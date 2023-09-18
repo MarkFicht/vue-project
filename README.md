@@ -12,7 +12,7 @@ Developing with Vue 3 in Vite.
 
 ## DEMO
 
-[Click for DEMO Vue project](https://markficht.github.io/vue3-table-fake-data/)
+[Click for DEMO Vue project](https://markficht.github.io/vue-project/)
 
 ## Screen
 
