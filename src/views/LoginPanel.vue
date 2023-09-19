@@ -252,6 +252,12 @@ const signInWithGoogle = (e: MouseEvent) => {
 </template>
 
 <style scoped>
+main {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
 .header {
     height: 30px;
     line-height: 30px;

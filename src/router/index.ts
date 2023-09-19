@@ -23,7 +23,7 @@ const router = createRouter({
         {
             path: '/feed',
             name: 'feed',
-            component: FeedPanel,
+            component: () => import('../views/FeedPanel.vue'),
             meta: {
                 requiresAuth: true
             }
