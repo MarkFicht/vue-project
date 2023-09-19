@@ -27,6 +27,46 @@ const router = createRouter({
             meta: {
                 requiresAuth: true
             }
+        },
+        {
+            path: '/feed/reflex-game',
+            name: 'reflex',
+            component: () => import('../views/FeedPanel.vue'),
+            meta: {
+                requiresAuth: true
+            }
+        },
+        {
+            path: '/feed/duel-game',
+            name: 'duel',
+            component: () => import('../views/FeedPanel.vue'),
+            meta: {
+                requiresAuth: true
+            }
+        },
+        {
+            path: '/feed/quatro-game',
+            name: 'quatro',
+            component: () => import('../views/FeedPanel.vue'),
+            meta: {
+                requiresAuth: true
+            }
+        },
+        {
+            path: '/feed/settings',
+            name: 'settings',
+            component: () => import('../views/FeedPanel.vue'),
+            meta: {
+                requiresAuth: true
+            }
+        },
+        {
+            path: '/feed/logout',
+            name: 'logout',
+            component: () => import('../views/FeedPanel.vue'),
+            meta: {
+                requiresAuth: true
+            }
         }
     ]
 });

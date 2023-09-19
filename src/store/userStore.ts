@@ -4,12 +4,14 @@ import type User from '@/interfaces/User';
 export const userStore = defineStore('userStore', {
     state: (): User => {
         return {
-            id: 0,
-            token: '',
-            username: '',
             password: '',
-            email: '',
-            keepLogIn: false
+            keepLogIn: false,
+            auth: '',
+            accessToken: '',
+            uid: '',
+            refreshToken: '',
+            displayName: '',
+            email: ''
         };
     },
     getters: {

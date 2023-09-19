@@ -1,8 +1,11 @@
+// import {} from 'firebase/auth';
 export default interface User {
-    id?: number;
-    token?: string;
-    username: string;
-    password: string;
-    email: string;
+    password?: string;
     keepLogIn?: boolean;
+    auth?: any;
+    accessToken?: string;
+    uid?: string;
+    refreshToken?: string;
+    displayName: string;
+    email: string;
 }
