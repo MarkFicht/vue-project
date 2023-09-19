@@ -1,79 +1,154 @@
 <script setup lang="ts">
-import { reactive, ref, type Ref } from 'vue';
+import { reactive, ref, type Ref, watch, onBeforeMount } from 'vue';
+import { useRouter } from 'vue-router';
 import useValidate from '@vuelidate/core';
-import { required, email, minLength, maxLength, sameAs, helpers } from '@vuelidate/validators';
-import type User from '@/interfaces/User';
+import { required, email, minLength, maxLength } from '@vuelidate/validators';
+import {
+    getAuth,
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+    GoogleAuthProvider,
+    signInWithPopup,
+    updateProfile,
+    onAuthStateChanged
+} from 'firebase/auth';
 
 const isLoginRegister = ref<boolean>(true);
 
 const header: Ref<string> = ref('Vue Project');
 const signIn = ref<string>('Sign In');
 const register = ref<string>('Register');
-const username = ref<string>('User Name');
+const signUpGoogle = ref<string>('Sign Up Google');
+const signInGoogle = ref<string>('Sign In Google');
+const displayName = ref<string>('User Name');
 const password = ref<string>('Password');
 const emailLabel = ref<string>('E-mail');
 const keepMe = ref<string>('Keep me log in');
 
+const errMsg = ref<string>('');
+const router = useRouter();
+
 const state = reactive({
-    username: '',
+    displayName: '',
     password: '',
     email: '',
     keepLogIn: false
 });
 
 const rules = reactive({
-    username: { required, minLength: minLength(6), maxLength: maxLength(20) },
+    // displayName: {
+    //     required: !isLoginRegister.value ? required : {},
+    //     minLength: minLength(6),
+    //     maxLength: maxLength(20)
+    // },
     password: { required, minLength: minLength(6), maxLength: maxLength(20) },
     email: {
         required,
         email
-        // unique: helpers.withAsync(async (val: string) => {
-        //     if (val.trim().length === 0) return true;
-        //     if (user?.value) return true;
-
-        //     let isUnique = true;
-
-        //     new Promise<boolean>((resolve, reject) => {
-        //         try {
-        //             userList.value.find((user) => {
-        //                 if (user.email === val) {
-        //                     isUnique = false;
-        //                     return true;
-        //                 }
-        //                 return false;
-        //             });
-        //             resolve(isUnique);
-        //         } catch (error) {
-        //             reject(error);
-        //         }
-        //     });
-
-        //     // const emailRegex =
-        //     //     /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-
-        //     return isUnique
-        //         ? isUnique
-        //         : {
-        //               $valid: isUnique,
-        //               $message: 'Email is already exists',
-        //               $pending: false
-        //           };
-        // })
     },
     keepLogIn: {}
 });
 
 const v$ = useValidate(rules, state);
 
+onBeforeMount(async () => {
+    const checkLoggedIn = await new Promise((resolve, reject) => {
+        const removeListener = onAuthStateChanged(
+            getAuth(),
+            (user) => {
+                removeListener();
+                resolve(user);
+            },
+            reject
+        );
+    });
+
+    checkLoggedIn && router.push('/feed');
+});
+
+watch([() => state.email, () => state.password], ([newValEmail, newValPassword]) => {
+    errMsg.value = '';
+});
+
 const submitForm = async (e: MouseEvent) => {
     e.preventDefault();
 
     const result = await v$.value.$validate();
-    if (result) {
-        alert('success');
-    } else {
-        //
+    const auth = getAuth();
+
+    if (result && !isLoginRegister.value) {
+        createUserWithEmailAndPassword(auth, state.email, state.password)
+            .then((data) => {
+                state.displayName !== '' &&
+                    updateProfile(auth.currentUser as any, {
+                        displayName: state.displayName
+                    });
+
+                router.push('/feed');
+            })
+            .catch((error) => {
+                console.error(
+                    '%c error -> ',
+                    'background: #222; color: #bada55',
+                    error.code,
+                    error.message
+                );
+                switch (error.code) {
+                    case 'auth/email-already-in-use':
+                        errMsg.value = 'E-mail already in use';
+                        break;
+                    default:
+                        errMsg.value = 'Something went wrong';
+                        break;
+                }
+            });
+    } else if (result && isLoginRegister.value) {
+        signInWithEmailAndPassword(auth, state.email, state.password)
+            .then((data) => {
+                router.push('/feed');
+            })
+            .catch((error) => {
+                console.error(
+                    '%c error -> ',
+                    'background: #222; color: #bada55',
+                    error.code,
+                    error.message
+                );
+                switch (error.code) {
+                    case 'auth/invalid-email':
+                        errMsg.value = 'Invalid e-mail';
+                        break;
+                    case 'auth/user-not-found':
+                        errMsg.value = 'User not found';
+                        break;
+                    case 'auth/wrong-password':
+                        errMsg.value = 'Incorrect password';
+                        break;
+                    default:
+                        errMsg.value = 'E-mail or password was Incorrect';
+                        break;
+                }
+            });
     }
+};
+
+const signInWithGoogle = (e: MouseEvent) => {
+    e.preventDefault();
+
+    const provider = new GoogleAuthProvider();
+    signInWithPopup(getAuth(), provider)
+        .then((res) => {
+            console.log('%c user google -> ', 'background: #222; color: #bada55', res.user);
+            router.push('/feed');
+        })
+        .catch((err) => {
+            console.error(
+                '%c error -> ',
+                'background: #222; color: #bada55',
+                err.code,
+                err.message
+            );
+        });
 };
 </script>
 
@@ -86,36 +161,23 @@ const submitForm = async (e: MouseEvent) => {
         <section class="login">
             <form action="">
                 <h2>{{ isLoginRegister ? signIn : register }}</h2>
-                <span class="input-box">
-                    <label for="login-input">{{ username }}</label>
+
+                <span v-if="!isLoginRegister" class="input-box">
+                    <label for="login-input">{{ displayName }}</label>
                     <input
                         type="text"
                         id="login-input"
-                        :placeholder="`${username}...`"
-                        v-model="state.username"
+                        :placeholder="`${displayName}...`"
+                        maxlength="20"
+                        v-model="state.displayName"
                     />
                     <span class="icon">
                         <ion-icon name="person-circle-outline"></ion-icon>
                     </span>
                 </span>
-                <span v-if="v$.username.$error" class="form-error">
-                    {{ v$.username.$errors[0].$message }}</span
-                >
-                <span class="input-box">
-                    <label for="password-input">{{ password }}</label>
-                    <input
-                        type="password"
-                        id="password-input"
-                        :placeholder="`${password}...`"
-                        v-model="state.password"
-                    />
-                    <span class="icon">
-                        <ion-icon name="lock-closed-outline"></ion-icon>
-                    </span>
-                </span>
-                <span v-if="v$.password.$error" class="form-error">
-                    {{ v$.password.$errors[0].$message }}</span
-                >
+                <!-- <span v-if="v$.displayName.$error" class="form-error">
+                    {{ v$.displayName.$errors[0].$message }}</span
+                > -->
 
                 <span class="input-box">
                     <label for="email-input">{{ emailLabel }}</label>
@@ -134,7 +196,25 @@ const submitForm = async (e: MouseEvent) => {
                         v$.email.$errors[0]?.$message || v$.email.$errors[0]?.$response.$message
                     }}</span
                 >
+
+                <span class="input-box">
+                    <label for="password-input">{{ password }}</label>
+                    <input
+                        type="password"
+                        id="password-input"
+                        :placeholder="`${password}...`"
+                        v-model="state.password"
+                    />
+                    <span class="icon">
+                        <ion-icon name="lock-closed-outline"></ion-icon>
+                    </span>
+                </span>
+                <span v-if="v$.password.$error" class="form-error">
+                    {{ v$.password.$errors[0].$message }}</span
+                >
+
                 <label> <input type="checkbox" v-model="state.keepLogIn" />{{ keepMe }} </label>
+
                 <span class="input-box">
                     <input
                         type="submit"
@@ -142,6 +222,17 @@ const submitForm = async (e: MouseEvent) => {
                         @click="(e) => submitForm(e)"
                     />
                 </span>
+                <span class="input-box submit-google">
+                    <input
+                        type="submit"
+                        :value="isLoginRegister ? signInGoogle : signUpGoogle"
+                        @click="signInWithGoogle"
+                    />
+                    <span class="icon">
+                        <ion-icon name="logo-google"></ion-icon>
+                    </span>
+                </span>
+                <span v-if="errMsg" class="form-error form-error-submit"> {{ errMsg }}</span>
             </form>
         </section>
 
@@ -237,6 +328,7 @@ section.login form .input-box input {
     background: transparent;
     border-radius: 10px;
     font-size: 1em;
+    height: 40px;
 }
 section.login form .input-box input[type='text'],
 section.login form .input-box input[type='password'] {
@@ -266,12 +358,12 @@ section.login form input[type='checkbox'] {
     margin-right: 5px;
 }
 section.login form input[type='submit'] {
-    margin-top: 30px;
+    margin-top: 15px;
     box-shadow:
         5px 5px 10px rgba(0, 0, 0, 0.1),
         -5px -5px 10px #fff;
     width: 100%;
-    padding: 15px 20px;
+    padding: 10px;
     cursor: pointer;
     font-weight: bold;
     font-size: 1.3em;
@@ -283,11 +375,22 @@ section.login form input[type='submit']:focus {
         inset 5px 5px 10px rgba(0, 0, 0, 0.1),
         inset -5px -5px 10px #fff;
 }
+.submit-google {
+    margin-top: 10px !important;
+}
+.submit-google .icon {
+    top: 45% !important;
+    font-size: 1.8em !important;
+}
 .form-error {
     color: tomato !important;
     font-size: 0.9em !important;
     text-align: center;
     display: block;
+    margin-bottom: -8px;
+}
+.form-error-submit {
+    margin-top: 6px;
 }
 /* --- Navi --- */
 section.nav {
@@ -308,6 +411,9 @@ section.nav {
     border-radius: 10px;
     filter: drop-shadow(0 15px 35px rgba(0, 0, 0, 0.5));
     animation: showElement 2s linear;
+    -webkit-user-select: none; /* Safari */
+    -ms-user-select: none; /* IE 10 and IE 11 */
+    user-select: none; /* Standard syntax */
 }
 section.nav nav {
     display: flex;
@@ -404,17 +510,38 @@ section.nav nav a:nth-child(2).active ~ .indicator {
         opacity: 1;
     }
 }
-/* 
-@media (max-width: 1024px) {
+
+@media (max-width: 720px) {
+    section.login {
+        width: 300px;
+        padding: 20px 25px;
+    }
+
     .header {
-        margin-top: 30px;
+        height: 25px;
+        line-height: 25px;
+        margin-bottom: 20px;
+    }
+    h1 {
+        font-size: 1.8rem;
+    }
+    section.login form h2 {
+        font-size: 1.6em;
+        margin-bottom: 15px;
         text-align: center;
+    }
+    section.nav {
+        transform: scale(0.9);
+        margin-top: 50px;
     }
 }
-@media (max-width: 680px) {
-    .header {
-        margin-top: 0px;
-        text-align: center;
+@media (max-width: 560px) {
+    section.login {
+        width: 250px;
     }
-} */
+
+    section.login form .input-box input {
+        height: 36px;
+    }
+}
 </style>

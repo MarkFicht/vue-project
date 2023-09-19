@@ -2,33 +2,30 @@ import './assets/main.css';
 
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
-// import firebase from 'firebase/app';
+import { initializeApp } from 'firebase/app';
+import { getAnalytics } from 'firebase/analytics';
 
 import App from './App.vue';
 import router from './router';
 
-// // --- Your web app's Firebase configuration
-// const firebaseConfig = {
-//     apiKey: 'AIzaSyDp574Cg72qIyAimYGfHFSO0txNP7sZmKk',
-//     authDomain: 'online-project-bf469.firebaseapp.com',
-//     databaseURL: 'https://online-project-bf469.firebaseio.com',
-//     projectId: 'online-project-bf469',
-//     storageBucket: 'online-project-bf469.appspot.com',
-//     messagingSenderId: '856280314889',
-//     appId: '1:856280314889:web:7fd5b9edbe34f900fc34d8'
-// };
-// // --- Initialize Firebase
-// firebase.initializeApp(firebaseConfig);
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
 
-// --- Check logged user after refresh
-// let app: any;
-// firebase.auth().onAuthStateChanged((user) => {
-//     console.log('%c user -> ', 'background: #222; color: #bada55', user);
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+    apiKey: 'AIzaSyBRIqo_JdB3v6nV5pAPNfkgm9NujxAup68',
+    authDomain: 'vue-project-d53d4.firebaseapp.com',
+    projectId: 'vue-project-d53d4',
+    storageBucket: 'vue-project-d53d4.appspot.com',
+    messagingSenderId: '495070706443',
+    appId: '1:495070706443:web:c2afce58385a473439800e',
+    measurementId: 'G-FQ88TGJMZE'
+};
 
-//     if (!app) {
-//         app = createApp(App).use(store).use(router).mount('#app');
-//     }
-// });
+// Initialize Firebase
+const firebaseApp = initializeApp(firebaseConfig);
+const analytics = getAnalytics(firebaseApp);
 
 const app = createApp(App);
 
