@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive, ref, type Ref, watch, onBeforeMount } from 'vue';
+import { reactive, ref, type Ref, watch, onBeforeMount, provide } from 'vue';
 import { useRouter } from 'vue-router';
 import useValidate from '@vuelidate/core';
 import { required, email, minLength, maxLength } from '@vuelidate/validators';
@@ -12,18 +12,34 @@ import {
     updateProfile,
     onAuthStateChanged
 } from 'firebase/auth';
-
-const isLoginRegister = ref<boolean>(true);
+import type RouteIndicatorNavi from '@/interfaces/RouteIndicatorNavi';
+import IndicatorNavi from '@/components/IndicatorNavi.vue';
 
 const header: Ref<string> = ref('Vue Project');
 const signIn = ref<string>('Sign In');
 const register = ref<string>('Register');
-const signUpGoogle = ref<string>('Sign Up Google');
+// const forgetPassword = ref<string>('Forgotten');
 const signInGoogle = ref<string>('Sign In Google');
+const signUpGoogle = ref<string>('Sign Up Google');
 const displayName = ref<string>('User Name');
 const password = ref<string>('Password');
 const emailLabel = ref<string>('E-mail');
 const keepMe = ref<string>('Keep me log in');
+
+const activeLink = ref<string>(signIn.value);
+const routes = ref<RouteIndicatorNavi[]>([
+    { name: `${signIn.value}`, ionIconClass: `log-in-outline`, to: `` },
+    { name: `${register.value}`, ionIconClass: `document-text-outline`, to: `` }
+    // { name: `${forgetPassword.value}`, ionIconClass: `refresh-outline`, to: `` }
+]);
+const updateActiveLink = (val: string) => {
+    activeLink.value = val;
+};
+provide('indicatorNavi', {
+    activeLink,
+    routes,
+    updateActiveLink
+});
 
 const errMsg = ref<string>('');
 const router = useRouter();
@@ -34,10 +50,9 @@ const state = reactive({
     email: '',
     keepLogIn: false
 });
-
 const rules = reactive({
     // displayName: {
-    //     required: !isLoginRegister.value ? required : {},
+    //     required: activeLink.value === `${register}` ? required : {},
     //     minLength: minLength(6),
     //     maxLength: maxLength(20)
     // },
@@ -76,7 +91,7 @@ const submitForm = async (e: MouseEvent) => {
     const result = await v$.value.$validate();
     const auth = getAuth();
 
-    if (result && !isLoginRegister.value) {
+    if (result && activeLink.value === register.value) {
         createUserWithEmailAndPassword(auth, state.email, state.password)
             .then((data) => {
                 state.displayName !== '' &&
@@ -102,7 +117,7 @@ const submitForm = async (e: MouseEvent) => {
                         break;
                 }
             });
-    } else if (result && isLoginRegister.value) {
+    } else if (result && activeLink.value === signIn.value) {
         signInWithEmailAndPassword(auth, state.email, state.password)
             .then((data) => {
                 router.push('/feed');
@@ -160,9 +175,9 @@ const signInWithGoogle = (e: MouseEvent) => {
 
         <section class="login">
             <form action="">
-                <h2>{{ isLoginRegister ? signIn : register }}</h2>
+                <h2>{{ activeLink }}</h2>
 
-                <span v-if="!isLoginRegister" class="input-box">
+                <span v-if="activeLink === `${register}`" class="input-box">
                     <label for="login-input">{{ displayName }}</label>
                     <input
                         type="text"
@@ -216,16 +231,12 @@ const signInWithGoogle = (e: MouseEvent) => {
                 <label> <input type="checkbox" v-model="state.keepLogIn" />{{ keepMe }} </label>
 
                 <span class="input-box">
-                    <input
-                        type="submit"
-                        :value="isLoginRegister ? signIn : register"
-                        @click="(e) => submitForm(e)"
-                    />
+                    <input type="submit" :value="activeLink" @click="(e) => submitForm(e)" />
                 </span>
                 <span class="input-box submit-google">
                     <input
                         type="submit"
-                        :value="isLoginRegister ? signInGoogle : signUpGoogle"
+                        :value="activeLink === `${signIn}` ? signInGoogle : signUpGoogle"
                         @click="signInWithGoogle"
                     />
                     <span class="icon">
@@ -236,32 +247,11 @@ const signInWithGoogle = (e: MouseEvent) => {
             </form>
         </section>
 
-        <section class="nav show-nav">
-            <nav>
-                <a
-                    :style="`--clr:#f3218b;`"
-                    :class="[isLoginRegister && 'active']"
-                    @click="() => (isLoginRegister = true)"
-                >
-                    <span class="icon"><ion-icon name="log-in-outline"></ion-icon></span>
-                    <span class="text">{{ signIn }}</span>
-                </a>
-                <a
-                    :style="`--clr:#2196f3;`"
-                    :class="[!isLoginRegister && 'active']"
-                    @click="() => (isLoginRegister = false)"
-                >
-                    <span class="icon"><ion-icon name="document-text-outline"></ion-icon></span>
-                    <span class="text">{{ register }}</span>
-                </a>
-                <div class="indicator"></div>
-            </nav>
-        </section>
+        <IndicatorNavi />
     </main>
 </template>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css?family=Poppins:200,300,400,500,600,700,800,900&display=swap');
 .header {
     height: 30px;
     line-height: 30px;
@@ -392,115 +382,6 @@ section.login form input[type='submit']:focus {
 .form-error-submit {
     margin-top: 6px;
 }
-/* --- Navi --- */
-section.nav {
-    /* position: fixed; */
-    /* z-index: 10000; */
-    /* bottom: 50px; */
-    /* left: 50%; */
-    /* transform: translateX(-50%); */
-    margin: 0 auto;
-    margin-top: 60px;
-    margin-bottom: 15px;
-    width: 190px;
-    height: 60px;
-    background-color: #eee;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    border-radius: 10px;
-    filter: drop-shadow(0 15px 35px rgba(0, 0, 0, 0.5));
-    animation: showElement 2s linear;
-    -webkit-user-select: none; /* Safari */
-    -ms-user-select: none; /* IE 10 and IE 11 */
-    user-select: none; /* Standard syntax */
-}
-section.nav nav {
-    display: flex;
-    width: 140px;
-}
-section.nav nav a {
-    position: relative;
-    list-style: none;
-    width: 70px;
-    height: 60px;
-    z-index: 2;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
-    width: 100%;
-    text-align: center;
-    font-weight: 500;
-}
-section.nav nav a .icon {
-    position: relative;
-    display: block;
-    line-height: 65px;
-    font-size: 1.5em;
-    text-align: center;
-    transition: 0.5s;
-    color: #666;
-}
-section.nav nav a.active .icon {
-    transform: translateY(-32px);
-    color: var(--clr);
-}
-section.nav nav a .text {
-    position: absolute;
-    color: #fff;
-    padding: 2px 7px;
-    border-radius: 12px;
-    font-weight: 400;
-    font-size: 0.75em;
-    letter-spacing: 0.05em;
-    transition: 0.5s;
-    transform: translateY(15px);
-    opacity: 0;
-}
-section.nav nav a.active .text {
-    transform: translateY(-4px);
-    background: var(--clr);
-    opacity: 1;
-}
-.indicator {
-    position: absolute;
-    top: -35px;
-    width: 70px;
-    height: 70px;
-    background: #eee;
-    border-radius: 50%;
-    transition: 0.5s;
-    z-index: 1;
-}
-.indicator::before {
-    content: '';
-    position: absolute;
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    top: 5px;
-    left: -28px;
-    background: transparent;
-    box-shadow: 15px 18px #eee;
-}
-.indicator::after {
-    content: '';
-    position: absolute;
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    top: 5px;
-    right: -28px;
-    background: transparent;
-    box-shadow: -15px 18px #eee;
-}
-section.nav nav a:nth-child(1).active ~ .indicator {
-    transform: translateX(calc(70px * 0));
-}
-section.nav nav a:nth-child(2).active ~ .indicator {
-    transform: translateX(calc(70px * 1));
-}
 @keyframes showElement {
     0%,
     30% {
@@ -529,10 +410,6 @@ section.nav nav a:nth-child(2).active ~ .indicator {
         font-size: 1.6em;
         margin-bottom: 15px;
         text-align: center;
-    }
-    section.nav {
-        transform: scale(0.9);
-        margin-top: 50px;
     }
 }
 @media (max-width: 560px) {

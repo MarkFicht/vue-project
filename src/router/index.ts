@@ -1,6 +1,11 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import LoginPanel from '../views/LoginPanel.vue';
+import FeedPanel from '../views/FeedPanel.vue';
+
+// -------------------
+// WARINING - lazy loading doesnt work correctly on github pages from dist build
+// -------------------
 
 const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
@@ -18,7 +23,7 @@ const router = createRouter({
         {
             path: '/feed',
             name: 'feed',
-            component: () => import('../views/FeedPanel.vue'),
+            component: FeedPanel,
             meta: {
                 requiresAuth: true
             }
