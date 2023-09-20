@@ -39,7 +39,7 @@ const router = createRouter({
         {
             path: '/feed/duel-game',
             name: 'duel',
-            component: () => import('../views/FeedPanel.vue'),
+            component: () => import('../views/TheDuelGameBoard.vue'),
             meta: {
                 requiresAuth: true
             }

@@ -26,13 +26,13 @@ const routes = ref<RouteIndicatorNavi[]>([
     {
         name: `${gameReflex.value}`,
         ionIconClass: `game-controller-outline`,
-        to: `/feed/reflex-game`
+        to: ``
     },
-    { name: `${gameDuel.value}`, ionIconClass: `game-controller-outline`, to: `/feed/duel-game` },
+    { name: `${gameDuel.value}`, ionIconClass: `game-controller-outline`, to: `` },
     {
         name: `${gameQuatro.value}`,
         ionIconClass: `game-controller-outline`,
-        to: `/feed/quatro-game`
+        to: ``
     },
     { name: `${settings.value}`, ionIconClass: `settings-outline`, to: `/feed/settings` },
     { name: `${logOut.value}`, ionIconClass: `log-out-outline`, to: `/feed/logout` }
