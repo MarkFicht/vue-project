@@ -1,4 +1,4 @@
-export default interface RouteIndicatorNavi {
+export default interface IRouteIndicatorNavi {
     name: string;
     ionIconClass: string;
     to: string;

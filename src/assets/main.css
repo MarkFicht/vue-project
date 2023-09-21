@@ -7,18 +7,49 @@
   width: 100%;
 }
 
-/* a,
-.green {
+.customButton {
+  position: relative;
+  box-shadow:
+    5px 5px 10px rgba(0, 0, 0, 0.1),
+    -5px -5px 10px #fff;
+  /* width: 100%; */
+  padding: 10px;
+  outline: none;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 1.3em;
+  color: #444;
+  letter-spacing: 0.05em;
+  display: flexbox;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  list-style: none;
+  height: 40px;
+  border-radius: 10px;
+  background: transparent;
   text-decoration: none;
-  color: hsla(160, 100%, 37%, 1);
-  transition: 0.4s;
-} */
+}
+.customButton:focus {
+  box-shadow:
+    inset 5px 5px 10px rgba(0, 0, 0, 0.1),
+    inset -5px -5px 10px #fff;
+}
 
-/* @media (hover: hover) {
-  a:hover {
-    background-color: hsla(160, 100%, 37%, 0.2);
-  }
-} */
+.customInput {
+  border: none;
+  outline: none;
+  background: transparent;
+  border-radius: 10px;
+  height: 40px;
+  width: 100%;
+  padding: 15px 20px;
+  box-shadow:
+    inset 5px 5px 10px rgba(0, 0, 0, 0.1),
+    inset -5px -5px 10px #fff;
+  font-size: 1.2em;
+}
 
 @media (min-width: 1024px) {
   #app {

@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { onMounted, ref, provide, watch } from 'vue';
+import { onMounted, ref, provide } from 'vue';
 import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
 import { useRouter } from 'vue-router';
-import type RouteIndicatorNavi from '@/interfaces/RouteIndicatorNavi';
+import type IRouteIndicatorNavi from '@/interfaces/RouteIndicatorNavi';
 import IndicatorNavi from '@/components/IndicatorNavi.vue';
 import TheReflexGame from '@/components/TheReflexGame.vue';
 import TheDuelGame from '@/components/TheDuelGame.vue';
@@ -17,34 +17,24 @@ const gameQuatro = ref<string>('Quatro');
 const settings = ref<string>('Settings');
 const logOut = ref<string>('log Out');
 
+const iconGame = ref<string>(`game-controller-outline`);
+const iconSettings = ref<string>(`settings-outline`);
+const iconLogout = ref<string>(`log-out-outline`);
+
 const router = useRouter();
 const isLoggedIn = ref<boolean>(false);
 
 // ---
 const activeLink = ref<string>(gameReflex.value);
-const routes = ref<RouteIndicatorNavi[]>([
-    {
-        name: `${gameReflex.value}`,
-        ionIconClass: `game-controller-outline`,
-        to: ``
-    },
-    { name: `${gameDuel.value}`, ionIconClass: `game-controller-outline`, to: `` },
-    {
-        name: `${gameQuatro.value}`,
-        ionIconClass: `game-controller-outline`,
-        to: ``
-    },
-    { name: `${settings.value}`, ionIconClass: `settings-outline`, to: `/feed/settings` },
-    { name: `${logOut.value}`, ionIconClass: `log-out-outline`, to: `/feed/logout` }
+const routes = ref<IRouteIndicatorNavi[]>([
+    { name: `${gameReflex.value}`, ionIconClass: iconGame.value, to: `` },
+    { name: `${gameDuel.value}`, ionIconClass: iconGame.value, to: `` },
+    { name: `${gameQuatro.value}`, ionIconClass: iconGame.value, to: `` },
+    { name: `${settings.value}`, ionIconClass: iconSettings.value, to: `/feed/settings` },
+    { name: `${logOut.value}`, ionIconClass: iconLogout.value, to: `/feed/logout` }
 ]);
-const updateActiveLink = (val: string) => {
-    activeLink.value = val;
-};
-provide('indicatorNavi', {
-    activeLink,
-    routes,
-    updateActiveLink
-});
+const updateActiveLink = (val: string) => (activeLink.value = val);
+provide('indicatorNavi', { activeLink, routes, updateActiveLink });
 
 // ---
 let auth: any;
@@ -64,13 +54,6 @@ onMounted(() => {
         return false;
     });
 });
-
-// ---
-const handleSignOut = () => {
-    signOut(auth).then(() => {
-        router.push('/');
-    });
-};
 </script>
 
 <template>

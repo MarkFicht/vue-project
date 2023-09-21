@@ -1,20 +1,31 @@
 <script setup lang="ts">
 import { onMounted, ref, computed } from 'vue';
-import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
-import { useRouter } from 'vue-router';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import {
     cardsTierOne,
     cardsTierTwo,
     cardsTierThree,
-    cardsTierGuild
+    cardsTierGuild,
+    tierOneX,
+    tierOneY,
+    tierTwoX,
+    tierTwoY,
+    tierThreeX,
+    tierThreeY,
+    prepareIdForCards
 } from '../helpers/GameDuelInit';
+import { getCountRandomObjFromArr } from '@/helpers/HelpersFoo';
 import DuelGameCardComponent from '@/components/DuelGameCardComponent.vue';
-import type { GameDuelCard } from '@/interfaces/GameDuel';
+import type { IGameDuelCard, State } from '@/interfaces/GameDuel';
 
-const gameDuel = ref<string>('Duel Game');
+const state = ref<State>('I');
+
+const headerGameDuel = ref<string>('Duel Game');
 const isLoggedIn = ref<boolean>(false);
 
-const tierCards = ref<Array<GameDuelCard[]>>([[]]);
+const tierOneCards = ref<IGameDuelCard[]>([]);
+const tierTwoCards = ref<IGameDuelCard[]>([]);
+const tierThreeCards = ref<IGameDuelCard[]>([]);
 
 // ---
 let auth: any;
@@ -26,160 +37,122 @@ onMounted(() => {
         } else isLoggedIn.value = false;
     });
 
-    prepareTierOne(getRandomObjFromArr(cardsTierOne, 20));
+    tierOneCards.value = prepareIdForCards(getCountRandomObjFromArr(cardsTierOne, 20), 'I');
+    tierTwoCards.value = prepareIdForCards(getCountRandomObjFromArr(cardsTierTwo, 20), 'II');
+    tierThreeCards.value = prepareIdForCards(
+        getCountRandomObjFromArr(
+            [
+                ...getCountRandomObjFromArr(cardsTierThree, 17),
+                ...getCountRandomObjFromArr(cardsTierGuild, 3)
+            ],
+            20
+        ),
+        'III'
+    );
 });
 
 // ---
-const cardClick = (gameCard: GameDuelCard) => {
-    console.log('%c card -> ', 'background: #222; color: #bada55', gameCard);
+const cardClick = (gameCard: IGameDuelCard) => {
+    //TODO - add action: buy, add in wonder, sell
+    //TODO - prepare 3 buttons after select card, for it
+    //TODO - change compnent duelgamecardcomponent.vue
 
-    // remove action
+    // ACTION SELL
     if (!!gameCard.coversBy && gameCard.coversBy.length > 0) {
         //
     } else {
-        let arr: Array<GameDuelCard[]> = [];
-        tierCards.value.forEach((row) => {
-            let firstNest: any[] = [];
-            row.forEach((card) => {
-                firstNest.push({
-                    ...card,
-                    coversBy: card?.coversBy
-                        ? card.coversBy.filter((id) => {
-                              return id !== gameCard.id;
-                          })
-                        : []
-                });
-            });
-            arr.push(firstNest);
-        });
-
-        let arr2: Array<GameDuelCard[]> = [];
-        arr.forEach((row) => {
-            // arr2.push(row.filter((card: GameDuelCard) => card.id !== gameCard.id));
-            arr2.push(
-                row.map((card: GameDuelCard) => {
-                    return card.id !== gameCard.id ? card : { ...card, taken: true };
-                })
-            );
-        });
-
-        tierCards.value = arr2;
+        if (state.value === 'I')
+            tierOneCards.value = setCard(tierOneCards.value, gameCard, 'graveyard');
+        if (state.value === 'II')
+            tierTwoCards.value = setCard(tierTwoCards.value, gameCard, 'graveyard');
+        if (state.value === 'III')
+            tierThreeCards.value = setCard(tierThreeCards.value, gameCard, 'graveyard');
     }
 };
 
-function getRandomObjFromArr(arr: GameDuelCard[], n: number) {
-    let result = new Array(n),
-        len = arr.length,
-        taken = new Array(len);
-    if (n > len) throw new RangeError('getRandom: more elements taken than available');
-    while (n--) {
-        let x = Math.floor(Math.random() * len);
-        result[n] = arr[x in taken ? taken[x] : x];
-        taken[x] = --len in taken ? taken[len] : len;
-    }
-    return result;
-}
+const setCard = (
+    arr: IGameDuelCard[],
+    gameCard: IGameDuelCard,
+    action: IGameDuelCard['taken']
+): IGameDuelCard[] => {
+    let prepareArr: IGameDuelCard[] = [];
 
-function prepareTierOne(arr: GameDuelCard[]) {
-    arr.map((data, i) => {
-        let j = i + 1;
-        let k = 0;
-        if (i < 2) k = 2;
-        else if (i < 5) k = 3;
-        else if (i < 9) k = 4;
-        else if (i < 14) k = 5;
-        else if (i < 20) k = 0;
-        return { ...data, id: j, coversBy: k !== 0 ? [j + k, j + k + 1] : [] };
-    }).forEach((data, i) => {
-        if (i < 2) tierCards.value[0].push(data);
-        else if (i === 2) tierCards.value.push([data]);
-        else if (i < 5) tierCards.value[1].push(data);
-        else if (i === 5) tierCards.value.push([data]);
-        else if (i < 9) tierCards.value[2].push(data);
-        else if (i === 9) tierCards.value.push([data]);
-        else if (i < 14) tierCards.value[3].push(data);
-        else if (i === 14) tierCards.value.push([data]);
-        else if (i < 20) tierCards.value[4].push(data);
-    });
-}
+    if (action === 'graveyard') {
+        arr.forEach((card) => {
+            prepareArr.push({
+                ...card,
+                taken: card.id === gameCard.id ? 'graveyard' : card.taken,
+                coversBy: card?.coversBy
+                    ? card.coversBy.filter((id) => {
+                          return id !== gameCard.id;
+                      })
+                    : []
+            });
+        });
+    }
+    return prepareArr;
+};
 </script>
 
 <template>
     <main>
         <header class="header">
-            <h1>{{ gameDuel }}</h1>
+            <h1>{{ headerGameDuel }}</h1>
         </header>
 
         <section class="wrapper">
             <section class="player2info"></section>
             <section class="player2"></section>
             <section class="wonders2"></section>
-            <section class="cards">
-                <section class="row row1">
-                    <DuelGameCardComponent
-                        v-for="(card, index) in tierCards[0]"
-                        :key="index"
-                        :card="card"
-                        @click="cardClick(card)"
-                    />
-                </section>
-                <section class="row row2">
-                    <DuelGameCardComponent
-                        v-for="(card, index) in tierCards[1]"
-                        :key="index"
-                        :card="card"
-                        @click="cardClick(card)"
-                    />
-                </section>
-                <section class="row row3">
-                    <DuelGameCardComponent
-                        v-for="(card, index) in tierCards[2]"
-                        :key="index"
-                        :card="card"
-                        @click="cardClick(card)"
-                    />
-                </section>
-                <section class="row row4">
-                    <DuelGameCardComponent
-                        v-for="(card, index) in tierCards[3]"
-                        :key="index"
-                        :card="card"
-                        @click="cardClick(card)"
-                    />
-                </section>
-                <section class="row row5">
-                    <DuelGameCardComponent
-                        v-for="(card, index) in tierCards[4]"
-                        :key="index"
-                        :card="card"
-                        @click="cardClick(card)"
-                    />
-                </section>
-                <!-- <section class="row row6"></section> -->
-
-                <!-- <DuelGameCardComponent
-                    v-for="(card, index) in cardsTierOne"
+            <section class="cards" v-if="state === 'I'">
+                <DuelGameCardComponent
+                    v-for="(card, index) in tierOneCards"
                     :key="index"
                     :card="card"
-                /> -->
+                    :x="tierOneX[index]"
+                    :y="tierOneY[index]"
+                    @click="cardClick(card)"
+                />
+            </section>
+            <section class="cards" v-if="state === 'II'">
+                <DuelGameCardComponent
+                    v-for="(card, index) in tierTwoCards"
+                    :key="index"
+                    :card="card"
+                    :x="tierTwoX[index]"
+                    :y="tierTwoY[index]"
+                    @click="cardClick(card)"
+                />
+            </section>
+            <section class="cards" v-if="state === 'III'">
+                <DuelGameCardComponent
+                    v-for="(card, index) in tierThreeCards"
+                    :key="index"
+                    :card="card"
+                    :x="tierThreeX[index]"
+                    :y="tierThreeY[index]"
+                    @click="cardClick(card)"
+                />
             </section>
             <section class="duel"></section>
             <section class="graveyard"></section>
             <section class="player1info"></section>
             <section class="wonders1"></section>
-            <section class="player1"></section>
-
-            <!-- <section class="cards">
-            <DuelGameCardComponent v-for="(card, index) in cardsTierTwo" :key="index" :card="card" />
-        </section> -->
-
-            <!-- <section class="cards">
-            <DuelGameCardComponent v-for="(card, index) in cardsTierThree" :key="index" :card="card" />
-        </section> -->
-
-            <!-- <section class="cards">
-            <DuelGameCardComponent v-for="(card, index) in cardsTierGuild" :key="index" :card="card" />
-        </section> -->
+            <section class="player1">
+                <div class="playerCardContainer">
+                    <div class="playerCard1"></div>
+                    <div class="playerCard2"></div>
+                    <div class="playerCard3"></div>
+                    <div class="playerCard4"></div>
+                    <div class="playerCard5"></div>
+                    <div class="playerCard6"></div>
+                    <div class="playerCard7"></div>
+                </div>
+                <div class="playerPointsContainer">
+                    <div class="playerCash"></div>
+                    <div class="playerCoins"></div>
+                </div>
+            </section>
         </section>
     </main>
 </template>
@@ -230,7 +203,7 @@ section.wrapper {
         '.    card card card duel grv '
         'w1   card card card duel grv '
         'w1   p1   p1   p1   p1   .   ';
-    grid-template-columns: 2fr 3fr 2fr 2fr 1fr 2fr;
+    grid-template-columns: 2fr 3fr 2fr 1fr 1fr 3fr;
     grid-template-rows: 1fr 1fr 1fr 1fr 1fr 1fr;
     background-color: #eee;
     animation: showElement 2s linear;
@@ -250,6 +223,48 @@ section.wrapper {
 .player1 {
     grid-area: p1;
     border: 1px solid;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.player1 div {
+    width: 60px;
+    height: 100%;
+    border-radius: 5px;
+}
+div.playerCardContainer {
+    width: 70%;
+    display: flex;
+    justify-content: left;
+    align-items: center;
+}
+div.playerCardContainer div {
+    margin: 0 2px;
+}
+div.playerPointsContainer {
+    border: 1px solid;
+    width: 30%;
+}
+.playerCard1 {
+    background-image: linear-gradient(to bottom, rgb(197, 96, 13), 7%, rgba(0, 0, 0, 0));
+}
+.playerCard2 {
+    background-image: linear-gradient(to bottom, rgb(131, 121, 114), 7%, rgba(0, 0, 0, 0));
+}
+.playerCard3 {
+    background-image: linear-gradient(to bottom, rgb(255, 239, 9), 7%, rgba(0, 0, 0, 0));
+}
+.playerCard4 {
+    background-image: linear-gradient(to bottom, rgb(25, 48, 255), 7%, rgba(0, 0, 0, 0));
+}
+.playerCard5 {
+    background-image: linear-gradient(to bottom, rgb(255, 26, 26), 7%, rgba(0, 0, 0, 0));
+}
+.playerCard6 {
+    background-image: linear-gradient(to bottom, rgb(18, 219, 0), 7%, rgba(0, 0, 0, 0));
+}
+.playerCard7 {
+    background-image: linear-gradient(to bottom, rgb(124, 11, 189), 7%, rgba(0, 0, 0, 0));
 }
 .player1info {
     grid-area: p1i;
@@ -262,62 +277,10 @@ section.wrapper {
 .cards {
     position: relative;
     grid-area: card;
-    border: 1px solid;
     display: flex;
     justify-content: center;
     align-items: center;
     flex-direction: column;
-}
-
-.cards .row {
-    height: 70px;
-    width: 100%;
-    border: 1px solid;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-.cards .row1 {
-    position: absolute;
-    top: 50%;
-    transform: translatey(-210%);
-    /* background-color: rgba(255, 0, 0, 1); */
-    z-index: 2;
-}
-.cards .row2 {
-    position: absolute;
-    top: 50%;
-    transform: translatey(-140%);
-    /* background-color: rgba(255, 255, 0, 1); */
-    z-index: 3;
-}
-.cards .row3 {
-    position: absolute;
-    top: 50%;
-    transform: translatey(-70%);
-    /* background-color: rgba(255, 0, 255, 1); */
-    z-index: 4;
-}
-.cards .row4 {
-    position: absolute;
-    top: 50%;
-    transform: translatey(0);
-    /* background-color: rgba(0, 0, 255, 1); */
-    z-index: 5;
-}
-.cards .row5 {
-    position: absolute;
-    top: 50%;
-    transform: translatey(70%);
-    /* background-color: rgba(0, 255, 255, 1); */
-    z-index: 6;
-}
-.cards .row6 {
-    position: absolute;
-    top: 50%;
-    transform: translatey(140%);
-    /* background-color: rgba(255, 0, 25, 1); */
-    z-index: 7;
 }
 .duel {
     grid-area: duel;

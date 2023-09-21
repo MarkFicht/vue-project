@@ -31,7 +31,7 @@ const handleSignOut = () => {
 
 <template>
     <h2>{{ props.header }}</h2>
-    <button @click="handleSignOut">log out</button>
+    <button :class="'customButton'" @click="handleSignOut">log out</button>
 </template>
 
 <style scoped>

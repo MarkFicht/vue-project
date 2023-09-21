@@ -1,7 +1,7 @@
 import type User from './User';
 // import {} from 'firebase/auth';
 
-export default interface Game {
+export default interface IGame {
     id: string;
     status: 'Free' | 'Lobby' | 'Busy';
     isStarted: boolean;

@@ -12,7 +12,7 @@ import {
     updateProfile,
     onAuthStateChanged
 } from 'firebase/auth';
-import type RouteIndicatorNavi from '@/interfaces/RouteIndicatorNavi';
+import type IRouteIndicatorNavi from '@/interfaces/RouteIndicatorNavi';
 import IndicatorNavi from '@/components/IndicatorNavi.vue';
 
 const header: Ref<string> = ref('Vue Project');
@@ -26,20 +26,15 @@ const password = ref<string>('Password');
 const emailLabel = ref<string>('E-mail');
 const keepMe = ref<string>('Keep me log in');
 
+// ---
 const activeLink = ref<string>(signIn.value);
-const routes = ref<RouteIndicatorNavi[]>([
+const routes = ref<IRouteIndicatorNavi[]>([
     { name: `${signIn.value}`, ionIconClass: `log-in-outline`, to: `` },
     { name: `${register.value}`, ionIconClass: `document-text-outline`, to: `` }
     // { name: `${forgetPassword.value}`, ionIconClass: `refresh-outline`, to: `` }
 ]);
-const updateActiveLink = (val: string) => {
-    activeLink.value = val;
-};
-provide('indicatorNavi', {
-    activeLink,
-    routes,
-    updateActiveLink
-});
+const updateActiveLink = (val: string) => (activeLink.value = val);
+provide('indicatorNavi', { activeLink, routes, updateActiveLink });
 
 const errMsg = ref<string>('');
 const router = useRouter();
@@ -66,6 +61,7 @@ const rules = reactive({
 
 const v$ = useValidate(rules, state);
 
+// ---
 onBeforeMount(async () => {
     const checkLoggedIn = await new Promise((resolve, reject) => {
         const removeListener = onAuthStateChanged(
@@ -85,6 +81,7 @@ watch([() => state.email, () => state.password], ([newValEmail, newValPassword])
     errMsg.value = '';
 });
 
+// ---
 const submitForm = async (e: MouseEvent) => {
     e.preventDefault();
 
@@ -102,12 +99,7 @@ const submitForm = async (e: MouseEvent) => {
                 router.push('/feed');
             })
             .catch((error) => {
-                console.error(
-                    '%c error -> ',
-                    'background: #222; color: #bada55',
-                    error.code,
-                    error.message
-                );
+                console.error(error.message);
                 switch (error.code) {
                     case 'auth/email-already-in-use':
                         errMsg.value = 'E-mail already in use';
@@ -123,12 +115,7 @@ const submitForm = async (e: MouseEvent) => {
                 router.push('/feed');
             })
             .catch((error) => {
-                console.error(
-                    '%c error -> ',
-                    'background: #222; color: #bada55',
-                    error.code,
-                    error.message
-                );
+                console.error(error.message);
                 switch (error.code) {
                     case 'auth/invalid-email':
                         errMsg.value = 'Invalid e-mail';
@@ -152,17 +139,9 @@ const signInWithGoogle = (e: MouseEvent) => {
 
     const provider = new GoogleAuthProvider();
     signInWithPopup(getAuth(), provider)
-        .then((res) => {
-            console.log('%c user google -> ', 'background: #222; color: #bada55', res.user);
-            router.push('/feed');
-        })
+        .then((res) => router.push('/feed'))
         .catch((err) => {
-            console.error(
-                '%c error -> ',
-                'background: #222; color: #bada55',
-                err.code,
-                err.message
-            );
+            console.error(err.message);
         });
 };
 </script>
@@ -181,6 +160,7 @@ const signInWithGoogle = (e: MouseEvent) => {
                     <label for="login-input">{{ displayName }}</label>
                     <input
                         type="text"
+                        :class="'customInput'"
                         id="login-input"
                         :placeholder="`${displayName}...`"
                         maxlength="20"
@@ -198,6 +178,7 @@ const signInWithGoogle = (e: MouseEvent) => {
                     <label for="email-input">{{ emailLabel }}</label>
                     <input
                         type="text"
+                        :class="'customInput'"
                         id="email-input"
                         :placeholder="`${emailLabel}...`"
                         v-model="state.email"
@@ -216,6 +197,7 @@ const signInWithGoogle = (e: MouseEvent) => {
                     <label for="password-input">{{ password }}</label>
                     <input
                         type="password"
+                        :class="'customInput'"
                         id="password-input"
                         :placeholder="`${password}...`"
                         v-model="state.password"
@@ -231,11 +213,17 @@ const signInWithGoogle = (e: MouseEvent) => {
                 <label> <input type="checkbox" v-model="state.keepLogIn" />{{ keepMe }} </label>
 
                 <span class="input-box">
-                    <input type="submit" :value="activeLink" @click="(e) => submitForm(e)" />
+                    <input
+                        type="submit"
+                        :class="'customButton'"
+                        :value="activeLink"
+                        @click="(e) => submitForm(e)"
+                    />
                 </span>
                 <span class="input-box submit-google">
                     <input
                         type="submit"
+                        :class="'customButton'"
                         :value="activeLink === `${signIn}` ? signInGoogle : signUpGoogle"
                         @click="signInWithGoogle"
                     />
@@ -318,22 +306,9 @@ section.login form .input-box label {
     font-weight: 600;
     letter-spacing: 0.05em;
 }
-section.login form .input-box input {
-    border: none;
-    outline: none;
-    background: transparent;
-    border-radius: 10px;
-    font-size: 1em;
-    height: 40px;
-}
 section.login form .input-box input[type='text'],
 section.login form .input-box input[type='password'] {
-    width: 100%;
-    padding: 15px 20px;
     padding-left: 40px;
-    box-shadow:
-        inset 5px 5px 10px rgba(0, 0, 0, 0.1),
-        inset -5px -5px 10px #fff;
     font-size: 1.2em;
 }
 section.login form .input-box .icon {
@@ -355,21 +330,7 @@ section.login form input[type='checkbox'] {
 }
 section.login form input[type='submit'] {
     margin-top: 15px;
-    box-shadow:
-        5px 5px 10px rgba(0, 0, 0, 0.1),
-        -5px -5px 10px #fff;
-    width: 100%;
-    padding: 10px;
-    cursor: pointer;
-    font-weight: bold;
     font-size: 1.3em;
-    color: #444;
-    letter-spacing: 0.05em;
-}
-section.login form input[type='submit']:focus {
-    box-shadow:
-        inset 5px 5px 10px rgba(0, 0, 0, 0.1),
-        inset -5px -5px 10px #fff;
 }
 .submit-google {
     margin-top: 10px !important;

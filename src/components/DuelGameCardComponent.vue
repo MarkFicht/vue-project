@@ -1,21 +1,20 @@
 <script setup lang="ts">
-import { onMounted, ref, toRef, toRefs } from 'vue';
-import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
-import { useRouter } from 'vue-router';
-import { cardsTierOne } from '../helpers/GameDuelInit';
-import type { GameDuelCard } from '@/interfaces/GameDuel';
+import { toRefs, onMounted } from 'vue';
+import type { IGameDuelCard } from '@/interfaces/GameDuel';
 
-const props = defineProps<{
-    card: GameDuelCard;
-}>();
+const props = defineProps<{ card: IGameDuelCard; x: number; y: number }>();
 const { card } = toRefs(props);
+
+onMounted(() => {
+    console.log('%c card -> ', 'background: #222; color: #bada55', card);
+});
 </script>
 
 <template>
     <div
-        v-if="!card.taken"
-        :class="['card', card.coversBy?.length === 0 && 'canSelect', card.taken && 'invisible']"
-        :style="`background: ${card.color}; cursor: ${
+        v-if="card.taken === 'inGame'"
+        :class="['card', `card${card.id}`, card.coversBy?.length === 0 && 'canSelect']"
+        :style="`--x:${x}%; --y:${y}%; background: ${card.color}; cursor: ${
             card.coversBy?.length === 0 ? 'pointer' : 'default'
         };`"
     >
@@ -97,20 +96,12 @@ const { card } = toRefs(props);
                     .filter((val) => val !== '')}`
             }}
         </div>
-        <!-- <div
-            v-for="(cost, i) in card.cost"
-            :key="cost"
-            :class="[
-                cost === 'specialChar' && 'specialCharCost',
-                cost !== 'specialChar' && 'standardCost'
-            ]"
-        >
-            {{ cost === 'specialChar' ? `${card.valueCost[i]}s` : '' }}
-            {{ cost === 'cash' ? `${card.valueCost[i]}$` : '' }}
-            {{ cost !== 'specialChar' && cost !== 'cash' ? `${card.valueCost[i]} ${cost[0]}` : '' }}
-        </div> -->
     </div>
-    <div v-else :class="['card', card.taken && 'invisible']"></div>
+    <div
+        v-else
+        :class="['card', `card${card.id}`, 'invisible']"
+        :style="`--x:${x}%; --y:${y}%; background: ${card.color};`"
+    ></div>
 </template>
 
 <style scoped>
@@ -122,6 +113,7 @@ div {
 }
 .card {
     border: 1px solid;
+    border-radius: 5px;
     width: 50px;
     height: 60px;
     margin: 0 3px;
@@ -132,12 +124,16 @@ div {
     line-height: 7px;
     filter: brightness(1.3);
     transition: 0.3s;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translateY(var(--y)) translateX(var(--x));
 }
 .canSelect:hover {
-    transform: scale(1.05);
+    transform: translateY(var(--y)) translateX(var(--x)) scale(1.05);
 }
 .invisible {
-    opacity: 0;
+    animation: invisible 0.5s linear forwards;
 }
 .specialChar {
     grid-row: 3 / 5;
@@ -173,5 +169,14 @@ div {
     line-height: 6px;
     display: flex;
     justify-content: start;
+}
+@keyframes invisible {
+    0% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+        display: none;
+    }
 }
 </style>

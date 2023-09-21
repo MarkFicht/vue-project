@@ -1,7 +1,7 @@
-export interface GameDuelCard {
+export interface IGameDuelCard {
     id?: number;
     coversBy?: number[];
-    taken: boolean;
+    taken: 'inGame' | 'graveyard' | 'inPlayerBoard' | 'inWonder';
     tier: '1' | '2' | '3' | 'guild';
     color: 'red' | 'green' | 'blue' | 'yellow' | 'brown' | 'grey' | 'purple';
     valueCost: number[];
@@ -25,7 +25,7 @@ export interface GameDuelCard {
     >;
 }
 
-export interface GameDuelCoin {
+export interface IGameDuelCoin {
     effect:
         | 'cashBack'
         | 'pointX3'
@@ -39,7 +39,7 @@ export interface GameDuelCoin {
         | 'artefact7';
 }
 
-export interface GameDuelWonderCard {
+export interface IGameDuelWonderCard {
     valueCost: number[];
     cost: Array<'clay' | 'brick' | 'wood' | 'paper' | 'glass' | 'cash'>;
     valuePower: number[];
@@ -57,28 +57,73 @@ export interface GameDuelWonderCard {
     >;
 }
 
-export interface GameDuelBoard {
+export type State = 'prepare' | 'I' | 'II' | 'III' | 'end';
+
+export interface IGameDuelBoard {
     pawn: number; // from -9 to 9
     player1: number[];
     player2: number[];
-    coins: GameDuelCoin['effect'][];
+    coins: IGameDuelCoin['effect'][];
+}
+
+export class BoardDuel implements IGameDuelBoard {
+    public pawn: number = 0;
+    public player1: number[] = [];
+    public player2!: number[];
+    public coins!: IGameDuelCoin['effect'][];
+
+    constructor(params?: IGameDuelBoard) {
+        Object.assign(this, params);
+    }
 }
 
 export interface GameDuelPlayer {
     points: number;
     cash: number;
-    wonderCards: GameDuelWonderCard[];
+    wonderCards: IGameDuelWonderCard[];
     cards: {
-        red: GameDuelCard[];
-        green: GameDuelCard[];
-        blue: GameDuelCard[];
-        yellow: GameDuelCard[];
-        brown: GameDuelCard[];
-        grey: GameDuelCard[];
+        red: IGameDuelCard[];
+        green: IGameDuelCard[];
+        blue: IGameDuelCard[];
+        yellow: IGameDuelCard[];
+        brown: IGameDuelCard[];
+        grey: IGameDuelCard[];
     };
-    coins: GameDuelCoin[];
+    coins: IGameDuelCoin[];
     effects: {
-        fromWonderCards: [];
-        fromCards: [];
+        fromWonderCards: any[];
+        fromCards: any[];
     };
+}
+
+export class PlayerDuel implements GameDuelPlayer {
+    private _id: number = 0;
+
+    get id(): number {
+        return this._id;
+    }
+    set setId(newId: number) {
+        this._id = newId;
+    }
+
+    public points: number = 0;
+    public cash: number = 7;
+    public wonderCards = [];
+    public cards = {
+        red: [],
+        green: [],
+        blue: [],
+        yellow: [],
+        brown: [],
+        grey: []
+    };
+    public coins = [];
+    public effects = {
+        fromWonderCards: [],
+        fromCards: []
+    };
+
+    constructor(params?: GameDuelPlayer) {
+        Object.assign(this, params);
+    }
 }

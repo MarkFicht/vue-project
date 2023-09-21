@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia';
-import type User from '@/interfaces/User';
+import type IUser from '@/interfaces/User';
 
 export const userStore = defineStore('userStore', {
-    state: (): User => {
+    state: (): IUser => {
         return {
             password: '',
             keepLogIn: false,

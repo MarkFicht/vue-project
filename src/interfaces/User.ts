@@ -1,5 +1,5 @@
 // import {} from 'firebase/auth';
-export default interface User {
+export default interface IUser {
     password?: string;
     keepLogIn?: boolean;
     auth?: any;
