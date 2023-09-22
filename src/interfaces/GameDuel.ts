@@ -1,6 +1,9 @@
+import type IUser from './User';
+
 export interface IGameDuelCard {
     id?: number;
     coversBy?: number[];
+    hide: boolean;
     taken: 'inGame' | 'graveyard' | 'inPlayerBoard' | 'inWonder';
     tier: '1' | '2' | '3' | 'guild';
     color: 'red' | 'green' | 'blue' | 'yellow' | 'brown' | 'grey' | 'purple';
@@ -78,6 +81,7 @@ export class BoardDuel implements IGameDuelBoard {
 }
 
 export interface GameDuelPlayer {
+    user: IUser;
     points: number;
     cash: number;
     wonderCards: IGameDuelWonderCard[];
@@ -106,6 +110,7 @@ export class PlayerDuel implements GameDuelPlayer {
         this._id = newId;
     }
 
+    user = {} as IUser;
     public points: number = 0;
     public cash: number = 7;
     public wonderCards = [];

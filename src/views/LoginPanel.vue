@@ -331,6 +331,7 @@ section.login form input[type='checkbox'] {
 section.login form input[type='submit'] {
     margin-top: 15px;
     font-size: 1.3em;
+    width: 100%;
 }
 .submit-google {
     margin-top: 10px !important;

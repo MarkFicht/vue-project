@@ -1,23 +1,13 @@
 <script setup lang="ts">
-import { toRefs, onMounted } from 'vue';
+import { toRefs } from 'vue';
 import type { IGameDuelCard } from '@/interfaces/GameDuel';
 
-const props = defineProps<{ card: IGameDuelCard; x: number; y: number }>();
+const props = defineProps<{ card: IGameDuelCard }>();
 const { card } = toRefs(props);
-
-onMounted(() => {
-    console.log('%c card -> ', 'background: #222; color: #bada55', card);
-});
 </script>
 
 <template>
-    <div
-        v-if="card.taken === 'inGame'"
-        :class="['card', `card${card.id}`, card.coversBy?.length === 0 && 'canSelect']"
-        :style="`--x:${x}%; --y:${y}%; background: ${card.color}; cursor: ${
-            card.coversBy?.length === 0 ? 'pointer' : 'default'
-        };`"
-    >
+    <div :class="['card', `card${card.id}`]" :style="`background: ${card.color};`">
         <div
             v-for="(power, i) in card.power"
             :key="power"
@@ -97,11 +87,6 @@ onMounted(() => {
             }}
         </div>
     </div>
-    <div
-        v-else
-        :class="['card', `card${card.id}`, 'invisible']"
-        :style="`--x:${x}%; --y:${y}%; background: ${card.color};`"
-    ></div>
 </template>
 
 <style scoped>
@@ -116,7 +101,6 @@ div {
     border-radius: 5px;
     width: 50px;
     height: 60px;
-    margin: 0 3px;
     display: grid;
     grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
     grid-template-rows: 1fr 1fr 1fr 1fr;
@@ -124,17 +108,8 @@ div {
     line-height: 7px;
     filter: brightness(1.3);
     transition: 0.3s;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translateY(var(--y)) translateX(var(--x));
 }
-.canSelect:hover {
-    transform: translateY(var(--y)) translateX(var(--x)) scale(1.05);
-}
-.invisible {
-    animation: invisible 0.5s linear forwards;
-}
+/* ------------------- */
 .specialChar {
     grid-row: 3 / 5;
     grid-column: 5;
@@ -169,14 +144,5 @@ div {
     line-height: 6px;
     display: flex;
     justify-content: start;
-}
-@keyframes invisible {
-    0% {
-        opacity: 1;
-    }
-    100% {
-        opacity: 0;
-        display: none;
-    }
 }
 </style>

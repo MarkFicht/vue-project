@@ -16,16 +16,19 @@ import {
 } from '../helpers/GameDuelInit';
 import { getCountRandomObjFromArr } from '@/helpers/HelpersFoo';
 import DuelGameCardComponent from '@/components/DuelGameCardComponent.vue';
+import DuelGameLayOutCardsComponent from '@/components/DuelGameLayOutCardsComponent.vue';
 import type { IGameDuelCard, State } from '@/interfaces/GameDuel';
+import { duelGameStore } from '@/store/duelGameStore';
+import { storeToRefs } from 'pinia';
+
+const storeDuelGame = duelGameStore();
+const { tierOneCards, tierTwoCards, tierThreeCards, selectedCard, graveyard, player1, player2 } =
+    storeToRefs(storeDuelGame);
 
 const state = ref<State>('I');
 
 const headerGameDuel = ref<string>('Duel Game');
 const isLoggedIn = ref<boolean>(false);
-
-const tierOneCards = ref<IGameDuelCard[]>([]);
-const tierTwoCards = ref<IGameDuelCard[]>([]);
-const tierThreeCards = ref<IGameDuelCard[]>([]);
 
 // ---
 let auth: any;
@@ -56,41 +59,13 @@ const cardClick = (gameCard: IGameDuelCard) => {
     //TODO - add action: buy, add in wonder, sell
     //TODO - prepare 3 buttons after select card, for it
     //TODO - change compnent duelgamecardcomponent.vue
+    selectedCard.value = {} as IGameDuelCard;
 
-    // ACTION SELL
     if (!!gameCard.coversBy && gameCard.coversBy.length > 0) {
-        //
+        return;
     } else {
-        if (state.value === 'I')
-            tierOneCards.value = setCard(tierOneCards.value, gameCard, 'graveyard');
-        if (state.value === 'II')
-            tierTwoCards.value = setCard(tierTwoCards.value, gameCard, 'graveyard');
-        if (state.value === 'III')
-            tierThreeCards.value = setCard(tierThreeCards.value, gameCard, 'graveyard');
+        selectedCard.value = gameCard;
     }
-};
-
-const setCard = (
-    arr: IGameDuelCard[],
-    gameCard: IGameDuelCard,
-    action: IGameDuelCard['taken']
-): IGameDuelCard[] => {
-    let prepareArr: IGameDuelCard[] = [];
-
-    if (action === 'graveyard') {
-        arr.forEach((card) => {
-            prepareArr.push({
-                ...card,
-                taken: card.id === gameCard.id ? 'graveyard' : card.taken,
-                coversBy: card?.coversBy
-                    ? card.coversBy.filter((id) => {
-                          return id !== gameCard.id;
-                      })
-                    : []
-            });
-        });
-    }
-    return prepareArr;
 };
 </script>
 
@@ -105,46 +80,80 @@ const setCard = (
             <section class="player2"></section>
             <section class="wonders2"></section>
             <section class="cards" v-if="state === 'I'">
-                <DuelGameCardComponent
+                <DuelGameLayOutCardsComponent
                     v-for="(card, index) in tierOneCards"
                     :key="index"
                     :card="card"
                     :x="tierOneX[index]"
                     :y="tierOneY[index]"
+                    :reversColor="'rgb(145, 19, 19)'"
                     @click="cardClick(card)"
                 />
             </section>
             <section class="cards" v-if="state === 'II'">
-                <DuelGameCardComponent
+                <DuelGameLayOutCardsComponent
                     v-for="(card, index) in tierTwoCards"
                     :key="index"
                     :card="card"
                     :x="tierTwoX[index]"
                     :y="tierTwoY[index]"
+                    :reversColor="'rgb(58, 59, 160)'"
                     @click="cardClick(card)"
                 />
             </section>
             <section class="cards" v-if="state === 'III'">
-                <DuelGameCardComponent
+                <DuelGameLayOutCardsComponent
                     v-for="(card, index) in tierThreeCards"
                     :key="index"
                     :card="card"
                     :x="tierThreeX[index]"
                     :y="tierThreeY[index]"
+                    :reversColor="card.tier === 'guild' ? 'rgb(107, 36, 128)' : 'rgb(175, 85, 202)'"
                     @click="cardClick(card)"
                 />
             </section>
             <section class="duel"></section>
-            <section class="graveyard"></section>
+            <section class="graveyard">
+                <DuelGameCardComponent v-for="card in graveyard" :key="card.id" :card="card" />
+            </section>
             <section class="player1info"></section>
             <section class="wonders1"></section>
+            <section class="playerAction">
+                <button
+                    :disabled="!selectedCard?.id"
+                    class="customButton"
+                    @click="() => storeDuelGame.setCardTaken(state)"
+                >
+                    take
+                </button>
+                <button
+                    :disabled="!selectedCard?.id"
+                    class="customButton"
+                    @click="() => storeDuelGame.setCardGraveyard(state)"
+                >
+                    sell
+                </button>
+                <button
+                    :disabled="!selectedCard?.id"
+                    class="customButton"
+                    @click="() => storeDuelGame.setCardToWonder(state)"
+                >
+                    build wonder
+                </button>
+            </section>
             <section class="player1">
                 <div class="playerCardContainer">
                     <div class="playerCard1"></div>
                     <div class="playerCard2"></div>
                     <div class="playerCard3"></div>
                     <div class="playerCard4"></div>
-                    <div class="playerCard5"></div>
+                    <div class="playerCard5">
+                        <DuelGameCardComponent
+                            v-for="card in player1.cards.red"
+                            :key="card.id"
+                            :card="card"
+                        />
+                    </div>
                     <div class="playerCard6"></div>
                     <div class="playerCard7"></div>
                 </div>
@@ -198,13 +207,15 @@ section.wrapper {
     display: grid;
     grid-template-areas:
         'w2   p2   p2   p2   p2   p1i '
-        'w2   card card card duel p2i '
+        'w2   .    .    .    duel p2i '
+        'w2   card card card duel .   '
         '.    card card card duel .   '
         '.    card card card duel grv '
         'w1   card card card duel grv '
-        'w1   p1   p1   p1   p1   .   ';
+        'w1   act  act  act  duel grv '
+        'w1   p1   p1   p1   p1   grv ';
     grid-template-columns: 2fr 3fr 2fr 1fr 1fr 3fr;
-    grid-template-rows: 1fr 1fr 1fr 1fr 1fr 1fr;
+    grid-template-rows: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
     background-color: #eee;
     animation: showElement 2s linear;
 }
@@ -266,6 +277,16 @@ div.playerPointsContainer {
 .playerCard7 {
     background-image: linear-gradient(to bottom, rgb(124, 11, 189), 7%, rgba(0, 0, 0, 0));
 }
+.playerAction {
+    grid-area: act;
+    border: 1px solid;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.playerAction > button {
+    margin: 0 10px;
+}
 .player1info {
     grid-area: p1i;
     border: 1px solid;
@@ -289,6 +310,10 @@ div.playerPointsContainer {
 .graveyard {
     grid-area: grv;
     border: 1px solid;
+    display: flex;
+    justify-content: left;
+    align-items: center;
+    flex-wrap: wrap;
 }
 @keyframes showElement {
     0%,
