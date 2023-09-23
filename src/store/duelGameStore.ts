@@ -10,6 +10,12 @@ import {
     type State
 } from '@/interfaces/GameDuel';
 import type IUser from '@/interfaces/User';
+import db from '@/firebase/index';
+import { collection, doc, setDoc, getDoc, updateDoc, onSnapshot } from 'firebase/firestore';
+
+const gameDuelRef = collection(db, 'gameDuel');
+const tableGameDuelRef = doc(gameDuelRef, 'table1');
+let unSubFirebase: any;
 
 export interface IDuelGameStore {
     turn: IUser;
@@ -57,10 +63,24 @@ export const duelGameStore = defineStore('duelGameStore', {
             //     return error;
             // }
         },
+        async subFirebaseConnect() {
+            // firebase - set game
+            unSubFirebase = await onSnapshot(tableGameDuelRef, (doc) => {
+                if (doc.exists()) {
+                    const { tierICards, tierIICards, tierIIICards } = doc.data();
+                    this.tierOneCards = tierICards;
+                    this.tierTwoCards = tierIICards;
+                    this.tierThreeCards = tierIIICards;
+                }
+            });
+        },
+        unSubFirebaseConnect() {
+            unSubFirebase();
+        },
         unselectCard() {
             this.selectedCard = {} as IGameDuelCard;
         },
-        setCardTaken(tier: State): void {
+        async setCardTaken(tier: State): Promise<void> {
             let cardToTake: IGameDuelCard = {} as IGameDuelCard;
 
             if (tier === 'I') {
@@ -76,6 +96,9 @@ export const duelGameStore = defineStore('duelGameStore', {
                             : []
                     };
                 });
+                await updateDoc(tableGameDuelRef, {
+                    tierICards: this.tierOneCards
+                });
             } else if (tier === 'II') {
                 this.tierTwoCards = this.$state.tierOneCards.map((card) => {
                     card.id === this.selectedCard.id && (cardToTake = card);
@@ -88,6 +111,9 @@ export const duelGameStore = defineStore('duelGameStore', {
                               })
                             : []
                     };
+                });
+                await updateDoc(tableGameDuelRef, {
+                    tierIICards: this.tierTwoCards
                 });
             } else if (tier === 'III') {
                 this.tierThreeCards = this.$state.tierOneCards.map((card) => {
@@ -102,12 +128,14 @@ export const duelGameStore = defineStore('duelGameStore', {
                             : []
                     };
                 });
+                await updateDoc(tableGameDuelRef, {
+                    tierIIICards: this.tierThreeCards
+                });
             }
-            //TODO - which player, etc.
-            this.player1.cards.red.push(cardToTake);
+            console.log('%c cardToTake -> ', 'background: #222; color: #bada55', cardToTake);
             this.unselectCard();
         },
-        setCardGraveyard(tier: State): void {
+        async setCardGraveyard(tier: State): Promise<void> {
             let cardToGraveyard: IGameDuelCard = {} as IGameDuelCard;
 
             if (tier === 'I') {
@@ -123,6 +151,9 @@ export const duelGameStore = defineStore('duelGameStore', {
                             : []
                     };
                 });
+                await updateDoc(tableGameDuelRef, {
+                    tierICards: this.tierOneCards
+                });
             } else if (tier === 'II') {
                 this.tierTwoCards = this.$state.tierOneCards.map((card) => {
                     card.id === this.selectedCard.id && (cardToGraveyard = card);
@@ -135,6 +166,9 @@ export const duelGameStore = defineStore('duelGameStore', {
                               })
                             : []
                     };
+                });
+                await updateDoc(tableGameDuelRef, {
+                    tierIICards: this.tierTwoCards
                 });
             } else if (tier === 'III') {
                 this.tierThreeCards = this.$state.tierOneCards.map((card) => {
@@ -149,11 +183,18 @@ export const duelGameStore = defineStore('duelGameStore', {
                             : []
                     };
                 });
+                await updateDoc(tableGameDuelRef, {
+                    tierIIICards: this.tierThreeCards
+                });
             }
-            this.graveyard.push(cardToGraveyard);
+            console.log(
+                '%c cardToGraveyard -> ',
+                'background: #222; color: #bada55',
+                cardToGraveyard
+            );
             this.unselectCard();
         },
-        setCardToWonder(tier: State): void {
+        async setCardToWonder(tier: State): Promise<void> {
             let cardToWonder: IGameDuelCard = {} as IGameDuelCard;
 
             if (tier === 'I') {
@@ -169,6 +210,9 @@ export const duelGameStore = defineStore('duelGameStore', {
                             : []
                     };
                 });
+                await updateDoc(tableGameDuelRef, {
+                    tierICards: this.tierOneCards
+                });
             } else if (tier === 'II') {
                 this.tierTwoCards = this.$state.tierOneCards.map((card) => {
                     card.id === this.selectedCard.id && (cardToWonder = card);
@@ -181,6 +225,9 @@ export const duelGameStore = defineStore('duelGameStore', {
                               })
                             : []
                     };
+                });
+                await updateDoc(tableGameDuelRef, {
+                    tierIICards: this.tierTwoCards
                 });
             } else if (tier === 'III') {
                 this.tierThreeCards = this.$state.tierOneCards.map((card) => {
@@ -195,8 +242,11 @@ export const duelGameStore = defineStore('duelGameStore', {
                             : []
                     };
                 });
+                await updateDoc(tableGameDuelRef, {
+                    tierIIICards: this.tierThreeCards
+                });
             }
-            // this.player1.wonderCards.push(cardToWonder);
+            console.log('%c cardToWonder -> ', 'background: #222; color: #bada55', cardToWonder);
             this.unselectCard();
         }
     }

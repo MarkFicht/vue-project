@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { onMounted, ref, computed } from 'vue';
+import { onMounted, ref, computed, watch } from 'vue';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { collection, doc, setDoc, getDoc } from 'firebase/firestore';
+import db from '@/firebase/index';
 import {
     cardsTierOne,
     cardsTierTwo,
@@ -20,10 +22,13 @@ import DuelGameLayOutCardsComponent from '@/components/DuelGameLayOutCardsCompon
 import type { IGameDuelCard, State } from '@/interfaces/GameDuel';
 import { duelGameStore } from '@/store/duelGameStore';
 import { storeToRefs } from 'pinia';
+import type IUser from '@/interfaces/User';
 
 const storeDuelGame = duelGameStore();
 const { tierOneCards, tierTwoCards, tierThreeCards, selectedCard, graveyard, player1, player2 } =
     storeToRefs(storeDuelGame);
+
+const user = ref<IUser>({} as IUser);
 
 const state = ref<State>('I');
 
@@ -31,27 +36,55 @@ const headerGameDuel = ref<string>('Duel Game');
 const isLoggedIn = ref<boolean>(false);
 
 // ---
-let auth: any;
-onMounted(() => {
+onMounted(async () => {
+    let auth: any;
     auth = getAuth();
-    onAuthStateChanged(auth, (user) => {
-        if (user) {
+    onAuthStateChanged(auth, (data) => {
+        if (data) {
             isLoggedIn.value = true;
+            // user.value = Object.assign(user.value, data);
+            user.value = {
+                uid: data.uid,
+                email: data.email || '',
+                displayName: data.displayName || ''
+            };
         } else isLoggedIn.value = false;
     });
 
-    tierOneCards.value = prepareIdForCards(getCountRandomObjFromArr(cardsTierOne, 20), 'I');
-    tierTwoCards.value = prepareIdForCards(getCountRandomObjFromArr(cardsTierTwo, 20), 'II');
-    tierThreeCards.value = prepareIdForCards(
-        getCountRandomObjFromArr(
-            [
-                ...getCountRandomObjFromArr(cardsTierThree, 17),
-                ...getCountRandomObjFromArr(cardsTierGuild, 3)
-            ],
-            20
-        ),
-        'III'
-    );
+    // firebase - set and check game cards
+    const gameDuelRef = collection(db, 'gameDuel');
+    const tableGameDuelRef = doc(gameDuelRef, 'table1');
+
+    const docSnap = await getDoc(tableGameDuelRef);
+
+    if (docSnap.exists() && !!docSnap.data()?.users) {
+        console.log('Document data:', docSnap.data());
+    } else {
+        await setDoc(tableGameDuelRef, {
+            users: [{ ...user.value }, {}],
+            tierICards: prepareIdForCards(getCountRandomObjFromArr(cardsTierOne, 20), 'I'),
+            tierIICards: prepareIdForCards(getCountRandomObjFromArr(cardsTierTwo, 20), 'II'),
+            tierIIICards: prepareIdForCards(
+                getCountRandomObjFromArr(
+                    [
+                        ...getCountRandomObjFromArr(cardsTierThree, 17),
+                        ...getCountRandomObjFromArr(cardsTierGuild, 3)
+                    ],
+                    20
+                ),
+                'III'
+            )
+        });
+
+        const docSnap2 = await getDoc(tableGameDuelRef);
+        if (docSnap2.exists()) {
+            console.log('Document data second time:', docSnap2.data());
+        } else {
+            console.log('No such document!');
+        }
+    }
+
+    await storeDuelGame.subFirebaseConnect();
 });
 
 // ---
