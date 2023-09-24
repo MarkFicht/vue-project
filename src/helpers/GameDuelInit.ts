@@ -11,7 +11,7 @@ export let cardsTierTwo: IGameDuelCard[] = [];
 export let cardsTierThree: IGameDuelCard[] = [];
 export let cardsTierGuild: IGameDuelCard[] = [];
 export const cardsWonder: IGameDuelWonderCard[] = [];
-export const coins: IGameDuelCoin[] = [];
+export let coins: IGameDuelCoin['effect'][] = [];
 export const rejectedCoins: IGameDuelCoin[] = [];
 export const border: IGameDuelBoard = {
     pawn: 0,
@@ -764,6 +764,20 @@ cardsTierGuild = [
         valuePower: [7],
         power: ['guild']
     }
+];
+
+// --- Create coins
+coins = [
+    'artefact7',
+    'attack1',
+    'cash6n4special',
+    'cashBack',
+    'lowCostBlue',
+    'lowCostWonder',
+    'point4n6cash',
+    'point7',
+    'pointX3',
+    'repeatWonder'
 ];
 
 // --- Helpers: Cards position in current tier

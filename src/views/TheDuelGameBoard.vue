@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, computed, watch } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { collection, doc, setDoc, getDoc } from 'firebase/firestore';
 import db from '@/firebase/index';
@@ -14,19 +14,28 @@ import {
     tierTwoY,
     tierThreeX,
     tierThreeY,
-    prepareIdForCards
+    prepareIdForCards,
+    coins
 } from '../helpers/GameDuelInit';
 import { getCountRandomObjFromArr } from '@/helpers/HelpersFoo';
 import DuelGameCardComponent from '@/components/DuelGameCardComponent.vue';
 import DuelGameLayOutCardsComponent from '@/components/DuelGameLayOutCardsComponent.vue';
-import type { IGameDuelCard, State } from '@/interfaces/GameDuel';
+import { PlayerDuel, type IGameDuelCard, type State, BoardDuel } from '@/interfaces/GameDuel';
 import { duelGameStore } from '@/store/duelGameStore';
 import { storeToRefs } from 'pinia';
 import type IUser from '@/interfaces/User';
 
 const storeDuelGame = duelGameStore();
-const { tierOneCards, tierTwoCards, tierThreeCards, selectedCard, graveyard, player1, player2 } =
-    storeToRefs(storeDuelGame);
+const {
+    tierOneCards,
+    tierTwoCards,
+    tierThreeCards,
+    selectedCard,
+    graveyard,
+    player1,
+    player2,
+    turn
+} = storeToRefs(storeDuelGame);
 
 const user = ref<IUser>({} as IUser);
 
@@ -34,6 +43,14 @@ const state = ref<State>('I');
 
 const headerGameDuel = ref<string>('Duel Game');
 const isLoggedIn = ref<boolean>(false);
+
+const canBuy = computed((): boolean => {
+    if (!selectedCard.value?.id) return true;
+
+    // console.log('%c playerResources -> ', 'background: #222; color: #bada55', playerResources());
+
+    return !selectedCard.value?.id;
+});
 
 // ---
 onMounted(async () => {
@@ -54,14 +71,27 @@ onMounted(async () => {
     // firebase - set and check game cards
     const gameDuelRef = collection(db, 'gameDuel');
     const tableGameDuelRef = doc(gameDuelRef, 'table1');
+    const prepareRandomCoins = getCountRandomObjFromArr(coins, 10);
 
     const docSnap = await getDoc(tableGameDuelRef);
 
-    if (docSnap.exists() && !!docSnap.data()?.users) {
+    if (docSnap.exists() && !!docSnap.data()?.player1) {
         console.log('Document data:', docSnap.data());
     } else {
         await setDoc(tableGameDuelRef, {
-            users: [{ ...user.value }, {}],
+            player1: { ...new PlayerDuel(), user: user.value, _id: user.value.uid },
+            player2: { ...new PlayerDuel() },
+            turn: user.value.uid,
+            gameBoard: {
+                ...new BoardDuel(),
+                coins: [
+                    prepareRandomCoins[0],
+                    prepareRandomCoins[1],
+                    prepareRandomCoins[2],
+                    prepareRandomCoins[3],
+                    prepareRandomCoins[4]
+                ]
+            },
             tierICards: prepareIdForCards(getCountRandomObjFromArr(cardsTierOne, 20), 'I'),
             tierIICards: prepareIdForCards(getCountRandomObjFromArr(cardsTierTwo, 20), 'II'),
             tierIIICards: prepareIdForCards(
@@ -73,7 +103,17 @@ onMounted(async () => {
                     20
                 ),
                 'III'
-            )
+            ),
+            wonderCards: [],
+            graveyard: [],
+            theRestOfCoins: [
+                prepareRandomCoins[5],
+                prepareRandomCoins[6],
+                prepareRandomCoins[7],
+                prepareRandomCoins[8],
+                prepareRandomCoins[9]
+            ],
+            tier: 'prepare'
         });
 
         const docSnap2 = await getDoc(tableGameDuelRef);
@@ -86,6 +126,134 @@ onMounted(async () => {
 
     await storeDuelGame.subFirebaseConnect();
 });
+
+const playerResources = (card: IGameDuelCard) => {
+    let cash = 7;
+    let clayValue = 0;
+    let brickValue = 0;
+    let woodValue = 0;
+    let paperValue = 0;
+    let glassValue = 0;
+    let clayOne = 0;
+    let brickOne = 0;
+    let woodOne = 0;
+    let paperGlassOne = 0;
+    let materialsCBW = 0;
+    let materialsPG = 0;
+    let specialChars: number[] = [];
+    let artefacts: number[] = [];
+    let specialEffects: string[] = [];
+
+    if (card.color === 'brown') {
+        switch (card.power[0]) {
+            case 'clay':
+                clayValue += card.valuePower[0];
+                break;
+            case 'brick':
+                brickValue += card.valuePower[0];
+                break;
+            case 'wood':
+                woodValue += card.valuePower[0];
+                break;
+            default:
+                break;
+        }
+    } else if (card.color === 'grey') {
+        switch (card.power[0]) {
+            case 'paper':
+                paperValue += card.valuePower[0];
+                break;
+            case 'glass':
+                glassValue += card.valuePower[0];
+                break;
+            default:
+                break;
+        }
+    } else if (card.color === 'yellow') {
+        card.power.forEach((yellowPow, i) => {
+            if (yellowPow === 'discount') {
+                switch (card.valuePower[i]) {
+                    case 1:
+                        clayOne = 1;
+                        break;
+                    case 2:
+                        brickOne = 1;
+                        break;
+                    case 3:
+                        woodOne = 1;
+                        break;
+                    case 4:
+                        paperGlassOne = 1;
+                        break;
+                    default:
+                        break;
+                }
+            }
+            if (yellowPow === 'materials') {
+                switch (card.valuePower[i]) {
+                    case 1:
+                        materialsCBW += 1;
+                        break;
+                    case 2:
+                        materialsPG += 1;
+                        break;
+                    default:
+                        break;
+                }
+            }
+            if (yellowPow === 'specialChar') {
+                specialChars.push(card.valuePower[i]);
+            }
+            if (yellowPow === 'cash') {
+                cash += card.valuePower[i];
+            }
+            if (yellowPow === 'cashBack') {
+                //TODO
+            }
+        });
+    } else if (card.color === 'red') {
+        card.power.forEach((redPow, i) => {
+            if (redPow === 'specialChar') {
+                specialChars.push(card.valuePower[i]);
+            }
+        });
+    } else if (card.color === 'green') {
+        card.power.forEach((greenPow, i) => {
+            if (greenPow === 'specialChar') {
+                specialChars.push(card.valuePower[i]);
+            }
+            if (greenPow === 'artefact') {
+                artefacts.push(card.valuePower[i]);
+            }
+        });
+    } else if (card.color === 'blue') {
+        card.power.forEach((bluePow, i) => {
+            if (bluePow === 'specialChar') {
+                specialChars.push(card.valuePower[i]);
+            }
+        });
+    } else if (card.color === 'purple') {
+        // TODO
+    }
+
+    return {
+        cash,
+        clayValue,
+        brickValue,
+        woodValue,
+        paperValue,
+        glassValue,
+        clayOne,
+        brickOne,
+        woodOne,
+        paperGlassOne,
+        materialsCBW,
+        materialsPG,
+        specialChars,
+        artefacts,
+        specialEffects
+    };
+};
 
 // ---
 const cardClick = (gameCard: IGameDuelCard) => {
@@ -153,7 +321,7 @@ const cardClick = (gameCard: IGameDuelCard) => {
             <section class="wonders1"></section>
             <section class="playerAction">
                 <button
-                    :disabled="!selectedCard?.id"
+                    :disabled="canBuy"
                     class="customButton"
                     @click="() => storeDuelGame.setCardTaken(state)"
                 >

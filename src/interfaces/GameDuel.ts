@@ -72,8 +72,9 @@ export interface IGameDuelBoard {
 export class BoardDuel implements IGameDuelBoard {
     public pawn: number = 0;
     public player1: number[] = [];
-    public player2!: number[];
-    public coins!: IGameDuelCoin['effect'][];
+    // public player2!: number[];
+    public player2: number[] = [];
+    public coins: IGameDuelCoin['effect'][] = [];
 
     constructor(params?: IGameDuelBoard) {
         Object.assign(this, params);
@@ -83,7 +84,23 @@ export class BoardDuel implements IGameDuelBoard {
 export interface GameDuelPlayer {
     user: IUser;
     points: number;
-    cash: number;
+    resources: {
+        cash: number;
+        clayValue: number;
+        brickValue: number;
+        woodValue: number;
+        paperValue: number;
+        glassValue: number;
+        clayOne: number;
+        brickOne: number;
+        woodOne: number;
+        paperGlassOne: number;
+        materialsCBW: number;
+        materialsPG: number;
+        specialChars: number[];
+        artefacts: number[];
+        specialEffects: string[];
+    };
     wonderCards: IGameDuelWonderCard[];
     cards: {
         red: IGameDuelCard[];
@@ -92,6 +109,7 @@ export interface GameDuelPlayer {
         yellow: IGameDuelCard[];
         brown: IGameDuelCard[];
         grey: IGameDuelCard[];
+        purple: IGameDuelCard[];
     };
     coins: IGameDuelCoin[];
     effects: {
@@ -112,7 +130,23 @@ export class PlayerDuel implements GameDuelPlayer {
 
     user = {} as IUser;
     public points: number = 0;
-    public cash: number = 7;
+    public resources = {
+        cash: 7,
+        clayValue: 0,
+        brickValue: 0,
+        woodValue: 0,
+        paperValue: 0,
+        glassValue: 0,
+        clayOne: 0,
+        brickOne: 0,
+        woodOne: 0,
+        paperGlassOne: 0,
+        materialsCBW: 0,
+        materialsPG: 0,
+        specialChars: [],
+        artefacts: [],
+        specialEffects: []
+    };
     public wonderCards = [];
     public cards = {
         red: [],
@@ -120,7 +154,8 @@ export class PlayerDuel implements GameDuelPlayer {
         blue: [],
         yellow: [],
         brown: [],
-        grey: []
+        grey: [],
+        purple: []
     };
     public coins = [];
     public effects = {

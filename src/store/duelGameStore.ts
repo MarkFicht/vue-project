@@ -11,20 +11,28 @@ import {
 } from '@/interfaces/GameDuel';
 import type IUser from '@/interfaces/User';
 import db from '@/firebase/index';
-import { collection, doc, setDoc, getDoc, updateDoc, onSnapshot } from 'firebase/firestore';
+import {
+    collection,
+    doc,
+    setDoc,
+    getDoc,
+    updateDoc,
+    onSnapshot,
+    increment
+} from 'firebase/firestore';
 
 const gameDuelRef = collection(db, 'gameDuel');
 const tableGameDuelRef = doc(gameDuelRef, 'table1');
 let unSubFirebase: any;
 
 export interface IDuelGameStore {
-    turn: IUser;
+    turn: string;
     tier: State;
     selectedCard: IGameDuelCard;
     tierOneCards: IGameDuelCard[];
     tierTwoCards: IGameDuelCard[];
     tierThreeCards: IGameDuelCard[];
-    allCoins: IGameDuelCoin[];
+    theRestOfCoins: IGameDuelCoin[];
     wonderCards: IGameDuelWonderCard[];
     graveyard: IGameDuelCard[];
     board: IGameDuelBoard;
@@ -35,13 +43,13 @@ export interface IDuelGameStore {
 export const duelGameStore = defineStore('duelGameStore', {
     state: (): IDuelGameStore => {
         return {
-            turn: {} as IUser,
+            turn: '',
             tier: 'prepare',
             selectedCard: {} as IGameDuelCard,
             tierOneCards: [],
             tierTwoCards: [],
             tierThreeCards: [],
-            allCoins: [],
+            theRestOfCoins: [],
             wonderCards: [],
             graveyard: [],
             board: new BoardDuel(),
@@ -67,10 +75,30 @@ export const duelGameStore = defineStore('duelGameStore', {
             // firebase - set game
             unSubFirebase = await onSnapshot(tableGameDuelRef, (doc) => {
                 if (doc.exists()) {
-                    const { tierICards, tierIICards, tierIIICards } = doc.data();
+                    const {
+                        turn,
+                        tier,
+                        tierICards,
+                        tierIICards,
+                        tierIIICards,
+                        player1,
+                        player2,
+                        gameBoard,
+                        wonderCards,
+                        graveyard,
+                        theRestOfCoins
+                    } = doc.data();
+                    this.turn = turn;
+                    this.tier = tier;
                     this.tierOneCards = tierICards;
                     this.tierTwoCards = tierIICards;
                     this.tierThreeCards = tierIIICards;
+                    this.player1 = player1;
+                    this.player2 = player2;
+                    this.board = gameBoard;
+                    this.wonderCards = wonderCards;
+                    this.graveyard = graveyard;
+                    this.theRestOfCoins = theRestOfCoins;
                 }
             });
         },
@@ -132,7 +160,22 @@ export const duelGameStore = defineStore('duelGameStore', {
                     tierIIICards: this.tierThreeCards
                 });
             }
-            console.log('%c cardToTake -> ', 'background: #222; color: #bada55', cardToTake);
+
+            if (this.turn === this.player1.user.uid) {
+                this.player1.cards[cardToTake.color].push(cardToTake);
+                //TODO - start it after 2 users online
+                await updateDoc(tableGameDuelRef, {
+                    'player1.cards': this.player1.cards,
+                    turn: this.player2.user?.uid || 0
+                });
+            } else {
+                this.player2.cards[cardToTake.color].push(cardToTake);
+                await updateDoc(tableGameDuelRef, {
+                    'player2.cards': this.player2.cards,
+                    turn: this.player1.user?.uid
+                });
+            }
+
             this.unselectCard();
         },
         async setCardGraveyard(tier: State): Promise<void> {
@@ -187,11 +230,24 @@ export const duelGameStore = defineStore('duelGameStore', {
                     tierIIICards: this.tierThreeCards
                 });
             }
-            console.log(
-                '%c cardToGraveyard -> ',
-                'background: #222; color: #bada55',
-                cardToGraveyard
-            );
+
+            if (this.turn === this.player1.user.uid) {
+                const addCash = 2 + this.player1.cards.yellow.length;
+
+                //TODO - start it after 2 users online
+                await updateDoc(tableGameDuelRef, {
+                    'player1.resources.cash': increment(addCash),
+                    turn: this.player2.user?.uid || 0
+                });
+            } else {
+                const addCash = 2 + this.player2.cards.yellow.length;
+
+                await updateDoc(tableGameDuelRef, {
+                    'player2.resources.cash': increment(addCash),
+                    turn: this.player1.user?.uid
+                });
+            }
+
             this.unselectCard();
         },
         async setCardToWonder(tier: State): Promise<void> {
