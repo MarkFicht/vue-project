@@ -64,16 +64,11 @@ export type State = 'prepare' | 'I' | 'II' | 'III' | 'end';
 
 export interface IGameDuelBoard {
     pawn: number; // from -9 to 9
-    player1: number[];
-    player2: number[];
     coins: IGameDuelCoin['effect'][];
 }
 
 export class BoardDuel implements IGameDuelBoard {
     public pawn: number = 0;
-    public player1: number[] = [];
-    // public player2!: number[];
-    public player2: number[] = [];
     public coins: IGameDuelCoin['effect'][] = [];
 
     constructor(params?: IGameDuelBoard) {
@@ -81,7 +76,7 @@ export class BoardDuel implements IGameDuelBoard {
     }
 }
 
-export interface GameDuelPlayer {
+export interface IGameDuelPlayer {
     user: IUser;
     points: number;
     resources: {
@@ -100,6 +95,7 @@ export interface GameDuelPlayer {
         specialChars: number[];
         artefacts: number[];
         specialEffects: string[];
+        coins: IGameDuelCoin['effect'][];
     };
     wonderCards: IGameDuelWonderCard[];
     cards: {
@@ -111,14 +107,13 @@ export interface GameDuelPlayer {
         grey: IGameDuelCard[];
         purple: IGameDuelCard[];
     };
-    coins: IGameDuelCoin[];
     effects: {
         fromWonderCards: any[];
         fromCards: any[];
     };
 }
 
-export class PlayerDuel implements GameDuelPlayer {
+export class PlayerDuel implements IGameDuelPlayer {
     private _id: number = 0;
 
     get id(): number {
@@ -145,7 +140,8 @@ export class PlayerDuel implements GameDuelPlayer {
         materialsPG: 0,
         specialChars: [],
         artefacts: [],
-        specialEffects: []
+        specialEffects: [],
+        coins: []
     };
     public wonderCards = [];
     public cards = {
@@ -157,13 +153,12 @@ export class PlayerDuel implements GameDuelPlayer {
         grey: [],
         purple: []
     };
-    public coins = [];
     public effects = {
         fromWonderCards: [],
         fromCards: []
     };
 
-    constructor(params?: GameDuelPlayer) {
+    constructor(params?: IGameDuelPlayer) {
         Object.assign(this, params);
     }
 }

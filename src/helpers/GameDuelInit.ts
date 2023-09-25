@@ -3,7 +3,8 @@ import type {
     IGameDuelWonderCard,
     IGameDuelCoin,
     IGameDuelBoard,
-    State
+    State,
+    IGameDuelPlayer
 } from '@/interfaces/GameDuel';
 
 export let cardsTierOne: IGameDuelCard[] = [];
@@ -13,12 +14,6 @@ export let cardsTierGuild: IGameDuelCard[] = [];
 export const cardsWonder: IGameDuelWonderCard[] = [];
 export let coins: IGameDuelCoin['effect'][] = [];
 export const rejectedCoins: IGameDuelCoin[] = [];
-export const border: IGameDuelBoard = {
-    pawn: 0,
-    player1: [],
-    player2: [],
-    coins: []
-};
 
 // --- Create Tier I
 cardsTierOne = [
@@ -868,3 +863,105 @@ export function prepareIdForCards(arr: IGameDuelCard[], state: State): IGameDuel
 
     return prepareCards;
 }
+
+// --- Helpres: Count player resources
+export const countPlayerResources = (
+    card: IGameDuelCard,
+    player: IGameDuelPlayer
+): IGameDuelPlayer['resources'] => {
+    const res = { ...player.resources };
+
+    if (card.color === 'brown') {
+        switch (card.power[0]) {
+            case 'clay':
+                res.clayValue += card.valuePower[0];
+                break;
+            case 'brick':
+                res.brickValue += card.valuePower[0];
+                break;
+            case 'wood':
+                res.woodValue += card.valuePower[0];
+                break;
+            default:
+                break;
+        }
+    } else if (card.color === 'grey') {
+        switch (card.power[0]) {
+            case 'paper':
+                res.paperValue += card.valuePower[0];
+                break;
+            case 'glass':
+                res.glassValue += card.valuePower[0];
+                break;
+            default:
+                break;
+        }
+    } else if (card.color === 'yellow') {
+        card.power.forEach((yellowPow, i) => {
+            if (yellowPow === 'discount') {
+                switch (card.valuePower[i]) {
+                    case 1:
+                        res.clayOne = 1;
+                        break;
+                    case 2:
+                        res.brickOne = 1;
+                        break;
+                    case 3:
+                        res.woodOne = 1;
+                        break;
+                    case 4:
+                        res.paperGlassOne = 1;
+                        break;
+                    default:
+                        break;
+                }
+            }
+            if (yellowPow === 'materials') {
+                switch (card.valuePower[i]) {
+                    case 1:
+                        res.materialsCBW += 1;
+                        break;
+                    case 2:
+                        res.materialsPG += 1;
+                        break;
+                    default:
+                        break;
+                }
+            }
+            if (yellowPow === 'specialChar') {
+                res.specialChars.push(card.valuePower[i]);
+            }
+            if (yellowPow === 'cash') {
+                res.cash += card.valuePower[i];
+            }
+            if (yellowPow === 'cashBack') {
+                //TODO
+            }
+        });
+    } else if (card.color === 'red') {
+        card.power.forEach((redPow, i) => {
+            if (redPow === 'specialChar') {
+                res.specialChars.push(card.valuePower[i]);
+            }
+        });
+    } else if (card.color === 'green') {
+        card.power.forEach((greenPow, i) => {
+            if (greenPow === 'specialChar') {
+                res.specialChars.push(card.valuePower[i]);
+            }
+            if (greenPow === 'artefact') {
+                res.artefacts.push(card.valuePower[i]);
+            }
+        });
+    } else if (card.color === 'blue') {
+        card.power.forEach((bluePow, i) => {
+            if (bluePow === 'specialChar') {
+                res.specialChars.push(card.valuePower[i]);
+            }
+        });
+    } else if (card.color === 'purple') {
+        // TODO
+    }
+
+    return res;
+};

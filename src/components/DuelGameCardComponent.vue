@@ -2,12 +2,15 @@
 import { toRefs } from 'vue';
 import type { IGameDuelCard } from '@/interfaces/GameDuel';
 
-const props = defineProps<{ card: IGameDuelCard }>();
+const props = defineProps<{ card: IGameDuelCard; small?: boolean }>();
 const { card } = toRefs(props);
 </script>
 
 <template>
-    <div :class="['card', `card${card.id}`]" :style="`background: ${card.color};`">
+    <div
+        :class="['card', `card${card.id}`, small && 'small']"
+        :style="`background: ${card.color};`"
+    >
         <div
             v-for="(power, i) in card.power"
             :key="power"
@@ -108,6 +111,9 @@ div {
     line-height: 7px;
     filter: brightness(1.3);
     transition: 0.3s;
+}
+.small {
+    height: 20px !important;
 }
 /* ------------------- */
 .specialChar {

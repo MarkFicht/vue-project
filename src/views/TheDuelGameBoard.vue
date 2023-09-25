@@ -34,6 +34,7 @@ const {
     graveyard,
     player1,
     player2,
+    board,
     turn
 } = storeToRefs(storeDuelGame);
 
@@ -44,12 +45,35 @@ const state = ref<State>('I');
 const headerGameDuel = ref<string>('Duel Game');
 const isLoggedIn = ref<boolean>(false);
 
-const canBuy = computed((): boolean => {
-    if (!selectedCard.value?.id) return true;
+const canBuy = computed((): number => {
+    if (!selectedCard.value?.id) return -1;
 
-    // console.log('%c playerResources -> ', 'background: #222; color: #bada55', playerResources());
+    let buyForCash = 0;
+    let buyForFree = false;
 
-    return !selectedCard.value?.id;
+    selectedCard.value.cost.forEach((cost, i) => {
+        if (cost === 'specialChar') {
+            player1.value.resources.specialChars.find((sc) => {
+                if (sc === selectedCard.value.valueCost[i]) {
+                    buyForFree = true;
+                    return true;
+                }
+            });
+        } else if (cost === 'cash') {
+            buyForCash += selectedCard.value.valueCost[i];
+        } else if (cost === 'clay') {
+            let costForClay = selectedCard.value.valueCost[i];
+            if (player1.value.resources.clayValue >= costForClay) {
+                return null;
+            } else {
+                costForClay = costForClay - player1.value.resources.clayValue;
+                // TODO discout + material from cards + material form wonders
+            }
+        }
+    });
+
+    if (buyForFree) return 0;
+    else return buyForCash;
 });
 
 // ---
@@ -127,139 +151,8 @@ onMounted(async () => {
     await storeDuelGame.subFirebaseConnect();
 });
 
-const playerResources = (card: IGameDuelCard) => {
-    let cash = 7;
-    let clayValue = 0;
-    let brickValue = 0;
-    let woodValue = 0;
-    let paperValue = 0;
-    let glassValue = 0;
-    let clayOne = 0;
-    let brickOne = 0;
-    let woodOne = 0;
-    let paperGlassOne = 0;
-    let materialsCBW = 0;
-    let materialsPG = 0;
-    let specialChars: number[] = [];
-    let artefacts: number[] = [];
-    let specialEffects: string[] = [];
-
-    if (card.color === 'brown') {
-        switch (card.power[0]) {
-            case 'clay':
-                clayValue += card.valuePower[0];
-                break;
-            case 'brick':
-                brickValue += card.valuePower[0];
-                break;
-            case 'wood':
-                woodValue += card.valuePower[0];
-                break;
-            default:
-                break;
-        }
-    } else if (card.color === 'grey') {
-        switch (card.power[0]) {
-            case 'paper':
-                paperValue += card.valuePower[0];
-                break;
-            case 'glass':
-                glassValue += card.valuePower[0];
-                break;
-            default:
-                break;
-        }
-    } else if (card.color === 'yellow') {
-        card.power.forEach((yellowPow, i) => {
-            if (yellowPow === 'discount') {
-                switch (card.valuePower[i]) {
-                    case 1:
-                        clayOne = 1;
-                        break;
-                    case 2:
-                        brickOne = 1;
-                        break;
-                    case 3:
-                        woodOne = 1;
-                        break;
-                    case 4:
-                        paperGlassOne = 1;
-                        break;
-                    default:
-                        break;
-                }
-            }
-            if (yellowPow === 'materials') {
-                switch (card.valuePower[i]) {
-                    case 1:
-                        materialsCBW += 1;
-                        break;
-                    case 2:
-                        materialsPG += 1;
-                        break;
-                    default:
-                        break;
-                }
-            }
-            if (yellowPow === 'specialChar') {
-                specialChars.push(card.valuePower[i]);
-            }
-            if (yellowPow === 'cash') {
-                cash += card.valuePower[i];
-            }
-            if (yellowPow === 'cashBack') {
-                //TODO
-            }
-        });
-    } else if (card.color === 'red') {
-        card.power.forEach((redPow, i) => {
-            if (redPow === 'specialChar') {
-                specialChars.push(card.valuePower[i]);
-            }
-        });
-    } else if (card.color === 'green') {
-        card.power.forEach((greenPow, i) => {
-            if (greenPow === 'specialChar') {
-                specialChars.push(card.valuePower[i]);
-            }
-            if (greenPow === 'artefact') {
-                artefacts.push(card.valuePower[i]);
-            }
-        });
-    } else if (card.color === 'blue') {
-        card.power.forEach((bluePow, i) => {
-            if (bluePow === 'specialChar') {
-                specialChars.push(card.valuePower[i]);
-            }
-        });
-    } else if (card.color === 'purple') {
-        // TODO
-    }
-
-    return {
-        cash,
-        clayValue,
-        brickValue,
-        woodValue,
-        paperValue,
-        glassValue,
-        clayOne,
-        brickOne,
-        woodOne,
-        paperGlassOne,
-        materialsCBW,
-        materialsPG,
-        specialChars,
-        artefacts,
-        specialEffects
-    };
-};
-
 // ---
 const cardClick = (gameCard: IGameDuelCard) => {
-    //TODO - add action: buy, add in wonder, sell
-    //TODO - prepare 3 buttons after select card, for it
-    //TODO - change compnent duelgamecardcomponent.vue
     selectedCard.value = {} as IGameDuelCard;
 
     if (!!gameCard.coversBy && gameCard.coversBy.length > 0) {
@@ -277,8 +170,85 @@ const cardClick = (gameCard: IGameDuelCard) => {
         </header>
 
         <section class="wrapper">
-            <section class="player2info"></section>
-            <section class="player2"></section>
+            <section class="player2info">
+                <p>
+                    {{ `Nick: ${player2.user.displayName || player2.user.email}` }}
+                </p>
+                <p>
+                    {{ `Turn: ${turn === player2.user.uid ? 'YOU' : ''}` }}
+                </p>
+            </section>
+            <section class="player2">
+                <div class="playerCardContainer">
+                    <div class="playerCard1">
+                        <DuelGameCardComponent
+                            v-for="card in player2.cards.brown"
+                            :key="card.id"
+                            :card="card"
+                            small
+                        />
+                    </div>
+                    <div class="playerCard2">
+                        <DuelGameCardComponent
+                            v-for="card in player2.cards.grey"
+                            :key="card.id"
+                            :card="card"
+                            small
+                        />
+                    </div>
+                    <div class="playerCard3">
+                        <DuelGameCardComponent
+                            v-for="card in player2.cards.yellow"
+                            :key="card.id"
+                            :card="card"
+                            small
+                        />
+                    </div>
+                    <div class="playerCard4">
+                        <DuelGameCardComponent
+                            v-for="card in player2.cards.blue"
+                            :key="card.id"
+                            :card="card"
+                            small
+                        />
+                    </div>
+                    <div class="playerCard5">
+                        <DuelGameCardComponent
+                            v-for="card in player2.cards.red"
+                            :key="card.id"
+                            :card="card"
+                            small
+                        />
+                    </div>
+                    <div class="playerCard6">
+                        <DuelGameCardComponent
+                            v-for="card in player2.cards.green"
+                            :key="card.id"
+                            :card="card"
+                            small
+                        />
+                    </div>
+                    <div class="playerCard7">
+                        <DuelGameCardComponent
+                            v-for="card in player2.cards.purple"
+                            :key="card.id"
+                            :card="card"
+                            small
+                        />
+                    </div>
+                </div>
+                <div class="playerPointsContainer">
+                    <div class="playerCash">
+                        <p>
+                            {{ `Nick: ${player2.user.displayName || player2.user.email}` }}
+                        </p>
+                        <p>
+                            {{ `Cash: ${player2.resources.cash}` }}
+                        </p>
+                    </div>
+                    <div class="playerCoins"></div>
+                </div>
+            </section>
             <section class="wonders2"></section>
             <section class="cards" v-if="state === 'I'">
                 <DuelGameLayOutCardsComponent
@@ -313,19 +283,50 @@ const cardClick = (gameCard: IGameDuelCard) => {
                     @click="cardClick(card)"
                 />
             </section>
-            <section class="duel"></section>
-            <section class="graveyard">
-                <DuelGameCardComponent v-for="card in graveyard" :key="card.id" :card="card" />
+            <section class="duel">
+                <div class="boardDuel">
+                    <span class="boardBorder"></span><span class="boardBorder"></span
+                    ><span class="boardBorder"></span><span class="boardBorder"></span
+                    ><span class="boardBorder"></span><span class="boardBorder"></span
+                    ><span class="boardBorder"></span><span class="boardBorder"></span
+                    ><span class="boardBorder"></span><span class="boardBorder"></span
+                    ><span class="boardBorder"></span><span class="boardBorder"></span
+                    ><span class="boardBorder"></span><span class="boardBorder"></span
+                    ><span class="boardBorder"></span><span class="boardBorder"></span
+                    ><span class="boardBorder"></span><span class="boardBorder"></span
+                    ><span class="boardBorder"></span>
+                    <div class="boardPawn" :style="`--position:${board.pawn}`"></div>
+                </div>
+                <div class="boardCoins">
+                    <span v-for="coin in board.coins" :key="coin" class="boardSingleCoin">{{
+                        coin
+                    }}</span>
+                </div>
             </section>
-            <section class="player1info"></section>
+            <section class="graveyard">
+                <DuelGameCardComponent
+                    v-for="card in graveyard"
+                    :key="card.id"
+                    :card="card"
+                    small
+                />
+            </section>
+            <section class="player1info">
+                <p>
+                    {{ `Nick: ${player1.user.displayName || player1.user.email}` }}
+                </p>
+                <p>
+                    {{ `Turn: ${turn === player1.user.uid ? 'YOU' : ''}` }}
+                </p>
+            </section>
             <section class="wonders1"></section>
             <section class="playerAction">
                 <button
-                    :disabled="canBuy"
+                    :disabled="canBuy < 0 || canBuy > player1.resources.cash"
                     class="customButton"
-                    @click="() => storeDuelGame.setCardTaken(state)"
+                    @click="() => storeDuelGame.setCardTaken(state, canBuy)"
                 >
-                    take
+                    {{ `take ${canBuy >= 0 ? canBuy : ''}` }}
                 </button>
                 <button
                     :disabled="!selectedCard?.id"
@@ -344,22 +345,72 @@ const cardClick = (gameCard: IGameDuelCard) => {
             </section>
             <section class="player1">
                 <div class="playerCardContainer">
-                    <div class="playerCard1"></div>
-                    <div class="playerCard2"></div>
-                    <div class="playerCard3"></div>
-                    <div class="playerCard4"></div>
+                    <div class="playerCard1">
+                        <DuelGameCardComponent
+                            v-for="card in player1.cards.brown"
+                            :key="card.id"
+                            :card="card"
+                            small
+                        />
+                    </div>
+                    <div class="playerCard2">
+                        <DuelGameCardComponent
+                            v-for="card in player1.cards.grey"
+                            :key="card.id"
+                            :card="card"
+                            small
+                        />
+                    </div>
+                    <div class="playerCard3">
+                        <DuelGameCardComponent
+                            v-for="card in player1.cards.yellow"
+                            :key="card.id"
+                            :card="card"
+                            small
+                        />
+                    </div>
+                    <div class="playerCard4">
+                        <DuelGameCardComponent
+                            v-for="card in player1.cards.blue"
+                            :key="card.id"
+                            :card="card"
+                            small
+                        />
+                    </div>
                     <div class="playerCard5">
                         <DuelGameCardComponent
                             v-for="card in player1.cards.red"
                             :key="card.id"
                             :card="card"
+                            small
                         />
                     </div>
-                    <div class="playerCard6"></div>
-                    <div class="playerCard7"></div>
+                    <div class="playerCard6">
+                        <DuelGameCardComponent
+                            v-for="card in player1.cards.green"
+                            :key="card.id"
+                            :card="card"
+                            small
+                        />
+                    </div>
+                    <div class="playerCard7">
+                        <DuelGameCardComponent
+                            v-for="card in player1.cards.purple"
+                            :key="card.id"
+                            :card="card"
+                            small
+                        />
+                    </div>
                 </div>
                 <div class="playerPointsContainer">
-                    <div class="playerCash"></div>
+                    <div class="playerCash">
+                        <p>
+                            {{ `Nick: ${player1.user.displayName || player1.user.email}` }}
+                        </p>
+                        <p>
+                            {{ `Cash: ${player1.resources.cash}` }}
+                        </p>
+                    </div>
                     <div class="playerCoins"></div>
                 </div>
             </section>
@@ -407,8 +458,8 @@ section.wrapper {
     flex-direction: column; */
     display: grid;
     grid-template-areas:
-        'w2   p2   p2   p2   p2   p1i '
-        'w2   .    .    .    duel p2i '
+        'w2   p2   p2   p2   p2   p2i '
+        'w2   .    .    .    duel p1i '
         'w2   card card card duel .   '
         '.    card card card duel .   '
         '.    card card card duel grv '
@@ -439,7 +490,16 @@ section.wrapper {
     justify-content: space-between;
     align-items: center;
 }
-.player1 div {
+.player2 {
+    grid-area: p2;
+    border: 1px solid;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    /* transform: rotate(180deg); */
+}
+.player1 div,
+.player2 div {
     width: 60px;
     height: 100%;
     border-radius: 5px;
@@ -451,11 +511,14 @@ div.playerCardContainer {
     align-items: center;
 }
 div.playerCardContainer div {
-    margin: 0 2px;
+    /* margin: 0 2px; */
 }
 div.playerPointsContainer {
     border: 1px solid;
     width: 30%;
+}
+div.playerPointsContainer > div {
+    width: 100%;
 }
 .playerCard1 {
     background-image: linear-gradient(to bottom, rgb(197, 96, 13), 7%, rgba(0, 0, 0, 0));
@@ -507,6 +570,67 @@ div.playerPointsContainer {
 .duel {
     grid-area: duel;
     border: 1px solid;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.boardCoins {
+    height: 200px;
+    width: 50px;
+    border: 1px solid;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+.boardSingleCoin {
+    height: 36px;
+    width: 36px;
+    margin: 1px auto;
+    border-radius: 50%;
+    border: 1px solid;
+    display: block;
+}
+.boardDuel {
+    position: relative;
+    height: 300px;
+    width: 60px;
+    border: 1px solid;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+.boardBorder {
+    height: 13px;
+    width: 30px;
+    margin: 1px auto;
+    border-radius: 50%;
+    border: 1px solid;
+    display: block;
+}
+.boardPawn {
+    position: absolute;
+    height: 15px;
+    width: 30px;
+    border-radius: 50%;
+    border: 1px solid red;
+    top: 50%;
+    transform: translateY(calc(var(--position) * 100% - 50%));
+    transition: 0.5s;
+}
+.boardBorder:nth-child(10) {
+    background-color: gray;
+}
+.boardBorder:nth-child(7),
+.boardBorder:nth-child(13),
+.boardBorder:nth-child(4),
+.boardBorder:nth-child(16) {
+    background-color: gray;
+}
+.boardBorder:nth-child(1),
+.boardBorder:nth-child(19) {
+    background-color: tomato;
 }
 .graveyard {
     grid-area: grv;
