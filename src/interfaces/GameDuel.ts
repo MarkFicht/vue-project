@@ -43,33 +43,36 @@ export interface IGameDuelCoin {
 }
 
 export interface IGameDuelWonderCard {
+    id?: number;
+    taken: boolean;
+    activated: boolean;
     valueCost: number[];
     cost: Array<'clay' | 'brick' | 'wood' | 'paper' | 'glass' | 'cash'>;
     valuePower: number[];
     power: Array<
-        | 'effect'
-        | 'clay'
-        | 'brick'
-        | 'wood'
-        | 'paper'
-        | 'glass'
+        | 'effect' // 1 - repeat, 2 - take from grav, 3 - take 1 of 3 coins
         | 'cash'
         | 'attack'
         | 'points'
-        | 'materials'
+        | 'materials' // 1 - c/b/w, 2 - p/g
+        | 'break' // 1 - brown, 2 - grey, 3 - cash
     >;
 }
 
-export type State = 'prepare' | 'I' | 'II' | 'III' | 'end';
+export type Tier = 'prepare' | 'I' | 'II' | 'III' | 'end';
 
 export interface IGameDuelBoard {
     pawn: number; // from -9 to 9
     coins: IGameDuelCoin['effect'][];
+    player1: number[];
+    player2: number[];
 }
 
 export class BoardDuel implements IGameDuelBoard {
     public pawn: number = 0;
     public coins: IGameDuelCoin['effect'][] = [];
+    public player1: number[] = [-6, -3];
+    public player2: number[] = [6, 3];
 
     constructor(params?: IGameDuelBoard) {
         Object.assign(this, params);

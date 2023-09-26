@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
-import { collection, doc, setDoc, getDoc } from 'firebase/firestore';
+import { collection, doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
 import db from '@/firebase/index';
 import {
     cardsTierOne,
@@ -15,12 +15,14 @@ import {
     tierThreeX,
     tierThreeY,
     prepareIdForCards,
+    cardsWonder,
     coins
 } from '../helpers/GameDuelInit';
 import { getCountRandomObjFromArr } from '@/helpers/HelpersFoo';
 import DuelGameCardComponent from '@/components/DuelGameCardComponent.vue';
 import DuelGameLayOutCardsComponent from '@/components/DuelGameLayOutCardsComponent.vue';
-import { PlayerDuel, type IGameDuelCard, type State, BoardDuel } from '@/interfaces/GameDuel';
+import DuelGameWonderComponent from '@/components/DuelGameWonderComponent.vue';
+import { PlayerDuel, type IGameDuelCard, BoardDuel } from '@/interfaces/GameDuel';
 import { duelGameStore } from '@/store/duelGameStore';
 import { storeToRefs } from 'pinia';
 import type IUser from '@/interfaces/User';
@@ -30,20 +32,79 @@ const {
     tierOneCards,
     tierTwoCards,
     tierThreeCards,
+    wonderCards,
     selectedCard,
     graveyard,
     player1,
     player2,
     board,
-    turn
+    turn,
+    tier,
+    move
 } = storeToRefs(storeDuelGame);
+const gameDuelRef = collection(db, 'gameDuel');
+const tableGameDuelRef = doc(gameDuelRef, 'table1');
 
 const user = ref<IUser>({} as IUser);
 
-const state = ref<State>('I');
-
 const headerGameDuel = ref<string>('Duel Game');
 const isLoggedIn = ref<boolean>(false);
+
+const isSecondPick = computed(() => {
+    return (
+        wonderCards.value[0]?.taken &&
+        wonderCards.value[1]?.taken &&
+        wonderCards.value[2]?.taken &&
+        wonderCards.value[3]?.taken
+    );
+});
+
+watch(
+    () => player2.value.wonderCards,
+    async () => {
+        player2.value.wonderCards.length === 4 &&
+            move.value === 0 &&
+            (await updateDoc(tableGameDuelRef, {
+                tier: 'I'
+            }));
+    }
+);
+
+watch(
+    () => move.value,
+    async () => {
+        if (move.value === 20) {
+            let checkTurn: any = turn.value;
+            checkTurn =
+                checkTurn === player1.value.user.uid
+                    ? player2.value.user?.uid || 0
+                    : player1.value.user.uid;
+            if (board.value.pawn > 0) checkTurn = player1.value.user.uid;
+            else if (board.value.pawn < 0) checkTurn = player2.value.user?.uid || 0;
+
+            await updateDoc(tableGameDuelRef, {
+                tier: 'II',
+                turn: checkTurn
+            });
+        }
+
+        if (move.value === 40) {
+            let checkTurn: any = turn.value;
+            checkTurn =
+                checkTurn === player1.value.user.uid
+                    ? player2.value.user?.uid || 0
+                    : player1.value.user.uid;
+            if (board.value.pawn > 0) checkTurn = player1.value.user.uid;
+            else if (board.value.pawn < 0) checkTurn = player2.value.user?.uid || 0;
+
+            await updateDoc(tableGameDuelRef, {
+                tier: 'III',
+                turn: checkTurn
+            });
+        }
+        // TODO - add end game
+    }
+);
 
 const canBuy = computed((): number => {
     if (!selectedCard.value?.id) return -1;
@@ -93,9 +154,11 @@ onMounted(async () => {
     });
 
     // firebase - set and check game cards
-    const gameDuelRef = collection(db, 'gameDuel');
-    const tableGameDuelRef = doc(gameDuelRef, 'table1');
     const prepareRandomCoins = getCountRandomObjFromArr(coins, 10);
+    let prepareWonderCards = getCountRandomObjFromArr(cardsWonder, 8);
+    prepareWonderCards = prepareWonderCards.map((data, i) => {
+        return { ...data, id: i };
+    });
 
     const docSnap = await getDoc(tableGameDuelRef);
 
@@ -128,7 +191,7 @@ onMounted(async () => {
                 ),
                 'III'
             ),
-            wonderCards: [],
+            wonderCards: prepareWonderCards,
             graveyard: [],
             theRestOfCoins: [
                 prepareRandomCoins[5],
@@ -137,7 +200,8 @@ onMounted(async () => {
                 prepareRandomCoins[8],
                 prepareRandomCoins[9]
             ],
-            tier: 'prepare'
+            tier: 'prepare',
+            move: 0
         });
 
         const docSnap2 = await getDoc(tableGameDuelRef);
@@ -159,6 +223,38 @@ const cardClick = (gameCard: IGameDuelCard) => {
         return;
     } else {
         selectedCard.value = gameCard;
+    }
+};
+
+const pickWonder = async (id: number) => {
+    const newArrWonders = wonderCards.value.map((data) => {
+        return data.id === id ? { ...wonderCards.value[id], taken: true } : data;
+    });
+
+    if (turn.value === player1.value.user.uid) {
+        await updateDoc(tableGameDuelRef, {
+            player1: {
+                ...player1.value,
+                wonderCards: [
+                    ...player1.value.wonderCards,
+                    { ...wonderCards.value[id], taken: true }
+                ]
+            },
+            turn: player2.value.user?.uid || 0,
+            wonderCards: newArrWonders
+        });
+    } else {
+        await updateDoc(tableGameDuelRef, {
+            player2: {
+                ...player2.value,
+                wonderCards: [
+                    ...player2.value.wonderCards,
+                    { ...wonderCards.value[id], taken: true }
+                ]
+            },
+            turn: player1.value.user.uid,
+            wonderCards: newArrWonders
+        });
     }
 };
 </script>
@@ -239,18 +335,70 @@ const cardClick = (gameCard: IGameDuelCard) => {
                 </div>
                 <div class="playerPointsContainer">
                     <div class="playerCash">
-                        <p>
+                        <p :style="turn === player2.user.uid ? `font-weight: bold;` : ''">
                             {{ `Nick: ${player2.user.displayName || player2.user.email}` }}
                         </p>
-                        <p>
-                            {{ `Cash: ${player2.resources.cash}` }}
+                        <p :style="turn === player2.user.uid ? `font-weight: bold;` : ''">
+                            {{ `Cash: ${player2.resources.cash} | Points: ${player2.points}` }}
                         </p>
                     </div>
                     <div class="playerCoins"></div>
                 </div>
             </section>
-            <section class="wonders2"></section>
-            <section class="cards" v-if="state === 'I'">
+            <section class="wonders2">
+                <DuelGameWonderComponent
+                    v-for="wonderCard in player2.wonderCards"
+                    :card="wonderCard"
+                    :key="wonderCard.id"
+                />
+            </section>
+            <section class="cards" v-if="tier === 'prepare'">
+                <div v-if="!isSecondPick" class="pickWonders">
+                    <DuelGameWonderComponent
+                        v-if="wonderCards[0] && !wonderCards[0].taken"
+                        :card="wonderCards[0]"
+                        @click="pickWonder(0)"
+                    />
+                    <DuelGameWonderComponent
+                        v-if="wonderCards[1] && !wonderCards[1].taken"
+                        :card="wonderCards[1]"
+                        @click="pickWonder(1)"
+                    />
+                    <DuelGameWonderComponent
+                        v-if="wonderCards[2] && !wonderCards[2].taken"
+                        :card="wonderCards[2]"
+                        @click="pickWonder(2)"
+                    />
+                    <DuelGameWonderComponent
+                        v-if="wonderCards[3] && !wonderCards[3].taken"
+                        :card="wonderCards[3]"
+                        @click="pickWonder(3)"
+                    />
+                </div>
+                <div v-if="isSecondPick" class="pickWonders">
+                    <DuelGameWonderComponent
+                        v-if="wonderCards[4] && !wonderCards[4].taken"
+                        :card="wonderCards[4]"
+                        @click="pickWonder(4)"
+                    />
+                    <DuelGameWonderComponent
+                        v-if="wonderCards[5] && !wonderCards[5].taken"
+                        :card="wonderCards[5]"
+                        @click="pickWonder(5)"
+                    />
+                    <DuelGameWonderComponent
+                        v-if="wonderCards[6] && !wonderCards[6].taken"
+                        :card="wonderCards[6]"
+                        @click="pickWonder(6)"
+                    />
+                    <DuelGameWonderComponent
+                        v-if="wonderCards[7] && !wonderCards[7].taken"
+                        :card="wonderCards[7]"
+                        @click="pickWonder(7)"
+                    />
+                </div>
+            </section>
+            <section class="cards" v-if="tier === 'I'">
                 <DuelGameLayOutCardsComponent
                     v-for="(card, index) in tierOneCards"
                     :key="index"
@@ -261,7 +409,7 @@ const cardClick = (gameCard: IGameDuelCard) => {
                     @click="cardClick(card)"
                 />
             </section>
-            <section class="cards" v-if="state === 'II'">
+            <section class="cards" v-if="tier === 'II'">
                 <DuelGameLayOutCardsComponent
                     v-for="(card, index) in tierTwoCards"
                     :key="index"
@@ -272,7 +420,7 @@ const cardClick = (gameCard: IGameDuelCard) => {
                     @click="cardClick(card)"
                 />
             </section>
-            <section class="cards" v-if="state === 'III'">
+            <section class="cards" v-if="tier === 'III'">
                 <DuelGameLayOutCardsComponent
                     v-for="(card, index) in tierThreeCards"
                     :key="index"
@@ -283,7 +431,14 @@ const cardClick = (gameCard: IGameDuelCard) => {
                     @click="cardClick(card)"
                 />
             </section>
+
             <section class="duel">
+                <div class="boardPanishment">
+                    <div :style="board.player1.length >= 1 ? 'background: tomato;' : ''">-5</div>
+                    <div :style="board.player1.length === 2 ? 'background: tomato;' : ''">-2</div>
+                    <div :style="board.player2.length === 2 ? 'background: tomato;' : ''">-2</div>
+                    <div :style="board.player2.length >= 1 ? 'background: tomato;' : ''">-5</div>
+                </div>
                 <div class="boardDuel">
                     <span class="boardBorder"></span><span class="boardBorder"></span
                     ><span class="boardBorder"></span><span class="boardBorder"></span
@@ -319,26 +474,32 @@ const cardClick = (gameCard: IGameDuelCard) => {
                     {{ `Turn: ${turn === player1.user.uid ? 'YOU' : ''}` }}
                 </p>
             </section>
-            <section class="wonders1"></section>
+            <section class="wonders1">
+                <DuelGameWonderComponent
+                    v-for="wonderCard in player1.wonderCards"
+                    :card="wonderCard"
+                    :key="wonderCard.id"
+                />
+            </section>
             <section class="playerAction">
                 <button
                     :disabled="canBuy < 0 || canBuy > player1.resources.cash"
                     class="customButton"
-                    @click="() => storeDuelGame.setCardTaken(state, canBuy)"
+                    @click="() => storeDuelGame.setCardTaken(canBuy)"
                 >
                     {{ `take ${canBuy >= 0 ? canBuy : ''}` }}
                 </button>
                 <button
                     :disabled="!selectedCard?.id"
                     class="customButton"
-                    @click="() => storeDuelGame.setCardGraveyard(state)"
+                    @click="() => storeDuelGame.setCardGraveyard()"
                 >
                     sell
                 </button>
                 <button
                     :disabled="!selectedCard?.id"
                     class="customButton"
-                    @click="() => storeDuelGame.setCardToWonder(state)"
+                    @click="() => storeDuelGame.setCardToWonder()"
                 >
                     build wonder
                 </button>
@@ -404,11 +565,11 @@ const cardClick = (gameCard: IGameDuelCard) => {
                 </div>
                 <div class="playerPointsContainer">
                     <div class="playerCash">
-                        <p>
+                        <p :style="turn === player1.user.uid ? `font-weight: bold;` : ''">
                             {{ `Nick: ${player1.user.displayName || player1.user.email}` }}
                         </p>
-                        <p>
-                            {{ `Cash: ${player1.resources.cash}` }}
+                        <p :style="turn === player1.user.uid ? `font-weight: bold;` : ''">
+                            {{ `Cash: ${player1.resources.cash} | Points: ${player1.points}` }}
                         </p>
                     </div>
                     <div class="playerCoins"></div>
@@ -462,7 +623,7 @@ section.wrapper {
         'w2   .    .    .    duel p1i '
         'w2   card card card duel .   '
         '.    card card card duel .   '
-        '.    card card card duel grv '
+        '.    card card card duel .   '
         'w1   card card card duel grv '
         'w1   act  act  act  duel grv '
         'w1   p1   p1   p1   p1   grv ';
@@ -480,6 +641,13 @@ section.wrapper {
     border: 1px solid;
 }
 .wonders2 {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    border: 1px solid;
+    height: 150px;
+    width: 180px;
     grid-area: w2;
     border: 1px solid;
 }
@@ -558,6 +726,13 @@ div.playerPointsContainer > div {
 .wonders1 {
     grid-area: w1;
     border: 1px solid;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    border: 1px solid;
+    height: 150px;
+    width: 180px;
 }
 .cards {
     position: relative;
@@ -566,6 +741,16 @@ div.playerPointsContainer > div {
     justify-content: center;
     align-items: center;
     flex-direction: column;
+}
+.pickWonders {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    border: 1px solid;
+    height: 150px;
+    width: 180px;
+    animation: showElement 2s linear;
 }
 .duel {
     grid-area: duel;
@@ -591,10 +776,32 @@ div.playerPointsContainer > div {
     border: 1px solid;
     display: block;
 }
+.boardPanishment {
+    height: 300px;
+    width: 30px;
+    /* border: 1px solid; */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+.boardPanishment > div {
+    width: 42px;
+    height: 18px;
+    border: 1px solid;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 16px 0;
+    transform: rotate(90deg);
+}
+.boardPanishment > div:nth-child(2) {
+    margin-bottom: 95px;
+}
 .boardDuel {
     position: relative;
     height: 300px;
-    width: 60px;
+    width: 50px;
     border: 1px solid;
     display: flex;
     justify-content: center;
@@ -635,9 +842,9 @@ div.playerPointsContainer > div {
 .graveyard {
     grid-area: grv;
     border: 1px solid;
-    display: flex;
-    justify-content: left;
-    align-items: center;
+    display: inline-flex;
+    /* justify-content: space-between; */
+    /* align-items: center; */
     flex-wrap: wrap;
 }
 @keyframes showElement {

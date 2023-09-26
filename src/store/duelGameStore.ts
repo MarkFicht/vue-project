@@ -7,19 +7,10 @@ import {
     type IGameDuelCard,
     type IGameDuelCoin,
     type IGameDuelWonderCard,
-    type State
+    type Tier
 } from '@/interfaces/GameDuel';
-import type IUser from '@/interfaces/User';
 import db from '@/firebase/index';
-import {
-    collection,
-    doc,
-    setDoc,
-    getDoc,
-    updateDoc,
-    onSnapshot,
-    increment
-} from 'firebase/firestore';
+import { collection, doc, updateDoc, onSnapshot, increment } from 'firebase/firestore';
 import { countPlayerResources } from '@/helpers/GameDuelInit';
 
 const gameDuelRef = collection(db, 'gameDuel');
@@ -28,7 +19,8 @@ let unSubFirebase: any;
 
 export interface IDuelGameStore {
     turn: string;
-    tier: State;
+    tier: Tier;
+    move: number;
     selectedCard: IGameDuelCard;
     tierOneCards: IGameDuelCard[];
     tierTwoCards: IGameDuelCard[];
@@ -46,6 +38,7 @@ export const duelGameStore = defineStore('duelGameStore', {
         return {
             turn: '',
             tier: 'prepare',
+            move: 0,
             selectedCard: {} as IGameDuelCard,
             tierOneCards: [],
             tierTwoCards: [],
@@ -79,6 +72,7 @@ export const duelGameStore = defineStore('duelGameStore', {
                     const {
                         turn,
                         tier,
+                        move,
                         tierICards,
                         tierIICards,
                         tierIIICards,
@@ -91,6 +85,7 @@ export const duelGameStore = defineStore('duelGameStore', {
                     } = doc.data();
                     this.turn = turn;
                     this.tier = tier;
+                    this.move = move;
                     this.tierOneCards = tierICards;
                     this.tierTwoCards = tierIICards;
                     this.tierThreeCards = tierIIICards;
@@ -109,10 +104,10 @@ export const duelGameStore = defineStore('duelGameStore', {
         unselectCard() {
             this.selectedCard = {} as IGameDuelCard;
         },
-        async setCardTaken(tier: State, cash: number): Promise<void> {
+        async setCardTaken(cash: number): Promise<void> {
             let cardToTake: IGameDuelCard = {} as IGameDuelCard;
 
-            if (tier === 'I') {
+            if (this.tier === 'I') {
                 this.tierOneCards = this.$state.tierOneCards.map((card) => {
                     card.id === this.selectedCard.id && (cardToTake = card);
                     return {
@@ -128,8 +123,8 @@ export const duelGameStore = defineStore('duelGameStore', {
                 await updateDoc(tableGameDuelRef, {
                     tierICards: this.tierOneCards
                 });
-            } else if (tier === 'II') {
-                this.tierTwoCards = this.$state.tierOneCards.map((card) => {
+            } else if (this.tier === 'II') {
+                this.tierTwoCards = this.$state.tierTwoCards.map((card) => {
                     card.id === this.selectedCard.id && (cardToTake = card);
                     return {
                         ...card,
@@ -144,8 +139,8 @@ export const duelGameStore = defineStore('duelGameStore', {
                 await updateDoc(tableGameDuelRef, {
                     tierIICards: this.tierTwoCards
                 });
-            } else if (tier === 'III') {
-                this.tierThreeCards = this.$state.tierOneCards.map((card) => {
+            } else if (this.tier === 'III') {
+                this.tierThreeCards = this.$state.tierThreeCards.map((card) => {
                     card.id === this.selectedCard.id && (cardToTake = card);
                     return {
                         ...card,
@@ -174,6 +169,20 @@ export const duelGameStore = defineStore('duelGameStore', {
                             if (this.player1.resources.coins.find((eff) => eff === 'attack1')) {
                                 this.board.pawn -= ++cardToTake.valuePower[i];
                             } else this.board.pawn -= cardToTake.valuePower[i];
+                            // TODO mistake
+                            if (
+                                this.board.player2.length === 2 &&
+                                this.board.pawn >= this.board.player2[1]
+                            ) {
+                                res.cash += -2;
+                                this.board.player2.pop();
+                            } else if (
+                                this.board.player2.length === 1 &&
+                                this.board.pawn >= this.board.player2[0]
+                            ) {
+                                res.cash += -5;
+                                this.board.player2.pop();
+                            }
                         }
                     });
                 }
@@ -196,7 +205,8 @@ export const duelGameStore = defineStore('duelGameStore', {
                     'player1.cards': this.player1.cards,
                     'player1.resources': { ...res, cash: res.cash - cash },
                     gameBoard: this.board,
-                    turn: this.player2.user?.uid || 0
+                    turn: this.player2.user?.uid || 0,
+                    move: increment(1)
                 });
             } else {
                 const res = countPlayerResources(cardToTake, this.player2);
@@ -210,6 +220,21 @@ export const duelGameStore = defineStore('duelGameStore', {
                             if (this.player2.resources.coins.find((eff) => eff === 'attack1')) {
                                 this.board.pawn += cardToTake.valuePower[i] + 1;
                             } else this.board.pawn += cardToTake.valuePower[i];
+                            // TODO mistake
+
+                            if (
+                                this.board.player1.length === 2 &&
+                                this.board.pawn >= this.board.player1[1]
+                            ) {
+                                res.cash += -2;
+                                this.board.player1.pop();
+                            } else if (
+                                this.board.player1.length === 1 &&
+                                this.board.pawn >= this.board.player1[0]
+                            ) {
+                                res.cash += -5;
+                                this.board.player1.pop();
+                            }
                         }
                     });
                 }
@@ -232,16 +257,17 @@ export const duelGameStore = defineStore('duelGameStore', {
                     'player2.cards': this.player2.cards,
                     'player2.resources': { ...res, cash: res.cash - cash },
                     gameBoard: this.board,
-                    turn: this.player1.user?.uid
+                    turn: this.player1.user?.uid,
+                    move: increment(1)
                 });
             }
 
             this.unselectCard();
         },
-        async setCardGraveyard(tier: State): Promise<void> {
+        async setCardGraveyard(): Promise<void> {
             let cardToGraveyard: IGameDuelCard = {} as IGameDuelCard;
 
-            if (tier === 'I') {
+            if (this.tier === 'I') {
                 this.tierOneCards = this.$state.tierOneCards.map((card) => {
                     card.id === this.selectedCard.id && (cardToGraveyard = card);
                     return {
@@ -257,8 +283,8 @@ export const duelGameStore = defineStore('duelGameStore', {
                 await updateDoc(tableGameDuelRef, {
                     tierICards: this.tierOneCards
                 });
-            } else if (tier === 'II') {
-                this.tierTwoCards = this.$state.tierOneCards.map((card) => {
+            } else if (this.tier === 'II') {
+                this.tierTwoCards = this.$state.tierTwoCards.map((card) => {
                     card.id === this.selectedCard.id && (cardToGraveyard = card);
                     return {
                         ...card,
@@ -273,8 +299,8 @@ export const duelGameStore = defineStore('duelGameStore', {
                 await updateDoc(tableGameDuelRef, {
                     tierIICards: this.tierTwoCards
                 });
-            } else if (tier === 'III') {
-                this.tierThreeCards = this.$state.tierOneCards.map((card) => {
+            } else if (this.tier === 'III') {
+                this.tierThreeCards = this.$state.tierThreeCards.map((card) => {
                     card.id === this.selectedCard.id && (cardToGraveyard = card);
                     return {
                         ...card,
@@ -299,7 +325,8 @@ export const duelGameStore = defineStore('duelGameStore', {
                 await updateDoc(tableGameDuelRef, {
                     'player1.resources.cash': increment(addCash),
                     graveyard: this.graveyard,
-                    turn: this.player2.user?.uid || 0
+                    turn: this.player2.user?.uid || 0,
+                    move: increment(1)
                 });
             } else {
                 const addCash = 2 + this.player2.cards.yellow.length;
@@ -307,16 +334,17 @@ export const duelGameStore = defineStore('duelGameStore', {
                 await updateDoc(tableGameDuelRef, {
                     'player2.resources.cash': increment(addCash),
                     graveyard: this.graveyard,
-                    turn: this.player1.user?.uid
+                    turn: this.player1.user?.uid,
+                    move: increment(1)
                 });
             }
 
             this.unselectCard();
         },
-        async setCardToWonder(tier: State): Promise<void> {
+        async setCardToWonder(): Promise<void> {
             let cardToWonder: IGameDuelCard = {} as IGameDuelCard;
 
-            if (tier === 'I') {
+            if (this.tier === 'I') {
                 this.tierOneCards = this.$state.tierOneCards.map((card) => {
                     card.id === this.selectedCard.id && (cardToWonder = card);
                     return {
@@ -332,7 +360,7 @@ export const duelGameStore = defineStore('duelGameStore', {
                 await updateDoc(tableGameDuelRef, {
                     tierICards: this.tierOneCards
                 });
-            } else if (tier === 'II') {
+            } else if (this.tier === 'II') {
                 this.tierTwoCards = this.$state.tierOneCards.map((card) => {
                     card.id === this.selectedCard.id && (cardToWonder = card);
                     return {
@@ -348,7 +376,7 @@ export const duelGameStore = defineStore('duelGameStore', {
                 await updateDoc(tableGameDuelRef, {
                     tierIICards: this.tierTwoCards
                 });
-            } else if (tier === 'III') {
+            } else if (this.tier === 'III') {
                 this.tierThreeCards = this.$state.tierOneCards.map((card) => {
                     card.id === this.selectedCard.id && (cardToWonder = card);
                     return {

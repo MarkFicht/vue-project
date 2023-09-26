@@ -2,8 +2,7 @@ import type {
     IGameDuelCard,
     IGameDuelWonderCard,
     IGameDuelCoin,
-    IGameDuelBoard,
-    State,
+    Tier,
     IGameDuelPlayer
 } from '@/interfaces/GameDuel';
 
@@ -11,9 +10,108 @@ export let cardsTierOne: IGameDuelCard[] = [];
 export let cardsTierTwo: IGameDuelCard[] = [];
 export let cardsTierThree: IGameDuelCard[] = [];
 export let cardsTierGuild: IGameDuelCard[] = [];
-export const cardsWonder: IGameDuelWonderCard[] = [];
 export let coins: IGameDuelCoin['effect'][] = [];
-export const rejectedCoins: IGameDuelCoin[] = [];
+export let cardsWonder: IGameDuelWonderCard[] = [];
+
+// --- Create Wonders
+cardsWonder = [
+    {
+        taken: false,
+        activated: false,
+        cost: ['brick', 'wood', 'clay', 'paper'],
+        valueCost: [1, 1, 1, 2],
+        power: ['attack', 'points', 'break'],
+        valuePower: [1, 3, 1]
+    },
+    {
+        taken: false,
+        activated: false,
+        cost: ['brick', 'wood', 'glass'],
+        valueCost: [2, 1, 1],
+        power: ['attack', 'points', 'break'],
+        valuePower: [1, 3, 2]
+    },
+    {
+        taken: false,
+        activated: false,
+        cost: ['brick', 'clay', 'paper'],
+        valueCost: [2, 2, 1],
+        power: ['effect', 'points', 'break', 'cash'],
+        valuePower: [1, 3, 3, 3]
+    },
+    {
+        taken: false,
+        activated: false,
+        cost: ['brick', 'clay', 'glass'],
+        valueCost: [1, 1, 2],
+        power: ['effect', 'points'],
+        valuePower: [1, 6]
+    },
+    {
+        taken: false,
+        activated: false,
+        cost: ['wood', 'glass', 'paper'],
+        valueCost: [2, 1, 1],
+        power: ['effect', 'points', 'cash'],
+        valuePower: [1, 3, 6]
+    },
+    {
+        taken: false,
+        activated: false,
+        cost: ['clay', 'glass', 'paper'],
+        valueCost: [2, 2, 1],
+        power: ['effect', 'points'],
+        valuePower: [2, 2]
+    },
+    {
+        taken: false,
+        activated: false,
+        cost: ['wood', 'brick', 'clay'],
+        valueCost: [2, 1, 1],
+        power: ['effect', 'points', 'materials'],
+        valuePower: [1, 2, 2]
+    },
+    {
+        taken: false,
+        activated: false,
+        cost: ['wood', 'glass', 'paper'],
+        valueCost: [3, 1, 1],
+        power: ['effect', 'points'],
+        valuePower: [3, 4]
+    },
+    {
+        taken: false,
+        activated: false,
+        cost: ['brick', 'paper'],
+        valueCost: [3, 1],
+        power: ['points'],
+        valuePower: [9]
+    },
+    {
+        taken: false,
+        activated: false,
+        cost: ['wood', 'brick', 'paper'],
+        valueCost: [1, 1, 2],
+        power: ['materials', 'points'],
+        valuePower: [1, 4]
+    },
+    {
+        taken: false,
+        activated: false,
+        cost: ['wood', 'brick', 'glass', 'paper'],
+        valueCost: [1, 1, 1, 1],
+        power: ['effect', 'cash'],
+        valuePower: [1, 12]
+    },
+    {
+        taken: false,
+        activated: false,
+        cost: ['clay', 'glass'],
+        valueCost: [3, 1],
+        power: ['attack', 'points'],
+        valuePower: [2, 3]
+    }
+];
 
 // --- Create Tier I
 cardsTierOne = [
@@ -798,10 +896,10 @@ export const tierThreeX = [
 const tierOneHideCards = [3, 4, 5, 10, 11, 12, 13, 14];
 
 // --- Helpers: Add IDs and coversBy to cards
-export function prepareIdForCards(arr: IGameDuelCard[], state: State): IGameDuelCard[] {
+export function prepareIdForCards(arr: IGameDuelCard[], tier: Tier): IGameDuelCard[] {
     let prepareCards: IGameDuelCard[] = [];
 
-    if (state === 'I') {
+    if (tier === 'I') {
         prepareCards = arr.map((data, i) => {
             const j = i + 1;
             let k = 0;
@@ -817,7 +915,7 @@ export function prepareIdForCards(arr: IGameDuelCard[], state: State): IGameDuel
                 hide: tierOneHideCards.find((num) => num === j) ? true : false
             };
         });
-    } else if (state === 'II') {
+    } else if (tier === 'II') {
         prepareCards[0] = { ...arr[0], id: 1, coversBy: [7] };
         prepareCards[1] = { ...arr[1], id: 2, coversBy: [7, 8] };
         prepareCards[2] = { ...arr[2], id: 3, coversBy: [8, 9] };
@@ -838,7 +936,7 @@ export function prepareIdForCards(arr: IGameDuelCard[], state: State): IGameDuel
         prepareCards[17] = { ...arr[17], id: 18, coversBy: [20], hide: true };
         prepareCards[18] = { ...arr[18], id: 19, coversBy: [] };
         prepareCards[19] = { ...arr[19], id: 20, coversBy: [] };
-    } else if (state === 'III') {
+    } else if (tier === 'III') {
         prepareCards[0] = { ...arr[0], id: 1, coversBy: [3, 4] };
         prepareCards[1] = { ...arr[1], id: 2, coversBy: [4, 5] };
         prepareCards[2] = { ...arr[2], id: 3, coversBy: [6, 7], hide: true };
