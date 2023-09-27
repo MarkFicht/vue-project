@@ -44,6 +44,7 @@ div {
     filter: brightness(1.3);
     transition: 0.3s;
     cursor: pointer;
+    background-color: aquamarine;
 }
 .cost {
     display: flex;

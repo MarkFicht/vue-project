@@ -50,6 +50,19 @@ const { card } = toRefs(props);
                       },`
                     : ''
             }}
+            {{
+                power === 'guild'
+                    ? `${
+                          (card.valuePower[i] === 1 && 'Y_x') ||
+                          (card.valuePower[i] === 2 && 'BG_x') ||
+                          (card.valuePower[i] === 3 && 'W_x2') ||
+                          (card.valuePower[i] === 4 && 'B_x') ||
+                          (card.valuePower[i] === 5 && 'G_x') ||
+                          (card.valuePower[i] === 6 && '$_3') ||
+                          (card.valuePower[i] === 7 && 'R_x')
+                      },`
+                    : ''
+            }}
             {{ power === 'cash' ? `${card.valuePower[i]}$` : '' }}
             {{
                 power !== 'materials' &&

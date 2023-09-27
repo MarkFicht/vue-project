@@ -60,6 +60,7 @@ export interface IGameDuelWonderCard {
 }
 
 export type Tier = 'prepare' | 'I' | 'II' | 'III' | 'end';
+export type Materials = 'clay' | 'brick' | 'wood' | 'paper' | 'glass';
 
 export interface IGameDuelBoard {
     pawn: number; // from -9 to 9

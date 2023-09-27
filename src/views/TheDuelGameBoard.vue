@@ -22,7 +22,7 @@ import { getCountRandomObjFromArr } from '@/helpers/HelpersFoo';
 import DuelGameCardComponent from '@/components/DuelGameCardComponent.vue';
 import DuelGameLayOutCardsComponent from '@/components/DuelGameLayOutCardsComponent.vue';
 import DuelGameWonderComponent from '@/components/DuelGameWonderComponent.vue';
-import { PlayerDuel, type IGameDuelCard, BoardDuel } from '@/interfaces/GameDuel';
+import { PlayerDuel, type IGameDuelCard, BoardDuel, type Materials } from '@/interfaces/GameDuel';
 import { duelGameStore } from '@/store/duelGameStore';
 import { storeToRefs } from 'pinia';
 import type IUser from '@/interfaces/User';
@@ -73,34 +73,44 @@ watch(
 watch(
     () => move.value,
     async () => {
-        if (move.value === 20) {
-            let checkTurn: any = turn.value;
-            checkTurn =
-                checkTurn === player1.value.user.uid
-                    ? player2.value.user?.uid || 0
-                    : player1.value.user.uid;
-            if (board.value.pawn > 0) checkTurn = player1.value.user.uid;
-            else if (board.value.pawn < 0) checkTurn = player2.value.user?.uid || 0;
-
+        if (move.value >= 20 && move.value < 40) {
             await updateDoc(tableGameDuelRef, {
-                tier: 'II',
-                turn: checkTurn
+                tier: 'II'
             });
+
+            if (move.value === 20) {
+                let checkTurn: any = turn.value;
+                checkTurn =
+                    checkTurn === player1.value.user.uid
+                        ? player2.value.user?.uid || 0
+                        : player1.value.user.uid;
+                if (board.value.pawn > 0) checkTurn = player1.value.user.uid;
+                else if (board.value.pawn < 0) checkTurn = player2.value.user?.uid || 0;
+
+                await updateDoc(tableGameDuelRef, {
+                    turn: checkTurn
+                });
+            }
         }
 
-        if (move.value === 40) {
-            let checkTurn: any = turn.value;
-            checkTurn =
-                checkTurn === player1.value.user.uid
-                    ? player2.value.user?.uid || 0
-                    : player1.value.user.uid;
-            if (board.value.pawn > 0) checkTurn = player1.value.user.uid;
-            else if (board.value.pawn < 0) checkTurn = player2.value.user?.uid || 0;
-
+        if (move.value >= 40 && move.value <= 60) {
             await updateDoc(tableGameDuelRef, {
-                tier: 'III',
-                turn: checkTurn
+                tier: 'III'
             });
+
+            if (move.value === 40) {
+                let checkTurn: any = turn.value;
+                checkTurn =
+                    checkTurn === player1.value.user.uid
+                        ? player2.value.user?.uid || 0
+                        : player1.value.user.uid;
+                if (board.value.pawn > 0) checkTurn = player1.value.user.uid;
+                else if (board.value.pawn < 0) checkTurn = player2.value.user?.uid || 0;
+
+                await updateDoc(tableGameDuelRef, {
+                    turn: checkTurn
+                });
+            }
         }
         // TODO - add end game
     }
@@ -110,6 +120,34 @@ const canBuy = computed((): number => {
     if (!selectedCard.value?.id) return -1;
 
     let buyForCash = 0;
+    let arrCBW: { type: Materials; val: number }[] = [
+        {
+            type: 'clay',
+            val: player1.value.resources.clayOne ? 1 : 2 + player2.value.resources.clayValue
+        },
+        {
+            type: 'brick',
+            val: player1.value.resources.brickOne ? 1 : 2 + player2.value.resources.brickValue
+        },
+        {
+            type: 'wood',
+            val: player1.value.resources.woodOne ? 1 : 2 + player2.value.resources.woodValue
+        }
+    ];
+    arrCBW = arrCBW.sort((a, b) => b.val - a.val);
+    let arrPG: { type: Materials; val: number }[] = [
+        {
+            type: 'clay',
+            val: player1.value.resources.paperGlassOne ? 1 : 2 + player2.value.resources.paperValue
+        },
+        {
+            type: 'glass',
+            val: player1.value.resources.paperGlassOne ? 1 : 2 + player2.value.resources.glassValue
+        }
+    ];
+    arrPG = arrPG.sort((a, b) => b.val - a.val);
+
+    let missingMaterials: string[] = [];
     let buyForFree = false;
 
     selectedCard.value.cost.forEach((cost, i) => {
@@ -123,19 +161,138 @@ const canBuy = computed((): number => {
         } else if (cost === 'cash') {
             buyForCash += selectedCard.value.valueCost[i];
         } else if (cost === 'clay') {
-            let costForClay = selectedCard.value.valueCost[i];
-            if (player1.value.resources.clayValue >= costForClay) {
+            let numberOfClay = selectedCard.value.valueCost[i] - player1.value.resources.clayValue;
+            if (numberOfClay <= 0) {
                 return null;
             } else {
-                costForClay = costForClay - player1.value.resources.clayValue;
-                // TODO discout + material from cards + material form wonders
+                for (let index = 0; index < numberOfClay; index++) {
+                    missingMaterials.push('clay');
+                }
+            }
+        } else if (cost === 'brick') {
+            let numberOfBrick =
+                selectedCard.value.valueCost[i] - player1.value.resources.brickValue;
+            if (numberOfBrick <= 0) {
+                return null;
+            } else {
+                for (let index = 0; index < numberOfBrick; index++) {
+                    missingMaterials.push('brick');
+                }
+            }
+        } else if (cost === 'wood') {
+            let numberOfWood = selectedCard.value.valueCost[i] - player1.value.resources.woodValue;
+            if (numberOfWood <= 0) {
+                return null;
+            } else {
+                for (let index = 0; index < numberOfWood; index++) {
+                    missingMaterials.push('wood');
+                }
+            }
+        } else if (cost === 'paper') {
+            let numberOfPaper =
+                selectedCard.value.valueCost[i] - player1.value.resources.paperValue;
+            if (numberOfPaper <= 0) {
+                return null;
+            } else {
+                for (let index = 0; index < numberOfPaper; index++) {
+                    missingMaterials.push('paper');
+                }
+            }
+        } else if (cost === 'glass') {
+            let numberOfGlass =
+                selectedCard.value.valueCost[i] - player1.value.resources.glassValue;
+            if (numberOfGlass <= 0) {
+                return null;
+            } else {
+                for (let index = 0; index < numberOfGlass; index++) {
+                    missingMaterials.push('glass');
+                }
             }
         }
+    });
+
+    missingMaterials = removeOptionalMaterials(missingMaterials, arrCBW, arrPG);
+    missingMaterials.forEach((mat) => {
+        buyForCash +=
+            arrCBW.find(({ type }) => type === mat)?.val ||
+            arrPG.find(({ type }) => type === mat)?.val ||
+            0;
     });
 
     if (buyForFree) return 0;
     else return buyForCash;
 });
+
+function removeOptionalMaterials(
+    missingMaterials: string[],
+    arrCBW: { type: Materials; val: number }[],
+    arrPG: { type: Materials; val: number }[]
+): string[] {
+    let arr = missingMaterials;
+    for (let index = 0; index < player1.value.resources.materialsCBW; index++) {
+        let found = false;
+        let j: number = 0;
+        arr.find((str, i) => {
+            if (str === arrCBW[0].type) {
+                found = true;
+                j = i;
+                return true;
+            } else return false;
+        });
+        if (found) {
+            arr.splice(j, 1);
+        } else {
+            arr.find((str, i) => {
+                if (str === arrCBW[1].type) {
+                    found = true;
+                    j = i;
+                    return true;
+                } else return false;
+            });
+            if (found) {
+                arr.splice(j, 1);
+            } else {
+                arr.find((str, i) => {
+                    if (str === arrCBW[2].type) {
+                        found = true;
+                        j = i;
+                        return true;
+                    } else return false;
+                });
+                if (found) {
+                    arr.splice(j, 1);
+                } else null;
+            }
+        }
+    }
+    for (let index = 0; index < player1.value.resources.materialsPG; index++) {
+        let found = false;
+        let j: number = 0;
+        arr.find((str, i) => {
+            if (str === arrPG[0].type) {
+                found = true;
+                j = i;
+                return true;
+            } else return false;
+        });
+        if (found) {
+            arr.splice(j, 1);
+        } else {
+            arr.find((str, i) => {
+                if (str === arrPG[1].type) {
+                    found = true;
+                    j = i;
+                    return true;
+                } else return false;
+            });
+            if (found) {
+                arr.splice(j, 1);
+            } else null;
+        }
+    }
+
+    return arr;
+}
 
 // ---
 onMounted(async () => {

@@ -187,21 +187,66 @@ export const duelGameStore = defineStore('duelGameStore', {
                     });
                 }
                 if (cardToTake.color === 'green') {
-                    cardToTake.power.forEach((redPow, i) => {
-                        if (redPow === 'artefact') {
+                    cardToTake.power.forEach((greenPow, i) => {
+                        if (greenPow === 'artefact') {
                             if (
                                 this.player1.resources.artefacts.length !== 0 &&
                                 this.player1.resources.artefacts.find(
                                     (art) => art === cardToTake.valuePower[i]
                                 )
                             ) {
-                                //TODO
+                                //TODO - take coin
+                                console.log('%c takee -> ', 'background: #222; color: #bada55');
                             }
                         }
                     });
                 }
+                if (cardToTake.color === 'purple') {
+                    switch (cardToTake.valuePower[0]) {
+                        case 1: {
+                            const a = this.player1.cards.yellow.length;
+                            const b = this.player2.cards.yellow.length;
+                            const number = a > b ? a : b;
+                            res.cash += number;
+                            break;
+                        }
+                        case 2: {
+                            const a =
+                                this.player1.cards.brown.length + this.player1.cards.grey.length;
+                            const b =
+                                this.player2.cards.brown.length + this.player2.cards.grey.length;
+                            const number = a > b ? a : b;
+                            res.cash += number;
+                            break;
+                        }
+                        case 4: {
+                            const a = this.player1.cards.blue.length;
+                            const b = this.player2.cards.blue.length;
+                            const number = a > b ? a : b;
+                            res.cash += number;
+                            break;
+                        }
+                        case 5: {
+                            const a = this.player1.cards.green.length;
+                            const b = this.player2.cards.green.length;
+                            const number = a > b ? a : b;
+                            res.cash += number;
+                            break;
+                        }
+                        case 7: {
+                            const a = this.player1.cards.red.length;
+                            const b = this.player2.cards.red.length;
+                            const number = a > b ? a : b;
+                            res.cash += number;
+                            break;
+                        }
+                        default:
+                            break;
+                    }
+                }
                 //TODO - start it after 2 users online
                 await updateDoc(tableGameDuelRef, {
+                    'player1.points': this.player1.points,
                     'player1.cards': this.player1.cards,
                     'player1.resources': { ...res, cash: res.cash - cash },
                     gameBoard: this.board,
@@ -239,21 +284,65 @@ export const duelGameStore = defineStore('duelGameStore', {
                     });
                 }
                 if (cardToTake.color === 'green') {
-                    cardToTake.power.forEach((redPow, i) => {
-                        if (redPow === 'artefact') {
+                    cardToTake.power.forEach((greenPow, i) => {
+                        if (greenPow === 'artefact') {
                             if (
-                                this.player1.resources.artefacts.length !== 0 &&
-                                this.player1.resources.artefacts.find(
+                                this.player2.resources.artefacts.length !== 0 &&
+                                this.player2.resources.artefacts.find(
                                     (art) => art === cardToTake.valuePower[i]
                                 )
                             ) {
-                                //TODO
+                                //TODO - take coin
                             }
                         }
                     });
                 }
+                if (cardToTake.color === 'purple') {
+                    switch (cardToTake.valuePower[0]) {
+                        case 1: {
+                            const a = this.player1.cards.yellow.length;
+                            const b = this.player2.cards.yellow.length;
+                            const number = a > b ? a : b;
+                            res.cash += number;
+                            break;
+                        }
+                        case 2: {
+                            const a =
+                                this.player1.cards.brown.length + this.player1.cards.grey.length;
+                            const b =
+                                this.player2.cards.brown.length + this.player1.cards.grey.length;
+                            const number = a > b ? a : b;
+                            res.cash += number;
+                            break;
+                        }
+                        case 4: {
+                            const a = this.player1.cards.blue.length;
+                            const b = this.player2.cards.blue.length;
+                            const number = a > b ? a : b;
+                            res.cash += number;
+                            break;
+                        }
+                        case 5: {
+                            const a = this.player1.cards.green.length;
+                            const b = this.player2.cards.green.length;
+                            const number = a > b ? a : b;
+                            res.cash += number;
+                            break;
+                        }
+                        case 7: {
+                            const a = this.player1.cards.red.length;
+                            const b = this.player2.cards.red.length;
+                            const number = a > b ? a : b;
+                            res.cash += number;
+                            break;
+                        }
+                        default:
+                            break;
+                    }
+                }
                 //TODO - start it after 2 users online
                 await updateDoc(tableGameDuelRef, {
+                    'player2.points': this.player2.points,
                     'player2.cards': this.player2.cards,
                     'player2.resources': { ...res, cash: res.cash - cash },
                     gameBoard: this.board,

@@ -1033,7 +1033,26 @@ export const countPlayerResources = (
                 res.cash += card.valuePower[i];
             }
             if (yellowPow === 'cashBack') {
-                //TODO
+                switch (card.valuePower[i]) {
+                    case 1:
+                        res.cash +=
+                            player.wonderCards.filter((data) => data.activated === true).length * 2;
+                        break;
+                    case 2:
+                        res.cash += player.cards.yellow.length + 1;
+                        break;
+                    case 3:
+                        res.cash += player.cards.grey.length * 3;
+                        break;
+                    case 4:
+                        res.cash += player.cards.brown.length * 2;
+                        break;
+                    case 5:
+                        res.cash += player.cards.red.length;
+                        break;
+                    default:
+                        break;
+                }
             }
         });
     } else if (card.color === 'red') {
@@ -1053,12 +1072,16 @@ export const countPlayerResources = (
         });
     } else if (card.color === 'blue') {
         card.power.forEach((bluePow, i) => {
+            if (bluePow === 'points') {
+                player.points += card.valuePower[i];
+            }
             if (bluePow === 'specialChar') {
                 res.specialChars.push(card.valuePower[i]);
             }
         });
     } else if (card.color === 'purple') {
-        // TODO
+        // card.power.forEach((purplePow, i) => {
+        // });
     }
 
     return res;
