@@ -57,15 +57,7 @@ export const duelGameStore = defineStore('duelGameStore', {
         // }
     },
     actions: {
-        async fetchAllUsers() {
-            // try {
-            //     this.userList = (await getAllUsers()).data;
-            // } catch (error) {
-            //     console.log(error);
-            //     return error;
-            // }
-        },
-        async subFirebaseConnect() {
+        async subFirebaseConnect(uid: string) {
             // firebase - set game
             unSubFirebase = await onSnapshot(tableGameDuelRef, (doc) => {
                 if (doc.exists()) {

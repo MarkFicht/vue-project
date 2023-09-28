@@ -59,6 +59,16 @@ const isSecondPick = computed(() => {
     );
 });
 
+const isMyTurn = computed(() => {
+    console.log(
+        '%c turn.value === user.value.uid -> ',
+        'background: #222; color: #bada55',
+        turn.value,
+        user.value.uid
+    );
+    return turn.value === user.value.uid;
+});
+
 watch(
     () => player2.value.wonderCards,
     async () => {
@@ -319,8 +329,18 @@ onMounted(async () => {
 
     const docSnap = await getDoc(tableGameDuelRef);
 
-    if (docSnap.exists() && !!docSnap.data()?.player1) {
+    if (docSnap.exists()) {
         console.log('Document data:', docSnap.data());
+
+        if (
+            !docSnap.data()?.player2?.user?.uid &&
+            docSnap.data()?.player1?.user?.uid !== user.value.uid
+        ) {
+            // TODO - remove playes if leave, for 2 mins + build document correctly
+            await updateDoc(tableGameDuelRef, {
+                player2: { ...new PlayerDuel(), user: user.value, _id: user.value.uid }
+            });
+        }
     } else {
         await setDoc(tableGameDuelRef, {
             player1: { ...new PlayerDuel(), user: user.value, _id: user.value.uid },
@@ -369,11 +389,13 @@ onMounted(async () => {
         }
     }
 
-    await storeDuelGame.subFirebaseConnect();
+    await storeDuelGame.subFirebaseConnect(`${user.value.uid}`);
 });
 
 // ---
 const cardClick = (gameCard: IGameDuelCard) => {
+    if (!isMyTurn.value) return null;
+
     selectedCard.value = {} as IGameDuelCard;
 
     if (!!gameCard.coversBy && gameCard.coversBy.length > 0) {
@@ -384,6 +406,8 @@ const cardClick = (gameCard: IGameDuelCard) => {
 };
 
 const pickWonder = async (id: number) => {
+    if (!isMyTurn.value) return null;
+
     const newArrWonders = wonderCards.value.map((data) => {
         return data.id === id ? { ...wonderCards.value[id], taken: true } : data;
     });
