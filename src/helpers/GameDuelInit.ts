@@ -996,6 +996,9 @@ export const countPlayerResources = (
         }
     } else if (card.color === 'yellow') {
         card.power.forEach((yellowPow, i) => {
+            if (yellowPow === 'points') {
+                player.points += card.valuePower[i];
+            }
             if (yellowPow === 'discount') {
                 switch (card.valuePower[i]) {
                     case 1:
@@ -1068,6 +1071,9 @@ export const countPlayerResources = (
             }
             if (greenPow === 'artefact') {
                 res.artefacts.push(card.valuePower[i]);
+            }
+            if (greenPow === 'points') {
+                player.points += card.valuePower[i];
             }
         });
     } else if (card.color === 'blue') {

@@ -27,11 +27,7 @@ const { card } = toRefs(props);
     >
         <DuelGameCardComponent :card="card" />
     </div>
-    <div
-        v-else
-        :class="['cardWrapper', `card${card.id}`, 'invisible']"
-        :style="`--x:${x}%; --y:${y}%;`"
-    >
+    <div v-else :class="['cardWrapper', 'invisible']" :style="`--x:${x}%; --y:${y}%; --z:${-10};`">
         <DuelGameCardComponent :card="card" />
     </div>
 </template>

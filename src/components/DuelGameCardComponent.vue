@@ -120,8 +120,8 @@ div {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
     grid-template-rows: 1fr 1fr 1fr 1fr;
-    font-size: 7px;
-    line-height: 7px;
+    font-size: 10px;
+    line-height: 10px;
     filter: brightness(1.3);
     transition: 0.3s;
 }
@@ -140,27 +140,21 @@ div {
 .artefact {
     grid-row: 2 / 4;
     grid-column: 2 / 3;
-    font-size: 7px;
-    line-height: 7px;
 }
 .standardPower {
     grid-row: 2 / 4;
     grid-column: 3 / 5;
-    font-size: 9px;
-    line-height: 9px;
+    font-size: 11px;
+    line-height: 11px;
 }
 /* ------------------- */
 .specialCharCost {
     grid-column: 1;
     grid-row: 3 / 4;
-    font-size: 6px;
-    line-height: 6px;
 }
 .standardCost {
     grid-column: 1 / 4;
     grid-row: 1;
-    font-size: 6px;
-    line-height: 6px;
     display: flex;
     justify-content: start;
 }

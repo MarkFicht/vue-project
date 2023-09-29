@@ -22,7 +22,13 @@ import { getCountRandomObjFromArr } from '@/helpers/HelpersFoo';
 import DuelGameCardComponent from '@/components/DuelGameCardComponent.vue';
 import DuelGameLayOutCardsComponent from '@/components/DuelGameLayOutCardsComponent.vue';
 import DuelGameWonderComponent from '@/components/DuelGameWonderComponent.vue';
-import { PlayerDuel, type IGameDuelCard, BoardDuel, type Materials } from '@/interfaces/GameDuel';
+import {
+    PlayerDuel,
+    type IGameDuelCard,
+    BoardDuel,
+    type Materials,
+    type IGameDuelPlayer
+} from '@/interfaces/GameDuel';
 import { duelGameStore } from '@/store/duelGameStore';
 import { storeToRefs } from 'pinia';
 import type IUser from '@/interfaces/User';
@@ -49,6 +55,7 @@ const user = ref<IUser>({} as IUser);
 
 const headerGameDuel = ref<string>('Duel Game');
 const isLoggedIn = ref<boolean>(false);
+const actionForCards = ref<boolean>(false);
 
 const isSecondPick = computed(() => {
     return (
@@ -60,12 +67,6 @@ const isSecondPick = computed(() => {
 });
 
 const isMyTurn = computed(() => {
-    console.log(
-        '%c turn.value === user.value.uid -> ',
-        'background: #222; color: #bada55',
-        turn.value,
-        user.value.uid
-    );
     return turn.value === user.value.uid;
 });
 
@@ -76,7 +77,8 @@ watch(
             move.value === 0 &&
             (await updateDoc(tableGameDuelRef, {
                 tier: 'I'
-            }));
+            }),
+            (actionForCards.value = true));
     }
 );
 
@@ -128,98 +130,201 @@ watch(
 
 const canBuy = computed((): number => {
     if (!selectedCard.value?.id) return -1;
-
     let buyForCash = 0;
-    let arrCBW: { type: Materials; val: number }[] = [
-        {
-            type: 'clay',
-            val: player1.value.resources.clayOne ? 1 : 2 + player2.value.resources.clayValue
-        },
-        {
-            type: 'brick',
-            val: player1.value.resources.brickOne ? 1 : 2 + player2.value.resources.brickValue
-        },
-        {
-            type: 'wood',
-            val: player1.value.resources.woodOne ? 1 : 2 + player2.value.resources.woodValue
-        }
-    ];
-    arrCBW = arrCBW.sort((a, b) => b.val - a.val);
-    let arrPG: { type: Materials; val: number }[] = [
-        {
-            type: 'clay',
-            val: player1.value.resources.paperGlassOne ? 1 : 2 + player2.value.resources.paperValue
-        },
-        {
-            type: 'glass',
-            val: player1.value.resources.paperGlassOne ? 1 : 2 + player2.value.resources.glassValue
-        }
-    ];
-    arrPG = arrPG.sort((a, b) => b.val - a.val);
-
+    let arrCBW: { type: Materials; val: number }[] = [];
+    let arrPG: { type: Materials; val: number }[] = [];
     let missingMaterials: string[] = [];
     let buyForFree = false;
 
-    selectedCard.value.cost.forEach((cost, i) => {
-        if (cost === 'specialChar') {
-            player1.value.resources.specialChars.find((sc) => {
-                if (sc === selectedCard.value.valueCost[i]) {
-                    buyForFree = true;
-                    return true;
+    if (turn.value === player1.value.user.uid) {
+        arrCBW = [
+            {
+                type: 'clay',
+                val: player1.value.resources.clayOne ? 1 : 2 + player2.value.resources.clayValue
+            },
+            {
+                type: 'brick',
+                val: player1.value.resources.brickOne ? 1 : 2 + player2.value.resources.brickValue
+            },
+            {
+                type: 'wood',
+                val: player1.value.resources.woodOne ? 1 : 2 + player2.value.resources.woodValue
+            }
+        ];
+        arrCBW = arrCBW.sort((a, b) => b.val - a.val);
+        arrPG = [
+            {
+                type: 'paper',
+                val: player1.value.resources.paperGlassOne
+                    ? 1
+                    : 2 + player2.value.resources.paperValue
+            },
+            {
+                type: 'glass',
+                val: player1.value.resources.paperGlassOne
+                    ? 1
+                    : 2 + player2.value.resources.glassValue
+            }
+        ];
+        arrPG = arrPG.sort((a, b) => b.val - a.val);
+
+        selectedCard.value.cost.forEach((cost, i) => {
+            if (cost === 'specialChar') {
+                player1.value.resources.specialChars.find((sc) => {
+                    if (sc === selectedCard.value.valueCost[i]) {
+                        buyForFree = true;
+                        return true;
+                    }
+                });
+            } else if (cost === 'cash') {
+                buyForCash += selectedCard.value.valueCost[i];
+            } else if (cost === 'clay') {
+                let numberOfClay =
+                    selectedCard.value.valueCost[i] - player1.value.resources.clayValue;
+                if (numberOfClay <= 0) {
+                    return null;
+                } else {
+                    for (let index = 0; index < numberOfClay; index++) {
+                        missingMaterials.push('clay');
+                    }
                 }
-            });
-        } else if (cost === 'cash') {
-            buyForCash += selectedCard.value.valueCost[i];
-        } else if (cost === 'clay') {
-            let numberOfClay = selectedCard.value.valueCost[i] - player1.value.resources.clayValue;
-            if (numberOfClay <= 0) {
-                return null;
-            } else {
-                for (let index = 0; index < numberOfClay; index++) {
-                    missingMaterials.push('clay');
+            } else if (cost === 'brick') {
+                let numberOfBrick =
+                    selectedCard.value.valueCost[i] - player1.value.resources.brickValue;
+                if (numberOfBrick <= 0) {
+                    return null;
+                } else {
+                    for (let index = 0; index < numberOfBrick; index++) {
+                        missingMaterials.push('brick');
+                    }
+                }
+            } else if (cost === 'wood') {
+                let numberOfWood =
+                    selectedCard.value.valueCost[i] - player1.value.resources.woodValue;
+                if (numberOfWood <= 0) {
+                    return null;
+                } else {
+                    for (let index = 0; index < numberOfWood; index++) {
+                        missingMaterials.push('wood');
+                    }
+                }
+            } else if (cost === 'paper') {
+                let numberOfPaper =
+                    selectedCard.value.valueCost[i] - player1.value.resources.paperValue;
+                if (numberOfPaper <= 0) {
+                    return null;
+                } else {
+                    for (let index = 0; index < numberOfPaper; index++) {
+                        missingMaterials.push('paper');
+                    }
+                }
+            } else if (cost === 'glass') {
+                let numberOfGlass =
+                    selectedCard.value.valueCost[i] - player1.value.resources.glassValue;
+                if (numberOfGlass <= 0) {
+                    return null;
+                } else {
+                    for (let index = 0; index < numberOfGlass; index++) {
+                        missingMaterials.push('glass');
+                    }
                 }
             }
-        } else if (cost === 'brick') {
-            let numberOfBrick =
-                selectedCard.value.valueCost[i] - player1.value.resources.brickValue;
-            if (numberOfBrick <= 0) {
-                return null;
-            } else {
-                for (let index = 0; index < numberOfBrick; index++) {
-                    missingMaterials.push('brick');
+        });
+    } else {
+        arrCBW = [
+            {
+                type: 'clay',
+                val: player2.value.resources.clayOne ? 1 : 2 + player1.value.resources.clayValue
+            },
+            {
+                type: 'brick',
+                val: player2.value.resources.brickOne ? 1 : 2 + player1.value.resources.brickValue
+            },
+            {
+                type: 'wood',
+                val: player2.value.resources.woodOne ? 1 : 2 + player1.value.resources.woodValue
+            }
+        ];
+        arrCBW = arrCBW.sort((a, b) => b.val - a.val);
+        arrPG = [
+            {
+                type: 'paper',
+                val: player2.value.resources.paperGlassOne
+                    ? 1
+                    : 2 + player1.value.resources.paperValue
+            },
+            {
+                type: 'glass',
+                val: player2.value.resources.paperGlassOne
+                    ? 1
+                    : 2 + player1.value.resources.glassValue
+            }
+        ];
+        arrPG = arrPG.sort((a, b) => b.val - a.val);
+
+        selectedCard.value.cost.forEach((cost, i) => {
+            if (cost === 'specialChar') {
+                player2.value.resources.specialChars.find((sc) => {
+                    if (sc === selectedCard.value.valueCost[i]) {
+                        buyForFree = true;
+                        return true;
+                    }
+                });
+            } else if (cost === 'cash') {
+                buyForCash += selectedCard.value.valueCost[i];
+            } else if (cost === 'clay') {
+                let numberOfClay =
+                    selectedCard.value.valueCost[i] - player2.value.resources.clayValue;
+                if (numberOfClay <= 0) {
+                    return null;
+                } else {
+                    for (let index = 0; index < numberOfClay; index++) {
+                        missingMaterials.push('clay');
+                    }
+                }
+            } else if (cost === 'brick') {
+                let numberOfBrick =
+                    selectedCard.value.valueCost[i] - player2.value.resources.brickValue;
+                if (numberOfBrick <= 0) {
+                    return null;
+                } else {
+                    for (let index = 0; index < numberOfBrick; index++) {
+                        missingMaterials.push('brick');
+                    }
+                }
+            } else if (cost === 'wood') {
+                let numberOfWood =
+                    selectedCard.value.valueCost[i] - player2.value.resources.woodValue;
+                if (numberOfWood <= 0) {
+                    return null;
+                } else {
+                    for (let index = 0; index < numberOfWood; index++) {
+                        missingMaterials.push('wood');
+                    }
+                }
+            } else if (cost === 'paper') {
+                let numberOfPaper =
+                    selectedCard.value.valueCost[i] - player2.value.resources.paperValue;
+                if (numberOfPaper <= 0) {
+                    return null;
+                } else {
+                    for (let index = 0; index < numberOfPaper; index++) {
+                        missingMaterials.push('paper');
+                    }
+                }
+            } else if (cost === 'glass') {
+                let numberOfGlass =
+                    selectedCard.value.valueCost[i] - player2.value.resources.glassValue;
+                if (numberOfGlass <= 0) {
+                    return null;
+                } else {
+                    for (let index = 0; index < numberOfGlass; index++) {
+                        missingMaterials.push('glass');
+                    }
                 }
             }
-        } else if (cost === 'wood') {
-            let numberOfWood = selectedCard.value.valueCost[i] - player1.value.resources.woodValue;
-            if (numberOfWood <= 0) {
-                return null;
-            } else {
-                for (let index = 0; index < numberOfWood; index++) {
-                    missingMaterials.push('wood');
-                }
-            }
-        } else if (cost === 'paper') {
-            let numberOfPaper =
-                selectedCard.value.valueCost[i] - player1.value.resources.paperValue;
-            if (numberOfPaper <= 0) {
-                return null;
-            } else {
-                for (let index = 0; index < numberOfPaper; index++) {
-                    missingMaterials.push('paper');
-                }
-            }
-        } else if (cost === 'glass') {
-            let numberOfGlass =
-                selectedCard.value.valueCost[i] - player1.value.resources.glassValue;
-            if (numberOfGlass <= 0) {
-                return null;
-            } else {
-                for (let index = 0; index < numberOfGlass; index++) {
-                    missingMaterials.push('glass');
-                }
-            }
-        }
-    });
+        });
+    }
 
     missingMaterials = removeOptionalMaterials(missingMaterials, arrCBW, arrPG);
     missingMaterials.forEach((mat) => {
@@ -239,21 +344,12 @@ function removeOptionalMaterials(
     arrPG: { type: Materials; val: number }[]
 ): string[] {
     let arr = missingMaterials;
-    for (let index = 0; index < player1.value.resources.materialsCBW; index++) {
-        let found = false;
-        let j: number = 0;
-        arr.find((str, i) => {
-            if (str === arrCBW[0].type) {
-                found = true;
-                j = i;
-                return true;
-            } else return false;
-        });
-        if (found) {
-            arr.splice(j, 1);
-        } else {
+    if (turn.value === player1.value.user.uid) {
+        for (let index = 0; index < player1.value.resources.materialsCBW; index++) {
+            let found = false;
+            let j: number = 0;
             arr.find((str, i) => {
-                if (str === arrCBW[1].type) {
+                if (str === arrCBW[0].type) {
                     found = true;
                     j = i;
                     return true;
@@ -263,7 +359,43 @@ function removeOptionalMaterials(
                 arr.splice(j, 1);
             } else {
                 arr.find((str, i) => {
-                    if (str === arrCBW[2].type) {
+                    if (str === arrCBW[1].type) {
+                        found = true;
+                        j = i;
+                        return true;
+                    } else return false;
+                });
+                if (found) {
+                    arr.splice(j, 1);
+                } else {
+                    arr.find((str, i) => {
+                        if (str === arrCBW[2].type) {
+                            found = true;
+                            j = i;
+                            return true;
+                        } else return false;
+                    });
+                    if (found) {
+                        arr.splice(j, 1);
+                    } else null;
+                }
+            }
+        }
+        for (let index = 0; index < player1.value.resources.materialsPG; index++) {
+            let found = false;
+            let j: number = 0;
+            arr.find((str, i) => {
+                if (str === arrPG[0].type) {
+                    found = true;
+                    j = i;
+                    return true;
+                } else return false;
+            });
+            if (found) {
+                arr.splice(j, 1);
+            } else {
+                arr.find((str, i) => {
+                    if (str === arrPG[1].type) {
                         found = true;
                         j = i;
                         return true;
@@ -274,22 +406,12 @@ function removeOptionalMaterials(
                 } else null;
             }
         }
-    }
-    for (let index = 0; index < player1.value.resources.materialsPG; index++) {
-        let found = false;
-        let j: number = 0;
-        arr.find((str, i) => {
-            if (str === arrPG[0].type) {
-                found = true;
-                j = i;
-                return true;
-            } else return false;
-        });
-        if (found) {
-            arr.splice(j, 1);
-        } else {
+    } else {
+        for (let index = 0; index < player2.value.resources.materialsCBW; index++) {
+            let found = false;
+            let j: number = 0;
             arr.find((str, i) => {
-                if (str === arrPG[1].type) {
+                if (str === arrCBW[0].type) {
                     found = true;
                     j = i;
                     return true;
@@ -297,7 +419,54 @@ function removeOptionalMaterials(
             });
             if (found) {
                 arr.splice(j, 1);
-            } else null;
+            } else {
+                arr.find((str, i) => {
+                    if (str === arrCBW[1].type) {
+                        found = true;
+                        j = i;
+                        return true;
+                    } else return false;
+                });
+                if (found) {
+                    arr.splice(j, 1);
+                } else {
+                    arr.find((str, i) => {
+                        if (str === arrCBW[2].type) {
+                            found = true;
+                            j = i;
+                            return true;
+                        } else return false;
+                    });
+                    if (found) {
+                        arr.splice(j, 1);
+                    } else null;
+                }
+            }
+        }
+        for (let index = 0; index < player2.value.resources.materialsPG; index++) {
+            let found = false;
+            let j: number = 0;
+            arr.find((str, i) => {
+                if (str === arrPG[0].type) {
+                    found = true;
+                    j = i;
+                    return true;
+                } else return false;
+            });
+            if (found) {
+                arr.splice(j, 1);
+            } else {
+                arr.find((str, i) => {
+                    if (str === arrPG[1].type) {
+                        found = true;
+                        j = i;
+                        return true;
+                    } else return false;
+                });
+                if (found) {
+                    arr.splice(j, 1);
+                } else null;
+            }
         }
     }
 
@@ -389,6 +558,7 @@ onMounted(async () => {
         }
     }
 
+    tier !== 'prepare' && (actionForCards.value = true);
     await storeDuelGame.subFirebaseConnect(`${user.value.uid}`);
 });
 
@@ -399,6 +569,8 @@ const cardClick = (gameCard: IGameDuelCard) => {
     selectedCard.value = {} as IGameDuelCard;
 
     if (!!gameCard.coversBy && gameCard.coversBy.length > 0) {
+        return;
+    } else if (gameCard.taken !== 'inGame') {
         return;
     } else {
         selectedCard.value = gameCard;
@@ -447,17 +619,9 @@ const pickWonder = async (id: number) => {
         </header>
 
         <section class="wrapper">
-            <section class="player2info">
-                <p>
-                    {{ `Nick: ${player2.user.displayName || player2.user.email}` }}
-                </p>
-                <p>
-                    {{ `Turn: ${turn === player2.user.uid ? 'YOU' : ''}` }}
-                </p>
-            </section>
-            <section class="player2">
+            <section class="playerSection player2">
                 <div class="playerCardContainer">
-                    <div class="playerCard1">
+                    <div class="playerCard playerCard1">
                         <DuelGameCardComponent
                             v-for="card in player2.cards.brown"
                             :key="card.id"
@@ -465,7 +629,7 @@ const pickWonder = async (id: number) => {
                             small
                         />
                     </div>
-                    <div class="playerCard2">
+                    <div class="playerCard playerCard2">
                         <DuelGameCardComponent
                             v-for="card in player2.cards.grey"
                             :key="card.id"
@@ -473,7 +637,7 @@ const pickWonder = async (id: number) => {
                             small
                         />
                     </div>
-                    <div class="playerCard3">
+                    <div class="playerCard playerCard3">
                         <DuelGameCardComponent
                             v-for="card in player2.cards.yellow"
                             :key="card.id"
@@ -481,7 +645,7 @@ const pickWonder = async (id: number) => {
                             small
                         />
                     </div>
-                    <div class="playerCard4">
+                    <div class="playerCard playerCard4">
                         <DuelGameCardComponent
                             v-for="card in player2.cards.blue"
                             :key="card.id"
@@ -489,7 +653,7 @@ const pickWonder = async (id: number) => {
                             small
                         />
                     </div>
-                    <div class="playerCard5">
+                    <div class="playerCard playerCard5">
                         <DuelGameCardComponent
                             v-for="card in player2.cards.red"
                             :key="card.id"
@@ -497,7 +661,7 @@ const pickWonder = async (id: number) => {
                             small
                         />
                     </div>
-                    <div class="playerCard6">
+                    <div class="playerCard playerCard6">
                         <DuelGameCardComponent
                             v-for="card in player2.cards.green"
                             :key="card.id"
@@ -505,7 +669,7 @@ const pickWonder = async (id: number) => {
                             small
                         />
                     </div>
-                    <div class="playerCard7">
+                    <div class="playerCard playerCard7">
                         <DuelGameCardComponent
                             v-for="card in player2.cards.purple"
                             :key="card.id"
@@ -526,14 +690,14 @@ const pickWonder = async (id: number) => {
                     <div class="playerCoins"></div>
                 </div>
             </section>
-            <section class="wonders2">
+            <section class="wonders wonders2 customInput">
                 <DuelGameWonderComponent
                     v-for="wonderCard in player2.wonderCards"
                     :card="wonderCard"
                     :key="wonderCard.id"
                 />
             </section>
-            <section class="cards" v-if="tier === 'prepare'">
+            <section class="cards cardsWonder" v-if="tier === 'prepare'">
                 <div v-if="!isSecondPick" class="pickWonders">
                     <DuelGameWonderComponent
                         v-if="wonderCards[0] && !wonderCards[0].taken"
@@ -579,7 +743,7 @@ const pickWonder = async (id: number) => {
                     />
                 </div>
             </section>
-            <section class="cards" v-if="tier === 'I'">
+            <section class="cards cardsTier" v-if="tier === 'I'">
                 <DuelGameLayOutCardsComponent
                     v-for="(card, index) in tierOneCards"
                     :key="index"
@@ -590,7 +754,7 @@ const pickWonder = async (id: number) => {
                     @click="cardClick(card)"
                 />
             </section>
-            <section class="cards" v-if="tier === 'II'">
+            <section class="cards cardsTier" v-if="tier === 'II'">
                 <DuelGameLayOutCardsComponent
                     v-for="(card, index) in tierTwoCards"
                     :key="index"
@@ -601,7 +765,7 @@ const pickWonder = async (id: number) => {
                     @click="cardClick(card)"
                 />
             </section>
-            <section class="cards" v-if="tier === 'III'">
+            <section class="cards cardsTier" v-if="tier === 'III'">
                 <DuelGameLayOutCardsComponent
                     v-for="(card, index) in tierThreeCards"
                     :key="index"
@@ -639,7 +803,7 @@ const pickWonder = async (id: number) => {
                     }}</span>
                 </div>
             </section>
-            <section class="graveyard">
+            <section class="graveyard customInput">
                 <DuelGameCardComponent
                     v-for="card in graveyard"
                     :key="card.id"
@@ -647,47 +811,64 @@ const pickWonder = async (id: number) => {
                     small
                 />
             </section>
-            <section class="player1info">
-                <p>
-                    {{ `Nick: ${player1.user.displayName || player1.user.email}` }}
-                </p>
-                <p>
-                    {{ `Turn: ${turn === player1.user.uid ? 'YOU' : ''}` }}
-                </p>
+            <section class="playerInfo">
+                <div class="player1info customInput">
+                    <p>
+                        {{ `Nick: ${player1.user.displayName || player1.user.email}` }}
+                    </p>
+                    <p>
+                        {{ `Turn: ${turn === player1.user.uid ? 'YOU' : ''}` }}
+                    </p>
+                </div>
+                <div class="player2info customInput">
+                    <p>
+                        {{ `Nick: ${player2.user.displayName || player2.user.email}` }}
+                    </p>
+                    <p>
+                        {{ `Turn: ${turn === player2.user.uid ? 'YOU' : ''}` }}
+                    </p>
+                </div>
             </section>
-            <section class="wonders1">
+            <section class="wonders wonders1 customInput">
                 <DuelGameWonderComponent
                     v-for="wonderCard in player1.wonderCards"
                     :card="wonderCard"
                     :key="wonderCard.id"
                 />
             </section>
-            <section class="playerAction">
+            <section v-if="actionForCards" class="playerAction">
                 <button
-                    :disabled="canBuy < 0 || canBuy > player1.resources.cash"
+                    :disabled="
+                        canBuy < 0 ||
+                        !isMyTurn ||
+                        (turn === player1.user.uid
+                            ? canBuy > player1.resources.cash
+                            : canBuy > player2.resources.cash)
+                    "
                     class="customButton"
-                    @click="() => storeDuelGame.setCardTaken(canBuy)"
+                    @click="() => (isMyTurn ? storeDuelGame.setCardTaken(canBuy) : null)"
                 >
                     {{ `take ${canBuy >= 0 ? canBuy : ''}` }}
                 </button>
                 <button
                     :disabled="!selectedCard?.id"
                     class="customButton"
-                    @click="() => storeDuelGame.setCardGraveyard()"
+                    @click="() => (isMyTurn ? storeDuelGame.setCardGraveyard() : null)"
                 >
                     sell
                 </button>
                 <button
                     :disabled="!selectedCard?.id"
                     class="customButton"
-                    @click="() => storeDuelGame.setCardToWonder()"
+                    @click="() => (isMyTurn ? storeDuelGame.setCardToWonder() : null)"
                 >
                     build wonder
                 </button>
             </section>
-            <section class="player1">
+            <section v-else class="playerAction"></section>
+            <section class="playerSection player1">
                 <div class="playerCardContainer">
-                    <div class="playerCard1">
+                    <div class="playerCard playerCard1">
                         <DuelGameCardComponent
                             v-for="card in player1.cards.brown"
                             :key="card.id"
@@ -695,7 +876,7 @@ const pickWonder = async (id: number) => {
                             small
                         />
                     </div>
-                    <div class="playerCard2">
+                    <div class="playerCard playerCard2">
                         <DuelGameCardComponent
                             v-for="card in player1.cards.grey"
                             :key="card.id"
@@ -703,7 +884,7 @@ const pickWonder = async (id: number) => {
                             small
                         />
                     </div>
-                    <div class="playerCard3">
+                    <div class="playerCard playerCard3">
                         <DuelGameCardComponent
                             v-for="card in player1.cards.yellow"
                             :key="card.id"
@@ -711,7 +892,7 @@ const pickWonder = async (id: number) => {
                             small
                         />
                     </div>
-                    <div class="playerCard4">
+                    <div class="playerCard playerCard4">
                         <DuelGameCardComponent
                             v-for="card in player1.cards.blue"
                             :key="card.id"
@@ -719,7 +900,7 @@ const pickWonder = async (id: number) => {
                             small
                         />
                     </div>
-                    <div class="playerCard5">
+                    <div class="playerCard playerCard5">
                         <DuelGameCardComponent
                             v-for="card in player1.cards.red"
                             :key="card.id"
@@ -727,7 +908,7 @@ const pickWonder = async (id: number) => {
                             small
                         />
                     </div>
-                    <div class="playerCard6">
+                    <div class="playerCard playerCard6">
                         <DuelGameCardComponent
                             v-for="card in player1.cards.green"
                             :key="card.id"
@@ -735,7 +916,7 @@ const pickWonder = async (id: number) => {
                             small
                         />
                     </div>
-                    <div class="playerCard7">
+                    <div class="playerCard playerCard7">
                         <DuelGameCardComponent
                             v-for="card in player1.cards.purple"
                             :key="card.id"
@@ -770,8 +951,8 @@ main {
 .header {
     height: 30px;
     line-height: 30px;
-    margin-top: 20px;
-    margin-bottom: 25px;
+    margin-top: 15px;
+    margin-bottom: 15px;
     text-align: center;
 }
 h1 {
@@ -784,136 +965,116 @@ h1 {
 /* --- Wrapper card --- */
 section.wrapper {
     position: relative;
-    width: 90vw;
-    height: calc(100vh - 116px);
-    padding: 30px;
-    margin-bottom: 40px;
+    width: 1200px;
+    height: 720px;
+    padding: 20px;
+    margin-bottom: 20px;
     color: #444;
-    box-shadow: 0 0 50px rgba(0, 0, 0, 0.25);
-    /* box-shadow:
-        15px 15px 20px rgba(0, 0, 0, 0.1),
-        -15px -15px 20px rgba(0, 0, 0, 0.1); */
+    box-shadow: 0 0 50px rgba(0, 0, 0, 0.3);
     border-radius: 20px;
-    /* display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column; */
     display: grid;
     grid-template-areas:
-        'w2   p2   p2   p2   p2   p2i '
-        'w2   .    .    .    duel p1i '
-        'w2   card card card duel .   '
-        '.    card card card duel .   '
-        '.    card card card duel .   '
-        'w1   card card card duel grv '
-        'w1   act  act  act  duel grv '
-        'w1   p1   p1   p1   p1   grv ';
-    grid-template-columns: 2fr 3fr 2fr 1fr 1fr 3fr;
-    grid-template-rows: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+        'w2   p2   p2   pi  '
+        '.    card duel .   '
+        '.    act  duel grv '
+        'w1   p1   p1   grv ';
+    grid-template-columns: 220px 550px 200px 190px;
+    grid-template-rows: 155px 320px 50px 155px;
     background-color: #eee;
     animation: showElement 2s linear;
 }
-.player2 {
-    grid-area: p2;
-    border: 1px solid;
-}
-.player2info {
-    grid-area: p2i;
-    border: 1px solid;
-}
-.wonders2 {
+.wonders {
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
-    border: 1px solid;
-    height: 150px;
-    width: 180px;
+    height: 155px;
+    width: 220px;
+    padding: 5px;
+    filter: drop-shadow(0 0 35px rgba(0, 0, 0, 0.15));
+}
+.wonders1 {
+    grid-area: w1;
+}
+.wonders2 {
     grid-area: w2;
-    border: 1px solid;
 }
-.player1 {
-    grid-area: p1;
-    border: 1px solid;
+.playerInfo {
+    grid-area: pi;
+    margin: 0 auto;
+}
+.playerInfo > div {
+    height: 60px;
+    margin-bottom: 15px;
+    padding: 5px 15px !important;
+    font-size: 1em;
+    display: block;
+}
+.playerSection {
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
-.player2 {
-    grid-area: p2;
-    border: 1px solid;
+.playerCardContainer {
+    width: 550px;
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
-    /* transform: rotate(180deg); */
 }
-.player1 div,
-.player2 div {
-    width: 60px;
+.playerPointsContainer {
     height: 100%;
-    border-radius: 5px;
-}
-div.playerCardContainer {
-    width: 70%;
+    width: 200px;
     display: flex;
     justify-content: left;
     align-items: center;
 }
-div.playerCardContainer div {
-    /* margin: 0 2px; */
+.player1 {
+    grid-area: p1;
 }
-div.playerPointsContainer {
-    border: 1px solid;
-    width: 30%;
+.player2 {
+    grid-area: p2;
 }
-div.playerPointsContainer > div {
-    width: 100%;
+.playerCard {
+    width: 50px;
+    height: 150px;
+    border-radius: 5px;
+    margin: 0 5px;
 }
 .playerCard1 {
-    background-image: linear-gradient(to bottom, rgb(197, 96, 13), 7%, rgba(0, 0, 0, 0));
+    background-image: linear-gradient(to bottom, rgb(197, 96, 13), 7%, transparent);
 }
 .playerCard2 {
-    background-image: linear-gradient(to bottom, rgb(131, 121, 114), 7%, rgba(0, 0, 0, 0));
+    background-image: linear-gradient(to bottom, rgb(131, 121, 114), 7%, transparent);
 }
 .playerCard3 {
-    background-image: linear-gradient(to bottom, rgb(255, 239, 9), 7%, rgba(0, 0, 0, 0));
+    background-image: linear-gradient(to bottom, rgb(255, 239, 9), 7%, transparent);
 }
 .playerCard4 {
-    background-image: linear-gradient(to bottom, rgb(25, 48, 255), 7%, rgba(0, 0, 0, 0));
+    background-image: linear-gradient(to bottom, rgb(25, 48, 255), 7%, transparent);
 }
 .playerCard5 {
-    background-image: linear-gradient(to bottom, rgb(255, 26, 26), 7%, rgba(0, 0, 0, 0));
+    background-image: linear-gradient(to bottom, rgb(255, 26, 26), 7%, transparent);
 }
 .playerCard6 {
-    background-image: linear-gradient(to bottom, rgb(18, 219, 0), 7%, rgba(0, 0, 0, 0));
+    background-image: linear-gradient(to bottom, rgb(18, 219, 0), 7%, transparent);
 }
 .playerCard7 {
-    background-image: linear-gradient(to bottom, rgb(124, 11, 189), 7%, rgba(0, 0, 0, 0));
+    background-image: linear-gradient(to bottom, rgb(124, 11, 189), 7%, transparent);
 }
 .playerAction {
     grid-area: act;
-    border: 1px solid;
     display: flex;
     justify-content: center;
     align-items: center;
+    padding-bottom: 10px;
+    animation: showElement 2s linear;
 }
 .playerAction > button {
     margin: 0 10px;
-}
-.player1info {
-    grid-area: p1i;
-    border: 1px solid;
-}
-.wonders1 {
-    grid-area: w1;
-    border: 1px solid;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    border: 1px solid;
-    height: 150px;
-    width: 180px;
+    font-size: 16px;
+    line-height: 16px;
+    height: 32px;
+    padding: 6px 10px;
 }
 .cards {
     position: relative;
@@ -923,31 +1084,39 @@ div.playerPointsContainer > div {
     align-items: center;
     flex-direction: column;
 }
+.cardsWonder {
+    filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.05));
+}
+.cardsTier {
+    filter: drop-shadow(0 0 35px rgba(0, 0, 0, 0.4));
+}
 .pickWonders {
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
-    border: 1px solid;
-    height: 150px;
-    width: 180px;
+    height: 155px;
+    width: 220px;
     animation: showElement 2s linear;
+    filter: drop-shadow(0 15px 35px rgba(0, 0, 0, 0.5));
 }
 .duel {
     grid-area: duel;
-    border: 1px solid;
     display: flex;
     justify-content: center;
     align-items: center;
+    filter: drop-shadow(0 0 35px rgba(0, 0, 0, 0.4));
 }
 .boardCoins {
     height: 200px;
     width: 50px;
-    border: 1px solid;
     display: flex;
     justify-content: center;
     align-items: center;
     flex-direction: column;
+    border-top-right-radius: 15px;
+    border-bottom-right-radius: 15px;
+    background-color: rgb(76, 160, 50);
 }
 .boardSingleCoin {
     height: 36px;
@@ -956,11 +1125,11 @@ div.playerPointsContainer > div {
     border-radius: 50%;
     border: 1px solid;
     display: block;
+    background-color: rgb(27, 207, 27);
 }
 .boardPanishment {
     height: 300px;
     width: 30px;
-    /* border: 1px solid; */
     display: flex;
     justify-content: center;
     align-items: center;
@@ -969,7 +1138,8 @@ div.playerPointsContainer > div {
 .boardPanishment > div {
     width: 42px;
     height: 18px;
-    border: 1px solid;
+    border: 1px solid rgb(168, 64, 46);
+    border-radius: 5px;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -983,18 +1153,20 @@ div.playerPointsContainer > div {
     position: relative;
     height: 300px;
     width: 50px;
-    border: 1px solid;
+    border-radius: 15%;
     display: flex;
     justify-content: center;
     align-items: center;
     flex-direction: column;
+    background-color: rgb(241, 118, 118);
 }
 .boardBorder {
     height: 13px;
     width: 30px;
     margin: 1px auto;
     border-radius: 50%;
-    border: 1px solid;
+    border: 1px solid brown;
+    background-color: rgb(223, 83, 83);
     display: block;
 }
 .boardPawn {
@@ -1002,7 +1174,8 @@ div.playerPointsContainer > div {
     height: 15px;
     width: 30px;
     border-radius: 50%;
-    border: 1px solid red;
+    border: 3px solid rgb(180, 0, 0);
+    background-color: rgb(245, 9, 9);
     top: 50%;
     transform: translateY(calc(var(--position) * 100% - 50%));
     transition: 0.5s;
@@ -1022,10 +1195,11 @@ div.playerPointsContainer > div {
 }
 .graveyard {
     grid-area: grv;
-    border: 1px solid;
     display: inline-flex;
-    /* justify-content: space-between; */
-    /* align-items: center; */
+    padding: 10px;
+    height: 100%;
+    justify-content: space-between;
+    align-items: center;
     flex-wrap: wrap;
 }
 @keyframes showElement {
@@ -1038,38 +1212,9 @@ div.playerPointsContainer > div {
     }
 }
 @media (max-width: 720px) {
-    /* .header {
-        height: 25px;
-        line-height: 25px;
-        margin-bottom: 20px;
-    }
-    h1 {
-        font-size: 1.8rem;
-    }
-    section.wrapper {
-        padding: 20px 25px;
-        margin: 0 auto;
-        height: calc(100vh - 210px);
-    } */
 }
 @media (max-width: 560px) {
-    /* .header {
-        height: 25px;
-        line-height: 25px;
-        margin-top: 5px;
-    }
-    section.wrapper {
-        height: calc(100vh - 200px);
-    }
-    section.nav {
-        transform: scale(0.7);
-        margin: 0;
-        margin-top: 35px;
-    } */
 }
 @media (max-width: 360px) {
-    /* section.nav {
-        transform: scale(0.65);
-    } */
 }
 </style>
