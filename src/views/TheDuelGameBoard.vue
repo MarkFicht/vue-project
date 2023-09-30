@@ -22,13 +22,7 @@ import { getCountRandomObjFromArr } from '@/helpers/HelpersFoo';
 import DuelGameCardComponent from '@/components/DuelGameCardComponent.vue';
 import DuelGameLayOutCardsComponent from '@/components/DuelGameLayOutCardsComponent.vue';
 import DuelGameWonderComponent from '@/components/DuelGameWonderComponent.vue';
-import {
-    PlayerDuel,
-    type IGameDuelCard,
-    BoardDuel,
-    type Materials,
-    type IGameDuelPlayer
-} from '@/interfaces/GameDuel';
+import { PlayerDuel, type IGameDuelCard, BoardDuel, type Materials } from '@/interfaces/GameDuel';
 import { duelGameStore } from '@/store/duelGameStore';
 import { storeToRefs } from 'pinia';
 import type IUser from '@/interfaces/User';
@@ -56,6 +50,8 @@ const user = ref<IUser>({} as IUser);
 const headerGameDuel = ref<string>('Duel Game');
 const isLoggedIn = ref<boolean>(false);
 const actionForCards = ref<boolean>(false);
+const whoWillStart = ref<boolean>(false);
+const pickCoin = ref<boolean>(false);
 
 const isSecondPick = computed(() => {
     return (
@@ -102,6 +98,11 @@ watch(
                 await updateDoc(tableGameDuelRef, {
                     turn: checkTurn
                 });
+
+                if (turn.value === user.value.uid && board.value.pawn === 0) {
+                    actionForCards.value = false;
+                    whoWillStart.value = true;
+                }
             }
         }
 
@@ -122,6 +123,11 @@ watch(
                 await updateDoc(tableGameDuelRef, {
                     turn: checkTurn
                 });
+
+                if (turn.value === user.value.uid && board.value.pawn === 0) {
+                    actionForCards.value = false;
+                    whoWillStart.value = true;
+                }
             }
         }
         // TODO - add end game
@@ -473,6 +479,15 @@ function removeOptionalMaterials(
     return arr;
 }
 
+async function chooseWhoStarts(id: string): Promise<void> {
+    await updateDoc(tableGameDuelRef, {
+        turn: id
+    });
+
+    actionForCards.value = true;
+    whoWillStart.value = false;
+}
+
 // ---
 onMounted(async () => {
     let auth: any;
@@ -558,7 +573,8 @@ onMounted(async () => {
         }
     }
 
-    tier !== 'prepare' && (actionForCards.value = true);
+    tier.value !== 'prepare' && (actionForCards.value = true);
+    console.log('%c actionForCards -> ', 'background: #222; color: #bada55', actionForCards.value);
     await storeDuelGame.subFirebaseConnect(`${user.value.uid}`);
 });
 
@@ -863,6 +879,15 @@ const pickWonder = async (id: number) => {
                     @click="() => (isMyTurn ? storeDuelGame.setCardToWonder() : null)"
                 >
                     build wonder
+                </button>
+            </section>
+            <section v-else-if="whoWillStart" class="playerAction">
+                <button class="customButton" @click="() => chooseWhoStarts(`${player1.user.uid}`)">
+                    {{ player1.user.displayName }}
+                </button>
+                <p>{{ ' Who starts? ' }}</p>
+                <button class="customButton" @click="() => chooseWhoStarts(`${player2.user.uid}`)">
+                    {{ player2.user.displayName }}
                 </button>
             </section>
             <section v-else class="playerAction"></section>
@@ -1195,12 +1220,15 @@ section.wrapper {
 }
 .graveyard {
     grid-area: grv;
-    display: inline-flex;
     padding: 10px;
     height: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    /* display: inline-flex;
     justify-content: space-between;
     align-items: center;
-    flex-wrap: wrap;
+    flex-wrap: wrap; */
 }
 @keyframes showElement {
     0%,

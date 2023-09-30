@@ -96,8 +96,63 @@ export const duelGameStore = defineStore('duelGameStore', {
         unselectCard() {
             this.selectedCard = {} as IGameDuelCard;
         },
+        async checkTurnAndConditions(id: string, takeCoin: boolean): Promise<void> {
+            // let cardToWonder: IGameDuelCard = {} as IGameDuelCard;
+            // if (this.tier === 'I') {
+            //     this.tierOneCards = this.$state.tierOneCards.map((card) => {
+            //         card.id === this.selectedCard.id && (cardToWonder = card);
+            //         return {
+            //             ...card,
+            //             taken: card.id === this.selectedCard.id ? 'inWonder' : card.taken,
+            //             coversBy: card?.coversBy
+            //                 ? card.coversBy.filter((id) => {
+            //                       return id !== this.selectedCard.id;
+            //                   })
+            //                 : []
+            //         };
+            //     });
+            //     await updateDoc(tableGameDuelRef, {
+            //         tierICards: this.tierOneCards
+            //     });
+            // } else if (this.tier === 'II') {
+            //     this.tierTwoCards = this.$state.tierOneCards.map((card) => {
+            //         card.id === this.selectedCard.id && (cardToWonder = card);
+            //         return {
+            //             ...card,
+            //             taken: card.id === this.selectedCard.id ? 'inWonder' : card.taken,
+            //             coversBy: card?.coversBy
+            //                 ? card.coversBy.filter((id) => {
+            //                       return id !== this.selectedCard.id;
+            //                   })
+            //                 : []
+            //         };
+            //     });
+            //     await updateDoc(tableGameDuelRef, {
+            //         tierIICards: this.tierTwoCards
+            //     });
+            // } else if (this.tier === 'III') {
+            //     this.tierThreeCards = this.$state.tierOneCards.map((card) => {
+            //         card.id === this.selectedCard.id && (cardToWonder = card);
+            //         return {
+            //             ...card,
+            //             taken: card.id === this.selectedCard.id ? 'inWonder' : card.taken,
+            //             coversBy: card?.coversBy
+            //                 ? card.coversBy.filter((id) => {
+            //                       return id !== this.selectedCard.id;
+            //                   })
+            //                 : []
+            //         };
+            //     });
+            //     await updateDoc(tableGameDuelRef, {
+            //         tierIIICards: this.tierThreeCards
+            //     });
+            // }
+            // console.log('%c cardToWonder -> ', 'background: #222; color: #bada55', cardToWonder);
+            // this.unselectCard();
+        },
         async setCardTaken(cash: number): Promise<void> {
             let cardToTake: IGameDuelCard = {} as IGameDuelCard;
+            let takeCoin: boolean = false;
 
             if (this.tier === 'I') {
                 this.tierOneCards = this.$state.tierOneCards.map((card) => {
@@ -189,6 +244,7 @@ export const duelGameStore = defineStore('duelGameStore', {
                             ) {
                                 //TODO - take coin
                                 console.log('%c takee -> ', 'background: #222; color: #bada55');
+                                takeCoin = true;
                             }
                         }
                     });
@@ -236,15 +292,25 @@ export const duelGameStore = defineStore('duelGameStore', {
                             break;
                     }
                 }
-                //TODO - start it after 2 users online
-                await updateDoc(tableGameDuelRef, {
-                    'player1.points': this.player1.points,
-                    'player1.cards': this.player1.cards,
-                    'player1.resources': { ...res, cash: res.cash - cash },
-                    gameBoard: this.board,
-                    turn: this.player2.user?.uid || 0,
-                    move: increment(1)
-                });
+                if (takeCoin) {
+                    //TODO - start it after 2 users online
+                    await updateDoc(tableGameDuelRef, {
+                        'player1.points': this.player1.points,
+                        'player1.cards': this.player1.cards,
+                        'player1.resources': { ...res, cash: res.cash - cash }
+                    });
+                    this.checkTurnAndConditions(this.player1.user.uid, takeCoin);
+                } else {
+                    //TODO - start it after 2 users online
+                    await updateDoc(tableGameDuelRef, {
+                        'player1.points': this.player1.points,
+                        'player1.cards': this.player1.cards,
+                        'player1.resources': { ...res, cash: res.cash - cash },
+                        gameBoard: this.board,
+                        turn: this.player2.user?.uid || 0,
+                        move: increment(1)
+                    });
+                }
             } else {
                 const res = countPlayerResources(cardToTake, this.player2);
                 this.player2.cards[cardToTake.color].push({
