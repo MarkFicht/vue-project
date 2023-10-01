@@ -152,12 +152,6 @@ watch(
 watch(
     () => pickCoin.value,
     () => {
-        console.log(
-            '%c pickCoin.value -> ',
-            'background: #222; color: #bada55',
-            pickCoin.value,
-            isMyTurn.value
-        );
         if (pickCoin.value !== '' && isMyTurn.value) {
             actionForCards.value = false;
         } else {
@@ -860,10 +854,10 @@ const coinSelected = async (coin: IGameDuelCoin['effect']) => {
 
             <section class="duel">
                 <div class="boardPanishment">
-                    <div :style="board.player1.length >= 1 ? 'background: tomato;' : ''">-5</div>
-                    <div :style="board.player1.length === 2 ? 'background: tomato;' : ''">-2</div>
-                    <div :style="board.player2.length === 2 ? 'background: tomato;' : ''">-2</div>
-                    <div :style="board.player2.length >= 1 ? 'background: tomato;' : ''">-5</div>
+                    <div :style="board.punishment1 ? 'background: tomato;' : ''">-5</div>
+                    <div :style="board.punishment2 ? 'background: tomato;' : ''">-2</div>
+                    <div :style="board.punishment3 ? 'background: tomato;' : ''">-2</div>
+                    <div :style="board.punishment4 ? 'background: tomato;' : ''">-5</div>
                 </div>
                 <div class="boardDuel">
                     <span class="boardBorder"></span><span class="boardBorder"></span
@@ -877,6 +871,15 @@ const coinSelected = async (coin: IGameDuelCoin['effect']) => {
                     ><span class="boardBorder"></span><span class="boardBorder"></span
                     ><span class="boardBorder"></span>
                     <div class="boardPawn" :style="`--position:${board.pawn}`"></div>
+                    <div class="boardDuelPoints">
+                        <div>10</div>
+                        <div>5</div>
+                        <div>2</div>
+                        <div>0</div>
+                        <div>2</div>
+                        <div>5</div>
+                        <div>10</div>
+                    </div>
                 </div>
                 <div :class="['boardCoins', isMyTurn && pickCoin !== '' && 'selectCoin']">
                     <span
@@ -1270,12 +1273,12 @@ section.wrapper {
     transform: rotate(90deg);
 }
 .boardPanishment > div:nth-child(2) {
-    margin-bottom: 95px;
+    margin-bottom: 115px;
 }
 .boardDuel {
     position: relative;
-    height: 300px;
-    width: 50px;
+    height: 330px;
+    width: 60px;
     border-radius: 15%;
     display: flex;
     justify-content: center;
@@ -1283,28 +1286,77 @@ section.wrapper {
     flex-direction: column;
     background-color: rgb(241, 118, 118);
 }
+.boardDuelPoints {
+    width: 20px;
+    height: 330px;
+    position: absolute;
+    left: 2px;
+    top: 0;
+    text-align: center;
+    display: flex;
+    justify-content: space-between;
+    flex-direction: column;
+}
+.boardDuelPoints > div:nth-child(1) {
+    margin-top: 33px;
+}
+.boardDuelPoints > div:nth-child(2) {
+    margin-top: 18px;
+}
+.boardDuelPoints > div:nth-child(6) {
+    margin-bottom: 18px;
+}
+.boardDuelPoints > div:nth-child(7) {
+    margin-bottom: 33px;
+}
 .boardBorder {
     height: 13px;
-    width: 30px;
-    margin: 1px auto;
+    width: 25px;
+    margin: 2px 11px 2px auto;
     border-radius: 50%;
     border: 1px solid brown;
     background-color: rgb(223, 83, 83);
     display: block;
+    position: relative;
 }
 .boardPawn {
     position: absolute;
-    height: 15px;
+    height: 17px;
     width: 30px;
     border-radius: 50%;
-    border: 3px solid rgb(180, 0, 0);
+    border: 2px solid rgb(180, 0, 0);
     background-color: rgb(245, 9, 9);
+    left: 22px;
     top: 50%;
     transform: translateY(calc(var(--position) * 100% - 50%));
     transition: 0.5s;
 }
 .boardBorder:nth-child(10) {
     background-color: gray;
+}
+.boardBorder:nth-child(10)::before,
+.boardBorder:nth-child(7)::before,
+.boardBorder:nth-child(4)::before,
+.boardBorder:nth-child(1)::before {
+    content: '';
+    position: absolute;
+    height: 1px;
+    width: 50px;
+    border-bottom: 2px dotted gray;
+    left: -20px;
+    bottom: -4px;
+}
+.boardBorder:nth-child(10)::after,
+.boardBorder:nth-child(13)::after,
+.boardBorder:nth-child(16)::after,
+.boardBorder:nth-child(19)::after {
+    content: '';
+    position: absolute;
+    height: 1px;
+    width: 50px;
+    border-top: 2px dotted gray;
+    left: -20px;
+    top: -4px;
 }
 .boardBorder:nth-child(7),
 .boardBorder:nth-child(13),

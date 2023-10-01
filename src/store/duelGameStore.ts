@@ -100,14 +100,53 @@ export const duelGameStore = defineStore('duelGameStore', {
         unselectCard() {
             this.selectedCard = {} as IGameDuelCard;
         },
-        async checkTurnAndConditions(id: string): Promise<void> {
+        async setPickCoin(id: string): Promise<void> {
             await updateDoc(tableGameDuelRef, {
                 pickCoin: id
+            });
+        },
+        async setMovePawn(pawnPosition: number): Promise<void> {
+            if (pawnPosition <= -6 && this.board.punishment1) {
+                await updateDoc(tableGameDuelRef, {
+                    'gameBoard.punishment1': false,
+                    'player2.resources.cash':
+                        this.player2.resources.cash <= 5 ? 0 : (this.player2.resources.cash -= 5)
+                });
+            } else if (pawnPosition <= -3 && this.board.punishment2) {
+                await updateDoc(tableGameDuelRef, {
+                    'gameBoard.punishment2': false,
+                    'player2.resources.cash':
+                        this.player2.resources.cash <= 2 ? 0 : (this.player2.resources.cash -= 2)
+                });
+            } else if (pawnPosition >= 3 && this.board.punishment3) {
+                await updateDoc(tableGameDuelRef, {
+                    'gameBoard.punishment3': false,
+                    'player1.resources.cash':
+                        this.player1.resources.cash <= 2 ? 0 : (this.player1.resources.cash -= 2)
+                });
+            } else if (pawnPosition >= 6 && this.board.punishment4) {
+                await updateDoc(tableGameDuelRef, {
+                    'gameBoard.punishment4': false,
+                    'player1.resources.cash':
+                        this.player1.resources.cash <= 5 ? 0 : (this.player1.resources.cash -= 5)
+                });
+            }
+
+            // TODO - check its over
+            await updateDoc(tableGameDuelRef, {
+                'gameBoard.pawn': pawnPosition,
+                turn:
+                    this.turn === this.player1.user.uid
+                        ? this.player2.user.uid
+                        : this.player1.user.uid,
+                move: increment(1)
             });
         },
         async setCardTaken(cash: number): Promise<void> {
             let cardToTake: IGameDuelCard = {} as IGameDuelCard;
             let takeCoin: boolean = false;
+            let movePawn: boolean = false;
+            let pawnPosition: number = 0;
 
             if (this.tier === 'I') {
                 this.tierOneCards = this.$state.tierOneCards.map((card) => {
@@ -169,37 +208,23 @@ export const duelGameStore = defineStore('duelGameStore', {
                     cardToTake.power.forEach((redPow, i) => {
                         if (redPow === 'attack') {
                             if (this.player1.resources.coins.find((eff) => eff === 'attack1')) {
-                                this.board.pawn -= ++cardToTake.valuePower[i];
-                            } else this.board.pawn -= cardToTake.valuePower[i];
-                            // TODO mistake
-                            if (
-                                this.board.player2.length === 2 &&
-                                this.board.pawn >= this.board.player2[1]
-                            ) {
-                                res.cash += -2;
-                                this.board.player2.pop();
-                            } else if (
-                                this.board.player2.length === 1 &&
-                                this.board.pawn >= this.board.player2[0]
-                            ) {
-                                res.cash += -5;
-                                this.board.player2.pop();
-                            }
+                                pawnPosition = this.board.pawn - ++cardToTake.valuePower[i];
+                            } else pawnPosition = this.board.pawn - cardToTake.valuePower[i];
+
+                            movePawn = true;
                         }
                     });
                 }
                 if (cardToTake.color === 'green') {
                     cardToTake.power.forEach((greenPow, i) => {
                         if (greenPow === 'artefact') {
-                            if (
-                                this.player1.resources.artefacts.length !== 0 &&
-                                this.player1.resources.artefacts.find(
-                                    (art) => art === cardToTake.valuePower[i]
-                                )
-                            ) {
-                                //TODO - take coin
-                                console.log('%c takee -> ', 'background: #222; color: #bada55');
-                                takeCoin = true;
+                            if (this.player1.resources.artefacts.length !== 0) {
+                                let pair = 0;
+                                this.player1.resources.artefacts.forEach((art) => {
+                                    art === cardToTake.valuePower[i] ? pair++ : null;
+                                });
+
+                                pair === 2 && (takeCoin = true);
                             }
                         }
                     });
@@ -247,21 +272,20 @@ export const duelGameStore = defineStore('duelGameStore', {
                             break;
                     }
                 }
+
+                //TODO - start it after 2 users online
+                await updateDoc(tableGameDuelRef, {
+                    'player1.points': this.player1.points,
+                    'player1.cards': this.player1.cards,
+                    'player1.resources': { ...res, cash: res.cash - cash }
+                });
+
                 if (takeCoin) {
-                    //TODO - start it after 2 users online
-                    await updateDoc(tableGameDuelRef, {
-                        'player1.points': this.player1.points,
-                        'player1.cards': this.player1.cards,
-                        'player1.resources': { ...res, cash: res.cash - cash }
-                    });
-                    this.checkTurnAndConditions(this.player1.user.uid);
+                    this.setPickCoin(`${this.player1.user.uid}`);
+                } else if (movePawn) {
+                    this.setMovePawn(pawnPosition);
                 } else {
-                    //TODO - start it after 2 users online
                     await updateDoc(tableGameDuelRef, {
-                        'player1.points': this.player1.points,
-                        'player1.cards': this.player1.cards,
-                        'player1.resources': { ...res, cash: res.cash - cash },
-                        gameBoard: this.board,
                         turn: this.player2.user?.uid || 0,
                         move: increment(1)
                     });
@@ -276,36 +300,23 @@ export const duelGameStore = defineStore('duelGameStore', {
                     cardToTake.power.forEach((redPow, i) => {
                         if (redPow === 'attack') {
                             if (this.player2.resources.coins.find((eff) => eff === 'attack1')) {
-                                this.board.pawn += cardToTake.valuePower[i] + 1;
-                            } else this.board.pawn += cardToTake.valuePower[i];
-                            // TODO mistake
+                                pawnPosition = this.board.pawn + cardToTake.valuePower[i] + 1;
+                            } else pawnPosition = this.board.pawn + cardToTake.valuePower[i];
 
-                            if (
-                                this.board.player1.length === 2 &&
-                                this.board.pawn >= this.board.player1[1]
-                            ) {
-                                res.cash += -2;
-                                this.board.player1.pop();
-                            } else if (
-                                this.board.player1.length === 1 &&
-                                this.board.pawn >= this.board.player1[0]
-                            ) {
-                                res.cash += -5;
-                                this.board.player1.pop();
-                            }
+                            movePawn = true;
                         }
                     });
                 }
                 if (cardToTake.color === 'green') {
                     cardToTake.power.forEach((greenPow, i) => {
                         if (greenPow === 'artefact') {
-                            if (
-                                this.player2.resources.artefacts.length !== 0 &&
-                                this.player2.resources.artefacts.find(
-                                    (art) => art === cardToTake.valuePower[i]
-                                )
-                            ) {
-                                //TODO - take coin
+                            if (this.player2.resources.artefacts.length !== 0) {
+                                let pair = 0;
+                                this.player2.resources.artefacts.forEach((art) => {
+                                    art === cardToTake.valuePower[i] ? pair++ : null;
+                                });
+
+                                pair === 2 && (takeCoin = true);
                             }
                         }
                     });
@@ -353,21 +364,20 @@ export const duelGameStore = defineStore('duelGameStore', {
                             break;
                     }
                 }
+
+                //TODO - start it after 2 users online
+                await updateDoc(tableGameDuelRef, {
+                    'player2.points': this.player2.points,
+                    'player2.cards': this.player2.cards,
+                    'player2.resources': { ...res, cash: res.cash - cash }
+                });
+
                 if (takeCoin) {
-                    //TODO - start it after 2 users online
-                    await updateDoc(tableGameDuelRef, {
-                        'player2.points': this.player2.points,
-                        'player2.cards': this.player2.cards,
-                        'player2.resources': { ...res, cash: res.cash - cash }
-                    });
-                    this.checkTurnAndConditions(this.player2.user.uid);
+                    this.setPickCoin(`${this.player2.user.uid}`);
+                } else if (movePawn) {
+                    this.setMovePawn(pawnPosition);
                 } else {
-                    //TODO - start it after 2 users online
                     await updateDoc(tableGameDuelRef, {
-                        'player2.points': this.player2.points,
-                        'player2.cards': this.player2.cards,
-                        'player2.resources': { ...res, cash: res.cash - cash },
-                        gameBoard: this.board,
                         turn: this.player1.user?.uid || 0,
                         move: increment(1)
                     });

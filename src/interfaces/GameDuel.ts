@@ -65,15 +65,19 @@ export type Materials = 'clay' | 'brick' | 'wood' | 'paper' | 'glass';
 export interface IGameDuelBoard {
     pawn: number; // from -9 to 9
     coins: IGameDuelCoin['effect'][];
-    player1: number[];
-    player2: number[];
+    punishment1: boolean;
+    punishment2: boolean;
+    punishment3: boolean;
+    punishment4: boolean;
 }
 
 export class BoardDuel implements IGameDuelBoard {
     public pawn: number = 0;
     public coins: IGameDuelCoin['effect'][] = [];
-    public player1: number[] = [-6, -3];
-    public player2: number[] = [6, 3];
+    public punishment1: boolean = true;
+    public punishment2: boolean = true;
+    public punishment3: boolean = true;
+    public punishment4: boolean = true;
 
     constructor(params?: IGameDuelBoard) {
         Object.assign(this, params);
