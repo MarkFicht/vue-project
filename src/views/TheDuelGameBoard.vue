@@ -1,7 +1,16 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
-import { collection, doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
+import {
+    collection,
+    doc,
+    setDoc,
+    getDoc,
+    updateDoc,
+    arrayRemove,
+    arrayUnion,
+    increment
+} from 'firebase/firestore';
 import db from '@/firebase/index';
 import {
     cardsTierOne,
@@ -22,7 +31,13 @@ import { getCountRandomObjFromArr } from '@/helpers/HelpersFoo';
 import DuelGameCardComponent from '@/components/DuelGameCardComponent.vue';
 import DuelGameLayOutCardsComponent from '@/components/DuelGameLayOutCardsComponent.vue';
 import DuelGameWonderComponent from '@/components/DuelGameWonderComponent.vue';
-import { PlayerDuel, type IGameDuelCard, BoardDuel, type Materials } from '@/interfaces/GameDuel';
+import {
+    PlayerDuel,
+    type IGameDuelCard,
+    BoardDuel,
+    type Materials,
+    type IGameDuelCoin
+} from '@/interfaces/GameDuel';
 import { duelGameStore } from '@/store/duelGameStore';
 import { storeToRefs } from 'pinia';
 import type IUser from '@/interfaces/User';
@@ -40,7 +55,8 @@ const {
     board,
     turn,
     tier,
-    move
+    move,
+    pickCoin
 } = storeToRefs(storeDuelGame);
 const gameDuelRef = collection(db, 'gameDuel');
 const tableGameDuelRef = doc(gameDuelRef, 'table1');
@@ -51,7 +67,6 @@ const headerGameDuel = ref<string>('Duel Game');
 const isLoggedIn = ref<boolean>(false);
 const actionForCards = ref<boolean>(false);
 const whoWillStart = ref<boolean>(false);
-const pickCoin = ref<boolean>(false);
 
 const isSecondPick = computed(() => {
     return (
@@ -131,6 +146,23 @@ watch(
             }
         }
         // TODO - add end game
+    }
+);
+
+watch(
+    () => pickCoin.value,
+    () => {
+        console.log(
+            '%c pickCoin.value -> ',
+            'background: #222; color: #bada55',
+            pickCoin.value,
+            isMyTurn.value
+        );
+        if (pickCoin.value !== '' && isMyTurn.value) {
+            actionForCards.value = false;
+        } else {
+            actionForCards.value = true;
+        }
     }
 );
 
@@ -562,7 +594,8 @@ onMounted(async () => {
                 prepareRandomCoins[9]
             ],
             tier: 'prepare',
-            move: 0
+            move: 0,
+            pickCoin: ''
         });
 
         const docSnap2 = await getDoc(tableGameDuelRef);
@@ -573,9 +606,15 @@ onMounted(async () => {
         }
     }
 
-    tier.value !== 'prepare' && (actionForCards.value = true);
-    console.log('%c actionForCards -> ', 'background: #222; color: #bada55', actionForCards.value);
     await storeDuelGame.subFirebaseConnect(`${user.value.uid}`);
+
+    // Check state after refresh or leave
+    tier.value !== 'prepare' && (actionForCards.value = true);
+    if (pickCoin.value !== '' && isMyTurn.value) {
+        actionForCards.value = false;
+    } else {
+        actionForCards.value = true;
+    }
 });
 
 // ---
@@ -623,6 +662,25 @@ const pickWonder = async (id: number) => {
             },
             turn: player1.value.user.uid,
             wonderCards: newArrWonders
+        });
+    }
+};
+const coinSelected = async (coin: IGameDuelCoin['effect']) => {
+    if (turn.value === player1.value.user.uid) {
+        await updateDoc(tableGameDuelRef, {
+            'gameBoard.coins': arrayRemove(coin),
+            'player1.resources.coins': arrayUnion(coin),
+            pickCoin: '',
+            turn: player2.value.user?.uid || 0,
+            move: increment(1)
+        });
+    } else {
+        await updateDoc(tableGameDuelRef, {
+            'gameBoard.coins': arrayRemove(coin),
+            'player2.resources.coins': arrayUnion(coin),
+            pickCoin: '',
+            turn: player1.value.user?.uid || 0,
+            move: increment(1)
         });
     }
 };
@@ -703,7 +761,14 @@ const pickWonder = async (id: number) => {
                             {{ `Cash: ${player2.resources.cash} | Points: ${player2.points}` }}
                         </p>
                     </div>
-                    <div class="playerCoins"></div>
+                    <div class="playerCoins">
+                        <span
+                            v-for="coin in player2.resources.coins"
+                            :key="coin"
+                            class="boardSingleCoin"
+                            >{{ coin }}</span
+                        >
+                    </div>
                 </div>
             </section>
             <section class="wonders wonders2 customInput">
@@ -813,10 +878,14 @@ const pickWonder = async (id: number) => {
                     ><span class="boardBorder"></span>
                     <div class="boardPawn" :style="`--position:${board.pawn}`"></div>
                 </div>
-                <div class="boardCoins">
-                    <span v-for="coin in board.coins" :key="coin" class="boardSingleCoin">{{
-                        coin
-                    }}</span>
+                <div :class="['boardCoins', isMyTurn && pickCoin !== '' && 'selectCoin']">
+                    <span
+                        v-for="coin in board.coins"
+                        :key="coin"
+                        class="boardSingleCoin"
+                        @click="isMyTurn && pickCoin !== '' ? coinSelected(coin) : null"
+                        >{{ coin }}</span
+                    >
                 </div>
             </section>
             <section class="graveyard customInput">
@@ -890,6 +959,9 @@ const pickWonder = async (id: number) => {
                     {{ player2.user.displayName }}
                 </button>
             </section>
+            <section v-else-if="isMyTurn && pickCoin !== ''" class="playerAction">
+                <p>{{ 'Pick coin!' }}</p>
+            </section>
             <section v-else class="playerAction"></section>
             <section class="playerSection player1">
                 <div class="playerCardContainer">
@@ -959,7 +1031,14 @@ const pickWonder = async (id: number) => {
                             {{ `Cash: ${player1.resources.cash} | Points: ${player1.points}` }}
                         </p>
                     </div>
-                    <div class="playerCoins"></div>
+                    <div class="playerCoins">
+                        <span
+                            v-for="coin in player1.resources.coins"
+                            :key="coin"
+                            class="boardSingleCoin"
+                            >{{ coin }}</span
+                        >
+                    </div>
                 </div>
             </section>
         </section>
@@ -1050,8 +1129,21 @@ section.wrapper {
     height: 100%;
     width: 200px;
     display: flex;
+    justify-content: center;
+    align-items: start;
+    flex-direction: column;
+}
+.playerCash {
+    /*  */
+}
+.playerCoins {
+    height: 50px;
+    display: flex;
     justify-content: left;
     align-items: center;
+}
+.playerCoins > span {
+    margin: 0 5px;
 }
 .player1 {
     grid-area: p1;
@@ -1143,13 +1235,19 @@ section.wrapper {
     border-bottom-right-radius: 15px;
     background-color: rgb(76, 160, 50);
 }
+.selectCoin {
+    border: 3px dotted tomato;
+}
 .boardSingleCoin {
     height: 36px;
     width: 36px;
     margin: 1px auto;
     border-radius: 50%;
     border: 1px solid;
-    display: block;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
     background-color: rgb(27, 207, 27);
 }
 .boardPanishment {
@@ -1224,7 +1322,7 @@ section.wrapper {
     height: 100%;
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 3px 10px;
     /* display: inline-flex;
     justify-content: space-between;
     align-items: center;
