@@ -36,11 +36,18 @@ import {
     type IGameDuelCard,
     BoardDuel,
     type Materials,
-    type IGameDuelCoin
+    type IGameDuelCoin,
+    type IGameDuelWonderCard
 } from '@/interfaces/GameDuel';
 import { duelGameStore } from '@/store/duelGameStore';
 import { storeToRefs } from 'pinia';
 import type IUser from '@/interfaces/User';
+
+const headerGameDuel = ref<string>('Duel Game');
+const buttonBuyCard = ref<string>('Buy');
+const buttonSell = ref<string>('Sell');
+const buttonBuildWonder = ref<string>('Build Wonder');
+const labelWhoStarts = ref<string>('Who Starts?');
 
 const storeDuelGame = duelGameStore();
 const {
@@ -49,6 +56,7 @@ const {
     tierThreeCards,
     wonderCards,
     selectedCard,
+    selectedWonder,
     graveyard,
     player1,
     player2,
@@ -62,13 +70,17 @@ const gameDuelRef = collection(db, 'gameDuel');
 const tableGameDuelRef = doc(gameDuelRef, 'table1');
 
 const user = ref<IUser>({} as IUser);
-
-const headerGameDuel = ref<string>('Duel Game');
 const isLoggedIn = ref<boolean>(false);
+
 const actionForCards = ref<boolean>(false);
 const whoWillStart = ref<boolean>(false);
+const selectWonderCard = ref<boolean>(false);
 
-const isSecondPick = computed(() => {
+const isMyTurn = computed((): boolean => {
+    return turn.value === user.value.uid;
+});
+
+const isSecondPick = computed((): boolean => {
     return (
         wonderCards.value[0]?.taken &&
         wonderCards.value[1]?.taken &&
@@ -77,8 +89,40 @@ const isSecondPick = computed(() => {
     );
 });
 
-const isMyTurn = computed(() => {
-    return turn.value === user.value.uid;
+const canBuyTierCard = computed((): number => {
+    if (!selectedCard.value?.id) return -1;
+    return showPrice(selectedCard.value, `${user.value.uid}`);
+});
+
+const canBuyWonderCard = computed((): boolean => {
+    if (!isMyTurn.value) return false;
+    if (!selectedCard.value.id) return false;
+
+    if (user.value.uid === player1.value.user.uid) {
+        if (!player1.value.wonderCards.find((wc) => wc.activated === 'none')) return false;
+        else {
+            let canBuy = false;
+            player1.value.wonderCards.forEach((wc) => {
+                let fullPrice = showPrice(wc, `${user.value.uid}`);
+                wc.activated === 'none' && fullPrice <= player1.value.resources.cash
+                    ? (canBuy = true)
+                    : null;
+            });
+            return canBuy;
+        }
+    } else {
+        if (!player2.value.wonderCards.find((wc) => wc.activated === 'none')) return false;
+        else {
+            let canBuy = false;
+            player2.value.wonderCards.forEach((wc) => {
+                let fullPrice = showPrice(wc, `${user.value.uid}`);
+                wc.activated === 'none' && fullPrice <= player2.value.resources.cash
+                    ? (canBuy = true)
+                    : null;
+            });
+            return canBuy;
+        }
+    }
 });
 
 watch(
@@ -114,7 +158,7 @@ watch(
                     turn: checkTurn
                 });
 
-                if (turn.value === user.value.uid && board.value.pawn === 0) {
+                if (turn.value === user.value.uid) {
                     actionForCards.value = false;
                     whoWillStart.value = true;
                 }
@@ -139,7 +183,7 @@ watch(
                     turn: checkTurn
                 });
 
-                if (turn.value === user.value.uid && board.value.pawn === 0) {
+                if (turn.value === user.value.uid) {
                     actionForCards.value = false;
                     whoWillStart.value = true;
                 }
@@ -160,360 +204,6 @@ watch(
     }
 );
 
-const canBuy = computed((): number => {
-    if (!selectedCard.value?.id) return -1;
-    let buyForCash = 0;
-    let arrCBW: { type: Materials; val: number }[] = [];
-    let arrPG: { type: Materials; val: number }[] = [];
-    let missingMaterials: string[] = [];
-    let buyForFree = false;
-
-    if (turn.value === player1.value.user.uid) {
-        arrCBW = [
-            {
-                type: 'clay',
-                val: player1.value.resources.clayOne ? 1 : 2 + player2.value.resources.clayValue
-            },
-            {
-                type: 'brick',
-                val: player1.value.resources.brickOne ? 1 : 2 + player2.value.resources.brickValue
-            },
-            {
-                type: 'wood',
-                val: player1.value.resources.woodOne ? 1 : 2 + player2.value.resources.woodValue
-            }
-        ];
-        arrCBW = arrCBW.sort((a, b) => b.val - a.val);
-        arrPG = [
-            {
-                type: 'paper',
-                val: player1.value.resources.paperGlassOne
-                    ? 1
-                    : 2 + player2.value.resources.paperValue
-            },
-            {
-                type: 'glass',
-                val: player1.value.resources.paperGlassOne
-                    ? 1
-                    : 2 + player2.value.resources.glassValue
-            }
-        ];
-        arrPG = arrPG.sort((a, b) => b.val - a.val);
-
-        selectedCard.value.cost.forEach((cost, i) => {
-            if (cost === 'specialChar') {
-                player1.value.resources.specialChars.find((sc) => {
-                    if (sc === selectedCard.value.valueCost[i]) {
-                        buyForFree = true;
-                        return true;
-                    }
-                });
-            } else if (cost === 'cash') {
-                buyForCash += selectedCard.value.valueCost[i];
-            } else if (cost === 'clay') {
-                let numberOfClay =
-                    selectedCard.value.valueCost[i] - player1.value.resources.clayValue;
-                if (numberOfClay <= 0) {
-                    return null;
-                } else {
-                    for (let index = 0; index < numberOfClay; index++) {
-                        missingMaterials.push('clay');
-                    }
-                }
-            } else if (cost === 'brick') {
-                let numberOfBrick =
-                    selectedCard.value.valueCost[i] - player1.value.resources.brickValue;
-                if (numberOfBrick <= 0) {
-                    return null;
-                } else {
-                    for (let index = 0; index < numberOfBrick; index++) {
-                        missingMaterials.push('brick');
-                    }
-                }
-            } else if (cost === 'wood') {
-                let numberOfWood =
-                    selectedCard.value.valueCost[i] - player1.value.resources.woodValue;
-                if (numberOfWood <= 0) {
-                    return null;
-                } else {
-                    for (let index = 0; index < numberOfWood; index++) {
-                        missingMaterials.push('wood');
-                    }
-                }
-            } else if (cost === 'paper') {
-                let numberOfPaper =
-                    selectedCard.value.valueCost[i] - player1.value.resources.paperValue;
-                if (numberOfPaper <= 0) {
-                    return null;
-                } else {
-                    for (let index = 0; index < numberOfPaper; index++) {
-                        missingMaterials.push('paper');
-                    }
-                }
-            } else if (cost === 'glass') {
-                let numberOfGlass =
-                    selectedCard.value.valueCost[i] - player1.value.resources.glassValue;
-                if (numberOfGlass <= 0) {
-                    return null;
-                } else {
-                    for (let index = 0; index < numberOfGlass; index++) {
-                        missingMaterials.push('glass');
-                    }
-                }
-            }
-        });
-    } else {
-        arrCBW = [
-            {
-                type: 'clay',
-                val: player2.value.resources.clayOne ? 1 : 2 + player1.value.resources.clayValue
-            },
-            {
-                type: 'brick',
-                val: player2.value.resources.brickOne ? 1 : 2 + player1.value.resources.brickValue
-            },
-            {
-                type: 'wood',
-                val: player2.value.resources.woodOne ? 1 : 2 + player1.value.resources.woodValue
-            }
-        ];
-        arrCBW = arrCBW.sort((a, b) => b.val - a.val);
-        arrPG = [
-            {
-                type: 'paper',
-                val: player2.value.resources.paperGlassOne
-                    ? 1
-                    : 2 + player1.value.resources.paperValue
-            },
-            {
-                type: 'glass',
-                val: player2.value.resources.paperGlassOne
-                    ? 1
-                    : 2 + player1.value.resources.glassValue
-            }
-        ];
-        arrPG = arrPG.sort((a, b) => b.val - a.val);
-
-        selectedCard.value.cost.forEach((cost, i) => {
-            if (cost === 'specialChar') {
-                player2.value.resources.specialChars.find((sc) => {
-                    if (sc === selectedCard.value.valueCost[i]) {
-                        buyForFree = true;
-                        return true;
-                    }
-                });
-            } else if (cost === 'cash') {
-                buyForCash += selectedCard.value.valueCost[i];
-            } else if (cost === 'clay') {
-                let numberOfClay =
-                    selectedCard.value.valueCost[i] - player2.value.resources.clayValue;
-                if (numberOfClay <= 0) {
-                    return null;
-                } else {
-                    for (let index = 0; index < numberOfClay; index++) {
-                        missingMaterials.push('clay');
-                    }
-                }
-            } else if (cost === 'brick') {
-                let numberOfBrick =
-                    selectedCard.value.valueCost[i] - player2.value.resources.brickValue;
-                if (numberOfBrick <= 0) {
-                    return null;
-                } else {
-                    for (let index = 0; index < numberOfBrick; index++) {
-                        missingMaterials.push('brick');
-                    }
-                }
-            } else if (cost === 'wood') {
-                let numberOfWood =
-                    selectedCard.value.valueCost[i] - player2.value.resources.woodValue;
-                if (numberOfWood <= 0) {
-                    return null;
-                } else {
-                    for (let index = 0; index < numberOfWood; index++) {
-                        missingMaterials.push('wood');
-                    }
-                }
-            } else if (cost === 'paper') {
-                let numberOfPaper =
-                    selectedCard.value.valueCost[i] - player2.value.resources.paperValue;
-                if (numberOfPaper <= 0) {
-                    return null;
-                } else {
-                    for (let index = 0; index < numberOfPaper; index++) {
-                        missingMaterials.push('paper');
-                    }
-                }
-            } else if (cost === 'glass') {
-                let numberOfGlass =
-                    selectedCard.value.valueCost[i] - player2.value.resources.glassValue;
-                if (numberOfGlass <= 0) {
-                    return null;
-                } else {
-                    for (let index = 0; index < numberOfGlass; index++) {
-                        missingMaterials.push('glass');
-                    }
-                }
-            }
-        });
-    }
-
-    missingMaterials = removeOptionalMaterials(missingMaterials, arrCBW, arrPG);
-    missingMaterials.forEach((mat) => {
-        buyForCash +=
-            arrCBW.find(({ type }) => type === mat)?.val ||
-            arrPG.find(({ type }) => type === mat)?.val ||
-            0;
-    });
-
-    if (buyForFree) return 0;
-    else return buyForCash;
-});
-
-function removeOptionalMaterials(
-    missingMaterials: string[],
-    arrCBW: { type: Materials; val: number }[],
-    arrPG: { type: Materials; val: number }[]
-): string[] {
-    let arr = missingMaterials;
-    if (turn.value === player1.value.user.uid) {
-        for (let index = 0; index < player1.value.resources.materialsCBW; index++) {
-            let found = false;
-            let j: number = 0;
-            arr.find((str, i) => {
-                if (str === arrCBW[0].type) {
-                    found = true;
-                    j = i;
-                    return true;
-                } else return false;
-            });
-            if (found) {
-                arr.splice(j, 1);
-            } else {
-                arr.find((str, i) => {
-                    if (str === arrCBW[1].type) {
-                        found = true;
-                        j = i;
-                        return true;
-                    } else return false;
-                });
-                if (found) {
-                    arr.splice(j, 1);
-                } else {
-                    arr.find((str, i) => {
-                        if (str === arrCBW[2].type) {
-                            found = true;
-                            j = i;
-                            return true;
-                        } else return false;
-                    });
-                    if (found) {
-                        arr.splice(j, 1);
-                    } else null;
-                }
-            }
-        }
-        for (let index = 0; index < player1.value.resources.materialsPG; index++) {
-            let found = false;
-            let j: number = 0;
-            arr.find((str, i) => {
-                if (str === arrPG[0].type) {
-                    found = true;
-                    j = i;
-                    return true;
-                } else return false;
-            });
-            if (found) {
-                arr.splice(j, 1);
-            } else {
-                arr.find((str, i) => {
-                    if (str === arrPG[1].type) {
-                        found = true;
-                        j = i;
-                        return true;
-                    } else return false;
-                });
-                if (found) {
-                    arr.splice(j, 1);
-                } else null;
-            }
-        }
-    } else {
-        for (let index = 0; index < player2.value.resources.materialsCBW; index++) {
-            let found = false;
-            let j: number = 0;
-            arr.find((str, i) => {
-                if (str === arrCBW[0].type) {
-                    found = true;
-                    j = i;
-                    return true;
-                } else return false;
-            });
-            if (found) {
-                arr.splice(j, 1);
-            } else {
-                arr.find((str, i) => {
-                    if (str === arrCBW[1].type) {
-                        found = true;
-                        j = i;
-                        return true;
-                    } else return false;
-                });
-                if (found) {
-                    arr.splice(j, 1);
-                } else {
-                    arr.find((str, i) => {
-                        if (str === arrCBW[2].type) {
-                            found = true;
-                            j = i;
-                            return true;
-                        } else return false;
-                    });
-                    if (found) {
-                        arr.splice(j, 1);
-                    } else null;
-                }
-            }
-        }
-        for (let index = 0; index < player2.value.resources.materialsPG; index++) {
-            let found = false;
-            let j: number = 0;
-            arr.find((str, i) => {
-                if (str === arrPG[0].type) {
-                    found = true;
-                    j = i;
-                    return true;
-                } else return false;
-            });
-            if (found) {
-                arr.splice(j, 1);
-            } else {
-                arr.find((str, i) => {
-                    if (str === arrPG[1].type) {
-                        found = true;
-                        j = i;
-                        return true;
-                    } else return false;
-                });
-                if (found) {
-                    arr.splice(j, 1);
-                } else null;
-            }
-        }
-    }
-
-    return arr;
-}
-
-async function chooseWhoStarts(id: string): Promise<void> {
-    await updateDoc(tableGameDuelRef, {
-        turn: id
-    });
-
-    actionForCards.value = true;
-    whoWillStart.value = false;
-}
-
 // ---
 onMounted(async () => {
     let auth: any;
@@ -521,7 +211,6 @@ onMounted(async () => {
     onAuthStateChanged(auth, (data) => {
         if (data) {
             isLoggedIn.value = true;
-            // user.value = Object.assign(user.value, data);
             user.value = {
                 uid: data.uid,
                 email: data.email || '',
@@ -533,9 +222,6 @@ onMounted(async () => {
     // firebase - set and check game cards
     const prepareRandomCoins = getCountRandomObjFromArr(coins, 10);
     let prepareWonderCards = getCountRandomObjFromArr(cardsWonder, 8);
-    prepareWonderCards = prepareWonderCards.map((data, i) => {
-        return { ...data, id: i };
-    });
 
     const docSnap = await getDoc(tableGameDuelRef);
 
@@ -612,10 +298,383 @@ onMounted(async () => {
 });
 
 // ---
-const cardClick = (gameCard: IGameDuelCard) => {
+async function chooseWhoStarts(id: string): Promise<void> {
+    await updateDoc(tableGameDuelRef, {
+        turn: id
+    });
+
+    actionForCards.value = true;
+    whoWillStart.value = false;
+}
+
+function showPrice(selectedCard: IGameDuelWonderCard | IGameDuelCard, uid: string): number {
+    if (!selectedCard?.id) return -1;
+    let buyForCash = 0;
+    let arrCBW: { type: Materials; val: number }[] = [];
+    let arrPG: { type: Materials; val: number }[] = [];
+    let missingMaterials: string[] = [];
+    let buyForFree = false;
+    const p1Res = player1.value.resources;
+    const p2Res = player2.value.resources;
+
+    if (player1.value.user.uid === uid) {
+        arrCBW = [
+            {
+                type: 'clay',
+                val: p1Res.clayOne ? 1 : 2 + p2Res.clayValue
+            },
+            {
+                type: 'brick',
+                val: p1Res.brickOne ? 1 : 2 + p2Res.brickValue
+            },
+            {
+                type: 'wood',
+                val: p1Res.woodOne ? 1 : 2 + p2Res.woodValue
+            }
+        ];
+        arrCBW = arrCBW.sort((a, b) => b.val - a.val);
+        arrPG = [
+            {
+                type: 'paper',
+                val: p1Res.paperGlassOne ? 1 : 2 + p2Res.paperValue
+            },
+            {
+                type: 'glass',
+                val: p1Res.paperGlassOne ? 1 : 2 + p2Res.glassValue
+            }
+        ];
+        arrPG = arrPG.sort((a, b) => b.val - a.val);
+
+        selectedCard.cost.forEach((cost, i) => {
+            if (cost === 'specialChar') {
+                p1Res.specialChars.find((sc) => {
+                    if (sc === selectedCard.valueCost[i]) {
+                        buyForFree = true;
+                        return true;
+                    }
+                });
+            } else if (cost === 'cash') {
+                buyForCash += selectedCard.valueCost[i];
+            } else if (cost === 'clay') {
+                let numberOfClay = selectedCard.valueCost[i] - p1Res.clayValue;
+                if (numberOfClay <= 0) {
+                    return null;
+                } else {
+                    for (let index = 0; index < numberOfClay; index++) {
+                        missingMaterials.push('clay');
+                    }
+                }
+            } else if (cost === 'brick') {
+                let numberOfBrick = selectedCard.valueCost[i] - p1Res.brickValue;
+                if (numberOfBrick <= 0) {
+                    return null;
+                } else {
+                    for (let index = 0; index < numberOfBrick; index++) {
+                        missingMaterials.push('brick');
+                    }
+                }
+            } else if (cost === 'wood') {
+                let numberOfWood = selectedCard.valueCost[i] - p1Res.woodValue;
+                if (numberOfWood <= 0) {
+                    return null;
+                } else {
+                    for (let index = 0; index < numberOfWood; index++) {
+                        missingMaterials.push('wood');
+                    }
+                }
+            } else if (cost === 'paper') {
+                let numberOfPaper = selectedCard.valueCost[i] - p1Res.paperValue;
+                if (numberOfPaper <= 0) {
+                    return null;
+                } else {
+                    for (let index = 0; index < numberOfPaper; index++) {
+                        missingMaterials.push('paper');
+                    }
+                }
+            } else if (cost === 'glass') {
+                let numberOfGlass = selectedCard.valueCost[i] - p1Res.glassValue;
+                if (numberOfGlass <= 0) {
+                    return null;
+                } else {
+                    for (let index = 0; index < numberOfGlass; index++) {
+                        missingMaterials.push('glass');
+                    }
+                }
+            }
+        });
+    } else {
+        arrCBW = [
+            {
+                type: 'clay',
+                val: p2Res.clayOne ? 1 : 2 + p1Res.clayValue
+            },
+            {
+                type: 'brick',
+                val: p2Res.brickOne ? 1 : 2 + p1Res.brickValue
+            },
+            {
+                type: 'wood',
+                val: p2Res.woodOne ? 1 : 2 + p1Res.woodValue
+            }
+        ];
+        arrCBW = arrCBW.sort((a, b) => b.val - a.val);
+        arrPG = [
+            {
+                type: 'paper',
+                val: p2Res.paperGlassOne ? 1 : 2 + p1Res.paperValue
+            },
+            {
+                type: 'glass',
+                val: p2Res.paperGlassOne ? 1 : 2 + p1Res.glassValue
+            }
+        ];
+        arrPG = arrPG.sort((a, b) => b.val - a.val);
+
+        selectedCard.cost.forEach((cost, i) => {
+            if (cost === 'specialChar') {
+                p2Res.specialChars.find((sc) => {
+                    if (sc === selectedCard.valueCost[i]) {
+                        buyForFree = true;
+                        return true;
+                    }
+                });
+            } else if (cost === 'cash') {
+                buyForCash += selectedCard.valueCost[i];
+            } else if (cost === 'clay') {
+                let numberOfClay = selectedCard.valueCost[i] - p2Res.clayValue;
+                if (numberOfClay <= 0) {
+                    return null;
+                } else {
+                    for (let index = 0; index < numberOfClay; index++) {
+                        missingMaterials.push('clay');
+                    }
+                }
+            } else if (cost === 'brick') {
+                let numberOfBrick = selectedCard.valueCost[i] - p2Res.brickValue;
+                if (numberOfBrick <= 0) {
+                    return null;
+                } else {
+                    for (let index = 0; index < numberOfBrick; index++) {
+                        missingMaterials.push('brick');
+                    }
+                }
+            } else if (cost === 'wood') {
+                let numberOfWood = selectedCard.valueCost[i] - p2Res.woodValue;
+                if (numberOfWood <= 0) {
+                    return null;
+                } else {
+                    for (let index = 0; index < numberOfWood; index++) {
+                        missingMaterials.push('wood');
+                    }
+                }
+            } else if (cost === 'paper') {
+                let numberOfPaper = selectedCard.valueCost[i] - p2Res.paperValue;
+                if (numberOfPaper <= 0) {
+                    return null;
+                } else {
+                    for (let index = 0; index < numberOfPaper; index++) {
+                        missingMaterials.push('paper');
+                    }
+                }
+            } else if (cost === 'glass') {
+                let numberOfGlass = selectedCard.valueCost[i] - p2Res.glassValue;
+                if (numberOfGlass <= 0) {
+                    return null;
+                } else {
+                    for (let index = 0; index < numberOfGlass; index++) {
+                        missingMaterials.push('glass');
+                    }
+                }
+            }
+        });
+    }
+
+    missingMaterials = removeOptionalMaterials(missingMaterials, arrCBW, arrPG, uid);
+    missingMaterials.forEach((mat) => {
+        buyForCash +=
+            arrCBW.find(({ type }) => type === mat)?.val ||
+            arrPG.find(({ type }) => type === mat)?.val ||
+            0;
+    });
+
+    if (buyForFree) return 0;
+    else return buyForCash;
+}
+
+function removeOptionalMaterials(
+    missingMaterials: string[],
+    arrCBW: { type: Materials; val: number }[],
+    arrPG: { type: Materials; val: number }[],
+    uid: string
+): string[] {
+    let arr = missingMaterials;
+    const p1Res = player1.value.resources;
+    const p2Res = player2.value.resources;
+
+    if (player1.value.user.uid === uid) {
+        for (let index = 0; index < p1Res.materialsCBW; index++) {
+            let found = false;
+            let j: number = 0;
+            arr.find((str, i) => {
+                if (str === arrCBW[0].type) {
+                    found = true;
+                    j = i;
+                    return true;
+                } else return false;
+            });
+            if (found) {
+                arr.splice(j, 1);
+            } else {
+                arr.find((str, i) => {
+                    if (str === arrCBW[1].type) {
+                        found = true;
+                        j = i;
+                        return true;
+                    } else return false;
+                });
+                if (found) {
+                    arr.splice(j, 1);
+                } else {
+                    arr.find((str, i) => {
+                        if (str === arrCBW[2].type) {
+                            found = true;
+                            j = i;
+                            return true;
+                        } else return false;
+                    });
+                    if (found) {
+                        arr.splice(j, 1);
+                    } else null;
+                }
+            }
+        }
+        for (let index = 0; index < p1Res.materialsPG; index++) {
+            let found = false;
+            let j: number = 0;
+            arr.find((str, i) => {
+                if (str === arrPG[0].type) {
+                    found = true;
+                    j = i;
+                    return true;
+                } else return false;
+            });
+            if (found) {
+                arr.splice(j, 1);
+            } else {
+                arr.find((str, i) => {
+                    if (str === arrPG[1].type) {
+                        found = true;
+                        j = i;
+                        return true;
+                    } else return false;
+                });
+                if (found) {
+                    arr.splice(j, 1);
+                } else null;
+            }
+        }
+    } else {
+        for (let index = 0; index < p2Res.materialsCBW; index++) {
+            let found = false;
+            let j: number = 0;
+            arr.find((str, i) => {
+                if (str === arrCBW[0].type) {
+                    found = true;
+                    j = i;
+                    return true;
+                } else return false;
+            });
+            if (found) {
+                arr.splice(j, 1);
+            } else {
+                arr.find((str, i) => {
+                    if (str === arrCBW[1].type) {
+                        found = true;
+                        j = i;
+                        return true;
+                    } else return false;
+                });
+                if (found) {
+                    arr.splice(j, 1);
+                } else {
+                    arr.find((str, i) => {
+                        if (str === arrCBW[2].type) {
+                            found = true;
+                            j = i;
+                            return true;
+                        } else return false;
+                    });
+                    if (found) {
+                        arr.splice(j, 1);
+                    } else null;
+                }
+            }
+        }
+        for (let index = 0; index < p2Res.materialsPG; index++) {
+            let found = false;
+            let j: number = 0;
+            arr.find((str, i) => {
+                if (str === arrPG[0].type) {
+                    found = true;
+                    j = i;
+                    return true;
+                } else return false;
+            });
+            if (found) {
+                arr.splice(j, 1);
+            } else {
+                arr.find((str, i) => {
+                    if (str === arrPG[1].type) {
+                        found = true;
+                        j = i;
+                        return true;
+                    } else return false;
+                });
+                if (found) {
+                    arr.splice(j, 1);
+                } else null;
+            }
+        }
+    }
+
+    return arr;
+}
+
+const wonderSelectedForPlayer = async (id: number) => {
+    if (!isMyTurn.value) return null;
+
+    let newCard = {} as IGameDuelWonderCard;
+    const newArrWonders = wonderCards.value.map((data) => {
+        return data.id === id ? ((newCard = { ...data, taken: true }), newCard) : data;
+    });
+
+    if (turn.value === player1.value.user.uid) {
+        await updateDoc(tableGameDuelRef, {
+            player1: {
+                ...player1.value,
+                wonderCards: [...player1.value.wonderCards, { ...newCard }]
+            },
+            turn: player2.value.user?.uid || 0,
+            wonderCards: newArrWonders
+        });
+    } else {
+        await updateDoc(tableGameDuelRef, {
+            player2: {
+                ...player2.value,
+                wonderCards: [...player2.value.wonderCards, { ...newCard }]
+            },
+            turn: player1.value.user.uid,
+            wonderCards: newArrWonders
+        });
+    }
+};
+
+const tierCardClick = (gameCard: IGameDuelCard) => {
     if (!isMyTurn.value) return null;
 
     selectedCard.value = {} as IGameDuelCard;
+    selectedWonder.value = {} as IGameDuelWonderCard;
+    selectWonderCard.value = false;
 
     if (!!gameCard.coversBy && gameCard.coversBy.length > 0) {
         return;
@@ -626,39 +685,6 @@ const cardClick = (gameCard: IGameDuelCard) => {
     }
 };
 
-const pickWonder = async (id: number) => {
-    if (!isMyTurn.value) return null;
-
-    const newArrWonders = wonderCards.value.map((data) => {
-        return data.id === id ? { ...wonderCards.value[id], taken: true } : data;
-    });
-
-    if (turn.value === player1.value.user.uid) {
-        await updateDoc(tableGameDuelRef, {
-            player1: {
-                ...player1.value,
-                wonderCards: [
-                    ...player1.value.wonderCards,
-                    { ...wonderCards.value[id], taken: true }
-                ]
-            },
-            turn: player2.value.user?.uid || 0,
-            wonderCards: newArrWonders
-        });
-    } else {
-        await updateDoc(tableGameDuelRef, {
-            player2: {
-                ...player2.value,
-                wonderCards: [
-                    ...player2.value.wonderCards,
-                    { ...wonderCards.value[id], taken: true }
-                ]
-            },
-            turn: player1.value.user.uid,
-            wonderCards: newArrWonders
-        });
-    }
-};
 const coinSelected = async (coin: IGameDuelCoin['effect']) => {
     if (turn.value === player1.value.user.uid) {
         await updateDoc(tableGameDuelRef, {
@@ -677,6 +703,20 @@ const coinSelected = async (coin: IGameDuelCoin['effect']) => {
             move: increment(1)
         });
     }
+};
+
+const prepareSelectWonder = () => {
+    if (!isMyTurn.value) return null;
+
+    selectWonderCard.value = true;
+};
+
+const wonderCardSelected = (wonderCard: IGameDuelWonderCard, cash: number) => {
+    if (!isMyTurn.value) return null;
+    let fullPrice = showPrice(wonderCard, `${user.value.uid}`);
+    if (fullPrice > cash) return null;
+    else selectedWonder.value = wonderCard;
+    storeDuelGame.setCardToWonder();
 };
 </script>
 
@@ -765,11 +805,25 @@ const coinSelected = async (coin: IGameDuelCoin['effect']) => {
                     </div>
                 </div>
             </section>
-            <section class="wonders wonders2 customInput">
+            <section
+                :class="[
+                    'wonders',
+                    'wonders2',
+                    'customInput',
+                    user.uid === player2.user.uid && selectWonderCard && 'selectWonderFromPlayer'
+                ]"
+            >
                 <DuelGameWonderComponent
                     v-for="wonderCard in player2.wonderCards"
                     :card="wonderCard"
                     :key="wonderCard.id"
+                    :cash="showPrice(wonderCard, `${player2.user.uid}`)"
+                    :resCash="player2.resources.cash"
+                    @click="
+                        tier !== 'prepare' && selectWonderCard
+                            ? wonderCardSelected(wonderCard, player2.resources.cash)
+                            : null
+                    "
                 />
             </section>
             <section class="cards cardsWonder" v-if="tier === 'prepare'">
@@ -777,44 +831,44 @@ const coinSelected = async (coin: IGameDuelCoin['effect']) => {
                     <DuelGameWonderComponent
                         v-if="wonderCards[0] && !wonderCards[0].taken"
                         :card="wonderCards[0]"
-                        @click="pickWonder(0)"
+                        @click="wonderSelectedForPlayer(wonderCards[0].id)"
                     />
                     <DuelGameWonderComponent
                         v-if="wonderCards[1] && !wonderCards[1].taken"
                         :card="wonderCards[1]"
-                        @click="pickWonder(1)"
+                        @click="wonderSelectedForPlayer(wonderCards[1].id)"
                     />
                     <DuelGameWonderComponent
                         v-if="wonderCards[2] && !wonderCards[2].taken"
                         :card="wonderCards[2]"
-                        @click="pickWonder(2)"
+                        @click="wonderSelectedForPlayer(wonderCards[2].id)"
                     />
                     <DuelGameWonderComponent
                         v-if="wonderCards[3] && !wonderCards[3].taken"
                         :card="wonderCards[3]"
-                        @click="pickWonder(3)"
+                        @click="wonderSelectedForPlayer(wonderCards[3].id)"
                     />
                 </div>
                 <div v-if="isSecondPick" class="pickWonders">
                     <DuelGameWonderComponent
                         v-if="wonderCards[4] && !wonderCards[4].taken"
                         :card="wonderCards[4]"
-                        @click="pickWonder(4)"
+                        @click="wonderSelectedForPlayer(wonderCards[4].id)"
                     />
                     <DuelGameWonderComponent
                         v-if="wonderCards[5] && !wonderCards[5].taken"
                         :card="wonderCards[5]"
-                        @click="pickWonder(5)"
+                        @click="wonderSelectedForPlayer(wonderCards[5].id)"
                     />
                     <DuelGameWonderComponent
                         v-if="wonderCards[6] && !wonderCards[6].taken"
                         :card="wonderCards[6]"
-                        @click="pickWonder(6)"
+                        @click="wonderSelectedForPlayer(wonderCards[6].id)"
                     />
                     <DuelGameWonderComponent
                         v-if="wonderCards[7] && !wonderCards[7].taken"
                         :card="wonderCards[7]"
-                        @click="pickWonder(7)"
+                        @click="wonderSelectedForPlayer(wonderCards[7].id)"
                     />
                 </div>
             </section>
@@ -826,7 +880,13 @@ const coinSelected = async (coin: IGameDuelCoin['effect']) => {
                     :x="tierOneX[index]"
                     :y="tierOneY[index]"
                     :reversColor="'rgb(145, 19, 19)'"
-                    @click="cardClick(card)"
+                    :cash1P="
+                        card.coversBy?.length === 0 ? showPrice(card, `${player1.user.uid}`) : -1
+                    "
+                    :cash2P="
+                        card.coversBy?.length === 0 ? showPrice(card, `${player2.user.uid}`) : -1
+                    "
+                    @click="tierCardClick(card)"
                 />
             </section>
             <section class="cards cardsTier" v-if="tier === 'II'">
@@ -837,7 +897,13 @@ const coinSelected = async (coin: IGameDuelCoin['effect']) => {
                     :x="tierTwoX[index]"
                     :y="tierTwoY[index]"
                     :reversColor="'rgb(58, 59, 160)'"
-                    @click="cardClick(card)"
+                    :cash1P="
+                        card.coversBy?.length === 0 ? showPrice(card, `${player1.user.uid}`) : -1
+                    "
+                    :cash2P="
+                        card.coversBy?.length === 0 ? showPrice(card, `${player2.user.uid}`) : -1
+                    "
+                    @click="tierCardClick(card)"
                 />
             </section>
             <section class="cards cardsTier" v-if="tier === 'III'">
@@ -848,16 +914,22 @@ const coinSelected = async (coin: IGameDuelCoin['effect']) => {
                     :x="tierThreeX[index]"
                     :y="tierThreeY[index]"
                     :reversColor="card.tier === 'guild' ? 'rgb(107, 36, 128)' : 'rgb(175, 85, 202)'"
-                    @click="cardClick(card)"
+                    :cash1P="
+                        card.coversBy?.length === 0 ? showPrice(card, `${player1.user.uid}`) : -1
+                    "
+                    :cash2P="
+                        card.coversBy?.length === 0 ? showPrice(card, `${player2.user.uid}`) : -1
+                    "
+                    @click="tierCardClick(card)"
                 />
             </section>
 
             <section class="duel">
                 <div class="boardPanishment">
-                    <div :style="board.punishment1 ? 'background: tomato;' : ''">-5</div>
-                    <div :style="board.punishment2 ? 'background: tomato;' : ''">-2</div>
-                    <div :style="board.punishment3 ? 'background: tomato;' : ''">-2</div>
-                    <div :style="board.punishment4 ? 'background: tomato;' : ''">-5</div>
+                    <div :style="board.punishment1 ? 'background: tomato;' : ''">-5$</div>
+                    <div :style="board.punishment2 ? 'background: tomato;' : ''">-2$</div>
+                    <div :style="board.punishment3 ? 'background: tomato;' : ''">-2$</div>
+                    <div :style="board.punishment4 ? 'background: tomato;' : ''">-5$</div>
                 </div>
                 <div class="boardDuel">
                     <span class="boardBorder"></span><span class="boardBorder"></span
@@ -917,47 +989,72 @@ const coinSelected = async (coin: IGameDuelCoin['effect']) => {
                     </p>
                 </div>
             </section>
-            <section class="wonders wonders1 customInput">
+            <section
+                :class="[
+                    'wonders',
+                    'wonders1',
+                    'customInput',
+                    user.uid === player1.user.uid && selectWonderCard && 'selectWonderFromPlayer'
+                ]"
+            >
                 <DuelGameWonderComponent
                     v-for="wonderCard in player1.wonderCards"
                     :card="wonderCard"
                     :key="wonderCard.id"
+                    :cash="showPrice(wonderCard, `${player1.user.uid}`)"
+                    :resCash="player1.resources.cash"
+                    @click="
+                        tier !== 'prepare' && selectWonderCard
+                            ? wonderCardSelected(wonderCard, player1.resources.cash)
+                            : null
+                    "
                 />
             </section>
             <section v-if="actionForCards" class="playerAction">
                 <button
                     :disabled="
-                        canBuy < 0 ||
+                        canBuyTierCard < 0 ||
                         !isMyTurn ||
                         (turn === player1.user.uid
-                            ? canBuy > player1.resources.cash
-                            : canBuy > player2.resources.cash)
+                            ? canBuyTierCard > player1.resources.cash
+                            : canBuyTierCard > player2.resources.cash)
                     "
                     class="customButton"
-                    @click="() => (isMyTurn ? storeDuelGame.setCardTaken(canBuy) : null)"
+                    @click="
+                        () =>
+                            isMyTurn
+                                ? (storeDuelGame.setCardTaken(canBuyTierCard),
+                                  selectWonderCard === false)
+                                : null
+                    "
                 >
-                    {{ `take ${canBuy >= 0 ? canBuy : ''}` }}
+                    {{ `${buttonBuyCard} ${canBuyTierCard >= 0 ? canBuyTierCard : ''}` }}
                 </button>
                 <button
                     :disabled="!selectedCard?.id"
                     class="customButton"
-                    @click="() => (isMyTurn ? storeDuelGame.setCardGraveyard() : null)"
+                    @click="
+                        () =>
+                            isMyTurn
+                                ? (storeDuelGame.setCardGraveyard(), selectWonderCard === false)
+                                : null
+                    "
                 >
-                    sell
+                    {{ buttonSell }}
                 </button>
                 <button
-                    :disabled="!selectedCard?.id"
+                    :disabled="!canBuyWonderCard"
                     class="customButton"
-                    @click="() => (isMyTurn ? storeDuelGame.setCardToWonder() : null)"
+                    @click="() => (isMyTurn ? prepareSelectWonder() : null)"
                 >
-                    build wonder
+                    {{ buttonBuildWonder }}
                 </button>
             </section>
             <section v-else-if="whoWillStart" class="playerAction">
                 <button class="customButton" @click="() => chooseWhoStarts(`${player1.user.uid}`)">
                     {{ player1.user.displayName }}
                 </button>
-                <p>{{ ' Who starts? ' }}</p>
+                <p>{{ ` ${labelWhoStarts} ` }}</p>
                 <button class="customButton" @click="() => chooseWhoStarts(`${player2.user.uid}`)">
                     {{ player2.user.displayName }}
                 </button>
@@ -1072,7 +1169,7 @@ h1 {
 /* --- Wrapper card --- */
 section.wrapper {
     position: relative;
-    width: 1200px;
+    width: 1110px;
     height: 720px;
     padding: 20px;
     margin-bottom: 20px;
@@ -1085,7 +1182,7 @@ section.wrapper {
         '.    card duel .   '
         '.    act  duel grv '
         'w1   p1   p1   grv ';
-    grid-template-columns: 220px 550px 200px 190px;
+    grid-template-columns: 230px 450px 200px 190px;
     grid-template-rows: 155px 320px 50px 155px;
     background-color: #eee;
     animation: showElement 2s linear;
@@ -1096,7 +1193,7 @@ section.wrapper {
     align-items: center;
     flex-wrap: wrap;
     height: 155px;
-    width: 220px;
+    width: 230px;
     padding: 5px;
     filter: drop-shadow(0 0 35px rgba(0, 0, 0, 0.15));
 }
@@ -1123,7 +1220,7 @@ section.wrapper {
     align-items: center;
 }
 .playerCardContainer {
-    width: 550px;
+    width: 450px;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -1187,7 +1284,7 @@ section.wrapper {
     justify-content: center;
     align-items: center;
     padding-bottom: 10px;
-    animation: showElement 2s linear;
+    animation: showElement 0.5s linear;
 }
 .playerAction > button {
     margin: 0 10px;
@@ -1216,8 +1313,8 @@ section.wrapper {
     align-items: center;
     flex-wrap: wrap;
     height: 155px;
-    width: 220px;
-    animation: showElement 2s linear;
+    width: 230px;
+    animation: showElement 0.5s linear;
     filter: drop-shadow(0 15px 35px rgba(0, 0, 0, 0.5));
 }
 .duel {
@@ -1237,9 +1334,6 @@ section.wrapper {
     border-top-right-radius: 15px;
     border-bottom-right-radius: 15px;
     background-color: rgb(76, 160, 50);
-}
-.selectCoin {
-    border: 3px dotted tomato;
 }
 .boardSingleCoin {
     height: 36px;
@@ -1301,10 +1395,16 @@ section.wrapper {
     margin-top: 33px;
 }
 .boardDuelPoints > div:nth-child(2) {
-    margin-top: 18px;
+    margin-top: 25px;
+}
+.boardDuelPoints > div:nth-child(3) {
+    margin-top: 20px;
+}
+.boardDuelPoints > div:nth-child(5) {
+    margin-bottom: 20px;
 }
 .boardDuelPoints > div:nth-child(6) {
-    margin-bottom: 18px;
+    margin-bottom: 25px;
 }
 .boardDuelPoints > div:nth-child(7) {
     margin-bottom: 33px;
@@ -1379,6 +1479,10 @@ section.wrapper {
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap; */
+}
+.selectCoin,
+.selectWonderFromPlayer {
+    border: 3px dotted tomato;
 }
 @keyframes showElement {
     0%,

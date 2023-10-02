@@ -16,96 +16,108 @@ export let cardsWonder: IGameDuelWonderCard[] = [];
 // --- Create Wonders
 cardsWonder = [
     {
+        id: 1,
         taken: false,
-        activated: false,
+        activated: 'none',
         cost: ['brick', 'wood', 'clay', 'paper'],
         valueCost: [1, 1, 1, 2],
         power: ['attack', 'points', 'break'],
         valuePower: [1, 3, 1]
     },
     {
+        id: 2,
         taken: false,
-        activated: false,
+        activated: 'none',
         cost: ['brick', 'wood', 'glass'],
         valueCost: [2, 1, 1],
         power: ['attack', 'points', 'break'],
         valuePower: [1, 3, 2]
     },
     {
+        id: 3,
         taken: false,
-        activated: false,
+        activated: 'none',
         cost: ['brick', 'clay', 'paper'],
         valueCost: [2, 2, 1],
         power: ['effect', 'points', 'break', 'cash'],
         valuePower: [1, 3, 3, 3]
     },
     {
+        id: 4,
         taken: false,
-        activated: false,
+        activated: 'none',
         cost: ['brick', 'clay', 'glass'],
         valueCost: [1, 1, 2],
         power: ['effect', 'points'],
         valuePower: [1, 6]
     },
     {
+        id: 5,
         taken: false,
-        activated: false,
+        activated: 'none',
         cost: ['wood', 'glass', 'paper'],
         valueCost: [2, 1, 1],
         power: ['effect', 'points', 'cash'],
         valuePower: [1, 3, 6]
     },
     {
+        id: 6,
         taken: false,
-        activated: false,
+        activated: 'none',
         cost: ['clay', 'glass', 'paper'],
         valueCost: [2, 2, 1],
         power: ['effect', 'points'],
         valuePower: [2, 2]
     },
     {
+        id: 7,
         taken: false,
-        activated: false,
+        activated: 'none',
         cost: ['wood', 'brick', 'clay'],
         valueCost: [2, 1, 1],
         power: ['effect', 'points', 'materials'],
         valuePower: [1, 2, 2]
     },
     {
+        id: 8,
         taken: false,
-        activated: false,
+        activated: 'none',
         cost: ['wood', 'glass', 'paper'],
         valueCost: [3, 1, 1],
         power: ['effect', 'points'],
         valuePower: [3, 4]
     },
     {
+        id: 9,
         taken: false,
-        activated: false,
+        activated: 'none',
         cost: ['brick', 'paper'],
         valueCost: [3, 1],
         power: ['points'],
         valuePower: [9]
     },
     {
+        id: 10,
         taken: false,
-        activated: false,
+        activated: 'none',
         cost: ['wood', 'brick', 'paper'],
         valueCost: [1, 1, 2],
         power: ['materials', 'points'],
         valuePower: [1, 4]
     },
     {
+        id: 11,
         taken: false,
-        activated: false,
+        activated: 'none',
         cost: ['wood', 'brick', 'glass', 'paper'],
         valueCost: [1, 1, 1, 1],
         power: ['effect', 'cash'],
         valuePower: [1, 12]
     },
     {
+        id: 12,
         taken: false,
-        activated: false,
+        activated: 'none',
         cost: ['clay', 'glass'],
         valueCost: [3, 1],
         power: ['attack', 'points'],
@@ -116,7 +128,7 @@ cardsWonder = [
 // --- Create Tier I
 cardsTierOne = [
     {
-        tier: '1',
+        tier: 'I',
         taken: 'inGame',
         hide: false,
         color: 'red',
@@ -126,7 +138,7 @@ cardsTierOne = [
         power: ['attack', 'specialChar']
     },
     {
-        tier: '1',
+        tier: 'I',
         taken: 'inGame',
         hide: false,
         color: 'red',
@@ -136,7 +148,7 @@ cardsTierOne = [
         power: ['attack', 'specialChar']
     },
     {
-        tier: '1',
+        tier: 'I',
         taken: 'inGame',
         hide: false,
         color: 'red',
@@ -146,7 +158,7 @@ cardsTierOne = [
         power: ['attack', 'specialChar']
     },
     {
-        tier: '1',
+        tier: 'I',
         taken: 'inGame',
         hide: false,
         color: 'red',
@@ -156,7 +168,7 @@ cardsTierOne = [
         power: ['attack']
     },
     {
-        tier: '1',
+        tier: 'I',
         taken: 'inGame',
         hide: false,
         color: 'green',
@@ -166,7 +178,7 @@ cardsTierOne = [
         power: ['artefact', 'specialChar']
     },
     {
-        tier: '1',
+        tier: 'I',
         taken: 'inGame',
         hide: false,
         color: 'green',
@@ -176,7 +188,7 @@ cardsTierOne = [
         power: ['artefact', 'specialChar']
     },
     {
-        tier: '1',
+        tier: 'I',
         taken: 'inGame',
         hide: false,
         color: 'green',
@@ -186,7 +198,7 @@ cardsTierOne = [
         power: ['artefact', 'points']
     },
     {
-        tier: '1',
+        tier: 'I',
         taken: 'inGame',
         hide: false,
         color: 'green',
@@ -196,7 +208,7 @@ cardsTierOne = [
         power: ['artefact', 'points']
     },
     {
-        tier: '1',
+        tier: 'I',
         taken: 'inGame',
         hide: false,
         color: 'blue',
@@ -206,7 +218,7 @@ cardsTierOne = [
         power: ['specialChar', 'points']
     },
     {
-        tier: '1',
+        tier: 'I',
         taken: 'inGame',
         hide: false,
         color: 'blue',
@@ -216,7 +228,7 @@ cardsTierOne = [
         power: ['specialChar', 'points']
     },
     {
-        tier: '1',
+        tier: 'I',
         taken: 'inGame',
         hide: false,
         color: 'blue',
@@ -226,7 +238,7 @@ cardsTierOne = [
         power: ['specialChar', 'points']
     },
     {
-        tier: '1',
+        tier: 'I',
         taken: 'inGame',
         hide: false,
         color: 'yellow',
@@ -236,7 +248,7 @@ cardsTierOne = [
         power: ['cash', 'specialChar']
     },
     {
-        tier: '1',
+        tier: 'I',
         taken: 'inGame',
         hide: false,
         color: 'yellow',
@@ -246,7 +258,7 @@ cardsTierOne = [
         power: ['discount']
     },
     {
-        tier: '1',
+        tier: 'I',
         taken: 'inGame',
         hide: false,
         color: 'yellow',
@@ -256,7 +268,7 @@ cardsTierOne = [
         power: ['discount']
     },
     {
-        tier: '1',
+        tier: 'I',
         taken: 'inGame',
         hide: false,
         color: 'yellow',
@@ -266,7 +278,7 @@ cardsTierOne = [
         power: ['discount']
     },
     {
-        tier: '1',
+        tier: 'I',
         taken: 'inGame',
         hide: false,
         color: 'brown',
@@ -276,7 +288,7 @@ cardsTierOne = [
         power: ['clay']
     },
     {
-        tier: '1',
+        tier: 'I',
         taken: 'inGame',
         hide: false,
         color: 'brown',
@@ -286,7 +298,7 @@ cardsTierOne = [
         power: ['brick']
     },
     {
-        tier: '1',
+        tier: 'I',
         taken: 'inGame',
         hide: false,
         color: 'brown',
@@ -296,7 +308,7 @@ cardsTierOne = [
         power: ['wood']
     },
     {
-        tier: '1',
+        tier: 'I',
         taken: 'inGame',
         hide: false,
         color: 'brown',
@@ -306,7 +318,7 @@ cardsTierOne = [
         power: ['clay']
     },
     {
-        tier: '1',
+        tier: 'I',
         taken: 'inGame',
         hide: false,
         color: 'brown',
@@ -316,7 +328,7 @@ cardsTierOne = [
         power: ['brick']
     },
     {
-        tier: '1',
+        tier: 'I',
         taken: 'inGame',
         hide: false,
         color: 'brown',
@@ -326,7 +338,7 @@ cardsTierOne = [
         power: ['wood']
     },
     {
-        tier: '1',
+        tier: 'I',
         taken: 'inGame',
         hide: false,
         color: 'grey',
@@ -336,7 +348,7 @@ cardsTierOne = [
         power: ['paper']
     },
     {
-        tier: '1',
+        tier: 'I',
         taken: 'inGame',
         hide: false,
         color: 'grey',
@@ -350,7 +362,7 @@ cardsTierOne = [
 // --- Create Tier II
 cardsTierTwo = [
     {
-        tier: '2',
+        tier: 'II',
         taken: 'inGame',
         hide: false,
         color: 'red',
@@ -360,7 +372,7 @@ cardsTierTwo = [
         power: ['attack']
     },
     {
-        tier: '2',
+        tier: 'II',
         taken: 'inGame',
         hide: false,
         color: 'red',
@@ -370,7 +382,7 @@ cardsTierTwo = [
         power: ['attack']
     },
     {
-        tier: '2',
+        tier: 'II',
         taken: 'inGame',
         hide: false,
         color: 'red',
@@ -380,7 +392,7 @@ cardsTierTwo = [
         power: ['attack', 'specialChar']
     },
     {
-        tier: '2',
+        tier: 'II',
         taken: 'inGame',
         hide: false,
         color: 'red',
@@ -390,7 +402,7 @@ cardsTierTwo = [
         power: ['attack', 'specialChar']
     },
     {
-        tier: '2',
+        tier: 'II',
         taken: 'inGame',
         hide: false,
         color: 'red',
@@ -400,7 +412,7 @@ cardsTierTwo = [
         power: ['attack']
     },
     {
-        tier: '2',
+        tier: 'II',
         taken: 'inGame',
         hide: false,
         color: 'green',
@@ -410,7 +422,7 @@ cardsTierTwo = [
         power: ['artefact', 'points']
     },
     {
-        tier: '2',
+        tier: 'II',
         taken: 'inGame',
         hide: false,
         color: 'green',
@@ -420,7 +432,7 @@ cardsTierTwo = [
         power: ['artefact', 'points']
     },
     {
-        tier: '2',
+        tier: 'II',
         taken: 'inGame',
         hide: false,
         color: 'green',
@@ -430,7 +442,7 @@ cardsTierTwo = [
         power: ['artefact', 'points', 'specialChar']
     },
     {
-        tier: '2',
+        tier: 'II',
         taken: 'inGame',
         hide: false,
         color: 'green',
@@ -440,7 +452,7 @@ cardsTierTwo = [
         power: ['artefact', 'points', 'specialChar']
     },
     {
-        tier: '2',
+        tier: 'II',
         taken: 'inGame',
         hide: false,
         color: 'blue',
@@ -450,7 +462,7 @@ cardsTierTwo = [
         power: ['points', 'specialChar']
     },
     {
-        tier: '2',
+        tier: 'II',
         taken: 'inGame',
         hide: false,
         color: 'blue',
@@ -460,7 +472,7 @@ cardsTierTwo = [
         power: ['points', 'specialChar']
     },
     {
-        tier: '2',
+        tier: 'II',
         taken: 'inGame',
         hide: false,
         color: 'blue',
@@ -470,7 +482,7 @@ cardsTierTwo = [
         power: ['points']
     },
     {
-        tier: '2',
+        tier: 'II',
         taken: 'inGame',
         hide: false,
         color: 'blue',
@@ -480,7 +492,7 @@ cardsTierTwo = [
         power: ['points', 'specialChar']
     },
     {
-        tier: '2',
+        tier: 'II',
         taken: 'inGame',
         hide: false,
         color: 'blue',
@@ -490,7 +502,7 @@ cardsTierTwo = [
         power: ['points']
     },
     {
-        tier: '2',
+        tier: 'II',
         taken: 'inGame',
         hide: false,
         color: 'yellow',
@@ -500,7 +512,7 @@ cardsTierTwo = [
         power: ['cash', 'specialChar']
     },
     {
-        tier: '2',
+        tier: 'II',
         taken: 'inGame',
         hide: false,
         color: 'yellow',
@@ -510,7 +522,7 @@ cardsTierTwo = [
         power: ['materials']
     },
     {
-        tier: '2',
+        tier: 'II',
         taken: 'inGame',
         hide: false,
         color: 'yellow',
@@ -520,7 +532,7 @@ cardsTierTwo = [
         power: ['materials']
     },
     {
-        tier: '2',
+        tier: 'II',
         taken: 'inGame',
         hide: false,
         color: 'yellow',
@@ -530,7 +542,7 @@ cardsTierTwo = [
         power: ['discount']
     },
     {
-        tier: '2',
+        tier: 'II',
         taken: 'inGame',
         hide: false,
         color: 'brown',
@@ -540,7 +552,7 @@ cardsTierTwo = [
         power: ['clay']
     },
     {
-        tier: '2',
+        tier: 'II',
         taken: 'inGame',
         hide: false,
         color: 'brown',
@@ -550,7 +562,7 @@ cardsTierTwo = [
         power: ['brick']
     },
     {
-        tier: '2',
+        tier: 'II',
         taken: 'inGame',
         hide: false,
         color: 'brown',
@@ -560,7 +572,7 @@ cardsTierTwo = [
         power: ['wood']
     },
     {
-        tier: '2',
+        tier: 'II',
         taken: 'inGame',
         hide: false,
         color: 'grey',
@@ -570,7 +582,7 @@ cardsTierTwo = [
         power: ['paper']
     },
     {
-        tier: '2',
+        tier: 'II',
         taken: 'inGame',
         hide: false,
         color: 'grey',
@@ -584,7 +596,7 @@ cardsTierTwo = [
 // --- Create Tier III
 cardsTierThree = [
     {
-        tier: '3',
+        tier: 'III',
         taken: 'inGame',
         hide: false,
         color: 'red',
@@ -594,7 +606,7 @@ cardsTierThree = [
         power: ['attack']
     },
     {
-        tier: '3',
+        tier: 'III',
         taken: 'inGame',
         hide: false,
         color: 'red',
@@ -604,7 +616,7 @@ cardsTierThree = [
         power: ['attack']
     },
     {
-        tier: '3',
+        tier: 'III',
         taken: 'inGame',
         hide: false,
         color: 'red',
@@ -614,7 +626,7 @@ cardsTierThree = [
         power: ['attack']
     },
     {
-        tier: '3',
+        tier: 'III',
         taken: 'inGame',
         hide: false,
         color: 'red',
@@ -624,7 +636,7 @@ cardsTierThree = [
         power: ['attack']
     },
     {
-        tier: '3',
+        tier: 'III',
         taken: 'inGame',
         hide: false,
         color: 'red',
@@ -634,7 +646,7 @@ cardsTierThree = [
         power: ['attack']
     },
     {
-        tier: '3',
+        tier: 'III',
         taken: 'inGame',
         hide: false,
         color: 'green',
@@ -644,7 +656,7 @@ cardsTierThree = [
         power: ['artefact', 'points']
     },
     {
-        tier: '3',
+        tier: 'III',
         taken: 'inGame',
         hide: false,
         color: 'green',
@@ -654,7 +666,7 @@ cardsTierThree = [
         power: ['artefact', 'points']
     },
     {
-        tier: '3',
+        tier: 'III',
         taken: 'inGame',
         hide: false,
         color: 'green',
@@ -664,7 +676,7 @@ cardsTierThree = [
         power: ['artefact', 'points']
     },
     {
-        tier: '3',
+        tier: 'III',
         taken: 'inGame',
         hide: false,
         color: 'green',
@@ -674,7 +686,7 @@ cardsTierThree = [
         power: ['artefact', 'points']
     },
     {
-        tier: '3',
+        tier: 'III',
         taken: 'inGame',
         hide: false,
         color: 'blue',
@@ -684,7 +696,7 @@ cardsTierThree = [
         power: ['points']
     },
     {
-        tier: '3',
+        tier: 'III',
         taken: 'inGame',
         hide: false,
         color: 'blue',
@@ -694,7 +706,7 @@ cardsTierThree = [
         power: ['points']
     },
     {
-        tier: '3',
+        tier: 'III',
         taken: 'inGame',
         hide: false,
         color: 'blue',
@@ -704,7 +716,7 @@ cardsTierThree = [
         power: ['points']
     },
     {
-        tier: '3',
+        tier: 'III',
         taken: 'inGame',
         hide: false,
         color: 'blue',
@@ -714,7 +726,7 @@ cardsTierThree = [
         power: ['points']
     },
     {
-        tier: '3',
+        tier: 'III',
         taken: 'inGame',
         hide: false,
         color: 'blue',
@@ -724,7 +736,7 @@ cardsTierThree = [
         power: ['points']
     },
     {
-        tier: '3',
+        tier: 'III',
         taken: 'inGame',
         hide: false,
         color: 'blue',
@@ -734,7 +746,7 @@ cardsTierThree = [
         power: ['points']
     },
     {
-        tier: '3',
+        tier: 'III',
         taken: 'inGame',
         hide: false,
         color: 'yellow',
@@ -744,7 +756,7 @@ cardsTierThree = [
         power: ['points', 'cashBack']
     },
     {
-        tier: '3',
+        tier: 'III',
         taken: 'inGame',
         hide: false,
         color: 'yellow',
@@ -754,7 +766,7 @@ cardsTierThree = [
         power: ['points', 'cashBack']
     },
     {
-        tier: '3',
+        tier: 'III',
         taken: 'inGame',
         hide: false,
         color: 'yellow',
@@ -764,7 +776,7 @@ cardsTierThree = [
         power: ['points', 'cashBack']
     },
     {
-        tier: '3',
+        tier: 'III',
         taken: 'inGame',
         hide: false,
         color: 'yellow',
@@ -774,7 +786,7 @@ cardsTierThree = [
         power: ['points', 'cashBack']
     },
     {
-        tier: '3',
+        tier: 'III',
         taken: 'inGame',
         hide: false,
         color: 'yellow',
@@ -1039,7 +1051,8 @@ export const countPlayerResources = (
                 switch (card.valuePower[i]) {
                     case 1:
                         res.cash +=
-                            player.wonderCards.filter((data) => data.activated === true).length * 2;
+                            player.wonderCards.filter((data) => data.activated !== 'none').length *
+                            2;
                         break;
                     case 2:
                         res.cash += player.cards.yellow.length + 1;

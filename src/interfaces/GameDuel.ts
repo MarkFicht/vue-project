@@ -5,7 +5,7 @@ export interface IGameDuelCard {
     coversBy?: number[];
     hide: boolean;
     taken: 'inGame' | 'graveyard' | 'inPlayerBoard' | 'inWonder';
-    tier: '1' | '2' | '3' | 'guild';
+    tier: 'I' | 'II' | 'III' | 'guild';
     color: 'red' | 'green' | 'blue' | 'yellow' | 'brown' | 'grey' | 'purple';
     valueCost: number[];
     cost: Array<'specialChar' | 'clay' | 'brick' | 'wood' | 'paper' | 'glass' | 'cash'>;
@@ -43,11 +43,11 @@ export interface IGameDuelCoin {
 }
 
 export interface IGameDuelWonderCard {
-    id?: number;
+    id: number;
     taken: boolean;
-    activated: boolean;
+    activated: 'none' | 'I' | 'II' | 'III' | 'guild';
     valueCost: number[];
-    cost: Array<'clay' | 'brick' | 'wood' | 'paper' | 'glass' | 'cash'>;
+    cost: Array<Materials>;
     valuePower: number[];
     power: Array<
         | 'effect' // 1 - repeat, 2 - take from grav, 3 - take 1 of 3 coins

@@ -23,6 +23,7 @@ export interface IDuelGameStore {
     move: number;
     pickCoin: string;
     selectedCard: IGameDuelCard;
+    selectedWonder: IGameDuelWonderCard;
     tierOneCards: IGameDuelCard[];
     tierTwoCards: IGameDuelCard[];
     tierThreeCards: IGameDuelCard[];
@@ -42,6 +43,7 @@ export const duelGameStore = defineStore('duelGameStore', {
             move: 0,
             pickCoin: '',
             selectedCard: {} as IGameDuelCard,
+            selectedWonder: {} as IGameDuelWonderCard,
             tierOneCards: [],
             tierTwoCards: [],
             tierThreeCards: [],
@@ -99,6 +101,7 @@ export const duelGameStore = defineStore('duelGameStore', {
         },
         unselectCard() {
             this.selectedCard = {} as IGameDuelCard;
+            this.selectedWonder = {} as IGameDuelWonderCard;
         },
         async setPickCoin(id: string): Promise<void> {
             await updateDoc(tableGameDuelRef, {
@@ -465,6 +468,7 @@ export const duelGameStore = defineStore('duelGameStore', {
         },
         async setCardToWonder(): Promise<void> {
             let cardToWonder: IGameDuelCard = {} as IGameDuelCard;
+            let wonderCardToActive: IGameDuelWonderCard = {} as IGameDuelWonderCard;
 
             if (this.tier === 'I') {
                 this.tierOneCards = this.$state.tierOneCards.map((card) => {
@@ -515,7 +519,9 @@ export const duelGameStore = defineStore('duelGameStore', {
                     tierIIICards: this.tierThreeCards
                 });
             }
-            console.log('%c cardToWonder -> ', 'background: #222; color: #bada55', cardToWonder);
+            wonderCardToActive = this.selectedWonder;
+            wonderCardToActive.activated = cardToWonder.tier;
+            // TODO set color on activated + check for 7 cards and remove 8th
             this.unselectCard();
         }
     }

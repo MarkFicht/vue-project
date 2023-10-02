@@ -2,16 +2,25 @@
 import { toRefs } from 'vue';
 import type { IGameDuelWonderCard } from '@/interfaces/GameDuel';
 
-const props = defineProps<{ card: IGameDuelWonderCard }>();
+const props = defineProps<{ card: IGameDuelWonderCard; cash?: number; resCash?: number }>();
 const { card } = toRefs(props);
 </script>
 
 <template>
     <div :class="['card']">
+        <div
+            v-if="card.taken"
+            :class="[
+                'cashSum',
+                resCash !== undefined && cash !== undefined && cash > resCash && 'colorRed'
+            ]"
+        >
+            {{ cash }}
+        </div>
         <div class="cost">
             {{
                 `${card.cost
-                    .map((cost, i) => ` ${card.valueCost[i]}${cost === 'cash' ? '$' : cost[0]}`)
+                    .map((cost, i) => ` ${card.valueCost[i]}${cost[0]}`)
                     .filter((val) => val !== '')}`
             }}
         </div>
@@ -31,7 +40,25 @@ div {
     justify-content: center;
     align-items: center;
     filter: brightness(0.4);
-    animation: showElement 2s linear;
+    animation: showElement 0.5s linear;
+}
+.cashSum {
+    position: absolute;
+    width: 17px;
+    height: 17px;
+    font-size: 12px;
+    line-height: 17px;
+    border-radius: 50%;
+    background-color: goldenrod;
+    bottom: -50%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-120%);
+    border: 2px solid #444;
+    filter: brightness(1.3);
+    font-weight: bold;
+}
+.colorRed {
+    color: red;
 }
 .card {
     position: relative;

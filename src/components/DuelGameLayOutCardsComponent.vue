@@ -6,9 +6,16 @@ import { duelGameStore } from '@/store/duelGameStore';
 import { storeToRefs } from 'pinia';
 
 const storeDuelGame = duelGameStore();
-const { selectedCard } = storeToRefs(storeDuelGame);
+const { selectedCard, player1, player2 } = storeToRefs(storeDuelGame);
 
-const props = defineProps<{ card: IGameDuelCard; x: number; y: number; reversColor: string }>();
+const props = defineProps<{
+    card: IGameDuelCard;
+    x: number;
+    y: number;
+    reversColor: string;
+    cash1P?: number;
+    cash2P?: number;
+}>();
 const { card } = toRefs(props);
 </script>
 
@@ -25,7 +32,13 @@ const { card } = toRefs(props);
             card.coversBy?.length === 0 ? 'pointer' : 'default'
         };`"
     >
-        <DuelGameCardComponent :card="card" />
+        <DuelGameCardComponent
+            :card="card"
+            :cash1P="cash1P"
+            :cash2P="cash2P"
+            :res1P="player1.resources.cash"
+            :res2P="player2.resources.cash"
+        />
     </div>
     <div v-else :class="['cardWrapper', 'invisible']" :style="`--x:${x}%; --y:${y}%; --z:${-10};`">
         <DuelGameCardComponent :card="card" />
@@ -64,7 +77,7 @@ const { card } = toRefs(props);
     height: 60px;
     top: 0;
     left: 0;
-    border: 10px solid;
+    border: 4px dotted tomato;
     border-radius: 5px;
 }
 .invisible {

@@ -2,7 +2,14 @@
 import { toRefs } from 'vue';
 import type { IGameDuelCard } from '@/interfaces/GameDuel';
 
-const props = defineProps<{ card: IGameDuelCard; small?: boolean }>();
+const props = defineProps<{
+    card: IGameDuelCard;
+    small?: boolean;
+    cash1P?: number;
+    cash2P?: number;
+    res1P?: number;
+    res2P?: number;
+}>();
 const { card } = toRefs(props);
 </script>
 
@@ -11,6 +18,18 @@ const { card } = toRefs(props);
         :class="['card', `card${card.id}`, small && 'small']"
         :style="`background: ${card.color};`"
     >
+        <div
+            v-if="card.taken === 'inGame' && cash1P !== undefined && cash1P >= 0"
+            :class="['cashSumP1', res1P !== undefined && cash1P > res1P && 'colorRed']"
+        >
+            {{ cash1P }}
+        </div>
+        <div
+            v-if="card.taken === 'inGame' && cash2P !== undefined && cash2P >= 0"
+            :class="['cashSumP2', res2P !== undefined && cash2P > res2P && 'colorRed']"
+        >
+            {{ cash2P }}
+        </div>
         <div
             v-for="(power, i) in card.power"
             :key="power"
@@ -112,7 +131,43 @@ div {
     align-items: center;
     filter: brightness(0.4);
 }
+.cashSumP1 {
+    position: absolute;
+    width: 17px;
+    height: 17px;
+    font-size: 12px;
+    line-height: 17px;
+    border-radius: 50%;
+    background-color: goldenrod;
+    bottom: -50%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-65%);
+    border: 2px solid #444;
+    filter: brightness(1.3);
+    z-index: 1000;
+    font-weight: bold;
+}
+.cashSumP2 {
+    position: absolute;
+    width: 17px;
+    height: 17px;
+    font-size: 12px;
+    line-height: 17px;
+    border-radius: 50%;
+    background-color: silver;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%) translateY(0);
+    border: 2px solid #444;
+    filter: brightness(1.3);
+    z-index: 1000;
+    font-weight: bold;
+}
+.colorRed {
+    color: red;
+}
 .card {
+    position: relative;
     border: 1px solid;
     border-radius: 5px;
     width: 50px;
