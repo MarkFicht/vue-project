@@ -675,6 +675,7 @@ const wonderSelectedForPlayer = async (id: number) => {
 const tierCardClick = (gameCard: IGameDuelCard) => {
     if (!isMyTurn.value) return null;
     if (pickCoin.value !== '') return null;
+    if (whoWillStart.value) return null;
 
     selectedCard.value = {} as IGameDuelCard;
     selectedWonder.value = {} as IGameDuelWonderCard;
