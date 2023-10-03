@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, toRefs } from 'vue';
+import { onMounted, ref, toRefs, watch } from 'vue';
 import type { IGameDuelWonderCard } from '@/interfaces/GameDuel';
 
 const props = defineProps<{ card: IGameDuelWonderCard; cash?: number; resCash?: number }>();
@@ -20,6 +20,9 @@ const woodCost = ref<number>(0);
 const paperCost = ref<number>(0);
 const glassCost = ref<number>(0);
 const cashCost = ref<number>(0);
+
+//---
+const reversColor = ref<string>('');
 
 onMounted(() => {
     card.value.power.forEach((pow, i) => {
@@ -69,11 +72,38 @@ onMounted(() => {
                 break;
         }
     });
+    takeReversColor();
 });
+
+watch(
+    () => card.value.activated,
+    () => {
+        takeReversColor();
+    }
+);
+
+function takeReversColor(): void {
+    switch (card.value.activated) {
+        case 'I':
+            reversColor.value = 'rgb(145, 19, 19)';
+            break;
+        case 'II':
+            reversColor.value = 'rgb(58, 59, 160)';
+            break;
+        case 'III':
+            reversColor.value = 'rgb(175, 85, 202)';
+            break;
+        case 'guild':
+            reversColor.value = 'rgb(107, 36, 128)';
+            break;
+        default:
+            break;
+    }
+}
 </script>
 
 <template>
-    <div :class="['card']">
+    <div :class="['card']" :style="`--activeColor: ${reversColor};`">
         <div
             v-if="card.taken"
             :class="[
@@ -191,7 +221,8 @@ div {
     top: 4px;
     border-top-right-radius: 5px;
     border-bottom-right-radius: 5px;
-    right: -10px;
+    background-color: var(--activeColor);
+    right: -11px;
     width: 10px;
     height: 50px;
     border: 1px solid;

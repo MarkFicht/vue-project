@@ -126,6 +126,11 @@ const canBuyWonderCard = computed((): boolean => {
     }
 });
 
+watch([() => selectedWonder.value, () => selectedCard.value], () => {
+    if (!selectedWonder.value?.id || !selectedCard.value?.id) {
+        selectWonderCard.value = false;
+    }
+});
 watch(
     () => player2.value.wonderCards,
     async () => {
@@ -1029,7 +1034,7 @@ const wonderCardSelected = (wonderCard: IGameDuelWonderCard, cash: number) => {
                     "
                 />
             </section>
-            <section v-if="actionForCards" class="playerAction">
+            <section v-if="actionForCards && selectedCard?.id" class="playerAction">
                 <button
                     :disabled="
                         canBuyTierCard < 0 ||

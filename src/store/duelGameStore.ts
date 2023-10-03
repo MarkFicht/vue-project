@@ -10,7 +10,7 @@ import {
     type Tier
 } from '@/interfaces/GameDuel';
 import db from '@/firebase/index';
-import { collection, doc, updateDoc, onSnapshot, increment } from 'firebase/firestore';
+import { collection, doc, updateDoc, onSnapshot, increment, arrayUnion } from 'firebase/firestore';
 import { countPlayerResources } from '@/helpers/GameDuelInit';
 
 const gameDuelRef = collection(db, 'gameDuel');
@@ -487,7 +487,7 @@ export const duelGameStore = defineStore('duelGameStore', {
                     tierICards: this.tierOneCards
                 });
             } else if (this.tier === 'II') {
-                this.tierTwoCards = this.$state.tierOneCards.map((card) => {
+                this.tierTwoCards = this.$state.tierTwoCards.map((card) => {
                     card.id === this.selectedCard.id && (cardToWonder = card);
                     return {
                         ...card,
@@ -503,7 +503,7 @@ export const duelGameStore = defineStore('duelGameStore', {
                     tierIICards: this.tierTwoCards
                 });
             } else if (this.tier === 'III') {
-                this.tierThreeCards = this.$state.tierOneCards.map((card) => {
+                this.tierThreeCards = this.$state.tierThreeCards.map((card) => {
                     card.id === this.selectedCard.id && (cardToWonder = card);
                     return {
                         ...card,
@@ -521,7 +521,34 @@ export const duelGameStore = defineStore('duelGameStore', {
             }
             wonderCardToActive = this.selectedWonder;
             wonderCardToActive.activated = cardToWonder.tier;
-            // TODO set color on activated + check for 7 cards and remove 8th
+
+            if (this.turn === this.player1.user.uid) {
+                const newWonders = this.player1.wonderCards.map((cd) => {
+                    return cd.id === wonderCardToActive.id ? wonderCardToActive : cd;
+                });
+                await updateDoc(tableGameDuelRef, {
+                    'player1.wonderCards': newWonders,
+                    move: increment(1),
+                    turn:
+                        this.turn === this.player1.user.uid
+                            ? this.player2.user.uid
+                            : this.player1.user.uid
+                });
+            } else {
+                const newWonders = this.player2.wonderCards.map((cd) => {
+                    return cd.id === wonderCardToActive.id ? wonderCardToActive : cd;
+                });
+                await updateDoc(tableGameDuelRef, {
+                    'player2.wonderCards': newWonders,
+                    move: increment(1),
+                    turn:
+                        this.turn === this.player1.user.uid
+                            ? this.player2.user.uid
+                            : this.player1.user.uid
+                });
+            }
+
+            // TODO check for 7 cards and remove 8th + get res
             this.unselectCard();
         }
     }
