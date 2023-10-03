@@ -1,9 +1,75 @@
 <script setup lang="ts">
-import { toRefs } from 'vue';
+import { onMounted, ref, toRefs } from 'vue';
 import type { IGameDuelWonderCard } from '@/interfaces/GameDuel';
 
 const props = defineProps<{ card: IGameDuelWonderCard; cash?: number; resCash?: number }>();
 const { card } = toRefs(props);
+
+// --- power
+const effect = ref<number>(0);
+const cashPow = ref<number>(0);
+const breakRes = ref<number>(0);
+const materials = ref<number>(0);
+const attack = ref<number>(0);
+const point = ref<number>(0);
+
+// --- cost
+const clayCost = ref<number>(0);
+const brickCost = ref<number>(0);
+const woodCost = ref<number>(0);
+const paperCost = ref<number>(0);
+const glassCost = ref<number>(0);
+const cashCost = ref<number>(0);
+
+onMounted(() => {
+    card.value.power.forEach((pow, i) => {
+        switch (pow) {
+            case 'effect':
+                effect.value = card.value.valuePower[i];
+                break;
+            case 'cash':
+                cashPow.value = card.value.valuePower[i];
+                break;
+            case 'break':
+                breakRes.value = card.value.valuePower[i];
+                break;
+            case 'materials':
+                materials.value = card.value.valuePower[i];
+                break;
+            case 'attack':
+                attack.value = card.value.valuePower[i];
+                break;
+            case 'points':
+                point.value = card.value.valuePower[i];
+                break;
+
+            default:
+                break;
+        }
+    });
+    card.value.cost.forEach((cost, i) => {
+        switch (cost) {
+            case 'clay':
+                clayCost.value = card.value.valueCost[i];
+                break;
+            case 'brick':
+                brickCost.value = card.value.valueCost[i];
+                break;
+            case 'wood':
+                woodCost.value = card.value.valueCost[i];
+                break;
+            case 'paper':
+                paperCost.value = card.value.valueCost[i];
+                break;
+            case 'glass':
+                glassCost.value = card.value.valueCost[i];
+                break;
+
+            default:
+                break;
+        }
+    });
+});
 </script>
 
 <template>
@@ -17,19 +83,65 @@ const { card } = toRefs(props);
         >
             {{ cash }}
         </div>
+
         <div class="cost">
-            {{
-                `${card.cost
-                    .map((cost, i) => ` ${card.valueCost[i]}${cost[0]}`)
-                    .filter((val) => val !== '')}`
-            }}
+            <div v-if="cashCost" class="resources" :style="'width: 100%;'">
+                <div class="cash">{{ cashCost + '$' }}</div>
+            </div>
+            <div v-if="clayCost" class="resources" :style="'width: 100%;'">
+                <div v-for="num in clayCost" :key="num" class="clay">c</div>
+            </div>
+            <div v-if="brickCost" class="resources" :style="'width: 100%;'">
+                <div v-for="num in brickCost" :key="num" class="brick">b</div>
+            </div>
+            <div v-if="woodCost" class="resources" :style="'width: 100%;'">
+                <div v-for="num in woodCost" :key="num" class="wood">w</div>
+            </div>
+            <div v-if="paperCost" class="resources" :style="'width: 100%;'">
+                <div v-for="num in paperCost" :key="num" class="paper">p</div>
+            </div>
+            <div v-if="glassCost" class="resources" :style="'width: 100%;'">
+                <div v-for="num in glassCost" :key="num" class="glass">g</div>
+            </div>
         </div>
+
         <div class="power">
-            {{
-                `${card.power
-                    .map((power, i) => ` ${card.valuePower[i]}_${power}`)
-                    .filter((val) => val !== '')}`
-            }}
+            <div v-if="effect === 1"><ion-icon name="reload-outline"></ion-icon></div>
+            <div v-if="effect === 2"><ion-icon name="trash-outline"></ion-icon></div>
+            <div v-if="effect === 3" class="takeCoin"></div>
+
+            <div v-if="cashPow" class="cash">
+                {{ cashPow + '$' }}
+            </div>
+
+            <div v-if="breakRes === 1" class="breakBrown">{{ '/' }}</div>
+            <div v-if="breakRes === 2" class="breakGrey">{{ '/' }}</div>
+            <div v-if="breakRes === 3" class="cash" :style="'text-decoration: line-through;'">
+                {{ breakRes + '$' }}
+            </div>
+
+            <div
+                v-if="materials === 1"
+                class="resources"
+                :style="'width: 100%; transform: scale(.8);'"
+            >
+                <div class="clay">c</div>
+                /
+                <div class="brick">b</div>
+                /
+                <div class="wood">w</div>
+            </div>
+            <div v-if="materials === 2" class="resources" :style="'width: 100%;'">
+                <div class="paper">p</div>
+                /
+                <div class="glass">g</div>
+            </div>
+
+            <div v-if="attack">
+                <ion-icon v-for="num in attack" :key="num" name="skull-sharp"></ion-icon>
+            </div>
+
+            <div v-if="point">{{ point }}<ion-icon name="ribbon-sharp"></ion-icon></div>
         </div>
     </div>
 </template>
@@ -39,7 +151,6 @@ div {
     display: flex;
     justify-content: center;
     align-items: center;
-    filter: brightness(0.4);
     animation: showElement 0.5s linear;
 }
 .cashSum {
@@ -49,12 +160,11 @@ div {
     font-size: 12px;
     line-height: 17px;
     border-radius: 50%;
-    background-color: goldenrod;
+    background-color: gold;
     bottom: -50%;
     left: 50%;
-    transform: translateX(-50%) translateY(-120%);
+    transform: translateX(-50%) translateY(-110%);
     border: 2px solid #444;
-    filter: brightness(1.3);
     font-weight: bold;
 }
 .colorRed {
@@ -62,19 +172,18 @@ div {
 }
 .card {
     position: relative;
-    border: 1px solid;
+    border: 2px solid #333;
     border-radius: 5px;
     width: 80px;
     height: 60px;
     margin: 0 20px 0 5px;
     display: grid;
-    grid-template-columns: 1fr 2fr;
+    grid-template-columns: 2fr 3fr;
     font-size: 11px;
     line-height: 11px;
-    filter: brightness(1.3);
     transition: 0.3s;
     cursor: pointer;
-    background-color: aquamarine;
+    background-color: darksalmon;
 }
 .card::before {
     content: '';
@@ -91,9 +200,91 @@ div {
     display: flex;
     flex-direction: column;
 }
+.resources > div {
+    width: 10px;
+    height: 10px;
+    line-height: 10px;
+    font-size: 9px;
+    border: 1px solid gold;
+    border-radius: 50%;
+    margin-left: 1px;
+}
+.cash {
+    width: 15px;
+    height: 15px;
+    line-height: 15px;
+    font-size: 10px;
+    border: 1px solid goldenrod;
+    background-color: gold;
+    border-radius: 50%;
+    margin-left: 1px;
+}
+.clay {
+    background-color: crimson;
+}
+.brick {
+    background-color: slategrey;
+}
+.wood {
+    background-color: greenyellow;
+}
+.paper {
+    background-color: coral;
+}
+.glass {
+    background-color: cornflowerblue;
+}
 .power {
     display: flex;
     flex-direction: column;
+}
+.breakGrey {
+    height: 14px;
+    width: 9px;
+    background-color: gray;
+    border-radius: 2px;
+    font-size: 10px;
+    border: 1px solid #333;
+}
+.breakBrown {
+    height: 14px;
+    width: 9px;
+    background-color: brown;
+    border-radius: 2px;
+    font-size: 10px;
+    border: 1px solid #333;
+}
+.takeCoin {
+    position: relative;
+    width: 10px;
+    height: 10px;
+    border: 1px solid #333;
+    border-radius: 50%;
+    background-color: green;
+}
+.takeCoin::before {
+    content: '';
+    position: absolute;
+    top: -3px;
+    left: 3px;
+    z-index: 10;
+    width: 10px;
+    height: 10px;
+    border: 1px solid #333;
+    border-radius: 50%;
+    background-color: rgb(0, 148, 0);
+}
+.takeCoin::after {
+    content: '';
+    position: absolute;
+    top: -6px;
+    left: 6px;
+    z-index: 10;
+    width: 10px;
+    height: 10px;
+    border: 1px solid #333;
+    border-radius: 50%;
+    background-color: rgb(0, 163, 0);
 }
 @keyframes showElement {
     0%,

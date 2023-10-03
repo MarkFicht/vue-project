@@ -933,10 +933,10 @@ const wonderCardSelected = (wonderCard: IGameDuelWonderCard, cash: number) => {
 
             <section class="duel">
                 <div class="boardPanishment">
-                    <div :style="board.punishment1 ? 'background: tomato;' : ''">-5$</div>
-                    <div :style="board.punishment2 ? 'background: tomato;' : ''">-2$</div>
-                    <div :style="board.punishment3 ? 'background: tomato;' : ''">-2$</div>
-                    <div :style="board.punishment4 ? 'background: tomato;' : ''">-5$</div>
+                    <div :style="!board.punishment1 ? 'opacity: 0;' : ''">-5$</div>
+                    <div :style="!board.punishment2 ? 'opacity: 0;' : ''">-2$</div>
+                    <div :style="!board.punishment3 ? 'opacity: 0;' : ''">-2$</div>
+                    <div :style="!board.punishment4 ? 'opacity: 0;' : ''">-5$</div>
                 </div>
                 <div class="boardDuel">
                     <span class="boardBorder"></span><span class="boardBorder"></span
@@ -979,20 +979,32 @@ const wonderCardSelected = (wonderCard: IGameDuelWonderCard, cash: number) => {
                 />
             </section>
             <section class="playerInfo">
-                <div class="player1info customInput">
+                <div
+                    :class="[
+                        'player1info',
+                        'customInput',
+                        turn === player1.user.uid && 'boldParagraf'
+                    ]"
+                >
                     <p>
                         {{ `Nick: ${player1.user.displayName || player1.user.email}` }}
                     </p>
                     <p>
-                        {{ `Turn: ${turn === player1.user.uid ? 'YOU' : ''}` }}
+                        {{ `Timer: 90` }}
                     </p>
                 </div>
-                <div class="player2info customInput">
+                <div
+                    :class="[
+                        'player2info',
+                        'customInput',
+                        turn === player2.user.uid && 'boldParagraf'
+                    ]"
+                >
                     <p>
                         {{ `Nick: ${player2.user.displayName || player2.user.email}` }}
                     </p>
                     <p>
-                        {{ `Turn: ${turn === player2.user.uid ? 'YOU' : ''}` }}
+                        {{ `Timer: 90` }}
                     </p>
                 </div>
             </section>
@@ -1223,6 +1235,9 @@ section.wrapper {
     font-size: 1em;
     display: block;
 }
+.boldParagraf > p {
+    font-weight: bold;
+}
 .playerSection {
     display: flex;
     justify-content: space-between;
@@ -1352,7 +1367,7 @@ section.wrapper {
     width: 36px;
     margin: 1px auto;
     border-radius: 50%;
-    border: 1px solid;
+    border: 2px solid #222;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -1366,17 +1381,20 @@ section.wrapper {
     justify-content: center;
     align-items: center;
     flex-direction: column;
+    transition: 0.5s;
 }
 .boardPanishment > div {
     width: 42px;
     height: 18px;
-    border: 1px solid rgb(168, 64, 46);
+    border: 2px solid rgb(168, 64, 46);
     border-radius: 5px;
     display: flex;
     justify-content: center;
     align-items: center;
     margin: 16px 0;
+    background: tomato;
     transform: rotate(90deg);
+    transition: 0.5s;
 }
 .boardPanishment > div:nth-child(2) {
     margin-bottom: 115px;
