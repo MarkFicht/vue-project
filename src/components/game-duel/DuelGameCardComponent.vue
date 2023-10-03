@@ -222,7 +222,7 @@ onMounted(() => {
             </div>
         </div>
 
-        <div v-if="specialCharCost" class="specialCharCost">
+        <div v-if="!small && specialCharCost" class="specialCharCost">
             {{ specialCharCost + 's' }}
         </div>
         <div v-if="!small && (!card.hide || card.coversBy?.length === 0)" class="standardCost">
@@ -264,7 +264,7 @@ div {
     background-color: gold;
     bottom: -50%;
     left: 50%;
-    transform: translateX(-50%) translateY(-65%);
+    transform: translateX(-50%) translateY(-85%);
     border: 2px solid #333;
     z-index: 1000;
     font-weight: bold;
@@ -291,21 +291,19 @@ div {
     position: relative;
     border: 2px solid;
     border-radius: 5px;
-    width: 50px;
-    height: 60px;
+    width: 60px;
+    height: 69px;
     display: grid;
     grid-template-columns: 1fr 2fr 1fr;
     grid-template-rows: 1fr 1fr 1fr;
-    font-size: 10px;
-    line-height: 10px;
     transition: 0.3s;
     color: #222;
 }
 .resources > div {
-    width: 11px;
+    width: 13px;
     height: 13px;
     line-height: 13px;
-    font-size: 9px;
+    font-size: 11px;
     border: 1px solid gold;
     border-radius: 50%;
     margin-left: 2px;
@@ -316,8 +314,8 @@ div {
 .discount > div::before {
     content: '1';
     position: absolute;
-    top: -2px;
-    right: 5px;
+    top: -1px;
+    right: 8px;
     width: 7px;
     height: 7px;
     font-size: 5px;
@@ -345,26 +343,31 @@ div {
 .small {
     height: 20px !important;
     grid-template-rows: 1fr !important;
+    width: 50px;
+}
+.small .standardPower {
+    font-size: 11px;
+    line-height: 11px;
 }
 /* ------------------- */
 .specialChar {
-    font-size: 7px;
+    font-size: 10px;
     position: absolute;
     top: 1px;
-    right: 0;
+    right: 1px;
 }
 .standardPower {
     grid-row: 1;
     grid-column: 1 / 4;
-    font-size: 9px;
-    line-height: 9px;
+    font-size: 13px;
+    line-height: 13px;
 }
 /* ------------------- */
 .specialCharCost {
-    font-size: 7px;
+    font-size: 9px;
     position: absolute;
-    top: 1px;
-    left: 0;
+    top: 7px;
+    left: 1px;
 }
 .standardCost {
     grid-row: 2;
@@ -374,17 +377,19 @@ div {
     /* flex-direction: column; */
 }
 .standardCost > .resources > div {
-    width: 7px;
-    height: 7px;
-    line-height: 7px;
-    font-size: 6px;
+    width: 9px;
+    height: 9px;
+    line-height: 8px;
+    font-size: 8px;
     border: 1px solid gold;
     border-radius: 50%;
     margin-left: 1px;
 }
 .cash {
-    width: 10px !important;
-    height: 10px !important;
+    width: 12px !important;
+    height: 12px !important;
+    text-align: center;
+    font-size: 9px !important;
     border: 1px solid goldenrod !important;
     background-color: gold;
 }

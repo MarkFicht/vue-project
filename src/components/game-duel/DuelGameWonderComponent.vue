@@ -297,7 +297,7 @@ div {
     content: '';
     position: absolute;
     top: -3px;
-    left: 3px;
+    left: 1px;
     z-index: 10;
     width: 10px;
     height: 10px;
@@ -308,8 +308,8 @@ div {
 .takeCoin::after {
     content: '';
     position: absolute;
-    top: -6px;
-    left: 6px;
+    top: -5px;
+    left: 3px;
     z-index: 10;
     width: 10px;
     height: 10px;

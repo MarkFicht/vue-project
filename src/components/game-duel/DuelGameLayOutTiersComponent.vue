@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { toRefs } from 'vue';
 import type { IGameDuelCard } from '@/interfaces/GameDuel';
-import DuelGameCardComponent from '@/components/DuelGameCardComponent.vue';
+import DuelGameCardComponent from '@/components/game-duel/DuelGameCardComponent.vue';
 import { duelGameStore } from '@/store/duelGameStore';
 import { storeToRefs } from 'pinia';
+import type IUser from '@/interfaces/User';
 
 const storeDuelGame = duelGameStore();
 const { selectedCard, player1, player2 } = storeToRefs(storeDuelGame);
@@ -15,6 +16,7 @@ const props = defineProps<{
     reversColor: string;
     cash1P?: number;
     cash2P?: number;
+    user: IUser;
 }>();
 const { card } = toRefs(props);
 </script>
@@ -34,10 +36,10 @@ const { card } = toRefs(props);
     >
         <DuelGameCardComponent
             :card="card"
-            :cash1P="cash1P"
-            :cash2P="cash2P"
-            :res1P="player1.resources.cash"
-            :res2P="player2.resources.cash"
+            :cash1P="user.uid === player1.user.uid ? cash1P : cash2P"
+            :cash2P="user.uid === player1.user.uid ? cash2P : cash1P"
+            :res1P="user.uid === player1.user.uid ? player1.resources.cash : player2.resources.cash"
+            :res2P="user.uid === player1.user.uid ? player2.resources.cash : player1.resources.cash"
         />
     </div>
     <div v-else :class="['cardWrapper', 'invisible']" :style="`--x:${x}%; --y:${y}%; --z:${-10};`">
@@ -73,8 +75,8 @@ const { card } = toRefs(props);
     content: '';
     position: absolute;
     z-index: 1;
-    width: 50px;
-    height: 60px;
+    width: 60px;
+    height: 69px;
     top: 0;
     left: 0;
     border: 4px dotted tomato;

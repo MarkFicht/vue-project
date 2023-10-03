@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch, provide } from 'vue';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import {
     collection,
@@ -28,9 +28,12 @@ import {
     coins
 } from '../helpers/GameDuelInit';
 import { getCountRandomObjFromArr } from '@/helpers/HelpersFoo';
-import DuelGameCardComponent from '@/components/DuelGameCardComponent.vue';
-import DuelGameLayOutTiersComponent from '@/components/DuelGameLayOutTiersComponent.vue';
-import DuelGameWonderComponent from '@/components/DuelGameWonderComponent.vue';
+import DuelGameLayOutTiersComponent from '@/components/game-duel/DuelGameLayOutTiersComponent.vue';
+import DuelGameWonderComponent from '@/components/game-duel/DuelGameWonderComponent.vue';
+import DuelGameBoardDuelComponent from '@/components/game-duel/DuelGameBoardDuelComponent.vue';
+import DuelGameGraveyardComponent from '@/components/game-duel/DuelGameGraveyardComponent.vue';
+import DuelGamePlayersInfoComponent from '@/components/game-duel/DuelGamePlayersInfoComponent.vue';
+import DuelGamePlayersResComponent from '@/components/game-duel/DuelGamePlayersResComponent.vue';
 import {
     PlayerDuel,
     type IGameDuelCard,
@@ -42,6 +45,9 @@ import {
 import { duelGameStore } from '@/store/duelGameStore';
 import { storeToRefs } from 'pinia';
 import type IUser from '@/interfaces/User';
+
+provide('showPrice', showPrice);
+provide('wonderCardSelected', wonderCardSelected);
 
 const headerGameDuel = ref<string>('Duel Game');
 const buttonBuyCard = ref<string>('Buy');
@@ -297,11 +303,31 @@ onMounted(async () => {
 
     // Check state after refresh or leave
     tier.value !== 'prepare' && (actionForCards.value = true);
+    // --- Check coin
     if (pickCoin.value !== '' && isMyTurn.value) {
         actionForCards.value = false;
         selectedCard.value = {} as IGameDuelCard;
     } else {
         actionForCards.value = true;
+    }
+    // --- Check who starts
+    if (move.value === 20 || move.value === 40) {
+        let checkTurn: any = turn.value;
+        checkTurn =
+            checkTurn === player1.value.user.uid
+                ? player2.value.user?.uid || 0
+                : player1.value.user.uid;
+        if (board.value.pawn > 0) checkTurn = player1.value.user.uid;
+        else if (board.value.pawn < 0) checkTurn = player2.value.user?.uid || 0;
+
+        await updateDoc(tableGameDuelRef, {
+            turn: checkTurn
+        });
+
+        if (turn.value === user.value.uid) {
+            actionForCards.value = false;
+            whoWillStart.value = true;
+        }
     }
 });
 
@@ -721,13 +747,13 @@ const prepareSelectWonder = () => {
     selectWonderCard.value = true;
 };
 
-const wonderCardSelected = (wonderCard: IGameDuelWonderCard, cash: number) => {
+function wonderCardSelected(wonderCard: IGameDuelWonderCard, cash: number): any {
     if (!isMyTurn.value) return null;
     let fullPrice = showPrice(wonderCard, `${user.value.uid}`);
     if (fullPrice > cash) return null;
     else selectedWonder.value = wonderCard;
     storeDuelGame.setCardToWonder();
-};
+}
 </script>
 
 <template>
@@ -737,107 +763,22 @@ const wonderCardSelected = (wonderCard: IGameDuelWonderCard, cash: number) => {
         </header>
 
         <section class="wrapper">
-            <section class="playerSection player2">
-                <div class="playerCardContainer">
-                    <div class="playerCard playerCard1">
-                        <DuelGameCardComponent
-                            v-for="card in player2.cards.brown"
-                            :key="card.id"
-                            :card="card"
-                            small
-                        />
-                    </div>
-                    <div class="playerCard playerCard2">
-                        <DuelGameCardComponent
-                            v-for="card in player2.cards.grey"
-                            :key="card.id"
-                            :card="card"
-                            small
-                        />
-                    </div>
-                    <div class="playerCard playerCard3">
-                        <DuelGameCardComponent
-                            v-for="card in player2.cards.yellow"
-                            :key="card.id"
-                            :card="card"
-                            small
-                        />
-                    </div>
-                    <div class="playerCard playerCard4">
-                        <DuelGameCardComponent
-                            v-for="card in player2.cards.blue"
-                            :key="card.id"
-                            :card="card"
-                            small
-                        />
-                    </div>
-                    <div class="playerCard playerCard5">
-                        <DuelGameCardComponent
-                            v-for="card in player2.cards.red"
-                            :key="card.id"
-                            :card="card"
-                            small
-                        />
-                    </div>
-                    <div class="playerCard playerCard6">
-                        <DuelGameCardComponent
-                            v-for="card in player2.cards.green.sort(
-                                (a, b) => a.valuePower[0] - b.valuePower[0]
-                            )"
-                            :key="card.id"
-                            :card="card"
-                            small
-                        />
-                    </div>
-                    <div class="playerCard playerCard7">
-                        <DuelGameCardComponent
-                            v-for="card in player2.cards.purple"
-                            :key="card.id"
-                            :card="card"
-                            small
-                        />
-                    </div>
-                </div>
-                <div class="playerPointsContainer">
-                    <div class="playerCash">
-                        <p :style="turn === player2.user.uid ? `font-weight: bold;` : ''">
-                            {{ `Nick: ${player2.user.displayName || player2.user.email}` }}
-                        </p>
-                        <p :style="turn === player2.user.uid ? `font-weight: bold;` : ''">
-                            {{ `Cash: ${player2.resources.cash} | Points: ${player2.points}` }}
-                        </p>
-                    </div>
-                    <div class="playerCoins">
-                        <span
-                            v-for="coin in player2.resources.coins"
-                            :key="coin"
-                            class="boardSingleCoin"
-                            >{{ coin }}</span
-                        >
-                    </div>
-                </div>
-            </section>
-            <section
-                :class="[
-                    'wonders',
-                    'wonders2',
-                    'customInput',
-                    user.uid === player2.user.uid && selectWonderCard && 'selectWonderFromPlayer'
-                ]"
-            >
-                <DuelGameWonderComponent
-                    v-for="wonderCard in player2.wonderCards"
-                    :card="wonderCard"
-                    :key="wonderCard.id"
-                    :cash="showPrice(wonderCard, `${player2.user.uid}`)"
-                    :resCash="player2.resources.cash"
-                    @click="
-                        tier !== 'prepare' && selectWonderCard
-                            ? wonderCardSelected(wonderCard, player2.resources.cash)
-                            : null
-                    "
-                />
-            </section>
+            <DuelGameBoardDuelComponent
+                :isMyTurn="isMyTurn"
+                :user="user"
+                @coin-selected="coinSelected"
+            />
+
+            <DuelGameGraveyardComponent />
+
+            <DuelGamePlayersInfoComponent />
+
+            <DuelGamePlayersResComponent
+                :user="user"
+                :selectWonderCard="selectWonderCard"
+                @wonder-card-selected="wonderCardSelected"
+            />
+
             <section class="cards cardsWonder" v-if="tier === 'prepare'">
                 <div v-if="!isSecondPick" class="pickWonders">
                     <DuelGameWonderComponent
@@ -889,6 +830,7 @@ const wonderCardSelected = (wonderCard: IGameDuelWonderCard, cash: number) => {
                     v-for="(card, index) in tierOneCards"
                     :key="index"
                     :card="card"
+                    :user="user"
                     :x="tierOneX[index]"
                     :y="tierOneY[index]"
                     :reversColor="'rgb(145, 19, 19)'"
@@ -906,6 +848,7 @@ const wonderCardSelected = (wonderCard: IGameDuelWonderCard, cash: number) => {
                     v-for="(card, index) in tierTwoCards"
                     :key="index"
                     :card="card"
+                    :user="user"
                     :x="tierTwoX[index]"
                     :y="tierTwoY[index]"
                     :reversColor="'rgb(58, 59, 160)'"
@@ -923,6 +866,7 @@ const wonderCardSelected = (wonderCard: IGameDuelWonderCard, cash: number) => {
                     v-for="(card, index) in tierThreeCards"
                     :key="index"
                     :card="card"
+                    :user="user"
                     :x="tierThreeX[index]"
                     :y="tierThreeY[index]"
                     :reversColor="card.tier === 'guild' ? 'rgb(107, 36, 128)' : 'rgb(175, 85, 202)'"
@@ -936,104 +880,6 @@ const wonderCardSelected = (wonderCard: IGameDuelWonderCard, cash: number) => {
                 />
             </section>
 
-            <section class="duel">
-                <div class="boardPanishment">
-                    <div :style="!board.punishment1 ? 'opacity: 0;' : ''">-5$</div>
-                    <div :style="!board.punishment2 ? 'opacity: 0;' : ''">-2$</div>
-                    <div :style="!board.punishment3 ? 'opacity: 0;' : ''">-2$</div>
-                    <div :style="!board.punishment4 ? 'opacity: 0;' : ''">-5$</div>
-                </div>
-                <div class="boardDuel">
-                    <span class="boardBorder"></span><span class="boardBorder"></span
-                    ><span class="boardBorder"></span><span class="boardBorder"></span
-                    ><span class="boardBorder"></span><span class="boardBorder"></span
-                    ><span class="boardBorder"></span><span class="boardBorder"></span
-                    ><span class="boardBorder"></span><span class="boardBorder"></span
-                    ><span class="boardBorder"></span><span class="boardBorder"></span
-                    ><span class="boardBorder"></span><span class="boardBorder"></span
-                    ><span class="boardBorder"></span><span class="boardBorder"></span
-                    ><span class="boardBorder"></span><span class="boardBorder"></span
-                    ><span class="boardBorder"></span>
-                    <div class="boardPawn" :style="`--position:${board.pawn}`"></div>
-                    <div class="boardDuelPoints">
-                        <div>10</div>
-                        <div>5</div>
-                        <div>2</div>
-                        <div>0</div>
-                        <div>2</div>
-                        <div>5</div>
-                        <div>10</div>
-                    </div>
-                </div>
-                <div :class="['boardCoins', isMyTurn && pickCoin !== '' && 'selectCoin']">
-                    <span
-                        v-for="coin in board.coins"
-                        :key="coin"
-                        class="boardSingleCoin"
-                        @click="isMyTurn && pickCoin !== '' ? coinSelected(coin) : null"
-                        >{{ coin }}</span
-                    >
-                </div>
-            </section>
-            <section class="graveyard customInput">
-                <DuelGameCardComponent
-                    v-for="card in graveyard"
-                    :key="card.id"
-                    :card="card"
-                    small
-                />
-            </section>
-            <section class="playerInfo">
-                <div
-                    :class="[
-                        'player1info',
-                        'customInput',
-                        turn === player1.user.uid && 'boldParagraf'
-                    ]"
-                >
-                    <p>
-                        {{ `Nick: ${player1.user.displayName || player1.user.email}` }}
-                    </p>
-                    <p>
-                        {{ `Timer: 90` }}
-                    </p>
-                </div>
-                <div
-                    :class="[
-                        'player2info',
-                        'customInput',
-                        turn === player2.user.uid && 'boldParagraf'
-                    ]"
-                >
-                    <p>
-                        {{ `Nick: ${player2.user.displayName || player2.user.email}` }}
-                    </p>
-                    <p>
-                        {{ `Timer: 90` }}
-                    </p>
-                </div>
-            </section>
-            <section
-                :class="[
-                    'wonders',
-                    'wonders1',
-                    'customInput',
-                    user.uid === player1.user.uid && selectWonderCard && 'selectWonderFromPlayer'
-                ]"
-            >
-                <DuelGameWonderComponent
-                    v-for="wonderCard in player1.wonderCards"
-                    :card="wonderCard"
-                    :key="wonderCard.id"
-                    :cash="showPrice(wonderCard, `${player1.user.uid}`)"
-                    :resCash="player1.resources.cash"
-                    @click="
-                        tier !== 'prepare' && selectWonderCard
-                            ? wonderCardSelected(wonderCard, player1.resources.cash)
-                            : null
-                    "
-                />
-            </section>
             <section v-if="actionForCards && selectedCard?.id" class="playerAction">
                 <button
                     :disabled="
@@ -1087,86 +933,6 @@ const wonderCardSelected = (wonderCard: IGameDuelWonderCard, cash: number) => {
                 <p>{{ labelPickCoin }}</p>
             </section>
             <section v-else class="playerAction"></section>
-            <section class="playerSection player1">
-                <div class="playerCardContainer">
-                    <div class="playerCard playerCard1">
-                        <DuelGameCardComponent
-                            v-for="card in player1.cards.brown"
-                            :key="card.id"
-                            :card="card"
-                            small
-                        />
-                    </div>
-                    <div class="playerCard playerCard2">
-                        <DuelGameCardComponent
-                            v-for="card in player1.cards.grey"
-                            :key="card.id"
-                            :card="card"
-                            small
-                        />
-                    </div>
-                    <div class="playerCard playerCard3">
-                        <DuelGameCardComponent
-                            v-for="card in player1.cards.yellow"
-                            :key="card.id"
-                            :card="card"
-                            small
-                        />
-                    </div>
-                    <div class="playerCard playerCard4">
-                        <DuelGameCardComponent
-                            v-for="card in player1.cards.blue"
-                            :key="card.id"
-                            :card="card"
-                            small
-                        />
-                    </div>
-                    <div class="playerCard playerCard5">
-                        <DuelGameCardComponent
-                            v-for="card in player1.cards.red"
-                            :key="card.id"
-                            :card="card"
-                            small
-                        />
-                    </div>
-                    <div class="playerCard playerCard6">
-                        <DuelGameCardComponent
-                            v-for="card in player1.cards.green.sort(
-                                (a, b) => a.valuePower[0] - b.valuePower[0]
-                            )"
-                            :key="card.id"
-                            :card="card"
-                            small
-                        />
-                    </div>
-                    <div class="playerCard playerCard7">
-                        <DuelGameCardComponent
-                            v-for="card in player1.cards.purple"
-                            :key="card.id"
-                            :card="card"
-                            small
-                        />
-                    </div>
-                </div>
-                <div class="playerPointsContainer">
-                    <div class="playerCash">
-                        <p :style="turn === player1.user.uid ? `font-weight: bold;` : ''">
-                            {{ `Nick: ${player1.user.displayName || player1.user.email}` }}
-                        </p>
-                        <p :style="turn === player1.user.uid ? `font-weight: bold;` : ''">
-                            {{ `Cash: ${player1.resources.cash} | Points: ${player1.points}` }}
-                        </p>
-                    </div>
-                    <div class="playerCoins">
-                        <span
-                            v-for="coin in player1.resources.coins"
-                            :key="coin"
-                            class="boardSingleCoin"
-                            >{{ coin }}</span
-                        >
-                    </div>
-                </div>
-            </section>
         </section>
     </main>
 </template>
@@ -1213,100 +979,6 @@ section.wrapper {
     background-color: #eee;
     animation: showElement 2s linear;
 }
-.wonders {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    height: 155px;
-    width: 230px;
-    padding: 5px;
-    filter: drop-shadow(0 0 35px rgba(0, 0, 0, 0.15));
-}
-.wonders1 {
-    grid-area: w1;
-}
-.wonders2 {
-    grid-area: w2;
-}
-.playerInfo {
-    grid-area: pi;
-    margin: 0 auto;
-}
-.playerInfo > div {
-    height: 60px;
-    margin-bottom: 15px;
-    padding: 5px 15px !important;
-    font-size: 1em;
-    display: block;
-}
-.boldParagraf > p {
-    font-weight: bold;
-}
-.playerSection {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-.playerCardContainer {
-    width: 450px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-.playerPointsContainer {
-    height: 100%;
-    width: 200px;
-    display: flex;
-    justify-content: center;
-    align-items: start;
-    flex-direction: column;
-}
-.playerCash {
-    /*  */
-}
-.playerCoins {
-    height: 50px;
-    display: flex;
-    justify-content: left;
-    align-items: center;
-}
-.playerCoins > span {
-    margin: 0 5px;
-}
-.player1 {
-    grid-area: p1;
-}
-.player2 {
-    grid-area: p2;
-}
-.playerCard {
-    width: 50px;
-    height: 150px;
-    border-radius: 5px;
-    margin: 0 5px;
-}
-.playerCard1 {
-    background-image: linear-gradient(to bottom, rgb(197, 96, 13), 7%, transparent);
-}
-.playerCard2 {
-    background-image: linear-gradient(to bottom, rgb(131, 121, 114), 7%, transparent);
-}
-.playerCard3 {
-    background-image: linear-gradient(to bottom, rgb(255, 239, 9), 7%, transparent);
-}
-.playerCard4 {
-    background-image: linear-gradient(to bottom, rgb(25, 48, 255), 7%, transparent);
-}
-.playerCard5 {
-    background-image: linear-gradient(to bottom, rgb(255, 26, 26), 7%, transparent);
-}
-.playerCard6 {
-    background-image: linear-gradient(to bottom, rgb(18, 219, 0), 7%, transparent);
-}
-.playerCard7 {
-    background-image: linear-gradient(to bottom, rgb(124, 11, 189), 7%, transparent);
-}
 .playerAction {
     grid-area: act;
     display: flex;
@@ -1346,177 +1018,7 @@ section.wrapper {
     animation: showElement 0.5s linear;
     filter: drop-shadow(0 15px 35px rgba(0, 0, 0, 0.5));
 }
-.duel {
-    grid-area: duel;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    filter: drop-shadow(0 0 35px rgba(0, 0, 0, 0.4));
-}
-.boardCoins {
-    height: 200px;
-    width: 50px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
-    border-top-right-radius: 15px;
-    border-bottom-right-radius: 15px;
-    background-color: rgb(76, 160, 50);
-    border-top: 2px solid #222;
-    border-right: 2px solid #222;
-    border-bottom: 2px solid #222;
-}
-.boardSingleCoin {
-    height: 36px;
-    width: 36px;
-    margin: 1px auto;
-    border-radius: 50%;
-    border: 2px solid #222;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    background-color: rgb(27, 207, 27);
-}
-.boardPanishment {
-    height: 300px;
-    width: 30px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
-    transition: 0.5s;
-}
-.boardPanishment > div {
-    width: 42px;
-    height: 18px;
-    border: 2px solid rgb(168, 64, 46);
-    border-radius: 5px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin: 16px 0;
-    background: tomato;
-    transform: rotate(90deg);
-    transition: 0.5s;
-}
-.boardPanishment > div:nth-child(2) {
-    margin-bottom: 115px;
-}
-.boardDuel {
-    position: relative;
-    height: 330px;
-    width: 60px;
-    border-radius: 15%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
-    background-color: rgb(241, 118, 118);
-    border: 2px solid #222;
-}
-.boardDuelPoints {
-    width: 20px;
-    height: 330px;
-    position: absolute;
-    left: 2px;
-    top: 0;
-    text-align: center;
-    display: flex;
-    justify-content: space-between;
-    flex-direction: column;
-}
-.boardDuelPoints > div:nth-child(1) {
-    margin-top: 33px;
-}
-.boardDuelPoints > div:nth-child(2) {
-    margin-top: 25px;
-}
-.boardDuelPoints > div:nth-child(3) {
-    margin-top: 20px;
-}
-.boardDuelPoints > div:nth-child(5) {
-    margin-bottom: 20px;
-}
-.boardDuelPoints > div:nth-child(6) {
-    margin-bottom: 25px;
-}
-.boardDuelPoints > div:nth-child(7) {
-    margin-bottom: 33px;
-}
-.boardBorder {
-    height: 13px;
-    width: 25px;
-    margin: 2px 11px 2px auto;
-    border-radius: 50%;
-    border: 1px solid brown;
-    /* background-color: rgb(223, 83, 83); */
-    background-color: rgb(241, 118, 118);
-    display: block;
-    position: relative;
-}
-.boardPawn {
-    position: absolute;
-    height: 17px;
-    width: 30px;
-    border-radius: 50%;
-    border: 2px solid rgb(180, 0, 0);
-    background-color: rgb(245, 9, 9);
-    left: 19px;
-    top: 50%;
-    transform: translateY(calc(var(--position) * 100% - 50%));
-    transition: 0.5s;
-}
-.boardBorder:nth-child(10) {
-    background-color: rgba(151, 151, 151, 0.5);
-}
-.boardBorder:nth-child(10)::before,
-.boardBorder:nth-child(7)::before,
-.boardBorder:nth-child(4)::before,
-.boardBorder:nth-child(1)::before {
-    content: '';
-    position: absolute;
-    height: 1px;
-    width: 50px;
-    border-bottom: 2px dotted rgba(151, 151, 151, 0.7);
-    left: -20px;
-    bottom: -4px;
-}
-.boardBorder:nth-child(10)::after,
-.boardBorder:nth-child(13)::after,
-.boardBorder:nth-child(16)::after,
-.boardBorder:nth-child(19)::after {
-    content: '';
-    position: absolute;
-    height: 1px;
-    width: 50px;
-    border-top: 2px dotted rgba(151, 151, 151, 0.7);
-    left: -20px;
-    top: -4px;
-}
-.boardBorder:nth-child(7),
-.boardBorder:nth-child(13),
-.boardBorder:nth-child(4),
-.boardBorder:nth-child(16) {
-    background-color: rgba(151, 151, 151, 0.5);
-}
-.boardBorder:nth-child(1),
-.boardBorder:nth-child(19) {
-    background-color: tomato;
-}
-.graveyard {
-    grid-area: grv;
-    padding: 10px;
-    height: 100%;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 3px 10px;
-    /* display: inline-flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap; */
-}
+
 .selectCoin,
 .selectWonderFromPlayer {
     border: 3px dotted tomato;
@@ -1529,6 +1031,11 @@ section.wrapper {
     100% {
         opacity: 1;
     }
+}
+@media (max-width: 1200px) {
+    /* section.wrapper {
+        transform: scale(0.8);
+    } */
 }
 @media (max-width: 720px) {
 }

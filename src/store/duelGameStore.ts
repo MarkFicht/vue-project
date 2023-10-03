@@ -56,9 +56,7 @@ export const duelGameStore = defineStore('duelGameStore', {
         };
     },
     getters: {
-        // getUserById: (state) => {
-        //     //
-        // }
+        //
     },
     actions: {
         async subFirebaseConnect(uid: string) {
