@@ -29,7 +29,7 @@ import {
 } from '../helpers/GameDuelInit';
 import { getCountRandomObjFromArr } from '@/helpers/HelpersFoo';
 import DuelGameCardComponent from '@/components/DuelGameCardComponent.vue';
-import DuelGameLayOutCardsComponent from '@/components/DuelGameLayOutCardsComponent.vue';
+import DuelGameLayOutTiersComponent from '@/components/DuelGameLayOutTiersComponent.vue';
 import DuelGameWonderComponent from '@/components/DuelGameWonderComponent.vue';
 import {
     PlayerDuel,
@@ -48,6 +48,7 @@ const buttonBuyCard = ref<string>('Buy');
 const buttonSell = ref<string>('Sell');
 const buttonBuildWonder = ref<string>('Build Wonder');
 const labelWhoStarts = ref<string>('Who Starts?');
+const labelPickCoin = ref<string>('Pick coin!');
 
 const storeDuelGame = duelGameStore();
 const {
@@ -198,6 +199,7 @@ watch(
     () => {
         if (pickCoin.value !== '' && isMyTurn.value) {
             actionForCards.value = false;
+            selectedCard.value = {} as IGameDuelCard;
         } else {
             actionForCards.value = true;
         }
@@ -292,6 +294,7 @@ onMounted(async () => {
     tier.value !== 'prepare' && (actionForCards.value = true);
     if (pickCoin.value !== '' && isMyTurn.value) {
         actionForCards.value = false;
+        selectedCard.value = {} as IGameDuelCard;
     } else {
         actionForCards.value = true;
     }
@@ -671,6 +674,7 @@ const wonderSelectedForPlayer = async (id: number) => {
 
 const tierCardClick = (gameCard: IGameDuelCard) => {
     if (!isMyTurn.value) return null;
+    if (pickCoin.value !== '') return null;
 
     selectedCard.value = {} as IGameDuelCard;
     selectedWonder.value = {} as IGameDuelWonderCard;
@@ -771,7 +775,9 @@ const wonderCardSelected = (wonderCard: IGameDuelWonderCard, cash: number) => {
                     </div>
                     <div class="playerCard playerCard6">
                         <DuelGameCardComponent
-                            v-for="card in player2.cards.green"
+                            v-for="card in player2.cards.green.sort(
+                                (a, b) => a.valuePower[0] - b.valuePower[0]
+                            )"
                             :key="card.id"
                             :card="card"
                             small
@@ -873,7 +879,7 @@ const wonderCardSelected = (wonderCard: IGameDuelWonderCard, cash: number) => {
                 </div>
             </section>
             <section class="cards cardsTier" v-if="tier === 'I'">
-                <DuelGameLayOutCardsComponent
+                <DuelGameLayOutTiersComponent
                     v-for="(card, index) in tierOneCards"
                     :key="index"
                     :card="card"
@@ -890,7 +896,7 @@ const wonderCardSelected = (wonderCard: IGameDuelWonderCard, cash: number) => {
                 />
             </section>
             <section class="cards cardsTier" v-if="tier === 'II'">
-                <DuelGameLayOutCardsComponent
+                <DuelGameLayOutTiersComponent
                     v-for="(card, index) in tierTwoCards"
                     :key="index"
                     :card="card"
@@ -907,7 +913,7 @@ const wonderCardSelected = (wonderCard: IGameDuelWonderCard, cash: number) => {
                 />
             </section>
             <section class="cards cardsTier" v-if="tier === 'III'">
-                <DuelGameLayOutCardsComponent
+                <DuelGameLayOutTiersComponent
                     v-for="(card, index) in tierThreeCards"
                     :key="index"
                     :card="card"
@@ -1060,7 +1066,7 @@ const wonderCardSelected = (wonderCard: IGameDuelWonderCard, cash: number) => {
                 </button>
             </section>
             <section v-else-if="isMyTurn && pickCoin !== ''" class="playerAction">
-                <p>{{ 'Pick coin!' }}</p>
+                <p>{{ labelPickCoin }}</p>
             </section>
             <section v-else class="playerAction"></section>
             <section class="playerSection player1">
@@ -1107,7 +1113,9 @@ const wonderCardSelected = (wonderCard: IGameDuelWonderCard, cash: number) => {
                     </div>
                     <div class="playerCard playerCard6">
                         <DuelGameCardComponent
-                            v-for="card in player1.cards.green"
+                            v-for="card in player1.cards.green.sort(
+                                (a, b) => a.valuePower[0] - b.valuePower[0]
+                            )"
                             :key="card.id"
                             :card="card"
                             small
@@ -1334,6 +1342,9 @@ section.wrapper {
     border-top-right-radius: 15px;
     border-bottom-right-radius: 15px;
     background-color: rgb(76, 160, 50);
+    border-top: 2px solid #222;
+    border-right: 2px solid #222;
+    border-bottom: 2px solid #222;
 }
 .boardSingleCoin {
     height: 36px;
@@ -1379,6 +1390,7 @@ section.wrapper {
     align-items: center;
     flex-direction: column;
     background-color: rgb(241, 118, 118);
+    border: 2px solid #222;
 }
 .boardDuelPoints {
     width: 20px;
@@ -1415,7 +1427,8 @@ section.wrapper {
     margin: 2px 11px 2px auto;
     border-radius: 50%;
     border: 1px solid brown;
-    background-color: rgb(223, 83, 83);
+    /* background-color: rgb(223, 83, 83); */
+    background-color: rgb(241, 118, 118);
     display: block;
     position: relative;
 }
@@ -1426,13 +1439,13 @@ section.wrapper {
     border-radius: 50%;
     border: 2px solid rgb(180, 0, 0);
     background-color: rgb(245, 9, 9);
-    left: 22px;
+    left: 19px;
     top: 50%;
     transform: translateY(calc(var(--position) * 100% - 50%));
     transition: 0.5s;
 }
 .boardBorder:nth-child(10) {
-    background-color: gray;
+    background-color: rgba(151, 151, 151, 0.5);
 }
 .boardBorder:nth-child(10)::before,
 .boardBorder:nth-child(7)::before,
@@ -1442,7 +1455,7 @@ section.wrapper {
     position: absolute;
     height: 1px;
     width: 50px;
-    border-bottom: 2px dotted gray;
+    border-bottom: 2px dotted rgba(151, 151, 151, 0.7);
     left: -20px;
     bottom: -4px;
 }
@@ -1454,7 +1467,7 @@ section.wrapper {
     position: absolute;
     height: 1px;
     width: 50px;
-    border-top: 2px dotted gray;
+    border-top: 2px dotted rgba(151, 151, 151, 0.7);
     left: -20px;
     top: -4px;
 }
@@ -1462,7 +1475,7 @@ section.wrapper {
 .boardBorder:nth-child(13),
 .boardBorder:nth-child(4),
 .boardBorder:nth-child(16) {
-    background-color: gray;
+    background-color: rgba(151, 151, 151, 0.5);
 }
 .boardBorder:nth-child(1),
 .boardBorder:nth-child(19) {

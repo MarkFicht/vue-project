@@ -63,7 +63,7 @@ const { card } = toRefs(props);
 }
 .cardHide > div {
     background-color: var(--reversCol) !important;
-    border: 1px solid rgb(63, 63, 63) !important;
+    border: 2px solid rgb(63, 63, 63) !important;
     color: transparent !important;
 }
 .canSelect:hover {
