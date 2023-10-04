@@ -228,24 +228,54 @@ onMounted(() => {
             </div>
 
             <div v-if="cashBack">
-                {{
-                    (cashBack === 1 && 'W_2') ||
-                    (cashBack === 2 && 'Y_1') ||
-                    (cashBack === 3 && 'G_3') ||
-                    (cashBack === 4 && 'B_2') ||
-                    (cashBack === 5 && 'R_1')
-                }}
+                <div v-if="cashBack === 1"><ion-icon name="prism"></ion-icon>{{ 'x2$' }}</div>
+                <div v-if="cashBack === 2">
+                    <div class="miniCard" :style="'background: yellow'"></div>
+                    {{ 'x1$' }}
+                </div>
+                <div v-if="cashBack === 3">
+                    <div class="miniCard" :style="'background: grey'"></div>
+                    {{ 'x3$' }}
+                </div>
+                <div v-if="cashBack === 4">
+                    <div class="miniCard" :style="'background: brown'"></div>
+                    {{ 'x2$' }}
+                </div>
+                <div v-if="cashBack === 5">
+                    <div class="miniCard" :style="'background: red'"></div>
+                    {{ 'x1$' }}
+                </div>
             </div>
             <div v-if="guild">
-                {{
-                    (guild === 1 && 'Y_x') ||
-                    (guild === 2 && 'BG_x') ||
-                    (guild === 3 && 'W_x2') ||
-                    (guild === 4 && 'B_x') ||
-                    (guild === 5 && 'G_x') ||
-                    (guild === 6 && '$_3') ||
-                    (guild === 7 && 'R_x')
-                }}
+                <div v-if="guild === 1">
+                    <div class="miniCard" :style="'background: yellow'"></div>
+                    {{ 'x1' }}<ion-icon name="ribbon-sharp"></ion-icon>{{ '$' }}
+                </div>
+                <div v-if="guild === 2">
+                    <div class="miniCard" :style="'background: brown'"></div>
+                    <div class="miniCard" :style="'background: grey'"></div>
+                    {{ 'x1' }}<ion-icon name="ribbon-sharp"></ion-icon>{{ '$' }}
+                </div>
+                <div v-if="guild === 3">
+                    <ion-icon name="prism"></ion-icon>
+                    {{ 'x2' }}<ion-icon name="ribbon-sharp"></ion-icon>
+                </div>
+                <div v-if="guild === 4">
+                    <div class="miniCard" :style="'background: blue'"></div>
+                    {{ 'x1' }}<ion-icon name="ribbon-sharp"></ion-icon>{{ '$' }}
+                </div>
+                <div v-if="guild === 5">
+                    <div class="miniCard" :style="'background: green'"></div>
+                    {{ 'x1' }}<ion-icon name="ribbon-sharp"></ion-icon>{{ '$' }}
+                </div>
+                <div v-if="guild === 6">
+                    <div class="cash">{{ '3' }}</div>
+                    {{ '/' }}<ion-icon name="ribbon-sharp"></ion-icon>
+                </div>
+                <div v-if="guild === 7">
+                    <div class="miniCard" :style="'background: red'"></div>
+                    {{ 'x1' }}<ion-icon name="ribbon-sharp"></ion-icon>{{ '$' }}
+                </div>
             </div>
         </div>
 
@@ -370,6 +400,13 @@ div {
 }
 .glass {
     background-color: cornflowerblue;
+}
+.miniCard {
+    height: 12px;
+    width: 9px;
+    border: 1px solid;
+    border-radius: 2px;
+    margin: 0 1px;
 }
 .small {
     height: 20px !important;

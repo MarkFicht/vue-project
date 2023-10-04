@@ -12,6 +12,7 @@ import {
 import db from '@/firebase/index';
 import { collection, doc, updateDoc, onSnapshot, increment, arrayUnion } from 'firebase/firestore';
 import { countPlayerResources } from '@/helpers/GameDuelInit';
+import { debounce } from 'lodash-es';
 
 const gameDuelRef = collection(db, 'gameDuel');
 const tableGameDuelRef = doc(gameDuelRef, 'table1');
@@ -132,43 +133,79 @@ export const duelGameStore = defineStore('duelGameStore', {
             });
             this.isLoading = false;
         },
-        async setMovePawn(pawnPosition: number): Promise<void> {
+        async setMovePawn(howManyMovePawn: number, uid: string): Promise<void> {
             this.isLoading = true;
 
-            if (pawnPosition <= -6 && this.board.punishment1) {
-                await updateDoc(tableGameDuelRef, {
-                    'gameBoard.punishment1': false,
-                    'player2.resources.cash':
-                        this.player2.resources.cash <= 5 ? 0 : (this.player2.resources.cash -= 5)
-                });
-            } else if (pawnPosition <= -3 && this.board.punishment2) {
-                await updateDoc(tableGameDuelRef, {
-                    'gameBoard.punishment2': false,
-                    'player2.resources.cash':
-                        this.player2.resources.cash <= 2 ? 0 : (this.player2.resources.cash -= 2)
-                });
-            } else if (pawnPosition >= 3 && this.board.punishment3) {
-                await updateDoc(tableGameDuelRef, {
-                    'gameBoard.punishment3': false,
-                    'player1.resources.cash':
-                        this.player1.resources.cash <= 2 ? 0 : (this.player1.resources.cash -= 2)
-                });
-            } else if (pawnPosition >= 6 && this.board.punishment4) {
-                await updateDoc(tableGameDuelRef, {
-                    'gameBoard.punishment4': false,
-                    'player1.resources.cash':
-                        this.player1.resources.cash <= 5 ? 0 : (this.player1.resources.cash -= 5)
-                });
+            if (uid === this.player1.user.uid) {
+                for (let index = 0; index < howManyMovePawn; index++) {
+                    if (this.board.pawn <= -8) {
+                        await updateDoc(tableGameDuelRef, {
+                            'gameBoard.pawn': increment(-1)
+                        });
+                        // TODO - end game!
+                        console.log('%c END GAME - ATTACK -> ', 'background: #222; color: #bada55');
+                        return;
+                    }
+                    await updateDoc(tableGameDuelRef, {
+                        'gameBoard.pawn': increment(-1)
+                    });
+                    if (this.board.pawn <= -6 && this.board.punishment1) {
+                        await updateDoc(tableGameDuelRef, {
+                            'gameBoard.punishment1': false,
+                            'player2.resources.cash':
+                                this.player2.resources.cash <= 5
+                                    ? 0
+                                    : (this.player2.resources.cash -= 5)
+                        });
+                    } else if (this.board.pawn <= -3 && this.board.punishment2) {
+                        await updateDoc(tableGameDuelRef, {
+                            'gameBoard.punishment2': false,
+                            'player2.resources.cash':
+                                this.player2.resources.cash <= 2
+                                    ? 0
+                                    : (this.player2.resources.cash -= 2)
+                        });
+                    }
+                }
+            } else {
+                for (let index = 0; index < howManyMovePawn; index++) {
+                    if (this.board.pawn >= 8) {
+                        await updateDoc(tableGameDuelRef, {
+                            'gameBoard.pawn': increment(1)
+                        });
+                        // TODO - end game!
+                        console.log('%c END GAME - ATTACK -> ', 'background: #222; color: #bada55');
+                        return;
+                    }
+                    await updateDoc(tableGameDuelRef, {
+                        'gameBoard.pawn': increment(1)
+                    });
+                    if (this.board.pawn >= 3 && this.board.punishment3) {
+                        await updateDoc(tableGameDuelRef, {
+                            'gameBoard.punishment3': false,
+                            'player1.resources.cash':
+                                this.player1.resources.cash <= 2
+                                    ? 0
+                                    : (this.player1.resources.cash -= 2)
+                        });
+                    } else if (this.board.pawn >= 6 && this.board.punishment4) {
+                        await updateDoc(tableGameDuelRef, {
+                            'gameBoard.punishment4': false,
+                            'player1.resources.cash':
+                                this.player1.resources.cash <= 5
+                                    ? 0
+                                    : (this.player1.resources.cash -= 5)
+                        });
+                    }
+                }
             }
 
             // TODO - check its over
-            await updateDoc(tableGameDuelRef, {
-                'gameBoard.pawn': pawnPosition,
-                turn:
-                    this.turn === this.player1.user.uid
-                        ? this.player2.user.uid
-                        : this.player1.user.uid
-            });
+            this.upgradeTurn(
+                this.turn === this.player1.user.uid
+                    ? `${this.player2.user.uid}`
+                    : `${this.player1.user.uid}`
+            );
             this.upgradeMove();
             this.isLoading = false;
         },
@@ -176,7 +213,7 @@ export const duelGameStore = defineStore('duelGameStore', {
             let cardToTake: IGameDuelCard = {} as IGameDuelCard;
             let takeCoin: boolean = false;
             let movePawn: boolean = false;
-            let pawnPosition: number = 0;
+            let howManyMovePawn: number = 0;
 
             if (this.tier === 'I') {
                 this.tierOneCards = this.$state.tierOneCards.map((card) => {
@@ -239,8 +276,10 @@ export const duelGameStore = defineStore('duelGameStore', {
                     cardToTake.power.forEach((redPow, i) => {
                         if (redPow === 'attack') {
                             if (this.player1.resources.coins.find((eff) => eff === 'attack1')) {
-                                pawnPosition = this.board.pawn - ++cardToTake.valuePower[i];
-                            } else pawnPosition = this.board.pawn - cardToTake.valuePower[i];
+                                howManyMovePawn = ++cardToTake.valuePower[i];
+                            } else {
+                                howManyMovePawn = cardToTake.valuePower[i];
+                            }
 
                             movePawn = true;
                         }
@@ -314,7 +353,7 @@ export const duelGameStore = defineStore('duelGameStore', {
                 if (takeCoin) {
                     this.setPickCoin(`${this.player1.user.uid}`);
                 } else if (movePawn) {
-                    this.setMovePawn(pawnPosition);
+                    this.setMovePawn(howManyMovePawn, `${this.player1.user.uid}`);
                 } else {
                     this.upgradeTurn(`${this.player2.user.uid}`);
                     this.upgradeMove();
@@ -329,8 +368,10 @@ export const duelGameStore = defineStore('duelGameStore', {
                     cardToTake.power.forEach((redPow, i) => {
                         if (redPow === 'attack') {
                             if (this.player2.resources.coins.find((eff) => eff === 'attack1')) {
-                                pawnPosition = this.board.pawn + cardToTake.valuePower[i] + 1;
-                            } else pawnPosition = this.board.pawn + cardToTake.valuePower[i];
+                                howManyMovePawn = cardToTake.valuePower[i] + 1;
+                            } else {
+                                howManyMovePawn = cardToTake.valuePower[i];
+                            }
 
                             movePawn = true;
                         }
@@ -404,7 +445,7 @@ export const duelGameStore = defineStore('duelGameStore', {
                 if (takeCoin) {
                     this.setPickCoin(`${this.player2.user.uid}`);
                 } else if (movePawn) {
-                    this.setMovePawn(pawnPosition);
+                    this.setMovePawn(howManyMovePawn, `${this.player2.user.uid}`);
                 } else {
                     this.upgradeTurn(`${this.player1.user.uid}`);
                     this.upgradeMove();

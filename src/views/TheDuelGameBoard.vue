@@ -942,7 +942,7 @@ function wonderCardSelected(wonderCard: IGameDuelWonderCard, cash: number): any 
                     {{ buttonBuildWonder }}
                 </button>
             </section>
-            <section v-else-if="isMyTurn && chooseWhoWillStart" class="playerAction">
+            <section v-else-if="isMyTurn && chooseWhoWillStart && !isLoading" class="playerAction">
                 <button class="customButton" @click="() => chooseWhoStarts(`${player1.user.uid}`)">
                     {{ player1.user.displayName }}
                 </button>
@@ -951,10 +951,10 @@ function wonderCardSelected(wonderCard: IGameDuelWonderCard, cash: number): any 
                     {{ player2.user.displayName }}
                 </button>
             </section>
-            <section v-else-if="isMyTurn && pickCoin !== ''" class="playerAction">
+            <section v-else-if="isMyTurn && pickCoin !== '' && !isLoading" class="playerAction">
                 <p>{{ labelPickCoin }}</p>
             </section>
-            <section v-else-if="isMyTurn && tier === 'prepare'" class="playerAction">
+            <section v-else-if="isMyTurn && tier === 'prepare' && !isLoading" class="playerAction">
                 <p>{{ labelPickWonder }}</p>
             </section>
             <section v-else class="playerAction"></section>
