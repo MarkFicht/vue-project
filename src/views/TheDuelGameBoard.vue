@@ -740,22 +740,41 @@ const tierCardClick = (gameCard: IGameDuelCard) => {
 
 const coinSelected = async (coin: IGameDuelCoin['effect']) => {
     isLoading.value = true;
+    let cash = 0;
+    switch (coin) {
+        case 'point4n6cash':
+            cash += 6;
+            break;
+        case 'cash6n4special':
+            cash += 6;
+            break;
+        default:
+            break;
+    }
     if (turn.value === player1.value.user.uid) {
         await updateDoc(tableGameDuelRef, {
             'gameBoard.coins': arrayRemove(coin),
             'player1.resources.coins': arrayUnion(coin),
             pickCoin: ''
         });
-        storeDuelGame.upgradeTurn(`${player2.value.user.uid}`);
+        cash !== 0 &&
+            (await updateDoc(tableGameDuelRef, {
+                'player1.resources.cash': increment(6)
+            }));
     } else {
         await updateDoc(tableGameDuelRef, {
             'gameBoard.coins': arrayRemove(coin),
             'player2.resources.coins': arrayUnion(coin),
             pickCoin: ''
         });
-        storeDuelGame.upgradeTurn(`${player1.value.user.uid}`);
+        cash !== 0 &&
+            (await updateDoc(tableGameDuelRef, {
+                'player2.resources.cash': increment(6)
+            }));
     }
-    storeDuelGame.upgradeMove();
+
+    // Check game over || upgrade turne and move
+    storeDuelGame.countArtefacts(turn.value);
     isLoading.value = false;
 };
 

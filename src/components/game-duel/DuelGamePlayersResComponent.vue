@@ -18,6 +18,24 @@ const { user } = toRefs(props);
 
 const showPrice = inject<any>('showPrice');
 const wonderCardSelected = inject<any>('wonderCardSelected');
+
+function countArtefacts(uid: string): number {
+    if (uid === player1.value.user.uid) {
+        let art = 0;
+        if (player1.value.resources.coins.find((coin) => coin === 'artefact7')) {
+            art += 0;
+        }
+        const arrOfArt = player1.value.cards.green.map((green) => green.valuePower[0]);
+        return (art += [...new Set(arrOfArt)].length);
+    } else {
+        let art = 0;
+        if (player2.value.resources.coins.find((coin) => coin === 'artefact7')) {
+            art += 0;
+        }
+        const arrOfArt = player2.value.cards.green.map((green) => green.valuePower[0]);
+        return (art += [...new Set(arrOfArt)].length);
+    }
+}
 </script>
 
 <template>
@@ -86,6 +104,9 @@ const wonderCardSelected = inject<any>('wonderCardSelected');
                 />
             </div>
             <div class="playerCard playerCard6">
+                <div class="countArt">
+                    {{ countArtefacts(`${player1.user.uid}`) + '/6' }}
+                </div>
                 <DuelGameCardComponent
                     v-for="card in player1.cards.green.sort(
                         (a, b) => a.valuePower[0] - b.valuePower[0]
@@ -188,6 +209,9 @@ const wonderCardSelected = inject<any>('wonderCardSelected');
                 />
             </div>
             <div class="playerCard playerCard6">
+                <div class="countArt">
+                    {{ countArtefacts(`${player2.user.uid}`) + '/6' }}
+                </div>
                 <DuelGameCardComponent
                     v-for="card in player2.cards.green.sort(
                         (a, b) => a.valuePower[0] - b.valuePower[0]
@@ -287,6 +311,14 @@ const wonderCardSelected = inject<any>('wonderCardSelected');
 }
 .playerCard6 {
     background-image: linear-gradient(to bottom, rgb(18, 219, 0), 7%, transparent);
+    position: relative;
+}
+.countArt {
+    position: absolute;
+    top: -18px;
+    font-size: 9px;
+    left: 50%;
+    transform: translateX(-50%);
 }
 .playerCard7 {
     background-image: linear-gradient(to bottom, rgb(124, 11, 189), 7%, transparent);
