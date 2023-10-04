@@ -22,8 +22,6 @@ export interface IDuelGameStore {
     tier: Tier;
     move: number;
     pickCoin: string;
-    selectedCard: IGameDuelCard;
-    selectedWonder: IGameDuelWonderCard;
     tierOneCards: IGameDuelCard[];
     tierTwoCards: IGameDuelCard[];
     tierThreeCards: IGameDuelCard[];
@@ -33,6 +31,9 @@ export interface IDuelGameStore {
     board: IGameDuelBoard;
     player1: IGameDuelPlayer;
     player2: IGameDuelPlayer;
+    selectedCard: IGameDuelCard;
+    selectedWonder: IGameDuelWonderCard;
+    isLoading: boolean;
 }
 
 export const duelGameStore = defineStore('duelGameStore', {
@@ -42,8 +43,6 @@ export const duelGameStore = defineStore('duelGameStore', {
             tier: 'prepare',
             move: 0,
             pickCoin: '',
-            selectedCard: {} as IGameDuelCard,
-            selectedWonder: {} as IGameDuelWonderCard,
             tierOneCards: [],
             tierTwoCards: [],
             tierThreeCards: [],
@@ -52,7 +51,10 @@ export const duelGameStore = defineStore('duelGameStore', {
             graveyard: [],
             board: new BoardDuel(),
             player1: new PlayerDuel(),
-            player2: new PlayerDuel()
+            player2: new PlayerDuel(),
+            selectedCard: {} as IGameDuelCard,
+            selectedWonder: {} as IGameDuelWonderCard,
+            isLoading: false
         };
     },
     getters: {
@@ -101,12 +103,26 @@ export const duelGameStore = defineStore('duelGameStore', {
             this.selectedCard = {} as IGameDuelCard;
             this.selectedWonder = {} as IGameDuelWonderCard;
         },
+        async upgradeMove(): Promise<void> {
+            await updateDoc(tableGameDuelRef, {
+                move: increment(1)
+            });
+        },
+        async upgradeTurn(uid: string): Promise<void> {
+            await updateDoc(tableGameDuelRef, {
+                turn: uid
+            });
+        },
         async setPickCoin(id: string): Promise<void> {
+            this.isLoading = true;
             await updateDoc(tableGameDuelRef, {
                 pickCoin: id
             });
+            this.isLoading = false;
         },
         async setMovePawn(pawnPosition: number): Promise<void> {
+            this.isLoading = true;
+
             if (pawnPosition <= -6 && this.board.punishment1) {
                 await updateDoc(tableGameDuelRef, {
                     'gameBoard.punishment1': false,
@@ -139,9 +155,10 @@ export const duelGameStore = defineStore('duelGameStore', {
                 turn:
                     this.turn === this.player1.user.uid
                         ? this.player2.user.uid
-                        : this.player1.user.uid,
-                move: increment(1)
+                        : this.player1.user.uid
             });
+            this.upgradeMove();
+            this.isLoading = false;
         },
         async setCardTaken(cash: number): Promise<void> {
             let cardToTake: IGameDuelCard = {} as IGameDuelCard;
@@ -199,6 +216,7 @@ export const duelGameStore = defineStore('duelGameStore', {
                 });
             }
 
+            this.isLoading = true;
             if (this.turn === this.player1.user.uid) {
                 const res = countPlayerResources(cardToTake, this.player1);
                 this.player1.cards[cardToTake.color].push({
@@ -286,10 +304,8 @@ export const duelGameStore = defineStore('duelGameStore', {
                 } else if (movePawn) {
                     this.setMovePawn(pawnPosition);
                 } else {
-                    await updateDoc(tableGameDuelRef, {
-                        turn: this.player2.user?.uid || 0,
-                        move: increment(1)
-                    });
+                    this.upgradeTurn(`${this.player2.user.uid}`);
+                    this.upgradeMove();
                 }
             } else {
                 const res = countPlayerResources(cardToTake, this.player2);
@@ -378,14 +394,13 @@ export const duelGameStore = defineStore('duelGameStore', {
                 } else if (movePawn) {
                     this.setMovePawn(pawnPosition);
                 } else {
-                    await updateDoc(tableGameDuelRef, {
-                        turn: this.player1.user?.uid || 0,
-                        move: increment(1)
-                    });
+                    this.upgradeTurn(`${this.player1.user.uid}`);
+                    this.upgradeMove();
                 }
             }
 
             this.unselectCard();
+            this.isLoading = false;
         },
         async setCardGraveyard(): Promise<void> {
             let cardToGraveyard: IGameDuelCard = {} as IGameDuelCard;
@@ -440,6 +455,7 @@ export const duelGameStore = defineStore('duelGameStore', {
                 });
             }
 
+            this.isLoading = true;
             this.graveyard.push({ ...cardToGraveyard, taken: 'graveyard' });
             if (this.turn === this.player1.user.uid) {
                 const addCash = 2 + this.player1.cards.yellow.length;
@@ -447,22 +463,23 @@ export const duelGameStore = defineStore('duelGameStore', {
                 //TODO - start it after 2 users online
                 await updateDoc(tableGameDuelRef, {
                     'player1.resources.cash': increment(addCash),
-                    graveyard: this.graveyard,
-                    turn: this.player2.user?.uid || 0,
-                    move: increment(1)
+                    graveyard: this.graveyard
                 });
+                this.upgradeTurn(`${this.player2.user?.uid}`);
+                this.upgradeMove();
             } else {
                 const addCash = 2 + this.player2.cards.yellow.length;
 
                 await updateDoc(tableGameDuelRef, {
                     'player2.resources.cash': increment(addCash),
-                    graveyard: this.graveyard,
-                    turn: this.player1.user?.uid,
-                    move: increment(1)
+                    graveyard: this.graveyard
                 });
+                this.upgradeTurn(`${this.player1.user.uid}`);
+                this.upgradeMove();
             }
 
             this.unselectCard();
+            this.isLoading = false;
         },
         async setCardToWonder(): Promise<void> {
             let cardToWonder: IGameDuelCard = {} as IGameDuelCard;
@@ -520,34 +537,36 @@ export const duelGameStore = defineStore('duelGameStore', {
             wonderCardToActive = this.selectedWonder;
             wonderCardToActive.activated = cardToWonder.tier;
 
+            this.isLoading = true;
             if (this.turn === this.player1.user.uid) {
                 const newWonders = this.player1.wonderCards.map((cd) => {
                     return cd.id === wonderCardToActive.id ? wonderCardToActive : cd;
                 });
                 await updateDoc(tableGameDuelRef, {
                     'player1.wonderCards': newWonders,
-                    move: increment(1),
                     turn:
                         this.turn === this.player1.user.uid
                             ? this.player2.user.uid
                             : this.player1.user.uid
                 });
+                this.upgradeMove();
             } else {
                 const newWonders = this.player2.wonderCards.map((cd) => {
                     return cd.id === wonderCardToActive.id ? wonderCardToActive : cd;
                 });
                 await updateDoc(tableGameDuelRef, {
                     'player2.wonderCards': newWonders,
-                    move: increment(1),
                     turn:
                         this.turn === this.player1.user.uid
                             ? this.player2.user.uid
                             : this.player1.user.uid
                 });
+                this.upgradeMove();
             }
 
             // TODO check for 7 cards and remove 8th + get res
             this.unselectCard();
+            this.isLoading = false;
         }
     }
 });

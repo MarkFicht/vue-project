@@ -38,8 +38,8 @@
 }
 .loader {
     position: relative;
-    width: 31px;
-    height: 31px;
+    width: 60px;
+    height: 60px;
 }
 
 .loader span {
@@ -56,8 +56,8 @@
     position: absolute;
     top: 0;
     left: 0;
-    width: 4px;
-    height: 4px;
+    width: 7px;
+    height: 7px;
     transform: scale(0);
     background: hsla(160, 100%, 37%, 1);
     border-radius: 50%;

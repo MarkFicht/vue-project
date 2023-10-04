@@ -30,6 +30,9 @@ const paperCost = ref<number>(0);
 const glassCost = ref<number>(0);
 const cashCost = ref<number>(0);
 
+// --- BG color
+const bgColor = ref<string>('');
+
 const props = defineProps<{
     card: IGameDuelCard;
     small?: boolean;
@@ -122,14 +125,38 @@ onMounted(() => {
                 break;
         }
     });
+
+    switch (card.value.color) {
+        case 'red':
+            bgColor.value = 'rgb(255, 39, 39)';
+            break;
+        case 'green':
+            bgColor.value = 'rgb(14, 165, 14)';
+            break;
+        case 'blue':
+            bgColor.value = 'rgb(74, 74, 252)';
+            break;
+        case 'yellow':
+            bgColor.value = 'rgb(255, 255, 44)';
+            break;
+        case 'brown':
+            bgColor.value = 'rgb(197, 69, 69)';
+            break;
+        case 'grey':
+            bgColor.value = 'rgb(161, 161, 161)';
+            break;
+        case 'purple':
+            bgColor.value = 'rgb(192, 23, 192)';
+            break;
+
+        default:
+            break;
+    }
 });
 </script>
 
 <template>
-    <div
-        :class="['card', `card${card.id}`, small && 'small']"
-        :style="`background: ${card.color};`"
-    >
+    <div :class="['card', `card${card.id}`, small && 'small']" :style="`--bgColor:${bgColor};`">
         <div
             v-if="card.taken === 'inGame' && cash1P !== undefined && cash1P >= 0"
             :class="['cashSumP1', res1P !== undefined && cash1P > res1P && 'colorRed']"
@@ -256,31 +283,31 @@ div {
 }
 .cashSumP1 {
     position: absolute;
-    width: 17px;
-    height: 17px;
+    width: 16px;
+    height: 16px;
     font-size: 12px;
     line-height: 17px;
     border-radius: 50%;
     background-color: gold;
     bottom: -50%;
     left: 50%;
-    transform: translateX(-50%) translateY(-85%);
-    border: 2px solid #333;
+    transform: translateX(-50%) translateY(-140%);
+    border: 1px solid #333;
     z-index: 1000;
     font-weight: bold;
 }
 .cashSumP2 {
     position: absolute;
-    width: 17px;
-    height: 17px;
+    width: 16px;
+    height: 16px;
     font-size: 12px;
     line-height: 17px;
     border-radius: 50%;
     background-color: silver;
     bottom: 0;
     left: 50%;
-    transform: translateX(-50%) translateY(0);
-    border: 2px solid #333;
+    transform: translateX(-50%) translateY(-30%);
+    border: 1px solid #333;
     z-index: 1000;
     font-weight: bold;
 }
@@ -289,7 +316,7 @@ div {
 }
 .card {
     position: relative;
-    border: 2px solid;
+    border: 1px solid #222;
     border-radius: 5px;
     width: 60px;
     height: 69px;
@@ -297,7 +324,11 @@ div {
     grid-template-columns: 1fr 2fr 1fr;
     grid-template-rows: 1fr 1fr 1fr;
     transition: 0.3s;
+    background-color: var(--bgColor);
     color: #222;
+    box-shadow:
+        inset 5px 5px 10px rgba(0, 0, 0, 0.2),
+        inset -5px -5px 10px rgba(255, 255, 255, 0.1);
 }
 .resources > div {
     width: 13px;

@@ -3,6 +3,7 @@ import { duelGameStore } from '@/store/duelGameStore';
 import { storeToRefs } from 'pinia';
 import DuelGameCardComponent from '@/components/game-duel/DuelGameCardComponent.vue';
 import DuelGameWonderComponent from '@/components/game-duel/DuelGameWonderComponent.vue';
+import DuelGameCoinComponent from '@/components/game-duel/DuelGameCoinComponent.vue';
 import { toRefs, inject } from 'vue';
 import type IUser from '@/interfaces/User';
 
@@ -113,9 +114,11 @@ const wonderCardSelected = inject<any>('wonderCardSelected');
                 </p>
             </div>
             <div class="playerCoins">
-                <span v-for="coin in player1.resources.coins" :key="coin" class="boardSingleCoin">{{
-                    coin
-                }}</span>
+                <DuelGameCoinComponent
+                    v-for="coin in player1.resources.coins"
+                    :key="coin"
+                    :coin="coin"
+                />
             </div>
         </div>
     </section>
@@ -213,12 +216,11 @@ const wonderCardSelected = inject<any>('wonderCardSelected');
                 </p>
             </div>
             <div class="playerCoins">
-                <span
+                <DuelGameCoinComponent
                     v-for="coin in player2.resources.coins"
                     :key="coin"
-                    class="playerSingleCoin"
-                    >{{ coin }}</span
-                >
+                    :coin="coin"
+                />
             </div>
         </div>
     </section>
@@ -255,17 +257,6 @@ const wonderCardSelected = inject<any>('wonderCardSelected');
 }
 .playerCoins > span {
     margin: 0 5px;
-}
-.playerSingleCoin {
-    height: 36px;
-    width: 36px;
-    margin: 1px auto;
-    border-radius: 50%;
-    border: 2px solid #222;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background-color: rgb(27, 207, 27);
 }
 .player1 {
     grid-area: p1;
@@ -316,5 +307,8 @@ const wonderCardSelected = inject<any>('wonderCardSelected');
 }
 .wonders2 {
     grid-area: w2;
+}
+.selectWonderFromPlayer {
+    border: 3px dotted tomato;
 }
 </style>

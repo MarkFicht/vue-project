@@ -3,6 +3,7 @@ import { toRefs } from 'vue';
 import { duelGameStore } from '@/store/duelGameStore';
 import { storeToRefs } from 'pinia';
 import type IUser from '@/interfaces/User';
+import DuelGameCoinComponent from '@/components/game-duel/DuelGameCoinComponent.vue';
 
 const storeDuelGame = duelGameStore();
 const { board, pickCoin, player2 } = storeToRefs(storeDuelGame);
@@ -39,7 +40,7 @@ const { isMyTurn } = toRefs(props);
             ><span class="boardBorder"></span><span class="boardBorder"></span
             ><span class="boardBorder"></span><span class="boardBorder"></span
             ><span class="boardBorder"></span>
-            <div class="boardPawn" :style="`--position:${board.pawn}`"></div>
+            <div class="boardPawn" :style="`--position:${board.pawn}`">X</div>
             <div class="boardDuelPoints">
                 <div>10</div>
                 <div>5</div>
@@ -51,13 +52,13 @@ const { isMyTurn } = toRefs(props);
             </div>
         </div>
         <div :class="['boardCoins', isMyTurn && pickCoin !== '' && 'selectCoin']">
-            <span
+            <DuelGameCoinComponent
                 v-for="coin in board.coins"
                 :key="coin"
-                class="boardSingleCoin"
+                :coin="coin"
+                :style="isMyTurn && pickCoin !== '' && `cursor: pointer;`"
                 @click="isMyTurn && pickCoin !== '' ? emit('coin-selected', coin) : null"
-                >{{ coin }}</span
-            >
+            />
         </div>
     </section>
 </template>
@@ -80,21 +81,9 @@ const { isMyTurn } = toRefs(props);
     border-top-right-radius: 15px;
     border-bottom-right-radius: 15px;
     background-color: rgb(76, 160, 50);
-    border-top: 2px solid #222;
-    border-right: 2px solid #222;
-    border-bottom: 2px solid #222;
-}
-.boardSingleCoin {
-    height: 36px;
-    width: 36px;
-    margin: 1px auto;
-    border-radius: 50%;
-    border: 2px solid #222;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    background-color: rgb(27, 207, 27);
+    border-top: 1px solid #222;
+    border-right: 1px solid #222;
+    border-bottom: 1px solid #222;
 }
 .boardPanishment {
     height: 300px;
@@ -108,7 +97,7 @@ const { isMyTurn } = toRefs(props);
 .boardPanishment > div {
     width: 42px;
     height: 18px;
-    border: 2px solid rgb(168, 64, 46);
+    border: 1px solid rgb(168, 64, 46);
     border-radius: 5px;
     display: flex;
     justify-content: center;
@@ -117,6 +106,9 @@ const { isMyTurn } = toRefs(props);
     background: tomato;
     transform: rotate(90deg);
     transition: 0.5s;
+    box-shadow:
+        inset 5px 5px 10px rgba(0, 0, 0, 0.25),
+        inset -5px -5px 10px rgba(255, 255, 255, 0.35);
 }
 .boardPanishment > div:nth-child(2) {
     margin-bottom: 115px;
@@ -137,7 +129,7 @@ const { isMyTurn } = toRefs(props);
     align-items: center;
     flex-direction: column;
     background-color: rgb(241, 118, 118);
-    border: 2px solid #222;
+    border: 1px solid #222;
 }
 .rotateBoardDuel {
     transform: rotate(180deg) scaleX(-1);
@@ -179,23 +171,31 @@ const { isMyTurn } = toRefs(props);
     width: 25px;
     margin: 2px 11px 2px auto;
     border-radius: 50%;
-    border: 1px solid brown;
+    /* border: 1px solid brown; */
     /* background-color: rgb(223, 83, 83); */
     background-color: rgb(241, 118, 118);
     display: block;
     position: relative;
+    box-shadow:
+        inset 5px 5px 10px rgba(0, 0, 0, 0.25),
+        inset -5px -5px 10px rgba(255, 255, 255, 0.35);
 }
 .boardPawn {
     position: absolute;
     height: 17px;
     width: 30px;
     border-radius: 50%;
-    border: 2px solid rgb(180, 0, 0);
-    background-color: rgb(245, 9, 9);
     left: 19px;
     top: 50%;
+    font-size: 10px;
+    text-align: center;
+    line-height: 16px;
     transform: translateY(calc(var(--position) * 100% - 50%));
     transition: 0.5s;
+    box-shadow:
+        2px 2px 10px rgba(0, 0, 0, 0.15),
+        -2px -2px 10px rgba(255, 255, 255, 0.25);
+    background: linear-gradient(-45deg, rgb(185, 6, 6), rgb(240, 104, 104));
 }
 .boardBorder:nth-child(10) {
     background-color: rgba(151, 151, 151, 0.5);
@@ -208,8 +208,8 @@ const { isMyTurn } = toRefs(props);
     position: absolute;
     height: 1px;
     width: 50px;
-    border-bottom: 2px dotted rgba(151, 151, 151, 0.7);
-    left: -20px;
+    border-bottom: 2px dotted rgba(135, 135, 135, 0.7);
+    left: -18px;
     bottom: -4px;
 }
 .boardBorder:nth-child(10)::after,
@@ -220,8 +220,8 @@ const { isMyTurn } = toRefs(props);
     position: absolute;
     height: 1px;
     width: 50px;
-    border-top: 2px dotted rgba(151, 151, 151, 0.7);
-    left: -20px;
+    border-top: 2px dotted rgba(135, 135, 135, 0.7);
+    left: -18px;
     top: -4px;
 }
 .boardBorder:nth-child(7),
@@ -233,5 +233,8 @@ const { isMyTurn } = toRefs(props);
 .boardBorder:nth-child(1),
 .boardBorder:nth-child(19) {
     background-color: tomato;
+}
+.selectCoin {
+    border: 3px dotted tomato;
 }
 </style>

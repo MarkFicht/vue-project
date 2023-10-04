@@ -28,6 +28,7 @@ import {
     coins
 } from '../helpers/GameDuelInit';
 import { getCountRandomObjFromArr } from '@/helpers/HelpersFoo';
+import LoadingSpinner from '@/components/LoadingSpinner.vue';
 import DuelGameLayOutTiersComponent from '@/components/game-duel/DuelGameLayOutTiersComponent.vue';
 import DuelGameWonderComponent from '@/components/game-duel/DuelGameWonderComponent.vue';
 import DuelGameBoardDuelComponent from '@/components/game-duel/DuelGameBoardDuelComponent.vue';
@@ -62,8 +63,6 @@ const {
     tierTwoCards,
     tierThreeCards,
     wonderCards,
-    selectedCard,
-    selectedWonder,
     graveyard,
     player1,
     player2,
@@ -71,7 +70,10 @@ const {
     turn,
     tier,
     move,
-    pickCoin
+    pickCoin,
+    selectedCard,
+    selectedWonder,
+    isLoading
 } = storeToRefs(storeDuelGame);
 const gameDuelRef = collection(db, 'gameDuel');
 const tableGameDuelRef = doc(gameDuelRef, 'table1');
@@ -140,12 +142,14 @@ watch([() => selectedWonder.value, () => selectedCard.value], () => {
 watch(
     () => player2.value.wonderCards,
     async () => {
+        isLoading.value = true;
         player2.value.wonderCards.length === 4 &&
             move.value === 0 &&
             (await updateDoc(tableGameDuelRef, {
                 tier: 'I'
             }),
             (actionForCards.value = true));
+        isLoading.value = false;
     }
 );
 
@@ -153,6 +157,7 @@ watch(
     () => move.value,
     async () => {
         if (move.value >= 20 && move.value < 40) {
+            isLoading.value = true;
             await updateDoc(tableGameDuelRef, {
                 tier: 'II'
             });
@@ -161,23 +166,24 @@ watch(
                 let checkTurn: any = turn.value;
                 checkTurn =
                     checkTurn === player1.value.user.uid
-                        ? player2.value.user?.uid || 0
+                        ? player2.value.user.uid
                         : player1.value.user.uid;
                 if (board.value.pawn > 0) checkTurn = player1.value.user.uid;
-                else if (board.value.pawn < 0) checkTurn = player2.value.user?.uid || 0;
+                else if (board.value.pawn < 0) checkTurn = player2.value.user.uid;
 
-                await updateDoc(tableGameDuelRef, {
-                    turn: checkTurn
-                });
+                storeDuelGame.upgradeTurn(`${checkTurn}`);
 
                 if (turn.value === user.value.uid) {
                     actionForCards.value = false;
                     whoWillStart.value = true;
                 }
             }
+            isLoading.value = false;
         }
 
         if (move.value >= 40 && move.value <= 60) {
+            isLoading.value = true;
+
             await updateDoc(tableGameDuelRef, {
                 tier: 'III'
             });
@@ -186,20 +192,19 @@ watch(
                 let checkTurn: any = turn.value;
                 checkTurn =
                     checkTurn === player1.value.user.uid
-                        ? player2.value.user?.uid || 0
+                        ? player2.value.user.uid
                         : player1.value.user.uid;
                 if (board.value.pawn > 0) checkTurn = player1.value.user.uid;
-                else if (board.value.pawn < 0) checkTurn = player2.value.user?.uid || 0;
+                else if (board.value.pawn < 0) checkTurn = player2.value.user.uid;
 
-                await updateDoc(tableGameDuelRef, {
-                    turn: checkTurn
-                });
+                storeDuelGame.upgradeTurn(`${checkTurn}`);
 
                 if (turn.value === user.value.uid) {
                     actionForCards.value = false;
                     whoWillStart.value = true;
                 }
             }
+            isLoading.value = false;
         }
         // TODO - add end game
     }
@@ -219,6 +224,8 @@ watch(
 
 // ---
 onMounted(async () => {
+    isLoading.value = true;
+
     let auth: any;
     auth = getAuth();
     onAuthStateChanged(auth, (data) => {
@@ -251,6 +258,7 @@ onMounted(async () => {
             });
         }
     } else {
+        // TODO - play for who starts - set turn on empty string + start for it
         await setDoc(tableGameDuelRef, {
             player1: { ...new PlayerDuel(), user: user.value, _id: user.value.uid },
             player2: { ...new PlayerDuel() },
@@ -302,6 +310,8 @@ onMounted(async () => {
     await storeDuelGame.subFirebaseConnect(`${user.value.uid}`);
 
     // Check state after refresh or leave
+    // --- TODO: check select wonders
+    // ----
     tier.value !== 'prepare' && (actionForCards.value = true);
     // --- Check coin
     if (pickCoin.value !== '' && isMyTurn.value) {
@@ -314,31 +324,31 @@ onMounted(async () => {
     if (move.value === 20 || move.value === 40) {
         let checkTurn: any = turn.value;
         checkTurn =
-            checkTurn === player1.value.user.uid
-                ? player2.value.user?.uid || 0
-                : player1.value.user.uid;
+            checkTurn === player1.value.user.uid ? player2.value.user.uid : player1.value.user.uid;
         if (board.value.pawn > 0) checkTurn = player1.value.user.uid;
-        else if (board.value.pawn < 0) checkTurn = player2.value.user?.uid || 0;
+        else if (board.value.pawn < 0) checkTurn = player2.value.user.uid;
 
-        await updateDoc(tableGameDuelRef, {
-            turn: checkTurn
-        });
+        storeDuelGame.upgradeTurn(`${checkTurn}`);
 
         if (turn.value === user.value.uid) {
             actionForCards.value = false;
             whoWillStart.value = true;
         }
     }
+
+    isLoading.value = false;
 });
 
 // ---
 async function chooseWhoStarts(id: string): Promise<void> {
-    await updateDoc(tableGameDuelRef, {
-        turn: id
-    });
+    isLoading.value = true;
+
+    storeDuelGame.upgradeTurn(`${id}`);
 
     actionForCards.value = true;
     whoWillStart.value = false;
+
+    isLoading.value = false;
 }
 
 function showPrice(selectedCard: IGameDuelWonderCard | IGameDuelCard, uid: string): number {
@@ -677,6 +687,7 @@ function removeOptionalMaterials(
 const wonderSelectedForPlayer = async (id: number) => {
     if (!isMyTurn.value) return null;
 
+    isLoading.value = true;
     let newCard = {} as IGameDuelWonderCard;
     const newArrWonders = wonderCards.value.map((data) => {
         return data.id === id ? ((newCard = { ...data, taken: true }), newCard) : data;
@@ -688,19 +699,20 @@ const wonderSelectedForPlayer = async (id: number) => {
                 ...player1.value,
                 wonderCards: [...player1.value.wonderCards, { ...newCard }]
             },
-            turn: player2.value.user?.uid || 0,
             wonderCards: newArrWonders
         });
+        storeDuelGame.upgradeTurn(`${player2.value.user.uid}`);
     } else {
         await updateDoc(tableGameDuelRef, {
             player2: {
                 ...player2.value,
                 wonderCards: [...player2.value.wonderCards, { ...newCard }]
             },
-            turn: player1.value.user.uid,
             wonderCards: newArrWonders
         });
+        storeDuelGame.upgradeTurn(`${player1.value.user.uid}`);
     }
+    isLoading.value = false;
 };
 
 const tierCardClick = (gameCard: IGameDuelCard) => {
@@ -722,23 +734,24 @@ const tierCardClick = (gameCard: IGameDuelCard) => {
 };
 
 const coinSelected = async (coin: IGameDuelCoin['effect']) => {
+    isLoading.value = true;
     if (turn.value === player1.value.user.uid) {
         await updateDoc(tableGameDuelRef, {
             'gameBoard.coins': arrayRemove(coin),
             'player1.resources.coins': arrayUnion(coin),
-            pickCoin: '',
-            turn: player2.value.user?.uid || 0,
-            move: increment(1)
+            pickCoin: ''
         });
+        storeDuelGame.upgradeTurn(`${player2.value.user.uid}`);
     } else {
         await updateDoc(tableGameDuelRef, {
             'gameBoard.coins': arrayRemove(coin),
             'player2.resources.coins': arrayUnion(coin),
-            pickCoin: '',
-            turn: player1.value.user?.uid || 0,
-            move: increment(1)
+            pickCoin: ''
         });
+        storeDuelGame.upgradeTurn(`${player1.value.user.uid}`);
     }
+    storeDuelGame.upgradeMove();
+    isLoading.value = false;
 };
 
 const prepareSelectWonder = () => {
@@ -763,6 +776,10 @@ function wonderCardSelected(wonderCard: IGameDuelWonderCard, cash: number): any 
         </header>
 
         <section class="wrapper">
+            <div v-if="isLoading" class="loading">
+                <LoadingSpinner />
+            </div>
+
             <DuelGameBoardDuelComponent
                 :isMyTurn="isMyTurn"
                 :user="user"
@@ -947,9 +964,9 @@ main {
 .header {
     height: 30px;
     line-height: 30px;
-    margin-top: 15px;
-    margin-bottom: 15px;
+    margin: 15px auto;
     text-align: center;
+    width: 1110px;
 }
 h1 {
     font-weight: 600;
@@ -964,6 +981,7 @@ section.wrapper {
     width: 1110px;
     height: 720px;
     padding: 20px;
+    margin: 0 auto;
     margin-bottom: 20px;
     color: #444;
     box-shadow: 0 0 50px rgba(0, 0, 0, 0.3);
@@ -978,6 +996,16 @@ section.wrapper {
     grid-template-rows: 155px 320px 50px 155px;
     background-color: #eee;
     animation: showElement 2s linear;
+}
+.loading {
+    position: absolute;
+    top: 0;
+    left: 0;
+    /* background-color: rgba(255, 255, 255, 0.35); */
+    border-radius: 20px;
+    width: 100%;
+    height: 100%;
+    z-index: 100000;
 }
 .playerAction {
     grid-area: act;
@@ -1006,7 +1034,7 @@ section.wrapper {
     filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.05));
 }
 .cardsTier {
-    filter: drop-shadow(0 0 35px rgba(0, 0, 0, 0.4));
+    filter: drop-shadow(0 0 35px rgba(0, 0, 0, 0.3));
 }
 .pickWonders {
     display: flex;
@@ -1019,10 +1047,6 @@ section.wrapper {
     filter: drop-shadow(0 15px 35px rgba(0, 0, 0, 0.5));
 }
 
-.selectCoin,
-.selectWonderFromPlayer {
-    border: 3px dotted tomato;
-}
 @keyframes showElement {
     0%,
     30% {

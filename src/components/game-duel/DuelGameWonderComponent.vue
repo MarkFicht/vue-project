@@ -114,6 +114,8 @@ function takeReversColor(): void {
             {{ cash }}
         </div>
 
+        <div class="wonderIcon"><ion-icon name="prism"></ion-icon></div>
+
         <div class="cost">
             <div v-if="cashCost" class="resources" :style="'width: 100%;'">
                 <div class="cash">{{ cashCost + '$' }}</div>
@@ -194,15 +196,21 @@ div {
     bottom: -50%;
     left: 50%;
     transform: translateX(-50%) translateY(-110%);
-    border: 2px solid #444;
+    border: 1px solid #444;
     font-weight: bold;
+}
+.wonderIcon {
+    position: absolute;
+    top: 1px;
+    left: 50%;
+    transform: translateX(-50%);
 }
 .colorRed {
     color: red;
 }
 .card {
     position: relative;
-    border: 2px solid #333;
+    border: 1px solid #333;
     border-radius: 5px;
     width: 80px;
     height: 60px;
@@ -214,6 +222,9 @@ div {
     transition: 0.3s;
     cursor: pointer;
     background-color: darksalmon;
+    box-shadow:
+        inset 5px 5px 10px rgba(0, 0, 0, 0.1),
+        inset -5px -5px 10px rgba(255, 255, 255, 0.2);
 }
 .card::before {
     content: '';
@@ -222,10 +233,13 @@ div {
     border-top-right-radius: 5px;
     border-bottom-right-radius: 5px;
     background-color: var(--activeColor);
-    right: -11px;
+    right: -10px;
     width: 10px;
     height: 50px;
     border: 1px solid;
+    box-shadow:
+        inset 5px 5px 10px rgba(0, 0, 0, 0.15),
+        inset -5px -5px 10px rgba(255, 255, 255, 0.3);
 }
 .cost {
     display: flex;

@@ -31,6 +31,7 @@ const { player1, player2, turn } = storeToRefs(storeDuelGame);
 .playerInfo {
     grid-area: pi;
     margin: 0 auto;
+    width: 100%;
 }
 .playerInfo > div {
     height: 60px;
