@@ -74,6 +74,7 @@ const {
     pickCoin,
     selectWondersForPlayers,
     selectWondersForPlayersMove,
+    chooseWhoWillStart,
     selectedCard,
     selectedWonder,
     isLoading
@@ -85,7 +86,6 @@ const user = ref<IUser>({} as IUser);
 const isLoggedIn = ref<boolean>(false);
 
 const actionForCards = ref<boolean>(false);
-const whoWillStart = ref<boolean>(false);
 const selectWonderCard = ref<boolean>(false);
 
 const isMyTurn = computed((): boolean => {
@@ -165,7 +165,7 @@ watch(
                 tier: 'II'
             });
 
-            if (move.value === 20) {
+            if (move.value === 20 && !chooseWhoWillStart.value) {
                 let checkTurn: any = turn.value;
                 checkTurn =
                     checkTurn === player1.value.user.uid
@@ -174,11 +174,13 @@ watch(
                 if (board.value.pawn > 0) checkTurn = player1.value.user.uid;
                 else if (board.value.pawn < 0) checkTurn = player2.value.user.uid;
 
-                storeDuelGame.upgradeTurn(`${checkTurn}`);
+                await storeDuelGame.upgradeTurn(`${checkTurn}`);
+                await updateDoc(tableGameDuelRef, {
+                    chooseWhoWillStart: true
+                });
 
-                if (turn.value === user.value.uid) {
+                if (isMyTurn.value) {
                     actionForCards.value = false;
-                    whoWillStart.value = true;
                 }
             }
             isLoading.value = false;
@@ -191,7 +193,7 @@ watch(
                 tier: 'III'
             });
 
-            if (move.value === 40) {
+            if (move.value === 40 && !chooseWhoWillStart.value) {
                 let checkTurn: any = turn.value;
                 checkTurn =
                     checkTurn === player1.value.user.uid
@@ -200,11 +202,13 @@ watch(
                 if (board.value.pawn > 0) checkTurn = player1.value.user.uid;
                 else if (board.value.pawn < 0) checkTurn = player2.value.user.uid;
 
-                storeDuelGame.upgradeTurn(`${checkTurn}`);
+                await storeDuelGame.upgradeTurn(`${checkTurn}`);
+                await updateDoc(tableGameDuelRef, {
+                    chooseWhoWillStart: true
+                });
 
-                if (turn.value === user.value.uid) {
+                if (isMyTurn.value) {
                     actionForCards.value = false;
-                    whoWillStart.value = true;
                 }
             }
             isLoading.value = false;
@@ -271,6 +275,7 @@ onMounted(async () => {
             player2: { ...new PlayerDuel() },
             selectWondersForPlayers: [],
             selectWondersForPlayersMove: 0,
+            chooseWhoWillStart: false,
             turn: user.value.uid,
             gameBoard: {
                 ...new BoardDuel(),
@@ -327,21 +332,6 @@ onMounted(async () => {
     } else {
         actionForCards.value = true;
     }
-    // --- Check who starts
-    if (move.value === 20 || move.value === 40) {
-        let checkTurn: any = turn.value;
-        checkTurn =
-            checkTurn === player1.value.user.uid ? player2.value.user.uid : player1.value.user.uid;
-        if (board.value.pawn > 0) checkTurn = player1.value.user.uid;
-        else if (board.value.pawn < 0) checkTurn = player2.value.user.uid;
-
-        storeDuelGame.upgradeTurn(`${checkTurn}`);
-
-        if (turn.value === user.value.uid) {
-            actionForCards.value = false;
-            whoWillStart.value = true;
-        }
-    }
 
     isLoading.value = false;
 });
@@ -351,9 +341,10 @@ async function chooseWhoStarts(id: string): Promise<void> {
     isLoading.value = true;
 
     storeDuelGame.upgradeTurn(`${id}`);
-
+    await updateDoc(tableGameDuelRef, {
+        chooseWhoWillStart: false
+    });
     actionForCards.value = true;
-    whoWillStart.value = false;
 
     isLoading.value = false;
 }
@@ -732,7 +723,7 @@ const wonderSelectedForPlayer = async (id: number) => {
 const tierCardClick = (gameCard: IGameDuelCard) => {
     if (!isMyTurn.value) return null;
     if (pickCoin.value !== '') return null;
-    if (whoWillStart.value) return null;
+    if (chooseWhoWillStart.value) return null;
 
     selectedCard.value = {} as IGameDuelCard;
     selectedWonder.value = {} as IGameDuelWonderCard;
@@ -911,7 +902,7 @@ function wonderCardSelected(wonderCard: IGameDuelWonderCard, cash: number): any 
                 />
             </section>
 
-            <section v-if="actionForCards && selectedCard?.id" class="playerAction">
+            <section v-if="actionForCards && selectedCard?.id && !isLoading" class="playerAction">
                 <button
                     :disabled="
                         canBuyTierCard < 0 ||
@@ -951,7 +942,7 @@ function wonderCardSelected(wonderCard: IGameDuelWonderCard, cash: number): any 
                     {{ buttonBuildWonder }}
                 </button>
             </section>
-            <section v-else-if="whoWillStart" class="playerAction">
+            <section v-else-if="isMyTurn && chooseWhoWillStart" class="playerAction">
                 <button class="customButton" @click="() => chooseWhoStarts(`${player1.user.uid}`)">
                     {{ player1.user.displayName }}
                 </button>
