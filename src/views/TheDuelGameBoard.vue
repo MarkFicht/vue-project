@@ -55,7 +55,8 @@ const buttonBuyCard = ref<string>('Buy');
 const buttonSell = ref<string>('Sell');
 const buttonBuildWonder = ref<string>('Build Wonder');
 const labelWhoStarts = ref<string>('Who Starts?');
-const labelPickCoin = ref<string>('Pick coin!');
+const labelPickCoin = ref<string>('Pick Coin!');
+const labelPickWonder = ref<string>('Pick Wonder!');
 
 const storeDuelGame = duelGameStore();
 const {
@@ -71,6 +72,8 @@ const {
     tier,
     move,
     pickCoin,
+    selectWondersForPlayers,
+    selectWondersForPlayersMove,
     selectedCard,
     selectedWonder,
     isLoading
@@ -253,8 +256,12 @@ onMounted(async () => {
             docSnap.data()?.player1?.user?.uid !== user.value.uid
         ) {
             // TODO - remove playes if leave, for 2 mins + build document correctly
+            // --- 'selectWondersForPlayers' - 9th uid is for start tier I
+            const p1 = docSnap.data().player1.user.uid;
+            const p2 = user.value.uid;
             await updateDoc(tableGameDuelRef, {
-                player2: { ...new PlayerDuel(), user: user.value, _id: user.value.uid }
+                player2: { ...new PlayerDuel(), user: user.value, _id: user.value.uid },
+                selectWondersForPlayers: [p1, p2, p2, p1, p2, p1, p1, p2, p1]
             });
         }
     } else {
@@ -262,6 +269,8 @@ onMounted(async () => {
         await setDoc(tableGameDuelRef, {
             player1: { ...new PlayerDuel(), user: user.value, _id: user.value.uid },
             player2: { ...new PlayerDuel() },
+            selectWondersForPlayers: [],
+            selectWondersForPlayersMove: 0,
             turn: user.value.uid,
             gameBoard: {
                 ...new BoardDuel(),
@@ -310,8 +319,6 @@ onMounted(async () => {
     await storeDuelGame.subFirebaseConnect(`${user.value.uid}`);
 
     // Check state after refresh or leave
-    // --- TODO: check select wonders
-    // ----
     tier.value !== 'prepare' && (actionForCards.value = true);
     // --- Check coin
     if (pickCoin.value !== '' && isMyTurn.value) {
@@ -699,19 +706,26 @@ const wonderSelectedForPlayer = async (id: number) => {
                 ...player1.value,
                 wonderCards: [...player1.value.wonderCards, { ...newCard }]
             },
-            wonderCards: newArrWonders
+            wonderCards: newArrWonders,
+            selectWondersForPlayersMove: increment(1)
         });
-        storeDuelGame.upgradeTurn(`${player2.value.user.uid}`);
+        storeDuelGame.upgradeTurn(
+            `${selectWondersForPlayers.value[selectWondersForPlayersMove.value]}`
+        );
     } else {
         await updateDoc(tableGameDuelRef, {
             player2: {
                 ...player2.value,
                 wonderCards: [...player2.value.wonderCards, { ...newCard }]
             },
-            wonderCards: newArrWonders
+            wonderCards: newArrWonders,
+            selectWondersForPlayersMove: increment(1)
         });
-        storeDuelGame.upgradeTurn(`${player1.value.user.uid}`);
+        storeDuelGame.upgradeTurn(
+            `${selectWondersForPlayers.value[selectWondersForPlayersMove.value]}`
+        );
     }
+
     isLoading.value = false;
 };
 
@@ -948,6 +962,9 @@ function wonderCardSelected(wonderCard: IGameDuelWonderCard, cash: number): any 
             </section>
             <section v-else-if="isMyTurn && pickCoin !== ''" class="playerAction">
                 <p>{{ labelPickCoin }}</p>
+            </section>
+            <section v-else-if="isMyTurn && tier === 'prepare'" class="playerAction">
+                <p>{{ labelPickWonder }}</p>
             </section>
             <section v-else class="playerAction"></section>
         </section>

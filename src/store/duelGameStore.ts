@@ -31,6 +31,8 @@ export interface IDuelGameStore {
     board: IGameDuelBoard;
     player1: IGameDuelPlayer;
     player2: IGameDuelPlayer;
+    selectWondersForPlayers: string[];
+    selectWondersForPlayersMove: number;
     selectedCard: IGameDuelCard;
     selectedWonder: IGameDuelWonderCard;
     isLoading: boolean;
@@ -52,6 +54,8 @@ export const duelGameStore = defineStore('duelGameStore', {
             board: new BoardDuel(),
             player1: new PlayerDuel(),
             player2: new PlayerDuel(),
+            selectWondersForPlayers: [],
+            selectWondersForPlayersMove: 0,
             selectedCard: {} as IGameDuelCard,
             selectedWonder: {} as IGameDuelWonderCard,
             isLoading: false
@@ -78,7 +82,9 @@ export const duelGameStore = defineStore('duelGameStore', {
                         wonderCards,
                         graveyard,
                         theRestOfCoins,
-                        pickCoin
+                        pickCoin,
+                        selectWondersForPlayers,
+                        selectWondersForPlayersMove
                     } = doc.data();
                     this.turn = turn;
                     this.tier = tier;
@@ -93,6 +99,8 @@ export const duelGameStore = defineStore('duelGameStore', {
                     this.graveyard = graveyard;
                     this.theRestOfCoins = theRestOfCoins;
                     this.pickCoin = pickCoin;
+                    this.selectWondersForPlayers = selectWondersForPlayers;
+                    this.selectWondersForPlayersMove = selectWondersForPlayersMove;
                 }
             });
         },
