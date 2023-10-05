@@ -313,7 +313,7 @@ onMounted(async () => {
 async function chooseWhoStarts(id: string): Promise<void> {
     isLoading.value = true;
 
-    await storeDuelGame.upgradeTurn(`${id}`);
+    await storeDuelGame.upgradeTurnAndMove(`${id}`, true);
     await updateDoc(tableGameDuelRef, {
         chooseWhoWillStart: false
     });
@@ -673,8 +673,9 @@ const wonderSelectedForPlayer = async (id: number) => {
             wonderCards: newArrWonders,
             selectWondersForPlayersMove: increment(1)
         });
-        storeDuelGame.upgradeTurn(
-            `${selectWondersForPlayers.value[selectWondersForPlayersMove.value]}`
+        storeDuelGame.upgradeTurnAndMove(
+            `${selectWondersForPlayers.value[selectWondersForPlayersMove.value]}`,
+            true
         );
     } else {
         await updateDoc(tableGameDuelRef, {
@@ -685,8 +686,9 @@ const wonderSelectedForPlayer = async (id: number) => {
             wonderCards: newArrWonders,
             selectWondersForPlayersMove: increment(1)
         });
-        storeDuelGame.upgradeTurn(
-            `${selectWondersForPlayers.value[selectWondersForPlayersMove.value]}`
+        storeDuelGame.upgradeTurnAndMove(
+            `${selectWondersForPlayers.value[selectWondersForPlayersMove.value]}`,
+            true
         );
     }
 
@@ -752,8 +754,7 @@ const coinSelected = async (coin: IGameDuelCoin['effect']) => {
     storeDuelGame.countArtefacts(turn.value);
 
     if (wonByArt.value === '' && wonByAggressive.value === '' && pickCoin.value === '') {
-        storeDuelGame.upgradeMove();
-        storeDuelGame.upgradeTurn(
+        storeDuelGame.upgradeTurnAndMove(
             turn.value === player1.value.user.uid
                 ? `${player2.value.user.uid}`
                 : `${player1.value.user.uid}`
@@ -965,11 +966,17 @@ function wonderCardSelected(wonderCard: IGameDuelWonderCard, cash: number): any 
                 "
                 class="playerAction"
             >
-                <button class="customButton" @click="() => chooseWhoStarts(`${player1.user.uid}`)">
+                <button
+                    class="customButton"
+                    @click="async () => await chooseWhoStarts(`${player1.user.uid}`)"
+                >
                     {{ player1.user.displayName }}
                 </button>
                 <p>{{ ` ${labelWhoStarts} ` }}</p>
-                <button class="customButton" @click="() => chooseWhoStarts(`${player2.user.uid}`)">
+                <button
+                    class="customButton"
+                    @click="async () => await chooseWhoStarts(`${player2.user.uid}`)"
+                >
                     {{ player2.user.displayName }}
                 </button>
             </section>

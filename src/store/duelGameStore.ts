@@ -124,15 +124,12 @@ export const duelGameStore = defineStore('duelGameStore', {
             this.selectedCard = {} as IGameDuelCard;
             this.selectedWonder = {} as IGameDuelWonderCard;
         },
-        async upgradeMove(): Promise<void> {
-            await updateDoc(tableGameDuelRef, {
-                move: increment(1)
-            });
-        },
-        async upgradeTurn(uid: string): Promise<void> {
-            this.isLoading = true;
-
-            if ((this.move === 20 || this.move === 40) && !this.chooseWhoWillStart) {
+        async upgradeTurnAndMove(uid: string, withOutMove?: boolean): Promise<void> {
+            if (withOutMove) {
+                await updateDoc(tableGameDuelRef, {
+                    turn: uid
+                });
+            } else if ((this.move + 1 === 20 || this.move + 1 === 40) && !this.chooseWhoWillStart) {
                 let checkTurn: string = uid;
                 checkTurn =
                     checkTurn === this.player1.user.uid
@@ -144,26 +141,22 @@ export const duelGameStore = defineStore('duelGameStore', {
 
                 await updateDoc(tableGameDuelRef, {
                     chooseWhoWillStart: true,
-                    turn: checkTurn
+                    turn: checkTurn,
+                    move: increment(1)
                 });
             } else {
                 await updateDoc(tableGameDuelRef, {
-                    turn: uid
+                    turn: uid,
+                    move: increment(1)
                 });
             }
-
-            this.isLoading = false;
         },
         async setPickCoin(id: string): Promise<void> {
-            this.isLoading = true;
             await updateDoc(tableGameDuelRef, {
                 pickCoin: id
             });
-            this.isLoading = false;
         },
         async setMovePawn(howManyMovePawn: number, uid: string): Promise<void> {
-            this.isLoading = true;
-
             if (uid === this.player1.user.uid) {
                 for (let index = 0; index < howManyMovePawn; index++) {
                     if (this.board.pawn <= -8) {
@@ -229,10 +222,8 @@ export const duelGameStore = defineStore('duelGameStore', {
                     }
                 }
             }
-            this.isLoading = false;
         },
         async countArtefacts(uid: string): Promise<void> {
-            this.isLoading = true;
             let art = 0;
 
             if (uid === this.player1.user.uid) {
@@ -257,7 +248,6 @@ export const duelGameStore = defineStore('duelGameStore', {
                 console.log('%c END GAME - ARTEFACT -> ', 'background: #222; color: #bada55');
                 return;
             }
-            this.isLoading = false;
         },
         async setCardTaken(cash: number): Promise<void> {
             let cardToTake: IGameDuelCard = {} as IGameDuelCard;
@@ -439,8 +429,7 @@ export const duelGameStore = defineStore('duelGameStore', {
                 }
 
                 if (this.wonByArt === '' && this.wonByAggressive === '' && this.pickCoin === '') {
-                    await this.upgradeMove();
-                    this.upgradeTurn(`${this.player2.user.uid}`);
+                    this.upgradeTurnAndMove(`${this.player2.user.uid}`);
                 }
             } else {
                 // --- coin: cash back from sp
@@ -563,8 +552,7 @@ export const duelGameStore = defineStore('duelGameStore', {
                 }
 
                 if (this.wonByArt === '' && this.wonByAggressive === '' && this.pickCoin === '') {
-                    await this.upgradeMove();
-                    this.upgradeTurn(`${this.player1.user.uid}`);
+                    await this.upgradeTurnAndMove(`${this.player1.user.uid}`);
                 }
             }
 
@@ -634,8 +622,7 @@ export const duelGameStore = defineStore('duelGameStore', {
                     'player1.resources.cash': increment(addCash),
                     graveyard: this.graveyard
                 });
-                this.upgradeMove();
-                this.upgradeTurn(`${this.player2.user?.uid}`);
+                this.upgradeTurnAndMove(`${this.player2.user?.uid}`);
             } else {
                 const addCash = 2 + this.player2.cards.yellow.length;
 
@@ -643,8 +630,7 @@ export const duelGameStore = defineStore('duelGameStore', {
                     'player2.resources.cash': increment(addCash),
                     graveyard: this.graveyard
                 });
-                this.upgradeMove();
-                this.upgradeTurn(`${this.player1.user.uid}`);
+                this.upgradeTurnAndMove(`${this.player1.user.uid}`);
             }
 
             this.unselectCard();
@@ -768,10 +754,9 @@ export const duelGameStore = defineStore('duelGameStore', {
                     player1: newResPlayer
                 });
                 if (this.wonByArt === '' && this.wonByAggressive === '') {
-                    this.upgradeMove();
                     repeat
-                        ? this.upgradeTurn(`${this.player1.user.uid}`)
-                        : this.upgradeTurn(`${this.player2.user.uid}`);
+                        ? this.upgradeTurnAndMove(`${this.player1.user.uid}`)
+                        : this.upgradeTurnAndMove(`${this.player2.user.uid}`);
                 }
             } else {
                 const newResPlayer = countPlayerResourcesFromWonders(
@@ -818,7 +803,7 @@ export const duelGameStore = defineStore('duelGameStore', {
                 });
 
                 if (movePawn) {
-                    this.setMovePawn(howManyMovePawn, `${this.player1.user.uid}`);
+                    this.setMovePawn(howManyMovePawn, `${this.player2.user.uid}`);
                 }
                 // perform destroy brown or grey cards in enemy res
                 // perform effects - looks on turn, etc
@@ -827,10 +812,9 @@ export const duelGameStore = defineStore('duelGameStore', {
                     player2: newResPlayer
                 });
                 if (this.wonByArt === '' && this.wonByAggressive === '') {
-                    this.upgradeMove();
                     repeat
-                        ? this.upgradeTurn(`${this.player2.user.uid}`)
-                        : this.upgradeTurn(`${this.player1.user.uid}`);
+                        ? this.upgradeTurnAndMove(`${this.player2.user.uid}`)
+                        : this.upgradeTurnAndMove(`${this.player1.user.uid}`);
                 }
             }
 
