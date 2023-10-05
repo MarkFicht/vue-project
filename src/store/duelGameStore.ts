@@ -754,7 +754,7 @@ export const duelGameStore = defineStore('duelGameStore', {
                     player1: newResPlayer
                 });
                 if (this.wonByArt === '' && this.wonByAggressive === '') {
-                    repeat
+                    repeat && this.move !== 19 && this.move !== 39
                         ? this.upgradeTurnAndMove(`${this.player1.user.uid}`)
                         : this.upgradeTurnAndMove(`${this.player2.user.uid}`);
                 }
@@ -812,7 +812,7 @@ export const duelGameStore = defineStore('duelGameStore', {
                     player2: newResPlayer
                 });
                 if (this.wonByArt === '' && this.wonByAggressive === '') {
-                    repeat
+                    repeat && this.move !== 19 && this.move !== 39
                         ? this.upgradeTurnAndMove(`${this.player2.user.uid}`)
                         : this.upgradeTurnAndMove(`${this.player1.user.uid}`);
                 }

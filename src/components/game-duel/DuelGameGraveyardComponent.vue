@@ -8,7 +8,10 @@ const { graveyard } = storeToRefs(storeDuelGame);
 </script>
 
 <template>
-    <section class="graveyard customInput">
+    <section
+        :class="['graveyard', 'customInput']"
+        :style="graveyard.length >= 24 ? 'overflow-y: scroll;' : ''"
+    >
         <DuelGameCardComponent v-for="card in graveyard" :key="card.id" :card="card" small />
     </section>
 </template>
