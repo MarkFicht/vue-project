@@ -57,7 +57,8 @@ const buttonSell = ref<string>('Sell');
 const buttonBuildWonder = ref<string>('Build Wonder');
 const labelWhoStarts = ref<string>('Who Starts?');
 const labelPickCoin = ref<string>('Pick Coin!');
-const labelPickCoinOfThree = ref<string>('Pick Coin!');
+const labelPickCoinOfThree = ref<string>('Pick one Coin of three!');
+const labelPickCardFromGraveyard = ref<string>('Pick card from graveyard!');
 const labelPickWonder = ref<string>('Pick Wonder!');
 
 const storeDuelGame = duelGameStore();
@@ -195,17 +196,17 @@ watch(
     }
 );
 
-watch(
-    () => pickCoin.value,
-    () => {
-        if (pickCoin.value !== '' && isMyTurn.value) {
-            actionForCards.value = false;
-            selectedCard.value = {} as IGameDuelCard;
-        } else {
-            actionForCards.value = true;
-        }
-    }
-);
+// watch(
+//     () => pickCoin.value,
+//     () => {
+//         if (pickCoin.value !== '' && isMyTurn.value) {
+//             actionForCards.value = false;
+//             selectedCard.value = {} as IGameDuelCard;
+//         } else {
+//             actionForCards.value = true;
+//         }
+//     }
+// );
 
 // ---
 onMounted(async () => {
@@ -316,6 +317,11 @@ onMounted(async () => {
     }
     // --- check pickCoinOfThree
     else if (pickCoinOfThree.value !== '' && isMyTurn.value) {
+        actionForCards.value = false;
+        selectedCard.value = {} as IGameDuelCard;
+    }
+    // --- check pickCardFromGraveyard
+    else if (pickCardFromGraveyard.value !== '' && isMyTurn.value) {
         actionForCards.value = false;
         selectedCard.value = {} as IGameDuelCard;
     } else {
@@ -713,7 +719,8 @@ const wonderSelectedForPlayer = async (id: number) => {
 
 const tierCardClick = (gameCard: IGameDuelCard) => {
     if (!isMyTurn.value) return null;
-    if (pickCoin.value !== '' || pickCoinOfThree.value !== '') return null;
+    if (pickCoin.value !== '' || pickCoinOfThree.value !== '' || pickCardFromGraveyard.value !== '')
+        return null;
     if (chooseWhoWillStart.value) return null;
     if (wonByArt.value) return null;
     if (wonByAggressive.value) return null;
@@ -730,6 +737,20 @@ const tierCardClick = (gameCard: IGameDuelCard) => {
         selectedCard.value = gameCard;
     }
 };
+
+const prepareSelectWonder = () => {
+    if (!isMyTurn.value) return null;
+
+    selectWonderCard.value = true;
+};
+
+function wonderCardSelected(wonderCard: IGameDuelWonderCard, cash: number): any {
+    if (!isMyTurn.value) return null;
+    let fullPrice = showPrice(wonderCard, `${user.value.uid}`);
+    if (fullPrice > cash) return null;
+    else selectedWonder.value = wonderCard;
+    storeDuelGame.setCardToWonder(fullPrice);
+}
 
 const coinSelected = async (coin: IGameDuelCoin['effect']) => {
     isLoading.value = true;
@@ -826,22 +847,24 @@ const coinSelectedOfThree = async (coin: IGameDuelCoin['effect']) => {
         );
     }
 
+    actionForCards.value = true;
     isLoading.value = false;
 };
 
-const prepareSelectWonder = () => {
-    if (!isMyTurn.value) return null;
+const graveyardCardSelected = async (gameCard: IGameDuelCard) => {
+    isLoading.value = true;
 
-    selectWonderCard.value = true;
+    await updateDoc(tableGameDuelRef, {
+        graveyard: arrayRemove(gameCard),
+        pickCardFromGraveyard: ''
+    });
+
+    selectedCard.value = gameCard;
+    await storeDuelGame.setCardTaken(0, gameCard.tier);
+    actionForCards.value = true;
+
+    isLoading.value = false;
 };
-
-function wonderCardSelected(wonderCard: IGameDuelWonderCard, cash: number): any {
-    if (!isMyTurn.value) return null;
-    let fullPrice = showPrice(wonderCard, `${user.value.uid}`);
-    if (fullPrice > cash) return null;
-    else selectedWonder.value = wonderCard;
-    storeDuelGame.setCardToWonder(fullPrice);
-}
 </script>
 
 <template>
@@ -861,7 +884,10 @@ function wonderCardSelected(wonderCard: IGameDuelWonderCard, cash: number): any 
                 @coin-selected="coinSelected"
             />
 
-            <DuelGameGraveyardComponent />
+            <DuelGameGraveyardComponent
+                :isMyTurn="isMyTurn"
+                @pick-card-from-graveyard="graveyardCardSelected"
+            />
 
             <DuelGamePlayersInfoComponent />
 
@@ -1041,6 +1067,12 @@ function wonderCardSelected(wonderCard: IGameDuelWonderCard, cash: number): any 
                     :coin="theRestOfCoins[i]"
                     @click="coinSelectedOfThree(theRestOfCoins[i])"
                 />
+            </section>
+            <section
+                v-else-if="isMyTurn && pickCardFromGraveyard !== '' && !isLoading"
+                class="playerAction"
+            >
+                <p>{{ labelPickCardFromGraveyard }}</p>
             </section>
             <section v-else-if="isMyTurn && tier === 'prepare' && !isLoading" class="playerAction">
                 <p>{{ labelPickWonder }}</p>

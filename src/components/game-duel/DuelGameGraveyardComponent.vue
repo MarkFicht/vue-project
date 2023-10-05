@@ -4,15 +4,35 @@ import { storeToRefs } from 'pinia';
 import DuelGameCardComponent from '@/components/game-duel/DuelGameCardComponent.vue';
 
 const storeDuelGame = duelGameStore();
-const { graveyard } = storeToRefs(storeDuelGame);
+const { graveyard, pickCardFromGraveyard } = storeToRefs(storeDuelGame);
+
+const emit = defineEmits(['pick-card-from-graveyard']);
+const props = defineProps<{
+    isMyTurn: boolean;
+}>();
 </script>
 
 <template>
     <section
-        :class="['graveyard', 'customInput']"
+        :class="[
+            'graveyard',
+            'customInput',
+            isMyTurn && pickCardFromGraveyard !== '' && 'selectFromGraveyard'
+        ]"
         :style="graveyard.length >= 24 ? 'overflow-y: scroll;' : ''"
     >
-        <DuelGameCardComponent v-for="card in graveyard" :key="card.id" :card="card" small />
+        <DuelGameCardComponent
+            v-for="card in graveyard"
+            :key="card.id"
+            :card="card"
+            small
+            :style="isMyTurn && pickCardFromGraveyard !== '' && `cursor: pointer;`"
+            @click="
+                isMyTurn && pickCardFromGraveyard !== ''
+                    ? emit('pick-card-from-graveyard', card)
+                    : null
+            "
+        />
     </section>
 </template>
 
@@ -23,10 +43,14 @@ const { graveyard } = storeToRefs(storeDuelGame);
     height: 100%;
     display: flex;
     flex-wrap: wrap;
-    gap: 3px 10px;
+    gap: 5px 7px;
+    justify-content: center;
     /* display: inline-flex;
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap; */
+}
+.selectFromGraveyard {
+    border: 3px dotted tomato;
 }
 </style>

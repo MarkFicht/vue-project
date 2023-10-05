@@ -285,7 +285,7 @@ export const duelGameStore = defineStore('duelGameStore', {
                 return;
             }
         },
-        async setCardTaken(cash: number): Promise<void> {
+        async setCardTaken(cash: number, tierFromGraveyard?: string): Promise<void> {
             let cardToTake: IGameDuelCard = {} as IGameDuelCard;
             let takeCoin: boolean = false;
             let checkArtefacts: boolean = false;
@@ -293,7 +293,7 @@ export const duelGameStore = defineStore('duelGameStore', {
             let howManyMovePawn: number = 0;
             let extraCashFromCoin: number = 0;
 
-            if (this.tier === 'I') {
+            if (this.tier === 'I' || tierFromGraveyard === 'I') {
                 this.tierOneCards = this.$state.tierOneCards.map((card) => {
                     card.id === this.selectedCard.id && (cardToTake = card);
                     return {
@@ -309,7 +309,7 @@ export const duelGameStore = defineStore('duelGameStore', {
                 await updateDoc(tableGameDuelRef, {
                     tierICards: this.tierOneCards
                 });
-            } else if (this.tier === 'II') {
+            } else if (this.tier === 'II' || tierFromGraveyard === 'II') {
                 this.tierTwoCards = this.$state.tierTwoCards.map((card) => {
                     card.id === this.selectedCard.id && (cardToTake = card);
                     return {
@@ -325,7 +325,7 @@ export const duelGameStore = defineStore('duelGameStore', {
                 await updateDoc(tableGameDuelRef, {
                     tierIICards: this.tierTwoCards
                 });
-            } else if (this.tier === 'III') {
+            } else if (this.tier === 'III' || tierFromGraveyard === 'III') {
                 this.tierThreeCards = this.$state.tierThreeCards.map((card) => {
                     card.id === this.selectedCard.id && (cardToTake = card);
                     return {
@@ -786,13 +786,21 @@ export const duelGameStore = defineStore('duelGameStore', {
                 if (takeOneFromThreeCoin) {
                     await this.setPickCoinOfThree(`${this.player1.user.uid}`);
                 }
+                if (takeFromGraveyard) {
+                    await this.setPickCardFromGraveyard(`${this.player1.user.uid}`);
+                }
                 // perform destroy brown or grey cards in enemy res
                 // perform effects - looks on turn, etc
 
                 await updateDoc(tableGameDuelRef, {
                     player1: newResPlayer
                 });
-                if (this.wonByArt === '' && this.wonByAggressive === '') {
+                if (
+                    this.wonByArt === '' &&
+                    this.wonByAggressive === '' &&
+                    this.pickCardFromGraveyard === '' &&
+                    this.pickCoinOfThree === ''
+                ) {
                     repeat && this.move !== 19 && this.move !== 39
                         ? this.upgradeTurnAndMove(`${this.player1.user.uid}`)
                         : this.upgradeTurnAndMove(`${this.player2.user.uid}`);
@@ -847,13 +855,21 @@ export const duelGameStore = defineStore('duelGameStore', {
                 if (takeOneFromThreeCoin) {
                     await this.setPickCoinOfThree(`${this.player2.user.uid}`);
                 }
+                if (takeFromGraveyard) {
+                    await this.setPickCardFromGraveyard(`${this.player2.user.uid}`);
+                }
                 // perform destroy brown or grey cards in enemy res
                 // perform effects - looks on turn, etc
 
                 await updateDoc(tableGameDuelRef, {
                     player2: newResPlayer
                 });
-                if (this.wonByArt === '' && this.wonByAggressive === '') {
+                if (
+                    this.wonByArt === '' &&
+                    this.wonByAggressive === '' &&
+                    this.pickCardFromGraveyard === '' &&
+                    this.pickCoinOfThree === ''
+                ) {
                     repeat && this.move !== 19 && this.move !== 39
                         ? this.upgradeTurnAndMove(`${this.player2.user.uid}`)
                         : this.upgradeTurnAndMove(`${this.player1.user.uid}`);
