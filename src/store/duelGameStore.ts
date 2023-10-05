@@ -23,10 +23,14 @@ export interface IDuelGameStore {
     tier: Tier;
     move: number;
     pickCoin: string;
+    pickCoinOfThree: string;
+    pickCardFromGraveyard: string;
+    destroyBrown: string;
+    destroyGrey: string;
     tierOneCards: IGameDuelCard[];
     tierTwoCards: IGameDuelCard[];
     tierThreeCards: IGameDuelCard[];
-    theRestOfCoins: IGameDuelCoin[];
+    theRestOfCoins: IGameDuelCoin['effect'][];
     wonderCards: IGameDuelWonderCard[];
     graveyard: IGameDuelCard[];
     board: IGameDuelBoard;
@@ -49,6 +53,10 @@ export const duelGameStore = defineStore('duelGameStore', {
             tier: 'prepare',
             move: 0,
             pickCoin: '',
+            pickCoinOfThree: '',
+            pickCardFromGraveyard: '',
+            destroyBrown: '',
+            destroyGrey: '',
             tierOneCards: [],
             tierTwoCards: [],
             tierThreeCards: [],
@@ -90,6 +98,10 @@ export const duelGameStore = defineStore('duelGameStore', {
                         graveyard,
                         theRestOfCoins,
                         pickCoin,
+                        pickCoinOfThree,
+                        pickCardFromGraveyard,
+                        destroyBrown,
+                        destroyGrey,
                         selectWondersForPlayers,
                         selectWondersForPlayersMove,
                         chooseWhoWillStart,
@@ -109,6 +121,10 @@ export const duelGameStore = defineStore('duelGameStore', {
                     this.graveyard = graveyard;
                     this.theRestOfCoins = theRestOfCoins;
                     this.pickCoin = pickCoin;
+                    this.pickCoinOfThree = pickCoinOfThree;
+                    this.pickCardFromGraveyard = pickCardFromGraveyard;
+                    this.destroyBrown = destroyBrown;
+                    this.destroyGrey = destroyGrey;
                     this.selectWondersForPlayers = selectWondersForPlayers;
                     this.selectWondersForPlayersMove = selectWondersForPlayersMove;
                     this.chooseWhoWillStart = chooseWhoWillStart;
@@ -154,6 +170,26 @@ export const duelGameStore = defineStore('duelGameStore', {
         async setPickCoin(id: string): Promise<void> {
             await updateDoc(tableGameDuelRef, {
                 pickCoin: id
+            });
+        },
+        async setPickCoinOfThree(id: string): Promise<void> {
+            await updateDoc(tableGameDuelRef, {
+                pickCoinOfThree: id
+            });
+        },
+        async setPickCardFromGraveyard(id: string): Promise<void> {
+            await updateDoc(tableGameDuelRef, {
+                pickCardFromGraveyard: id
+            });
+        },
+        async setDestroyBrown(id: string): Promise<void> {
+            await updateDoc(tableGameDuelRef, {
+                destroyBrown: id
+            });
+        },
+        async setDestroyGrey(id: string): Promise<void> {
+            await updateDoc(tableGameDuelRef, {
+                destroyGrey: id
             });
         },
         async setMovePawn(howManyMovePawn: number, uid: string): Promise<void> {
@@ -641,9 +677,9 @@ export const duelGameStore = defineStore('duelGameStore', {
             let wonderCardToActive: IGameDuelWonderCard = {} as IGameDuelWonderCard;
             let movePawn: boolean = false;
             let howManyMovePawn: number = 0;
+            let repeat: boolean = false;
             let destBrown: boolean = false;
             let destGrey: boolean = false;
-            let repeat: boolean = false;
             let takeFromGraveyard: boolean = false;
             let takeOneFromThreeCoin: boolean = false;
 
@@ -747,6 +783,9 @@ export const duelGameStore = defineStore('duelGameStore', {
                 if (movePawn) {
                     this.setMovePawn(howManyMovePawn, `${this.player1.user.uid}`);
                 }
+                if (takeOneFromThreeCoin) {
+                    await this.setPickCoinOfThree(`${this.player1.user.uid}`);
+                }
                 // perform destroy brown or grey cards in enemy res
                 // perform effects - looks on turn, etc
 
@@ -804,6 +843,9 @@ export const duelGameStore = defineStore('duelGameStore', {
 
                 if (movePawn) {
                     this.setMovePawn(howManyMovePawn, `${this.player2.user.uid}`);
+                }
+                if (takeOneFromThreeCoin) {
+                    await this.setPickCoinOfThree(`${this.player2.user.uid}`);
                 }
                 // perform destroy brown or grey cards in enemy res
                 // perform effects - looks on turn, etc

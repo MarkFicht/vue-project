@@ -31,6 +31,7 @@ import { getCountRandomObjFromArr } from '@/helpers/HelpersFoo';
 import LoadingSpinner from '@/components/LoadingSpinner.vue';
 import DuelGameLayOutTiersComponent from '@/components/game-duel/DuelGameLayOutTiersComponent.vue';
 import DuelGameWonderComponent from '@/components/game-duel/DuelGameWonderComponent.vue';
+import DuelGameCoinComponent from '@/components/game-duel/DuelGameCoinComponent.vue';
 import DuelGameBoardDuelComponent from '@/components/game-duel/DuelGameBoardDuelComponent.vue';
 import DuelGameGraveyardComponent from '@/components/game-duel/DuelGameGraveyardComponent.vue';
 import DuelGamePlayersInfoComponent from '@/components/game-duel/DuelGamePlayersInfoComponent.vue';
@@ -56,6 +57,7 @@ const buttonSell = ref<string>('Sell');
 const buttonBuildWonder = ref<string>('Build Wonder');
 const labelWhoStarts = ref<string>('Who Starts?');
 const labelPickCoin = ref<string>('Pick Coin!');
+const labelPickCoinOfThree = ref<string>('Pick Coin!');
 const labelPickWonder = ref<string>('Pick Wonder!');
 
 const storeDuelGame = duelGameStore();
@@ -71,7 +73,12 @@ const {
     turn,
     tier,
     move,
+    theRestOfCoins,
     pickCoin,
+    pickCoinOfThree,
+    pickCardFromGraveyard,
+    destroyBrown,
+    destroyGrey,
     selectWondersForPlayers,
     selectWondersForPlayersMove,
     chooseWhoWillStart,
@@ -282,6 +289,10 @@ onMounted(async () => {
             tier: 'prepare',
             move: 0,
             pickCoin: '',
+            pickCoinOfThree: '',
+            pickCardFromGraveyard: '',
+            destroyBrown: '',
+            destroyGrey: '',
             wonByArt: '',
             wonByAggressive: ''
         });
@@ -300,6 +311,11 @@ onMounted(async () => {
     tier.value !== 'prepare' && (actionForCards.value = true);
     // --- Check coin
     if (pickCoin.value !== '' && isMyTurn.value) {
+        actionForCards.value = false;
+        selectedCard.value = {} as IGameDuelCard;
+    }
+    // --- check pickCoinOfThree
+    else if (pickCoinOfThree.value !== '' && isMyTurn.value) {
         actionForCards.value = false;
         selectedCard.value = {} as IGameDuelCard;
     } else {
@@ -697,7 +713,7 @@ const wonderSelectedForPlayer = async (id: number) => {
 
 const tierCardClick = (gameCard: IGameDuelCard) => {
     if (!isMyTurn.value) return null;
-    if (pickCoin.value !== '') return null;
+    if (pickCoin.value !== '' || pickCoinOfThree.value !== '') return null;
     if (chooseWhoWillStart.value) return null;
     if (wonByArt.value) return null;
     if (wonByAggressive.value) return null;
@@ -754,6 +770,55 @@ const coinSelected = async (coin: IGameDuelCoin['effect']) => {
     storeDuelGame.countArtefacts(turn.value);
 
     if (wonByArt.value === '' && wonByAggressive.value === '' && pickCoin.value === '') {
+        storeDuelGame.upgradeTurnAndMove(
+            turn.value === player1.value.user.uid
+                ? `${player2.value.user.uid}`
+                : `${player1.value.user.uid}`
+        );
+    }
+
+    isLoading.value = false;
+};
+
+const coinSelectedOfThree = async (coin: IGameDuelCoin['effect']) => {
+    isLoading.value = true;
+    let cash = 0;
+    switch (coin) {
+        case 'point4n6cash':
+            cash += 6;
+            break;
+        case 'cash6n4special':
+            cash += 6;
+            break;
+        default:
+            break;
+    }
+    if (turn.value === player1.value.user.uid) {
+        await updateDoc(tableGameDuelRef, {
+            'gameBoard.coins': arrayRemove(coin),
+            'player1.resources.coins': arrayUnion(coin),
+            pickCoinOfThree: ''
+        });
+        cash !== 0 &&
+            (await updateDoc(tableGameDuelRef, {
+                'player1.resources.cash': increment(6)
+            }));
+    } else {
+        await updateDoc(tableGameDuelRef, {
+            'gameBoard.coins': arrayRemove(coin),
+            'player2.resources.coins': arrayUnion(coin),
+            pickCoinOfThree: ''
+        });
+        cash !== 0 &&
+            (await updateDoc(tableGameDuelRef, {
+                'player2.resources.cash': increment(6)
+            }));
+    }
+
+    // Check game over || upgrade turne and move
+    storeDuelGame.countArtefacts(turn.value);
+
+    if (wonByArt.value === '' && wonByAggressive.value === '' && pickCoinOfThree.value === '') {
         storeDuelGame.upgradeTurnAndMove(
             turn.value === player1.value.user.uid
                 ? `${player2.value.user.uid}`
@@ -907,16 +972,7 @@ function wonderCardSelected(wonderCard: IGameDuelWonderCard, cash: number): any 
                 />
             </section>
 
-            <section
-                v-if="
-                    actionForCards &&
-                    selectedCard?.id &&
-                    !isLoading &&
-                    wonByArt === '' &&
-                    wonByAggressive === ''
-                "
-                class="playerAction"
-            >
+            <section v-if="actionForCards && selectedCard?.id && !isLoading" class="playerAction">
                 <button
                     :disabled="
                         canBuyTierCard < 0 ||
@@ -956,16 +1012,7 @@ function wonderCardSelected(wonderCard: IGameDuelWonderCard, cash: number): any 
                     {{ buttonBuildWonder }}
                 </button>
             </section>
-            <section
-                v-else-if="
-                    isMyTurn &&
-                    chooseWhoWillStart &&
-                    !isLoading &&
-                    wonByArt === '' &&
-                    wonByAggressive === ''
-                "
-                class="playerAction"
-            >
+            <section v-else-if="isMyTurn && chooseWhoWillStart && !isLoading" class="playerAction">
                 <button
                     class="customButton"
                     @click="async () => await chooseWhoStarts(`${player1.user.uid}`)"
@@ -980,17 +1027,20 @@ function wonderCardSelected(wonderCard: IGameDuelWonderCard, cash: number): any 
                     {{ player2.user.displayName }}
                 </button>
             </section>
+            <section v-else-if="isMyTurn && pickCoin !== '' && !isLoading" class="playerAction">
+                <p>{{ labelPickCoin }}</p>
+            </section>
             <section
-                v-else-if="
-                    isMyTurn &&
-                    pickCoin !== '' &&
-                    !isLoading &&
-                    wonByArt === '' &&
-                    wonByAggressive === ''
-                "
+                v-else-if="isMyTurn && pickCoinOfThree !== '' && !isLoading"
                 class="playerAction"
             >
-                <p>{{ labelPickCoin }}</p>
+                <p>{{ labelPickCoinOfThree }}</p>
+                <DuelGameCoinComponent
+                    v-for="i in 3"
+                    :key="theRestOfCoins[i]"
+                    :coin="theRestOfCoins[i]"
+                    @click="coinSelectedOfThree(theRestOfCoins[i])"
+                />
             </section>
             <section v-else-if="isMyTurn && tier === 'prepare' && !isLoading" class="playerAction">
                 <p>{{ labelPickWonder }}</p>
@@ -1067,6 +1117,11 @@ section.wrapper {
     line-height: 16px;
     height: 32px;
     padding: 6px 10px;
+}
+.playerAction > span {
+    margin: 0;
+    margin-left: 10px;
+    cursor: pointer;
 }
 .cards {
     position: relative;
