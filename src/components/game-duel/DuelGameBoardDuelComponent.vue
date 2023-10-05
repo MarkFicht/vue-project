@@ -69,7 +69,7 @@ const { isMyTurn } = toRefs(props);
     display: flex;
     justify-content: center;
     align-items: center;
-    filter: drop-shadow(0 0 35px rgba(0, 0, 0, 0.4));
+    filter: drop-shadow(0 0 35px rgba(0, 0, 0, 0.3));
 }
 .boardCoins {
     height: 200px;

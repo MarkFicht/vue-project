@@ -75,6 +75,8 @@ const {
     selectWondersForPlayers,
     selectWondersForPlayersMove,
     chooseWhoWillStart,
+    wonByArt,
+    wonByAggressive,
     selectedCard,
     selectedWonder,
     isLoading
@@ -165,51 +167,20 @@ watch(
                 tier: 'II'
             });
 
-            if (move.value === 20 && !chooseWhoWillStart.value) {
-                let checkTurn: any = turn.value;
-                checkTurn =
-                    checkTurn === player1.value.user.uid
-                        ? player2.value.user.uid
-                        : player1.value.user.uid;
-                if (board.value.pawn > 0) checkTurn = player1.value.user.uid;
-                else if (board.value.pawn < 0) checkTurn = player2.value.user.uid;
-
-                await storeDuelGame.upgradeTurn(`${checkTurn}`);
-                await updateDoc(tableGameDuelRef, {
-                    chooseWhoWillStart: true
-                });
-
-                if (isMyTurn.value) {
-                    actionForCards.value = false;
-                }
+            if (chooseWhoWillStart.value && isMyTurn.value) {
+                actionForCards.value = false;
             }
             isLoading.value = false;
         }
 
         if (move.value >= 40 && move.value <= 60) {
             isLoading.value = true;
-
             await updateDoc(tableGameDuelRef, {
                 tier: 'III'
             });
 
-            if (move.value === 40 && !chooseWhoWillStart.value) {
-                let checkTurn: any = turn.value;
-                checkTurn =
-                    checkTurn === player1.value.user.uid
-                        ? player2.value.user.uid
-                        : player1.value.user.uid;
-                if (board.value.pawn > 0) checkTurn = player1.value.user.uid;
-                else if (board.value.pawn < 0) checkTurn = player2.value.user.uid;
-
-                await storeDuelGame.upgradeTurn(`${checkTurn}`);
-                await updateDoc(tableGameDuelRef, {
-                    chooseWhoWillStart: true
-                });
-
-                if (isMyTurn.value) {
-                    actionForCards.value = false;
-                }
+            if (chooseWhoWillStart.value && isMyTurn.value) {
+                actionForCards.value = false;
             }
             isLoading.value = false;
         }
@@ -310,7 +281,9 @@ onMounted(async () => {
             ],
             tier: 'prepare',
             move: 0,
-            pickCoin: ''
+            pickCoin: '',
+            wonByArt: '',
+            wonByAggressive: ''
         });
 
         const docSnap2 = await getDoc(tableGameDuelRef);
@@ -340,7 +313,7 @@ onMounted(async () => {
 async function chooseWhoStarts(id: string): Promise<void> {
     isLoading.value = true;
 
-    storeDuelGame.upgradeTurn(`${id}`);
+    await storeDuelGame.upgradeTurn(`${id}`);
     await updateDoc(tableGameDuelRef, {
         chooseWhoWillStart: false
     });
@@ -724,6 +697,8 @@ const tierCardClick = (gameCard: IGameDuelCard) => {
     if (!isMyTurn.value) return null;
     if (pickCoin.value !== '') return null;
     if (chooseWhoWillStart.value) return null;
+    if (wonByArt.value) return null;
+    if (wonByAggressive.value) return null;
 
     selectedCard.value = {} as IGameDuelCard;
     selectedWonder.value = {} as IGameDuelWonderCard;
@@ -775,6 +750,16 @@ const coinSelected = async (coin: IGameDuelCoin['effect']) => {
 
     // Check game over || upgrade turne and move
     storeDuelGame.countArtefacts(turn.value);
+
+    if (wonByArt.value === '' && wonByAggressive.value === '' && pickCoin.value === '') {
+        storeDuelGame.upgradeMove();
+        storeDuelGame.upgradeTurn(
+            turn.value === player1.value.user.uid
+                ? `${player2.value.user.uid}`
+                : `${player1.value.user.uid}`
+        );
+    }
+
     isLoading.value = false;
 };
 
@@ -789,7 +774,7 @@ function wonderCardSelected(wonderCard: IGameDuelWonderCard, cash: number): any 
     let fullPrice = showPrice(wonderCard, `${user.value.uid}`);
     if (fullPrice > cash) return null;
     else selectedWonder.value = wonderCard;
-    storeDuelGame.setCardToWonder();
+    storeDuelGame.setCardToWonder(fullPrice);
 }
 </script>
 
@@ -921,7 +906,16 @@ function wonderCardSelected(wonderCard: IGameDuelWonderCard, cash: number): any 
                 />
             </section>
 
-            <section v-if="actionForCards && selectedCard?.id && !isLoading" class="playerAction">
+            <section
+                v-if="
+                    actionForCards &&
+                    selectedCard?.id &&
+                    !isLoading &&
+                    wonByArt === '' &&
+                    wonByAggressive === ''
+                "
+                class="playerAction"
+            >
                 <button
                     :disabled="
                         canBuyTierCard < 0 ||
@@ -961,7 +955,16 @@ function wonderCardSelected(wonderCard: IGameDuelWonderCard, cash: number): any 
                     {{ buttonBuildWonder }}
                 </button>
             </section>
-            <section v-else-if="isMyTurn && chooseWhoWillStart && !isLoading" class="playerAction">
+            <section
+                v-else-if="
+                    isMyTurn &&
+                    chooseWhoWillStart &&
+                    !isLoading &&
+                    wonByArt === '' &&
+                    wonByAggressive === ''
+                "
+                class="playerAction"
+            >
                 <button class="customButton" @click="() => chooseWhoStarts(`${player1.user.uid}`)">
                     {{ player1.user.displayName }}
                 </button>
@@ -970,7 +973,16 @@ function wonderCardSelected(wonderCard: IGameDuelWonderCard, cash: number): any 
                     {{ player2.user.displayName }}
                 </button>
             </section>
-            <section v-else-if="isMyTurn && pickCoin !== '' && !isLoading" class="playerAction">
+            <section
+                v-else-if="
+                    isMyTurn &&
+                    pickCoin !== '' &&
+                    !isLoading &&
+                    wonByArt === '' &&
+                    wonByAggressive === ''
+                "
+                class="playerAction"
+            >
                 <p>{{ labelPickCoin }}</p>
             </section>
             <section v-else-if="isMyTurn && tier === 'prepare' && !isLoading" class="playerAction">
@@ -1071,7 +1083,7 @@ section.wrapper {
     height: 155px;
     width: 230px;
     animation: showElement 0.5s linear;
-    filter: drop-shadow(0 15px 35px rgba(0, 0, 0, 0.5));
+    filter: drop-shadow(0 15px 35px rgba(0, 0, 0, 0.35));
 }
 
 @keyframes showElement {

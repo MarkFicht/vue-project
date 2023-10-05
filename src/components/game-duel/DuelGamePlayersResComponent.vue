@@ -23,14 +23,14 @@ function countArtefacts(uid: string): number {
     if (uid === player1.value.user.uid) {
         let art = 0;
         if (player1.value.resources.coins.find((coin) => coin === 'artefact7')) {
-            art += 0;
+            art += 1;
         }
         const arrOfArt = player1.value.cards.green.map((green) => green.valuePower[0]);
         return (art += [...new Set(arrOfArt)].length);
     } else {
         let art = 0;
         if (player2.value.resources.coins.find((coin) => coin === 'artefact7')) {
-            art += 0;
+            art += 1;
         }
         const arrOfArt = player2.value.cards.green.map((green) => green.valuePower[0]);
         return (art += [...new Set(arrOfArt)].length);
@@ -41,12 +41,7 @@ function countArtefacts(uid: string): number {
 <template>
     <!-- UP SECTION -->
     <section
-        :class="[
-            'wonders',
-            user.uid === player1.user.uid ? 'wonders1' : 'wonders2',
-            'customInput',
-            user.uid === player1.user.uid && selectWonderCard && 'selectWonderFromPlayer'
-        ]"
+        :class="['wonders', user.uid === player1.user.uid ? 'wonders1' : 'wonders2', 'customInput']"
     >
         <DuelGameWonderComponent
             v-for="wonderCard in player1.wonderCards"
@@ -54,6 +49,11 @@ function countArtefacts(uid: string): number {
             :key="wonderCard.id"
             :cash="showPrice(wonderCard, `${player1.user.uid}`)"
             :resCash="player1.resources.cash"
+            :class="[
+                selectWonderCard &&
+                    showPrice(wonderCard, `${player1.user.uid}`) <= player1.resources.cash &&
+                    'selectWonderFromPlayer'
+            ]"
             @click="
                 tier !== 'prepare' && selectWonderCard
                     ? wonderCardSelected(wonderCard, player1.resources.cash)
@@ -126,15 +126,20 @@ function countArtefacts(uid: string): number {
             </div>
         </div>
         <div class="playerPointsContainer">
-            <div class="playerCash">
+            <div class="playerRes">
                 <p :style="turn === player1.user.uid ? `font-weight: bold;` : ''">
-                    {{ `Nick: ${player1.user.displayName || player1.user.email}` }}
+                    {{ `${player1.user.displayName || player1.user.email}` }}
                 </p>
                 <p :style="turn === player1.user.uid ? `font-weight: bold;` : ''">
-                    {{ `Cash: ${player1.resources.cash} | Points: ${player1.points}` }}
+                    {{ `Status: online` }}
+                </p>
+                <p :style="turn === player1.user.uid ? `font-weight: bold;` : ''">
+                    {{ `$: ${player1.resources.cash}` }}
+                    <ion-icon name="ribbon-sharp" :style="'margin-left: 10px;'"></ion-icon
+                    >{{ `: ${player1.points}` }}
                 </p>
             </div>
-            <div class="playerCoins">
+            <div class="playerCoins customInput">
                 <DuelGameCoinComponent
                     v-for="coin in player1.resources.coins"
                     :key="coin"
@@ -146,12 +151,7 @@ function countArtefacts(uid: string): number {
 
     <!-- DOWN SECTION -->
     <section
-        :class="[
-            'wonders',
-            user.uid === player1.user.uid ? 'wonders2' : 'wonders1',
-            'customInput',
-            user.uid === player2.user.uid && selectWonderCard && 'selectWonderFromPlayer'
-        ]"
+        :class="['wonders', user.uid === player1.user.uid ? 'wonders2' : 'wonders1', 'customInput']"
     >
         <DuelGameWonderComponent
             v-for="wonderCard in player2.wonderCards"
@@ -159,6 +159,11 @@ function countArtefacts(uid: string): number {
             :key="wonderCard.id"
             :cash="showPrice(wonderCard, `${player2.user.uid}`)"
             :resCash="player2.resources.cash"
+            :class="[
+                selectWonderCard &&
+                    showPrice(wonderCard, `${player2.user.uid}`) <= player2.resources.cash &&
+                    'selectWonderFromPlayer'
+            ]"
             @click="
                 tier !== 'prepare' && selectWonderCard
                     ? wonderCardSelected(wonderCard, player2.resources.cash)
@@ -231,15 +236,20 @@ function countArtefacts(uid: string): number {
             </div>
         </div>
         <div class="playerPointsContainer">
-            <div class="playerCash">
+            <div class="playerRes">
                 <p :style="turn === player2.user.uid ? `font-weight: bold;` : ''">
-                    {{ `Nick: ${player2.user.displayName || player2.user.email}` }}
+                    {{ `${player2.user.displayName || player2.user.email}` }}
                 </p>
                 <p :style="turn === player2.user.uid ? `font-weight: bold;` : ''">
-                    {{ `Cash: ${player2.resources.cash} | Points: ${player2.points}` }}
+                    {{ `Status: online` }}
+                </p>
+                <p :style="turn === player2.user.uid ? `font-weight: bold;` : ''">
+                    {{ `$: ${player2.resources.cash}` }}
+                    <ion-icon name="ribbon-sharp" :style="'margin-left: 10px;'"></ion-icon
+                    >{{ `: ${player2.points}` }}
                 </p>
             </div>
-            <div class="playerCoins">
+            <div class="playerCoins customInput">
                 <DuelGameCoinComponent
                     v-for="coin in player2.resources.coins"
                     :key="coin"
@@ -264,20 +274,42 @@ function countArtefacts(uid: string): number {
 }
 .playerPointsContainer {
     height: 100%;
-    width: 200px;
+    width: 180px;
+    margin-right: 20px;
+    border-radius: 10px;
+    box-shadow:
+        5px 5px 10px rgba(0, 0, 0, 0.1),
+        -5px -5px 10px rgba(255, 255, 255, 1);
     display: flex;
     justify-content: center;
     align-items: start;
     flex-direction: column;
 }
-.playerCash {
-    /*  */
+.playerRes {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    width: 100%;
+}
+.playerRes > p {
+    height: 24px;
+    line-height: 24px;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 .playerCoins {
     height: 50px;
+    width: 160px;
+    margin: 10px auto 0;
     display: flex;
-    justify-content: left;
+    justify-content: center;
     align-items: center;
+    padding: 0 !important;
 }
 .playerCoins > span {
     margin: 0 5px;

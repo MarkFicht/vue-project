@@ -11,7 +11,7 @@ import {
 } from '@/interfaces/GameDuel';
 import db from '@/firebase/index';
 import { collection, doc, updateDoc, onSnapshot, increment, arrayUnion } from 'firebase/firestore';
-import { countPlayerResources } from '@/helpers/GameDuelInit';
+import { countPlayerResources, countPlayerResourcesFromWonders } from '@/helpers/GameDuelInit';
 import { debounce } from 'lodash-es';
 
 const gameDuelRef = collection(db, 'gameDuel');
@@ -35,6 +35,8 @@ export interface IDuelGameStore {
     selectWondersForPlayers: string[];
     selectWondersForPlayersMove: number;
     chooseWhoWillStart: boolean;
+    wonByArt: string;
+    wonByAggressive: string;
     selectedCard: IGameDuelCard;
     selectedWonder: IGameDuelWonderCard;
     isLoading: boolean;
@@ -59,6 +61,8 @@ export const duelGameStore = defineStore('duelGameStore', {
             selectWondersForPlayers: [],
             selectWondersForPlayersMove: 0,
             chooseWhoWillStart: false,
+            wonByArt: '',
+            wonByAggressive: '',
             selectedCard: {} as IGameDuelCard,
             selectedWonder: {} as IGameDuelWonderCard,
             isLoading: false
@@ -88,7 +92,9 @@ export const duelGameStore = defineStore('duelGameStore', {
                         pickCoin,
                         selectWondersForPlayers,
                         selectWondersForPlayersMove,
-                        chooseWhoWillStart
+                        chooseWhoWillStart,
+                        wonByArt,
+                        wonByAggressive
                     } = doc.data();
                     this.turn = turn;
                     this.tier = tier;
@@ -106,6 +112,8 @@ export const duelGameStore = defineStore('duelGameStore', {
                     this.selectWondersForPlayers = selectWondersForPlayers;
                     this.selectWondersForPlayersMove = selectWondersForPlayersMove;
                     this.chooseWhoWillStart = chooseWhoWillStart;
+                    this.wonByArt = wonByArt;
+                    this.wonByAggressive = wonByAggressive;
                 }
             });
         },
@@ -122,9 +130,29 @@ export const duelGameStore = defineStore('duelGameStore', {
             });
         },
         async upgradeTurn(uid: string): Promise<void> {
-            await updateDoc(tableGameDuelRef, {
-                turn: uid
-            });
+            this.isLoading = true;
+
+            if ((this.move === 20 || this.move === 40) && !this.chooseWhoWillStart) {
+                let checkTurn: string = uid;
+                checkTurn =
+                    checkTurn === this.player1.user.uid
+                        ? `${this.player2.user.uid}`
+                        : `${this.player1.user.uid}`;
+
+                if (this.board.pawn > 0) checkTurn = `${this.player1.user.uid}`;
+                else if (this.board.pawn < 0) checkTurn = `${this.player2.user.uid}`;
+
+                await updateDoc(tableGameDuelRef, {
+                    chooseWhoWillStart: true,
+                    turn: checkTurn
+                });
+            } else {
+                await updateDoc(tableGameDuelRef, {
+                    turn: uid
+                });
+            }
+
+            this.isLoading = false;
         },
         async setPickCoin(id: string): Promise<void> {
             this.isLoading = true;
@@ -140,7 +168,8 @@ export const duelGameStore = defineStore('duelGameStore', {
                 for (let index = 0; index < howManyMovePawn; index++) {
                     if (this.board.pawn <= -8) {
                         await updateDoc(tableGameDuelRef, {
-                            'gameBoard.pawn': increment(-1)
+                            'gameBoard.pawn': increment(-1),
+                            wonByAggressive: uid
                         });
                         // TODO - end game!
                         console.log('%c END GAME - ATTACK -> ', 'background: #222; color: #bada55');
@@ -171,7 +200,8 @@ export const duelGameStore = defineStore('duelGameStore', {
                 for (let index = 0; index < howManyMovePawn; index++) {
                     if (this.board.pawn >= 8) {
                         await updateDoc(tableGameDuelRef, {
-                            'gameBoard.pawn': increment(1)
+                            'gameBoard.pawn': increment(1),
+                            wonByAggressive: uid
                         });
                         // TODO - end game!
                         console.log('%c END GAME - ATTACK -> ', 'background: #222; color: #bada55');
@@ -199,14 +229,6 @@ export const duelGameStore = defineStore('duelGameStore', {
                     }
                 }
             }
-
-            // TODO - check its over
-            this.upgradeTurn(
-                this.turn === this.player1.user.uid
-                    ? `${this.player2.user.uid}`
-                    : `${this.player1.user.uid}`
-            );
-            this.upgradeMove();
             this.isLoading = false;
         },
         async countArtefacts(uid: string): Promise<void> {
@@ -215,29 +237,25 @@ export const duelGameStore = defineStore('duelGameStore', {
 
             if (uid === this.player1.user.uid) {
                 if (this.player1.resources.coins.find((coin) => coin === 'artefact7')) {
-                    art += 0;
+                    art += 1;
                 }
                 const arrOfArt = this.player1.cards.green.map((green) => green.valuePower[0]);
                 art += [...new Set(arrOfArt)].length;
             } else {
                 if (this.player2.resources.coins.find((coin) => coin === 'artefact7')) {
-                    art += 0;
+                    art += 1;
                 }
                 const arrOfArt = this.player2.cards.green.map((green) => green.valuePower[0]);
                 art += [...new Set(arrOfArt)].length;
             }
 
             if (art >= 6) {
+                await updateDoc(tableGameDuelRef, {
+                    wonByArt: uid
+                });
                 // TODO - end game!
                 console.log('%c END GAME - ARTEFACT -> ', 'background: #222; color: #bada55');
                 return;
-            } else {
-                this.upgradeTurn(
-                    this.turn === this.player1.user.uid
-                        ? `${this.player2.user.uid}`
-                        : `${this.player1.user.uid}`
-                );
-                this.upgradeMove();
             }
             this.isLoading = false;
         },
@@ -340,7 +358,6 @@ export const duelGameStore = defineStore('duelGameStore', {
                                 this.player1.resources.artefacts.forEach((art) => {
                                     art === cardToTake.valuePower[i] ? pair++ : null;
                                 });
-
                                 pair === 2 && (takeCoin = true);
                             }
                         }
@@ -412,14 +429,18 @@ export const duelGameStore = defineStore('duelGameStore', {
                 }
 
                 if (checkArtefacts) {
-                    this.countArtefacts(`${this.player1.user.uid}`);
-                } else if (takeCoin) {
-                    this.setPickCoin(`${this.player1.user.uid}`);
-                } else if (movePawn) {
-                    this.setMovePawn(howManyMovePawn, `${this.player1.user.uid}`);
-                } else {
+                    await this.countArtefacts(`${this.player1.user.uid}`);
+                }
+                if (movePawn) {
+                    await this.setMovePawn(howManyMovePawn, `${this.player1.user.uid}`);
+                }
+                if (takeCoin) {
+                    await this.setPickCoin(`${this.player1.user.uid}`);
+                }
+
+                if (this.wonByArt === '' && this.wonByAggressive === '' && this.pickCoin === '') {
+                    await this.upgradeMove();
                     this.upgradeTurn(`${this.player2.user.uid}`);
-                    this.upgradeMove();
                 }
             } else {
                 // --- coin: cash back from sp
@@ -532,14 +553,18 @@ export const duelGameStore = defineStore('duelGameStore', {
                 }
 
                 if (checkArtefacts) {
-                    this.countArtefacts(`${this.player2.user.uid}`);
-                } else if (takeCoin) {
-                    this.setPickCoin(`${this.player2.user.uid}`);
-                } else if (movePawn) {
-                    this.setMovePawn(howManyMovePawn, `${this.player2.user.uid}`);
-                } else {
+                    await this.countArtefacts(`${this.player2.user.uid}`);
+                }
+                if (movePawn) {
+                    await this.setMovePawn(howManyMovePawn, `${this.player2.user.uid}`);
+                }
+                if (takeCoin) {
+                    await this.setPickCoin(`${this.player2.user.uid}`);
+                }
+
+                if (this.wonByArt === '' && this.wonByAggressive === '' && this.pickCoin === '') {
+                    await this.upgradeMove();
                     this.upgradeTurn(`${this.player1.user.uid}`);
-                    this.upgradeMove();
                 }
             }
 
@@ -609,8 +634,8 @@ export const duelGameStore = defineStore('duelGameStore', {
                     'player1.resources.cash': increment(addCash),
                     graveyard: this.graveyard
                 });
-                this.upgradeTurn(`${this.player2.user?.uid}`);
                 this.upgradeMove();
+                this.upgradeTurn(`${this.player2.user?.uid}`);
             } else {
                 const addCash = 2 + this.player2.cards.yellow.length;
 
@@ -618,16 +643,23 @@ export const duelGameStore = defineStore('duelGameStore', {
                     'player2.resources.cash': increment(addCash),
                     graveyard: this.graveyard
                 });
-                this.upgradeTurn(`${this.player1.user.uid}`);
                 this.upgradeMove();
+                this.upgradeTurn(`${this.player1.user.uid}`);
             }
 
             this.unselectCard();
             this.isLoading = false;
         },
-        async setCardToWonder(): Promise<void> {
+        async setCardToWonder(cash: number): Promise<void> {
             let cardToWonder: IGameDuelCard = {} as IGameDuelCard;
             let wonderCardToActive: IGameDuelWonderCard = {} as IGameDuelWonderCard;
+            let movePawn: boolean = false;
+            let howManyMovePawn: number = 0;
+            let destBrown: boolean = false;
+            let destGrey: boolean = false;
+            let repeat: boolean = false;
+            let takeFromGraveyard: boolean = false;
+            let takeOneFromThreeCoin: boolean = false;
 
             if (this.tier === 'I') {
                 this.tierOneCards = this.$state.tierOneCards.map((card) => {
@@ -683,29 +715,123 @@ export const duelGameStore = defineStore('duelGameStore', {
 
             this.isLoading = true;
             if (this.turn === this.player1.user.uid) {
-                const newWonders = this.player1.wonderCards.map((cd) => {
-                    return cd.id === wonderCardToActive.id ? wonderCardToActive : cd;
+                const newResPlayer = countPlayerResourcesFromWonders(
+                    wonderCardToActive,
+                    this.player1
+                );
+
+                newResPlayer.resources.cash -= cash;
+
+                // --- coin: repeat
+                if (newResPlayer.resources.coins.find((coin) => coin === 'repeatWonder')) {
+                    repeat = true;
+                }
+                // --- coin: cash back
+                if (cash > 0 && this.player2.resources.coins.find((coin) => coin === 'cashBack')) {
+                    updateDoc(tableGameDuelRef, {
+                        'player2.resources.cash': increment(cash)
+                    });
+                }
+                wonderCardToActive.power.forEach(async (wc, i) => {
+                    if (wc === 'attack') {
+                        movePawn = true;
+                        howManyMovePawn = wonderCardToActive.valuePower[i];
+                    } else if (wc === 'break') {
+                        if (wonderCardToActive.valuePower[i] === 1) {
+                            destBrown = true;
+                        } else if (wonderCardToActive.valuePower[i] === 2) {
+                            destGrey = true;
+                        } else if (wonderCardToActive.valuePower[i] === 3) {
+                            await updateDoc(tableGameDuelRef, {
+                                'player2.resources.cash':
+                                    this.player2.resources.cash <= 3 ? 0 : increment(-3)
+                            });
+                        }
+                    } else if (wc === 'effect') {
+                        if (wonderCardToActive.valuePower[i] === 1) {
+                            repeat = true;
+                        } else if (wonderCardToActive.valuePower[i] === 2) {
+                            takeFromGraveyard = true;
+                        } else if (wonderCardToActive.valuePower[i] === 3) {
+                            takeOneFromThreeCoin = true;
+                        }
+                    }
                 });
+
+                if (movePawn) {
+                    this.setMovePawn(howManyMovePawn, `${this.player1.user.uid}`);
+                }
+                // perform destroy brown or grey cards in enemy res
+                // perform effects - looks on turn, etc
+
                 await updateDoc(tableGameDuelRef, {
-                    'player1.wonderCards': newWonders,
-                    turn:
-                        this.turn === this.player1.user.uid
-                            ? this.player2.user.uid
-                            : this.player1.user.uid
+                    player1: newResPlayer
                 });
-                this.upgradeMove();
+                if (this.wonByArt === '' && this.wonByAggressive === '') {
+                    this.upgradeMove();
+                    repeat
+                        ? this.upgradeTurn(`${this.player1.user.uid}`)
+                        : this.upgradeTurn(`${this.player2.user.uid}`);
+                }
             } else {
-                const newWonders = this.player2.wonderCards.map((cd) => {
-                    return cd.id === wonderCardToActive.id ? wonderCardToActive : cd;
+                const newResPlayer = countPlayerResourcesFromWonders(
+                    wonderCardToActive,
+                    this.player2
+                );
+
+                newResPlayer.resources.cash -= cash;
+
+                // --- coin: repeat
+                if (newResPlayer.resources.coins.find((coin) => coin === 'repeatWonder')) {
+                    repeat = true;
+                }
+                // --- coin: cash back
+                if (cash > 0 && this.player1.resources.coins.find((coin) => coin === 'cashBack')) {
+                    updateDoc(tableGameDuelRef, {
+                        'player1.resources.cash': increment(cash)
+                    });
+                }
+                wonderCardToActive.power.forEach(async (wc, i) => {
+                    if (wc === 'attack') {
+                        movePawn = true;
+                        howManyMovePawn = wonderCardToActive.valuePower[i];
+                    } else if (wc === 'break') {
+                        if (wonderCardToActive.valuePower[i] === 1) {
+                            destBrown = true;
+                        } else if (wonderCardToActive.valuePower[i] === 2) {
+                            destGrey = true;
+                        } else if (wonderCardToActive.valuePower[i] === 3) {
+                            await updateDoc(tableGameDuelRef, {
+                                'player1.resources.cash':
+                                    this.player1.resources.cash <= 3 ? 0 : increment(-3)
+                            });
+                        }
+                    } else if (wc === 'effect') {
+                        if (wonderCardToActive.valuePower[i] === 1) {
+                            repeat = true;
+                        } else if (wonderCardToActive.valuePower[i] === 2) {
+                            takeFromGraveyard = true;
+                        } else if (wonderCardToActive.valuePower[i] === 3) {
+                            takeOneFromThreeCoin = true;
+                        }
+                    }
                 });
+
+                if (movePawn) {
+                    this.setMovePawn(howManyMovePawn, `${this.player1.user.uid}`);
+                }
+                // perform destroy brown or grey cards in enemy res
+                // perform effects - looks on turn, etc
+
                 await updateDoc(tableGameDuelRef, {
-                    'player2.wonderCards': newWonders,
-                    turn:
-                        this.turn === this.player1.user.uid
-                            ? this.player2.user.uid
-                            : this.player1.user.uid
+                    player2: newResPlayer
                 });
-                this.upgradeMove();
+                if (this.wonByArt === '' && this.wonByAggressive === '') {
+                    this.upgradeMove();
+                    repeat
+                        ? this.upgradeTurn(`${this.player2.user.uid}`)
+                        : this.upgradeTurn(`${this.player1.user.uid}`);
+                }
             }
 
             // TODO check for 7 cards and remove 8th + get res

@@ -115,10 +115,6 @@ export interface IGameDuelPlayer {
         grey: IGameDuelCard[];
         purple: IGameDuelCard[];
     };
-    effects: {
-        fromWonderCards: any[];
-        fromCards: any[];
-    };
 }
 
 export class PlayerDuel implements IGameDuelPlayer {
@@ -160,10 +156,6 @@ export class PlayerDuel implements IGameDuelPlayer {
         brown: [],
         grey: [],
         purple: []
-    };
-    public effects = {
-        fromWonderCards: [],
-        fromCards: []
     };
 
     constructor(params?: IGameDuelPlayer) {

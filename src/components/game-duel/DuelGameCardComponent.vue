@@ -460,5 +460,6 @@ div {
     font-size: 9px !important;
     border: 1px solid goldenrod !important;
     background-color: gold;
+    border-radius: 50%;
 }
 </style>

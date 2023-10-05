@@ -8,4 +8,5 @@ export default interface IUser {
     refreshToken?: string;
     displayName: string;
     email: string;
+    online?: boolean;
 }
