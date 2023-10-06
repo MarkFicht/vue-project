@@ -42,7 +42,8 @@ import {
     BoardDuel,
     type Materials,
     type IGameDuelCoin,
-    type IGameDuelWonderCard
+    type IGameDuelWonderCard,
+    type IGameDuelPlayer
 } from '@/interfaces/GameDuel';
 import { duelGameStore } from '@/store/duelGameStore';
 import { storeToRefs } from 'pinia';
@@ -63,6 +64,9 @@ const labelPickWonder = ref<string>('Pick Wonder!');
 const labelDestroyCard = ref<string>('Destroy Enemy Card!');
 const labelWonByArt = ref<string>('Winner By Artefacts: ');
 const labelWonByAggressive = ref<string>('Winner By Aggressive: ');
+
+const allPointsP1 = ref<number>(0);
+const allPointsP2 = ref<number>(0);
 
 const storeDuelGame = duelGameStore();
 const {
@@ -188,6 +192,8 @@ watch(
 
         if (move.value >= 40 && move.value <= 60) {
             isLoading.value = true;
+            actionForCards.value = true;
+
             await updateDoc(tableGameDuelRef, {
                 tier: 'III'
             });
@@ -197,10 +203,44 @@ watch(
             }
             isLoading.value = false;
         }
-        // TODO - add end game
+        if (move.value === 60) {
+            isLoading.value = true;
+            actionForCards.value = false;
+
+            await updateDoc(tableGameDuelRef, {
+                tier: 'end'
+            });
+
+            isLoading.value = false;
+        }
     }
 );
 
+watch(
+    () => tier.value,
+    () => {
+        if (tier.value === 'end') {
+            allPointsP1.value =
+                player1.value.points +
+                Math.floor(player1.value.resources.cash / 3) +
+                ((board.value.pawn <= -6 && 10) ||
+                    (board.value.pawn <= -3 && 5) ||
+                    (board.value.pawn <= -1 && 2) ||
+                    0) +
+                countPointsFromCoins(player1.value.resources.coins) +
+                countPointsFromPurple(player1.value.cards.purple.map((pur) => pur.valuePower[0]));
+            allPointsP2.value =
+                player2.value.points +
+                Math.floor(player2.value.resources.cash / 3) +
+                ((board.value.pawn >= 6 && 10) ||
+                    (board.value.pawn >= 3 && 5) ||
+                    (board.value.pawn >= 1 && 2) ||
+                    0) +
+                countPointsFromCoins(player2.value.resources.coins) +
+                countPointsFromPurple(player2.value.cards.purple.map((pur) => pur.valuePower[0]));
+        }
+    }
+);
 // ---
 onMounted(async () => {
     isLoading.value = true;
@@ -892,6 +932,58 @@ const destrooyEnemyCardSelected = async (gameCard: IGameDuelCard, color: 'brown'
 
     isLoading.value = false;
 };
+
+const countPointsFromPurple = (valPowPurple: number[]): number => {
+    let points = 0;
+    valPowPurple.forEach((purplePow) => {
+        if (purplePow === 1) {
+            const a = player1.value.cards.yellow.length;
+            const b = player2.value.cards.yellow.length;
+            points += a > b ? a : b;
+        }
+        if (purplePow === 2) {
+            const a = player1.value.cards.brown.length + player1.value.cards.grey.length;
+            const b = player2.value.cards.brown.length + player2.value.cards.grey.length;
+            points += a > b ? a : b;
+        }
+        if (purplePow === 3) {
+            const a = player1.value.wonderCards.length;
+            const b = player2.value.wonderCards.length;
+            points += a > b ? a * 2 : b * 2;
+        }
+        if (purplePow === 4) {
+            const a = player1.value.cards.blue.length;
+            const b = player2.value.cards.blue.length;
+            points += a > b ? a : b;
+        }
+        if (purplePow === 5) {
+            const a = player1.value.cards.green.length;
+            const b = player2.value.cards.green.length;
+            points += a > b ? a : b;
+        }
+        if (purplePow === 1) {
+            const a = Math.floor(player1.value.resources.cash / 3);
+            const b = Math.floor(player2.value.resources.cash / 3);
+            points += a > b ? a : b;
+        }
+        if (purplePow === 7) {
+            const a = player1.value.cards.red.length;
+            const b = player2.value.cards.red.length;
+            points += a > b ? a : b;
+        }
+    });
+    return points;
+};
+
+const countPointsFromCoins = (coins: IGameDuelCoin['effect'][]): number => {
+    let points = 0;
+    coins.forEach((coin) => {
+        coin === 'point4n6cash' && (points += 4);
+        coin === 'point7' && (points += 7);
+        coin === 'pointX3' && (points += 3 * coins.length);
+    });
+    return points;
+};
 </script>
 
 <template>
@@ -1026,6 +1118,100 @@ const destrooyEnemyCardSelected = async (gameCard: IGameDuelCard, color: 'brown'
                 />
             </section>
 
+            <!-- MAIN CONTAINER WITH CARDS, ETC. -->
+            <section class="cards countPoints" v-if="tier === 'end'">
+                <p :style="allPointsP1 > allPointsP2 ? 'font-weight: bold;' : ''">
+                    {{ `${player1.user.displayName || player1.user.email}`
+                    }}<ion-icon
+                        v-if="allPointsP1 > allPointsP2"
+                        class="animateHand"
+                        name="thumbs-up-sharp"
+                    ></ion-icon>
+                </p>
+                <div class="containerPoints customInput">
+                    <div class="currentPoints">
+                        <ion-icon name="ribbon-sharp"></ion-icon>{{ ':' + `${player1.points}` }}
+                    </div>
+                    <div class="cashPoints">
+                        {{ '$:' + `${Math.floor(player1.resources.cash / 3)}` }}
+                    </div>
+                    <div class="purplePoints">
+                        <div class="miniCard"></div>
+                        {{
+                            ':' +
+                            `${countPointsFromPurple(
+                                player1.cards.purple.map((pur) => pur.valuePower[0])
+                            )}`
+                        }}
+                    </div>
+                    <div class="coinsPoints">
+                        <div class="miniCoin"></div>
+                        {{ ':' + `${countPointsFromCoins(player1.resources.coins)}` }}
+                    </div>
+                    <div class="pawnPoints">
+                        <ion-icon name="skull-sharp"></ion-icon
+                        >{{
+                            ':' +
+                            `${
+                                (board.pawn <= -6 && 10) ||
+                                (board.pawn <= -3 && 5) ||
+                                (board.pawn <= -1 && 2) ||
+                                0
+                            }`
+                        }}
+                    </div>
+                    <div class="sumPoints">
+                        {{ '= ' + `${allPointsP1}` }}
+                    </div>
+                </div>
+
+                <p :style="allPointsP2 > allPointsP1 ? 'font-weight: bold;' : ''">
+                    {{ `${player2.user.displayName || player2.user.email}`
+                    }}<ion-icon
+                        v-if="allPointsP2 > allPointsP1"
+                        class="animateHand"
+                        name="thumbs-up-sharp"
+                    ></ion-icon>
+                </p>
+                <div class="containerPoints customInput">
+                    <div class="currentPoints">
+                        <ion-icon name="ribbon-sharp"></ion-icon>{{ ':' + `${player2.points}` }}
+                    </div>
+                    <div class="cashPoints">
+                        {{ '$:' + `${Math.floor(player2.resources.cash / 3)}` }}
+                    </div>
+                    <div class="purplePoints">
+                        <div class="miniCard"></div>
+                        {{
+                            ':' +
+                            `${countPointsFromPurple(
+                                player2.cards.purple.map((pur) => pur.valuePower[0])
+                            )}`
+                        }}
+                    </div>
+                    <div class="coinsPoints">
+                        <div class="miniCoin"></div>
+                        {{ ':' + `${countPointsFromCoins(player2.resources.coins)}` }}
+                    </div>
+                    <div class="pawnPoints">
+                        <ion-icon name="skull-sharp"></ion-icon
+                        >{{
+                            ':' +
+                            `${
+                                (board.pawn >= 6 && 10) ||
+                                (board.pawn >= 3 && 5) ||
+                                (board.pawn >= 1 && 2) ||
+                                0
+                            }`
+                        }}
+                    </div>
+                    <div class="sumPoints">
+                        {{ '= ' + `${allPointsP2}` }}
+                    </div>
+                </div>
+            </section>
+
+            <!-- ACTIONS -->
             <section v-if="actionForCards && selectedCard?.id && !isLoading" class="playerAction">
                 <button
                     :disabled="
@@ -1244,7 +1430,78 @@ section.wrapper {
     margin-left: 5px;
     animation: animateHand 1.5s infinite ease-in-out;
 }
-
+/* END GAME */
+.countPoints {
+    width: 360px;
+    height: 240px;
+    box-shadow:
+        5px 5px 10px rgba(0, 0, 0, 0.1),
+        -5px -5px 10px rgba(255, 255, 255, 1);
+    padding: 15px;
+    border-radius: 10px;
+    margin: auto;
+}
+.countPoints > p {
+    display: block;
+    width: 100%;
+    text-align: center;
+    height: 24px;
+    line-height: 24px;
+    letter-spacing: 1px;
+    padding: 0;
+    margin: 0;
+}
+.containerPoints {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 300px;
+    margin-bottom: 15px;
+    text-align: center;
+    height: 60px;
+    line-height: 40px;
+    letter-spacing: 1px;
+    padding: 3px;
+    font-size: 14px;
+}
+.containerPoints > div {
+    width: 46px;
+    height: 50px;
+    display: inline-flex;
+    position: relative;
+    justify-content: center;
+    align-items: center;
+}
+.containerPoints > div::before {
+    content: '';
+    position: absolute;
+    height: 40px;
+    width: 5px;
+    top: 5px;
+    right: -2px;
+    box-shadow:
+        inset 5px 5px 10px rgba(0, 0, 0, 0.1),
+        inset -5px -5px 10px #fff;
+}
+.containerPoints > div:last-child::before {
+    display: none;
+}
+.miniCard {
+    height: 12px;
+    width: 9px;
+    border: 1px solid;
+    border-radius: 2px;
+    margin: 0 1px;
+    background-color: purple;
+}
+.miniCoin {
+    height: 9px;
+    width: 9px;
+    border: 1px solid;
+    border-radius: 50%;
+    margin: 0 1px;
+    background-color: green;
+}
 @keyframes showElement {
     0%,
     30% {

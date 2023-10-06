@@ -153,6 +153,11 @@ export const duelGameStore = defineStore('duelGameStore', {
                 await updateDoc(tableGameDuelRef, {
                     turn: uid
                 });
+            } else if (this.move + 1 === 60) {
+                await updateDoc(tableGameDuelRef, {
+                    tier: 'end',
+                    move: increment(1)
+                });
             } else if ((this.move + 1 === 20 || this.move + 1 === 40) && !this.chooseWhoWillStart) {
                 let checkTurn: string = uid;
                 checkTurn =
