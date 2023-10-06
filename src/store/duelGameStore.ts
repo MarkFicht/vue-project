@@ -445,7 +445,6 @@ export const duelGameStore = defineStore('duelGameStore', {
                     }
                 }
 
-                //TODO - start it after 2 users online
                 await updateDoc(tableGameDuelRef, {
                     'player1.points': this.player1.points,
                     'player1.cards': this.player1.cards,
@@ -568,7 +567,6 @@ export const duelGameStore = defineStore('duelGameStore', {
                     }
                 }
 
-                //TODO - start it after 2 users online
                 await updateDoc(tableGameDuelRef, {
                     'player2.points': this.player2.points,
                     'player2.cards': this.player2.cards,
@@ -1047,7 +1045,6 @@ export const duelGameStore = defineStore('duelGameStore', {
                 }
             }
 
-            // TODO check for 7 cards and remove 8th + get res
             this.unselectCard();
             this.isLoading = false;
         }

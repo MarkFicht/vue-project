@@ -61,6 +61,8 @@ const labelPickCoinOfThree = ref<string>('Pick one Coin of three!');
 const labelPickCardFromGraveyard = ref<string>('Pick card from graveyard!');
 const labelPickWonder = ref<string>('Pick Wonder!');
 const labelDestroyCard = ref<string>('Destroy Enemy Card!');
+const labelWonByArt = ref<string>('Winner By Artefacts: ');
+const labelWonByAggressive = ref<string>('Winner By Aggressive: ');
 
 const storeDuelGame = duelGameStore();
 const {
@@ -172,6 +174,8 @@ watch(
     async () => {
         if (move.value >= 20 && move.value < 40) {
             isLoading.value = true;
+            actionForCards.value = true;
+
             await updateDoc(tableGameDuelRef, {
                 tier: 'II'
             });
@@ -196,18 +200,6 @@ watch(
         // TODO - add end game
     }
 );
-
-// watch(
-//     () => pickCoin.value,
-//     () => {
-//         if (pickCoin.value !== '' && isMyTurn.value) {
-//             actionForCards.value = false;
-//             selectedCard.value = {} as IGameDuelCard;
-//         } else {
-//             actionForCards.value = true;
-//         }
-//     }
-// );
 
 // ---
 onMounted(async () => {
@@ -310,7 +302,10 @@ onMounted(async () => {
     await storeDuelGame.subFirebaseConnect(`${user.value.uid}`);
 
     // Check state after refresh or leave
-    tier.value !== 'prepare' && (actionForCards.value = true);
+    tier.value !== 'prepare' || docSnap.data()?.tier !== 'prepare'
+        ? (actionForCards.value = true)
+        : null;
+
     // --- Check coin
     if (pickCoin.value !== '' && isMyTurn.value) {
         actionForCards.value = false;
@@ -330,8 +325,11 @@ onMounted(async () => {
     else if ((destroyBrown.value !== '' || destroyGrey.value !== '') && isMyTurn.value) {
         actionForCards.value = false;
         selectedCard.value = {} as IGameDuelCard;
-    } else {
-        actionForCards.value = true;
+    }
+    // --- check END GAME
+    else if (wonByArt.value !== '' || wonByAggressive.value !== '') {
+        actionForCards.value = false;
+        selectedCard.value = {} as IGameDuelCard;
     }
 
     isLoading.value = false;
@@ -345,8 +343,8 @@ async function chooseWhoStarts(id: string): Promise<void> {
     await updateDoc(tableGameDuelRef, {
         chooseWhoWillStart: false
     });
-    actionForCards.value = true;
 
+    actionForCards.value = true;
     isLoading.value = false;
 }
 
@@ -725,8 +723,6 @@ const wonderSelectedForPlayer = async (id: number) => {
 
 const tierCardClick = (gameCard: IGameDuelCard) => {
     if (!isMyTurn.value) return null;
-    if (pickCoin.value !== '' || pickCoinOfThree.value !== '' || pickCardFromGraveyard.value !== '')
-        return null;
     if (chooseWhoWillStart.value) return null;
     if (wonByArt.value) return null;
     if (wonByAggressive.value) return null;
@@ -755,11 +751,15 @@ function wonderCardSelected(wonderCard: IGameDuelWonderCard, cash: number): any 
     let fullPrice = showPrice(wonderCard, `${user.value.uid}`);
     if (fullPrice > cash) return null;
     else selectedWonder.value = wonderCard;
+
+    actionForCards.value = false;
     storeDuelGame.setCardToWonder(fullPrice);
 }
 
 const coinSelected = async (coin: IGameDuelCoin['effect']) => {
     isLoading.value = true;
+    actionForCards.value = false;
+
     let cash = 0;
     switch (coin) {
         case 'point4n6cash':
@@ -809,6 +809,8 @@ const coinSelected = async (coin: IGameDuelCoin['effect']) => {
 
 const coinSelectedOfThree = async (coin: IGameDuelCoin['effect']) => {
     isLoading.value = true;
+    actionForCards.value = false;
+
     let cash = 0;
     switch (coin) {
         case 'point4n6cash':
@@ -853,12 +855,12 @@ const coinSelectedOfThree = async (coin: IGameDuelCoin['effect']) => {
         );
     }
 
-    actionForCards.value = true;
     isLoading.value = false;
 };
 
 const graveyardCardSelected = async (gameCard: IGameDuelCard) => {
     isLoading.value = true;
+    actionForCards.value = false;
 
     await updateDoc(tableGameDuelRef, {
         graveyard: arrayRemove(gameCard),
@@ -867,15 +869,14 @@ const graveyardCardSelected = async (gameCard: IGameDuelCard) => {
 
     selectedCard.value = gameCard;
     await storeDuelGame.setCardTaken(0, gameCard.tier);
-    actionForCards.value = true;
 
     isLoading.value = false;
 };
 
 const destrooyEnemyCardSelected = async (gameCard: IGameDuelCard, color: 'brown' | 'grey') => {
     isLoading.value = true;
+    actionForCards.value = false;
 
-    console.log('%c co przekazane -> ', 'background: #222; color: #bada55', gameCard, color);
     if (color === 'brown') {
         await updateDoc(tableGameDuelRef, {
             destroyBrown: ''
@@ -888,7 +889,6 @@ const destrooyEnemyCardSelected = async (gameCard: IGameDuelCard, color: 'brown'
 
     selectedCard.value = gameCard;
     await storeDuelGame.setCardGraveyard(gameCard.tier);
-    actionForCards.value = true;
 
     isLoading.value = false;
 };
@@ -1040,7 +1040,8 @@ const destrooyEnemyCardSelected = async (gameCard: IGameDuelCard, color: 'brown'
                         () =>
                             isMyTurn
                                 ? (storeDuelGame.setCardTaken(canBuyTierCard),
-                                  selectWonderCard === false)
+                                  (selectWonderCard = false),
+                                  (actionForCards = false))
                                 : null
                     "
                 >
@@ -1052,7 +1053,9 @@ const destrooyEnemyCardSelected = async (gameCard: IGameDuelCard, color: 'brown'
                     @click="
                         () =>
                             isMyTurn
-                                ? (storeDuelGame.setCardGraveyard(), selectWonderCard === false)
+                                ? (storeDuelGame.setCardGraveyard(),
+                                  (selectWonderCard = false),
+                                  (actionForCards = false))
                                 : null
                     "
                 >
@@ -1065,6 +1068,30 @@ const destrooyEnemyCardSelected = async (gameCard: IGameDuelCard, color: 'brown'
                 >
                     {{ buttonBuildWonder }}
                 </button>
+            </section>
+            <section v-else-if="wonByArt !== ''" class="playerAction">
+                <p :style="'font-weight: bold;'">
+                    {{
+                        labelWonByArt +
+                        `${
+                            wonByArt === player1.user.uid
+                                ? player1.user.displayName || player1.user.email
+                                : player2.user.displayName || player2.user.email
+                        }`
+                    }}<ion-icon class="animateHand" name="thumbs-up-sharp"></ion-icon>
+                </p>
+            </section>
+            <section v-else-if="wonByAggressive !== ''" class="playerAction">
+                <p :style="'font-weight: bold;'">
+                    {{
+                        labelWonByAggressive +
+                        `${
+                            wonByAggressive === player1.user.uid
+                                ? player1.user.displayName || player1.user.email
+                                : player2.user.displayName || player2.user.email
+                        }`
+                    }}<ion-icon class="animateHand" name="thumbs-up-sharp"></ion-icon>
+                </p>
             </section>
             <section v-else-if="isMyTurn && chooseWhoWillStart && !isLoading" class="playerAction">
                 <button
@@ -1213,6 +1240,10 @@ section.wrapper {
     animation: showElement 0.5s linear;
     filter: drop-shadow(0 15px 35px rgba(0, 0, 0, 0.35));
 }
+.animateHand {
+    margin-left: 5px;
+    animation: animateHand 1.5s infinite ease-in-out;
+}
 
 @keyframes showElement {
     0%,
@@ -1221,6 +1252,17 @@ section.wrapper {
     }
     100% {
         opacity: 1;
+    }
+}
+@keyframes animateHand {
+    0% {
+        transform: rotate(-15deg);
+    }
+    50% {
+        transform: rotate(15deg) scale(1.1);
+    }
+    100% {
+        transform: rotate(-15deg);
     }
 }
 @media (max-width: 1200px) {
