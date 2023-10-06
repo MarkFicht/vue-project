@@ -912,9 +912,30 @@ export const duelGameStore = defineStore('duelGameStore', {
                     await this.setDestroyGrey(`${this.player1.user.uid}`);
                 }
 
-                await updateDoc(tableGameDuelRef, {
-                    player1: newResPlayer
-                });
+                const lastWonderP1 = newResPlayer.wonderCards.filter(
+                    (wc) => wc.activated !== 'none'
+                );
+                const lastWonderP2 = this.player2.wonderCards.filter(
+                    (wc) => wc.activated !== 'none'
+                );
+                if (lastWonderP1.length === 3 && lastWonderP2.length === 4) {
+                    await updateDoc(tableGameDuelRef, {
+                        player1: {
+                            ...newResPlayer,
+                            wonderCards: lastWonderP1
+                        }
+                    });
+                } else if (lastWonderP1.length === 4 && lastWonderP2.length === 3) {
+                    await updateDoc(tableGameDuelRef, {
+                        player1: newResPlayer,
+                        'player2.wonderCards': lastWonderP2
+                    });
+                } else {
+                    await updateDoc(tableGameDuelRef, {
+                        player1: newResPlayer
+                    });
+                }
+
                 if (
                     this.wonByArt === '' &&
                     this.wonByAggressive === '' &&
@@ -987,9 +1008,31 @@ export const duelGameStore = defineStore('duelGameStore', {
                     await this.setDestroyGrey(`${this.player2.user.uid}`);
                 }
 
-                await updateDoc(tableGameDuelRef, {
-                    player2: newResPlayer
-                });
+                const lastWonderP1 = this.player1.wonderCards.filter(
+                    (wc) => wc.activated !== 'none'
+                );
+                const lastWonderP2 = newResPlayer.wonderCards.filter(
+                    (wc) => wc.activated !== 'none'
+                );
+
+                if (lastWonderP1.length === 3 && lastWonderP2.length === 4) {
+                    await updateDoc(tableGameDuelRef, {
+                        'player1.wonderCards': lastWonderP1,
+                        player2: newResPlayer
+                    });
+                } else if (lastWonderP1.length === 4 && lastWonderP2.length === 3) {
+                    await updateDoc(tableGameDuelRef, {
+                        player2: {
+                            ...newResPlayer,
+                            wonderCards: lastWonderP2
+                        }
+                    });
+                } else {
+                    await updateDoc(tableGameDuelRef, {
+                        player2: newResPlayer
+                    });
+                }
+
                 if (
                     this.wonByArt === '' &&
                     this.wonByAggressive === '' &&

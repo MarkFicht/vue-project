@@ -98,7 +98,7 @@ function countArtefacts(uid: string): number {
                     'playerCard2',
                     user.uid === player2.user.uid &&
                         isMyTurn &&
-                        destroyBrown !== '' &&
+                        destroyGrey !== '' &&
                         'selectWonderFromPlayer'
                 ]"
             >
@@ -246,7 +246,7 @@ function countArtefacts(uid: string): number {
                     'playerCard2',
                     user.uid === player1.user.uid &&
                         isMyTurn &&
-                        destroyBrown !== '' &&
+                        destroyGrey !== '' &&
                         'selectWonderFromPlayer'
                 ]"
             >
