@@ -571,6 +571,34 @@ function showPrice(selectedCard: IGameDuelWonderCard | IGameDuelCard, uid: strin
     }
 
     missingMaterials = removeOptionalMaterials(missingMaterials, arrCBW, arrPG, uid);
+    if ((selectedCard as IGameDuelCard)?.color === 'blue') {
+        if (player1.value.user.uid === uid) {
+            if (player1.value.resources.coins.find((coin) => coin === 'lowCostBlue')) {
+                missingMaterials.shift();
+                missingMaterials.shift();
+            }
+        } else {
+            if (player2.value.resources.coins.find((coin) => coin === 'lowCostBlue')) {
+                missingMaterials.shift();
+                missingMaterials.shift();
+            }
+        }
+    }
+
+    if ((selectedCard as IGameDuelWonderCard)?.activated) {
+        if (player1.value.user.uid === uid) {
+            if (player1.value.resources.coins.find((coin) => coin === 'lowCostWonder')) {
+                missingMaterials.shift();
+                missingMaterials.shift();
+            }
+        } else {
+            if (player2.value.resources.coins.find((coin) => coin === 'lowCostWonder')) {
+                missingMaterials.shift();
+                missingMaterials.shift();
+            }
+        }
+    }
+
     missingMaterials.forEach((mat) => {
         buyForCash +=
             arrCBW.find(({ type }) => type === mat)?.val ||
