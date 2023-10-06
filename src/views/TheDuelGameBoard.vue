@@ -60,6 +60,7 @@ const labelPickCoin = ref<string>('Pick Coin!');
 const labelPickCoinOfThree = ref<string>('Pick one Coin of three!');
 const labelPickCardFromGraveyard = ref<string>('Pick card from graveyard!');
 const labelPickWonder = ref<string>('Pick Wonder!');
+const labelDestroyCard = ref<string>('Destroy Enemy Card!');
 
 const storeDuelGame = duelGameStore();
 const {
@@ -322,6 +323,11 @@ onMounted(async () => {
     }
     // --- check pickCardFromGraveyard
     else if (pickCardFromGraveyard.value !== '' && isMyTurn.value) {
+        actionForCards.value = false;
+        selectedCard.value = {} as IGameDuelCard;
+    }
+    // --- check destroyEnemyCard
+    else if ((destroyBrown.value !== '' || destroyGrey.value !== '') && isMyTurn.value) {
         actionForCards.value = false;
         selectedCard.value = {} as IGameDuelCard;
     } else {
@@ -865,6 +871,27 @@ const graveyardCardSelected = async (gameCard: IGameDuelCard) => {
 
     isLoading.value = false;
 };
+
+const destrooyEnemyCardSelected = async (gameCard: IGameDuelCard, color: 'brown' | 'grey') => {
+    isLoading.value = true;
+
+    console.log('%c co przekazane -> ', 'background: #222; color: #bada55', gameCard, color);
+    if (color === 'brown') {
+        await updateDoc(tableGameDuelRef, {
+            destroyBrown: ''
+        });
+    } else {
+        await updateDoc(tableGameDuelRef, {
+            destroyGrey: ''
+        });
+    }
+
+    selectedCard.value = gameCard;
+    await storeDuelGame.setCardGraveyard(gameCard.tier);
+    actionForCards.value = true;
+
+    isLoading.value = false;
+};
 </script>
 
 <template>
@@ -894,7 +921,8 @@ const graveyardCardSelected = async (gameCard: IGameDuelCard) => {
             <DuelGamePlayersResComponent
                 :user="user"
                 :selectWonderCard="selectWonderCard"
-                @wonder-card-selected="wonderCardSelected"
+                :isMyTurn="isMyTurn"
+                @destrooy-enemy-card-selected="destrooyEnemyCardSelected"
             />
 
             <section class="cards cardsWonder" v-if="tier === 'prepare'">
@@ -1073,6 +1101,12 @@ const graveyardCardSelected = async (gameCard: IGameDuelCard) => {
                 class="playerAction"
             >
                 <p>{{ labelPickCardFromGraveyard }}</p>
+            </section>
+            <section v-else-if="isMyTurn && destroyBrown !== '' && !isLoading" class="playerAction">
+                <p>{{ labelDestroyCard }}</p>
+            </section>
+            <section v-else-if="isMyTurn && destroyGrey !== '' && !isLoading" class="playerAction">
+                <p>{{ labelDestroyCard }}</p>
             </section>
             <section v-else-if="isMyTurn && tier === 'prepare' && !isLoading" class="playerAction">
                 <p>{{ labelPickWonder }}</p>

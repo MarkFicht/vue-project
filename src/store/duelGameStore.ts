@@ -10,7 +10,15 @@ import {
     type Tier
 } from '@/interfaces/GameDuel';
 import db from '@/firebase/index';
-import { collection, doc, updateDoc, onSnapshot, increment, arrayUnion } from 'firebase/firestore';
+import {
+    collection,
+    doc,
+    updateDoc,
+    onSnapshot,
+    increment,
+    arrayUnion,
+    arrayRemove
+} from 'firebase/firestore';
 import { countPlayerResources, countPlayerResourcesFromWonders } from '@/helpers/GameDuelInit';
 import { debounce } from 'lodash-es';
 
@@ -325,7 +333,11 @@ export const duelGameStore = defineStore('duelGameStore', {
                 await updateDoc(tableGameDuelRef, {
                     tierIICards: this.tierTwoCards
                 });
-            } else if (this.tier === 'III' || tierFromGraveyard === 'III') {
+            } else if (
+                this.tier === 'III' ||
+                tierFromGraveyard === 'III' ||
+                tierFromGraveyard === 'guild'
+            ) {
                 this.tierThreeCards = this.$state.tierThreeCards.map((card) => {
                     card.id === this.selectedCard.id && (cardToTake = card);
                     return {
@@ -595,10 +607,10 @@ export const duelGameStore = defineStore('duelGameStore', {
             this.unselectCard();
             this.isLoading = false;
         },
-        async setCardGraveyard(): Promise<void> {
+        async setCardGraveyard(tierFromDestroyedCard?: string): Promise<void> {
             let cardToGraveyard: IGameDuelCard = {} as IGameDuelCard;
 
-            if (this.tier === 'I') {
+            if (this.tier === 'I' || tierFromDestroyedCard === 'I') {
                 this.tierOneCards = this.$state.tierOneCards.map((card) => {
                     card.id === this.selectedCard.id && (cardToGraveyard = card);
                     return {
@@ -614,7 +626,7 @@ export const duelGameStore = defineStore('duelGameStore', {
                 await updateDoc(tableGameDuelRef, {
                     tierICards: this.tierOneCards
                 });
-            } else if (this.tier === 'II') {
+            } else if (this.tier === 'II' || tierFromDestroyedCard === 'II') {
                 this.tierTwoCards = this.$state.tierTwoCards.map((card) => {
                     card.id === this.selectedCard.id && (cardToGraveyard = card);
                     return {
@@ -630,7 +642,11 @@ export const duelGameStore = defineStore('duelGameStore', {
                 await updateDoc(tableGameDuelRef, {
                     tierIICards: this.tierTwoCards
                 });
-            } else if (this.tier === 'III') {
+            } else if (
+                this.tier === 'III' ||
+                tierFromDestroyedCard === 'III' ||
+                tierFromDestroyedCard === 'guild'
+            ) {
                 this.tierThreeCards = this.$state.tierThreeCards.map((card) => {
                     card.id === this.selectedCard.id && (cardToGraveyard = card);
                     return {
@@ -650,23 +666,123 @@ export const duelGameStore = defineStore('duelGameStore', {
 
             this.isLoading = true;
             this.graveyard.push({ ...cardToGraveyard, taken: 'graveyard' });
-            if (this.turn === this.player1.user.uid) {
-                const addCash = 2 + this.player1.cards.yellow.length;
 
-                //TODO - start it after 2 users online
-                await updateDoc(tableGameDuelRef, {
-                    'player1.resources.cash': increment(addCash),
-                    graveyard: this.graveyard
-                });
-                this.upgradeTurnAndMove(`${this.player2.user?.uid}`);
+            if (tierFromDestroyedCard) {
+                // --- Action destroy enemy card + remove enemy resources
+                if (this.turn === this.player1.user.uid) {
+                    const res = { ...this.player2.resources };
+                    if (cardToGraveyard.color === 'brown') {
+                        switch (cardToGraveyard.power[0]) {
+                            case 'clay':
+                                res.clayValue -= cardToGraveyard.valuePower[0];
+                                break;
+                            case 'brick':
+                                res.brickValue -= cardToGraveyard.valuePower[0];
+                                break;
+                            case 'wood':
+                                res.woodValue -= cardToGraveyard.valuePower[0];
+                                break;
+                            default:
+                                break;
+                        }
+
+                        await updateDoc(tableGameDuelRef, {
+                            'player2.resources': res,
+                            graveyard: this.graveyard,
+                            'player2.cards.brown': arrayRemove({
+                                ...cardToGraveyard,
+                                taken: 'inPlayerBoard'
+                            })
+                        });
+                    } else if (cardToGraveyard.color === 'grey') {
+                        switch (cardToGraveyard.power[0]) {
+                            case 'paper':
+                                res.paperValue -= cardToGraveyard.valuePower[0];
+                                break;
+                            case 'glass':
+                                res.glassValue -= cardToGraveyard.valuePower[0];
+                                break;
+                            default:
+                                break;
+                        }
+
+                        await updateDoc(tableGameDuelRef, {
+                            'player2.resources': res,
+                            graveyard: this.graveyard,
+                            'player2.cards.grey': arrayRemove({
+                                ...cardToGraveyard,
+                                taken: 'inPlayerBoard'
+                            })
+                        });
+                    }
+                    this.upgradeTurnAndMove(`${this.player2.user.uid}`);
+                } else {
+                    const res = { ...this.player1.resources };
+                    if (cardToGraveyard.color === 'brown') {
+                        switch (cardToGraveyard.power[0]) {
+                            case 'clay':
+                                res.clayValue -= cardToGraveyard.valuePower[0];
+                                break;
+                            case 'brick':
+                                res.brickValue -= cardToGraveyard.valuePower[0];
+                                break;
+                            case 'wood':
+                                res.woodValue -= cardToGraveyard.valuePower[0];
+                                break;
+                            default:
+                                break;
+                        }
+
+                        await updateDoc(tableGameDuelRef, {
+                            'player1.resources': res,
+                            graveyard: this.graveyard,
+                            'player1.cards.brown': arrayRemove({
+                                ...cardToGraveyard,
+                                taken: 'inPlayerBoard'
+                            })
+                        });
+                    } else if (cardToGraveyard.color === 'grey') {
+                        switch (cardToGraveyard.power[0]) {
+                            case 'paper':
+                                res.paperValue -= cardToGraveyard.valuePower[0];
+                                break;
+                            case 'glass':
+                                res.glassValue -= cardToGraveyard.valuePower[0];
+                                break;
+                            default:
+                                break;
+                        }
+
+                        await updateDoc(tableGameDuelRef, {
+                            'player1.resources': res,
+                            graveyard: this.graveyard,
+                            'player1.cards.grey': arrayRemove({
+                                ...cardToGraveyard,
+                                taken: 'inPlayerBoard'
+                            })
+                        });
+                    }
+                    this.upgradeTurnAndMove(`${this.player1.user.uid}`);
+                }
             } else {
-                const addCash = 2 + this.player2.cards.yellow.length;
+                // --- Action sell card for cash
+                if (this.turn === this.player1.user.uid) {
+                    const addCash = 2 + this.player1.cards.yellow.length;
 
-                await updateDoc(tableGameDuelRef, {
-                    'player2.resources.cash': increment(addCash),
-                    graveyard: this.graveyard
-                });
-                this.upgradeTurnAndMove(`${this.player1.user.uid}`);
+                    await updateDoc(tableGameDuelRef, {
+                        'player1.resources.cash': increment(addCash),
+                        graveyard: this.graveyard
+                    });
+                    this.upgradeTurnAndMove(`${this.player2.user?.uid}`);
+                } else {
+                    const addCash = 2 + this.player2.cards.yellow.length;
+
+                    await updateDoc(tableGameDuelRef, {
+                        'player2.resources.cash': increment(addCash),
+                        graveyard: this.graveyard
+                    });
+                    this.upgradeTurnAndMove(`${this.player1.user.uid}`);
+                }
             }
 
             this.unselectCard();
@@ -760,9 +876,9 @@ export const duelGameStore = defineStore('duelGameStore', {
                         howManyMovePawn = wonderCardToActive.valuePower[i];
                     } else if (wc === 'break') {
                         if (wonderCardToActive.valuePower[i] === 1) {
-                            destBrown = true;
+                            this.player2.cards.brown.length > 0 && (destBrown = true);
                         } else if (wonderCardToActive.valuePower[i] === 2) {
-                            destGrey = true;
+                            this.player2.cards.grey.length > 0 && (destGrey = true);
                         } else if (wonderCardToActive.valuePower[i] === 3) {
                             await updateDoc(tableGameDuelRef, {
                                 'player2.resources.cash':
@@ -789,8 +905,12 @@ export const duelGameStore = defineStore('duelGameStore', {
                 if (takeFromGraveyard) {
                     await this.setPickCardFromGraveyard(`${this.player1.user.uid}`);
                 }
-                // perform destroy brown or grey cards in enemy res
-                // perform effects - looks on turn, etc
+                if (destBrown) {
+                    await this.setDestroyBrown(`${this.player1.user.uid}`);
+                }
+                if (destGrey) {
+                    await this.setDestroyGrey(`${this.player1.user.uid}`);
+                }
 
                 await updateDoc(tableGameDuelRef, {
                     player1: newResPlayer
@@ -799,7 +919,9 @@ export const duelGameStore = defineStore('duelGameStore', {
                     this.wonByArt === '' &&
                     this.wonByAggressive === '' &&
                     this.pickCardFromGraveyard === '' &&
-                    this.pickCoinOfThree === ''
+                    this.pickCoinOfThree === '' &&
+                    this.destroyBrown === '' &&
+                    this.destroyGrey === ''
                 ) {
                     repeat && this.move !== 19 && this.move !== 39
                         ? this.upgradeTurnAndMove(`${this.player1.user.uid}`)
@@ -829,9 +951,9 @@ export const duelGameStore = defineStore('duelGameStore', {
                         howManyMovePawn = wonderCardToActive.valuePower[i];
                     } else if (wc === 'break') {
                         if (wonderCardToActive.valuePower[i] === 1) {
-                            destBrown = true;
+                            this.player1.cards.brown.length > 0 && (destBrown = true);
                         } else if (wonderCardToActive.valuePower[i] === 2) {
-                            destGrey = true;
+                            this.player1.cards.grey.length > 0 && (destGrey = true);
                         } else if (wonderCardToActive.valuePower[i] === 3) {
                             await updateDoc(tableGameDuelRef, {
                                 'player1.resources.cash':
@@ -858,8 +980,12 @@ export const duelGameStore = defineStore('duelGameStore', {
                 if (takeFromGraveyard) {
                     await this.setPickCardFromGraveyard(`${this.player2.user.uid}`);
                 }
-                // perform destroy brown or grey cards in enemy res
-                // perform effects - looks on turn, etc
+                if (destBrown) {
+                    await this.setDestroyBrown(`${this.player2.user.uid}`);
+                }
+                if (destGrey) {
+                    await this.setDestroyGrey(`${this.player2.user.uid}`);
+                }
 
                 await updateDoc(tableGameDuelRef, {
                     player2: newResPlayer
@@ -868,7 +994,9 @@ export const duelGameStore = defineStore('duelGameStore', {
                     this.wonByArt === '' &&
                     this.wonByAggressive === '' &&
                     this.pickCardFromGraveyard === '' &&
-                    this.pickCoinOfThree === ''
+                    this.pickCoinOfThree === '' &&
+                    this.destroyBrown === '' &&
+                    this.destroyGrey === ''
                 ) {
                     repeat && this.move !== 19 && this.move !== 39
                         ? this.upgradeTurnAndMove(`${this.player2.user.uid}`)

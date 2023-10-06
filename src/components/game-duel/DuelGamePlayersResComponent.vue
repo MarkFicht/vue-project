@@ -8,9 +8,11 @@ import { toRefs, inject } from 'vue';
 import type IUser from '@/interfaces/User';
 
 const storeDuelGame = duelGameStore();
-const { player1, player2, turn, tier } = storeToRefs(storeDuelGame);
+const { player1, player2, turn, tier, destroyBrown, destroyGrey } = storeToRefs(storeDuelGame);
 
+const emit = defineEmits(['destrooy-enemy-card-selected']);
 const props = defineProps<{
+    isMyTurn: boolean;
     user: IUser;
     selectWonderCard: boolean;
 }>();
@@ -63,20 +65,58 @@ function countArtefacts(uid: string): number {
     </section>
     <section :class="['playerSection', user.uid === player1.user.uid ? 'player1' : 'player2']">
         <div class="playerCardContainer">
-            <div class="playerCard playerCard1">
+            <div
+                :class="[
+                    'playerCard',
+                    'playerCard1',
+                    user.uid === player2.user.uid &&
+                        isMyTurn &&
+                        destroyBrown !== '' &&
+                        'selectWonderFromPlayer'
+                ]"
+            >
                 <DuelGameCardComponent
                     v-for="card in player1.cards.brown"
                     :key="card.id"
                     :card="card"
                     small
+                    :style="
+                        user.uid === player2.user.uid && isMyTurn && destroyBrown !== ''
+                            ? 'cursor: pointer;'
+                            : ''
+                    "
+                    @click="
+                        user.uid === player2.user.uid && isMyTurn && destroyBrown !== ''
+                            ? emit('destrooy-enemy-card-selected', card, 'brown')
+                            : null
+                    "
                 />
             </div>
-            <div class="playerCard playerCard2">
+            <div
+                :class="[
+                    'playerCard',
+                    'playerCard2',
+                    user.uid === player2.user.uid &&
+                        isMyTurn &&
+                        destroyBrown !== '' &&
+                        'selectWonderFromPlayer'
+                ]"
+            >
                 <DuelGameCardComponent
                     v-for="card in player1.cards.grey"
                     :key="card.id"
                     :card="card"
                     small
+                    :style="
+                        user.uid === player2.user.uid && isMyTurn && destroyGrey !== ''
+                            ? 'cursor: pointer;'
+                            : ''
+                    "
+                    @click="
+                        user.uid === player2.user.uid && isMyTurn && destroyGrey !== ''
+                            ? emit('destrooy-enemy-card-selected', card, 'grey')
+                            : null
+                    "
                 />
             </div>
             <div class="playerCard playerCard3">
@@ -173,20 +213,58 @@ function countArtefacts(uid: string): number {
     </section>
     <section :class="['playerSection', user.uid === player1.user.uid ? 'player2' : 'player1']">
         <div class="playerCardContainer">
-            <div class="playerCard playerCard1">
+            <div
+                :class="[
+                    'playerCard',
+                    'playerCard1',
+                    user.uid === player1.user.uid &&
+                        isMyTurn &&
+                        destroyBrown !== '' &&
+                        'selectWonderFromPlayer'
+                ]"
+            >
                 <DuelGameCardComponent
                     v-for="card in player2.cards.brown"
                     :key="card.id"
                     :card="card"
                     small
+                    :style="
+                        user.uid === player1.user.uid && isMyTurn && destroyBrown !== ''
+                            ? 'cursor: pointer;'
+                            : ''
+                    "
+                    @click="
+                        user.uid === player1.user.uid && isMyTurn && destroyBrown !== ''
+                            ? emit('destrooy-enemy-card-selected', card, 'brown')
+                            : null
+                    "
                 />
             </div>
-            <div class="playerCard playerCard2">
+            <div
+                :class="[
+                    'playerCard',
+                    'playerCard2',
+                    user.uid === player1.user.uid &&
+                        isMyTurn &&
+                        destroyBrown !== '' &&
+                        'selectWonderFromPlayer'
+                ]"
+            >
                 <DuelGameCardComponent
                     v-for="card in player2.cards.grey"
                     :key="card.id"
                     :card="card"
                     small
+                    :style="
+                        user.uid === player1.user.uid && isMyTurn && destroyGrey !== ''
+                            ? 'cursor: pointer;'
+                            : ''
+                    "
+                    @click="
+                        user.uid === player1.user.uid && isMyTurn && destroyGrey !== ''
+                            ? emit('destrooy-enemy-card-selected', card, 'grey')
+                            : null
+                    "
                 />
             </div>
             <div class="playerCard playerCard3">
