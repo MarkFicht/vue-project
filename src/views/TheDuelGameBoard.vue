@@ -42,8 +42,7 @@ import {
     BoardDuel,
     type Materials,
     type IGameDuelCoin,
-    type IGameDuelWonderCard,
-    type IGameDuelPlayer
+    type IGameDuelWonderCard
 } from '@/interfaces/GameDuel';
 import { duelGameStore } from '@/store/duelGameStore';
 import { storeToRefs } from 'pinia';
@@ -176,9 +175,10 @@ watch(
 watch(
     () => move.value,
     async () => {
+        actionForCards.value = true;
+
         if (move.value >= 20 && move.value < 40) {
             isLoading.value = true;
-            actionForCards.value = true;
 
             await updateDoc(tableGameDuelRef, {
                 tier: 'II'
@@ -192,7 +192,6 @@ watch(
 
         if (move.value >= 40 && move.value <= 60) {
             isLoading.value = true;
-            actionForCards.value = true;
 
             await updateDoc(tableGameDuelRef, {
                 tier: 'III'
