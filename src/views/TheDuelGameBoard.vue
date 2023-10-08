@@ -915,11 +915,19 @@ const coinSelectedOfThree = async (coin: IGameDuelCoin['effect']) => {
     storeDuelGame.countArtefacts(turn.value);
 
     if (wonByArt.value === '' && wonByAggressive.value === '' && pickCoinOfThree.value === '') {
-        storeDuelGame.upgradeTurnAndMove(
-            turn.value === player1.value.user.uid
-                ? `${player2.value.user.uid}`
-                : `${player1.value.user.uid}`
-        );
+        if (turn.value === player1.value.user.uid) {
+            if (player1.value.resources.coins.find((coin) => coin === 'repeatWonder')) {
+                storeDuelGame.upgradeTurnAndMove(`${player1.value.user.uid}`);
+            } else {
+                storeDuelGame.upgradeTurnAndMove(`${player2.value.user.uid}`);
+            }
+        } else {
+            if (player2.value.resources.coins.find((coin) => coin === 'repeatWonder')) {
+                storeDuelGame.upgradeTurnAndMove(`${player2.value.user.uid}`);
+            } else {
+                storeDuelGame.upgradeTurnAndMove(`${player1.value.user.uid}`);
+            }
+        }
     }
 
     isLoading.value = false;

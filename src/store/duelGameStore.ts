@@ -603,7 +603,21 @@ export const duelGameStore = defineStore('duelGameStore', {
                 }
 
                 if (this.wonByArt === '' && this.wonByAggressive === '' && this.pickCoin === '') {
-                    await this.upgradeTurnAndMove(`${this.player1.user.uid}`);
+                    if (this.turn === this.player1.user.uid && tierFromGraveyard) {
+                        if (this.player1.resources.coins.find((coin) => coin === 'repeatWonder')) {
+                            this.upgradeTurnAndMove(`${this.player1.user.uid}`);
+                        } else {
+                            this.upgradeTurnAndMove(`${this.player2.user.uid}`);
+                        }
+                    } else if (this.turn === this.player2.user.uid && tierFromGraveyard) {
+                        if (this.player2.resources.coins.find((coin) => coin === 'repeatWonder')) {
+                            this.upgradeTurnAndMove(`${this.player2.user.uid}`);
+                        } else {
+                            this.upgradeTurnAndMove(`${this.player1.user.uid}`);
+                        }
+                    } else {
+                        await this.upgradeTurnAndMove(`${this.player1.user.uid}`);
+                    }
                 }
             }
 
@@ -718,7 +732,9 @@ export const duelGameStore = defineStore('duelGameStore', {
                             })
                         });
                     }
-                    this.upgradeTurnAndMove(`${this.player2.user.uid}`);
+                    this.player1.resources.coins.find((coin) => coin === 'repeatWonder')
+                        ? this.upgradeTurnAndMove(`${this.player1.user.uid}`)
+                        : this.upgradeTurnAndMove(`${this.player2.user.uid}`);
                 } else {
                     const res = { ...this.player1.resources };
                     if (cardToGraveyard.color === 'brown') {
@@ -765,7 +781,9 @@ export const duelGameStore = defineStore('duelGameStore', {
                             })
                         });
                     }
-                    this.upgradeTurnAndMove(`${this.player1.user.uid}`);
+                    this.player2.resources.coins.find((coin) => coin === 'repeatWonder')
+                        ? this.upgradeTurnAndMove(`${this.player2.user.uid}`)
+                        : this.upgradeTurnAndMove(`${this.player1.user.uid}`);
                 }
             } else {
                 // --- Action sell card for cash
