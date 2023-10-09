@@ -4,16 +4,12 @@ import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
 import { useRouter } from 'vue-router';
 import type IRouteIndicatorNavi from '@/interfaces/RouteIndicatorNavi';
 import IndicatorNavi from '@/components/IndicatorNavi.vue';
-import TheReflexGame from '@/components/TheReflexGame.vue';
-import TheDuelGame from '@/components/TheDuelGame.vue';
-import TheQuatroGame from '@/components/TheQuatroGame.vue';
+import TheGame from '@/components/TheGame.vue';
 import TheSettings from '@/components/TheSettings.vue';
 import TheLogout from '@/components/TheLogout.vue';
 
 const header = ref<string>('Feed Panel');
-const gameReflex = ref<string>('Reflex');
-const gameDuel = ref<string>('Duel');
-const gameQuatro = ref<string>('Quatro');
+const gamesPage = ref<string>('Games');
 const settings = ref<string>('Settings');
 const logOut = ref<string>('log Out');
 
@@ -25,16 +21,21 @@ const router = useRouter();
 const isLoggedIn = ref<boolean>(false);
 
 // ---
-const activeLink = ref<string>(gameReflex.value);
+const activeLink = ref<string>(gamesPage.value);
 const routes = ref<IRouteIndicatorNavi[]>([
-    { name: `${gameReflex.value}`, ionIconClass: iconGame.value, to: `` },
-    { name: `${gameDuel.value}`, ionIconClass: iconGame.value, to: `` },
-    { name: `${gameQuatro.value}`, ionIconClass: iconGame.value, to: `` },
+    { name: `${gamesPage.value}`, ionIconClass: iconGame.value, to: `/feed/games` },
     { name: `${settings.value}`, ionIconClass: iconSettings.value, to: `/feed/settings` },
     { name: `${logOut.value}`, ionIconClass: iconLogout.value, to: `/feed/logout` }
 ]);
 const updateActiveLink = (val: string) => (activeLink.value = val);
-provide('indicatorNavi', { activeLink, routes, updateActiveLink });
+const colors = ref<string[]>([
+    `--clr:#2196f3;`,
+    '--clr:#008a1b;',
+    '--clr:#dc1dff;',
+    '--clr:#f3218b;',
+    '--clr:#d56f1d;'
+]);
+provide('indicatorNavi', { activeLink, routes, updateActiveLink, colors });
 
 // ---
 let auth: any;
@@ -63,9 +64,7 @@ onMounted(() => {
         </header>
 
         <section class="wrapper">
-            <TheReflexGame v-if="activeLink === gameReflex" :header="gameReflex" />
-            <TheDuelGame v-if="activeLink === gameDuel" :header="gameDuel" />
-            <TheQuatroGame v-if="activeLink === gameQuatro" :header="gameQuatro" />
+            <TheGame v-if="activeLink === gamesPage" :header="gamesPage" />
             <TheSettings v-if="activeLink === settings" :header="settings" />
             <TheLogout v-if="activeLink === logOut" :header="logOut" />
         </section>

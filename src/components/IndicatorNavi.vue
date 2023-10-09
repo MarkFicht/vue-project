@@ -2,15 +2,7 @@
 import { ref, inject } from 'vue';
 import { RouterLink } from 'vue-router';
 
-const colors = ref<string[]>([
-    '--clr:#f3218b;',
-    `--clr:#2196f3;`,
-    '--clr:#008a1b;',
-    '--clr:#dc1dff;',
-    '--clr:#d56f1d;'
-]);
-
-const { activeLink, routes, updateActiveLink } = inject<any>('indicatorNavi');
+const { activeLink, routes, updateActiveLink, colors } = inject<any>('indicatorNavi');
 </script>
 
 <template>

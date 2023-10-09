@@ -78,6 +78,7 @@ onBeforeMount(async () => {
 });
 
 watch([() => state.email, () => state.password], ([newValEmail, newValPassword]) => {
+    state.email = newValEmail.replace(' ', '');
     errMsg.value = '';
 });
 

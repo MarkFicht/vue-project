@@ -45,8 +45,8 @@ const router = createRouter({
             }
         },
         {
-            path: '/feed/quatro-game',
-            name: 'quatro',
+            path: '/feed/splendor-game',
+            name: 'splendor',
             component: () => import('../views/FeedPanel.vue'),
             meta: {
                 requiresAuth: true
