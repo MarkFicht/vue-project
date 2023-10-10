@@ -17,7 +17,7 @@ const { activeLink, routes, updateActiveLink, colors } = inject<any>('indicatorN
             :route-to="'/feed/duel-game'"
         />
         <TheCardComponent
-            :header="'Splendor'"
+            :header="'Gems game'"
             :desc="`IN PROGRESS`"
             video="'Video here soon!'"
             :color="colors[1]"

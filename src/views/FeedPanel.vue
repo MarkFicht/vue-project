@@ -98,7 +98,7 @@ h1 {
 section.wrapper {
     position: relative;
     width: 80vw;
-    height: calc(100vh - 230px);
+    min-height: calc(100vh - 230px);
     padding: 40px;
     color: #444;
     box-shadow: 0 0 50px rgba(0, 0, 0, 0.25);
@@ -135,27 +135,24 @@ section.wrapper {
         /* width: 100%; */
         padding: 20px 25px;
         margin: 0 auto;
-        height: calc(100vh - 210px);
+        min-height: calc(100vh - 210px);
     }
 }
 @media (max-width: 560px) {
     .header {
         height: 25px;
         line-height: 25px;
-        margin-top: 5px;
     }
     section.wrapper {
-        height: calc(100vh - 200px);
+        min-height: calc(100vh - 200px);
     }
-    section.nav {
+    /* section.nav {
         transform: scale(0.7);
         margin: 0;
         margin-top: 35px;
-    }
+    } */
 }
 @media (max-width: 360px) {
-    section.nav {
-        transform: scale(0.65);
-    }
+    /*  */
 }
 </style>

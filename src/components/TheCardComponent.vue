@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 
-const goToGame = ref<string>('Go to game');
+const goToGame = ref<string>('Go to Lobby');
 
 const props = defineProps<{
     header: String;
@@ -42,7 +42,7 @@ const props = defineProps<{
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    margin: 30px 60px;
+    margin: 15px 60px 35px;
 }
 .card .box {
     position: relative;
@@ -61,8 +61,9 @@ const props = defineProps<{
     text-align: right;
     width: 100%;
     margin-bottom: 25px;
+    font-weight: bold;
     font-size: 1.9em;
-    filter: drop-shadow(0 0 25px rgba(0, 0, 0, 0.66));
+    filter: drop-shadow(0 0 25px rgba(0, 0, 0, 0.2));
 }
 .card .box p {
     font-size: 0.9em;
@@ -144,7 +145,7 @@ const props = defineProps<{
     color: #fff;
     background-color: var(--clr);
     font-size: 1em;
-    letter-spacing: 0.2em;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
     text-decoration: none;
     transition: all 0.5s;
@@ -156,7 +157,7 @@ const props = defineProps<{
         -8px -8px 12px 0 rgba(0, 0, 0, 0.25) inset;
 }
 .cardButton:hover {
-    letter-spacing: 0.4em;
+    letter-spacing: 0.25em;
     background-color: tomato;
 }
 h2 {

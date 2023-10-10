@@ -34,7 +34,14 @@ const routes = ref<IRouteIndicatorNavi[]>([
     // { name: `${forgetPassword.value}`, ionIconClass: `refresh-outline`, to: `` }
 ]);
 const updateActiveLink = (val: string) => (activeLink.value = val);
-provide('indicatorNavi', { activeLink, routes, updateActiveLink });
+const colors = ref<string[]>([
+    `--clr:#2196f3;`,
+    '--clr:#008a1b;',
+    '--clr:#dc1dff;',
+    '--clr:#f3218b;',
+    '--clr:#d56f1d;'
+]);
+provide('indicatorNavi', { activeLink, routes, updateActiveLink, colors });
 
 const errMsg = ref<string>('');
 const router = useRouter();

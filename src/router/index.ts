@@ -45,8 +45,8 @@ const router = createRouter({
             }
         },
         {
-            path: '/feed/splendor-game',
-            name: 'splendor',
+            path: '/feed/gems-game',
+            name: 'gems',
             component: () => import('../views/FeedPanel.vue'),
             meta: {
                 requiresAuth: true
