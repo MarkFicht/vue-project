@@ -2,9 +2,7 @@ import type User from './User';
 // import {} from 'firebase/auth';
 
 export default interface IGame {
-    id: string;
+    id: 'Reflex' | 'Duel' | 'Gems';
     status: 'Free' | 'Lobby' | 'Busy';
-    isStarted: boolean;
-    playerLostConnection: boolean;
     players: User[];
 }

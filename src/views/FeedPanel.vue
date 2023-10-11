@@ -42,6 +42,7 @@ let auth: any;
 onMounted(() => {
     auth = getAuth();
     onAuthStateChanged(auth, (user) => {
+        console.log('%c auth n user -> ', 'background: #222; color: #bada55', auth, user);
         if (user) {
             isLoggedIn.value = true;
         } else isLoggedIn.value = false;

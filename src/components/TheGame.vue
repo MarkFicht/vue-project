@@ -10,25 +10,28 @@ const { activeLink, routes, updateActiveLink, colors } = inject<any>('indicatorN
 <template>
     <section class="gameContainer">
         <TheCardComponent
-            :header="'Duel game'"
+            :header="'Duel'"
             :desc="`A board game inspired by a strategy game called '7 Wonders of the World'`"
             :video="'Video here soon!'"
             :color="colors[0]"
             :route-to="'/feed/duel-game'"
+            :max-players="2"
         />
         <TheCardComponent
-            :header="'Gems game'"
+            :header="'Gems'"
             :desc="`IN PROGRESS`"
             video="'Video here soon!'"
             :color="colors[1]"
             :route-to="'/feed/splendor-game'"
+            :max-players="0"
         />
         <TheCardComponent
-            :header="'Reflex game'"
+            :header="'Reflex'"
             :desc="`IN PROGRESS`"
             video="'Video here soon!'"
             :color="colors[2]"
             :route-to="'/feed/reflex-game'"
+            :max-players="0"
         />
     </section>
 </template>

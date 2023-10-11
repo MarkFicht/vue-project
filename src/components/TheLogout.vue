@@ -8,17 +8,11 @@ const props = defineProps<{
 }>();
 
 const router = useRouter();
-const isLoggedIn = ref<boolean>(false);
 
 // ---
 let auth: any;
 onMounted(() => {
     auth = getAuth();
-    onAuthStateChanged(auth, (user) => {
-        if (user) {
-            isLoggedIn.value = true;
-        } else isLoggedIn.value = false;
-    });
 });
 
 // ---

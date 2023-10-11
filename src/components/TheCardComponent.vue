@@ -1,28 +1,58 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
+import type IUser from '@/interfaces/User';
+import type IGame from '@/interfaces/Game';
 
 const goToGame = ref<string>('Go to Lobby');
 
 const props = defineProps<{
-    header: String;
+    header: IGame['id'];
     video: any;
     desc: string;
     color: string;
     routeTo: string;
+    maxPlayers: number;
 }>();
+
+const game = ref<IGame>({
+    id: props.header,
+    status: 'Free',
+    players: []
+});
+
+watch(
+    () => game.value.players,
+    (newVal) => {
+        if (newVal.length === 0) game.value.status = 'Free';
+        else if (newVal.length === props.maxPlayers) game.value.status = 'Busy';
+        else game.value.status = 'Lobby';
+    }
+);
+
+function addPlayerToLobby(user: IUser): any {
+    // todo check that user is anywhere in other games
+    // todo check that user is in game
+    // todo check that user is online
+    // if (props.players.length < props.maxPlayers && !game.value.players.find(player => player.uid === user.uid)) {
+    // }
+}
 </script>
 
 <template>
     <div class="card" :style="`${color}`">
         <div class="box">{{ video }}</div>
         <div class="box">
-            <h2>{{ header }}</h2>
+            <h2>{{ game.id }}</h2>
             <p>{{ desc }}</p>
-            <RouterLink :to="routeTo" :class="'cardButton'">{{ goToGame }}</RouterLink>
+            <!-- <RouterLink :to="routeTo" :class="'cardButton'">{{ goToGame }}</RouterLink> -->
+            <button :disabled="maxPlayers === 0" :class="'cardButton'" @click="() => {}">
+                {{ goToGame }}
+            </button>
         </div>
         <div class="circle">
             <h2>{{ props.header }}</h2>
-            <h3>{{ 'CLOSE' }}</h3>
+            <h3>{{ maxPlayers === 0 ? 'IN PROGRESS' : game.status }}</h3>
+            <p>{{ maxPlayers === 0 ? 'IN PROGRESS' : `${game.players.length}/${maxPlayers}` }}</p>
         </div>
     </div>
 </template>
@@ -149,6 +179,7 @@ const props = defineProps<{
     text-transform: uppercase;
     text-decoration: none;
     transition: all 0.5s;
+    cursor: pointer;
     /* border: 5px solid #eee; */
     /* box-shadow: 0 0 0 10px #fff; */
     border: 12px solid #eee;
