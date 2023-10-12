@@ -1,18 +1,35 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, toRefs, watch } from 'vue';
 import type IUser from '@/interfaces/User';
 import type IGame from '@/interfaces/Game';
+import { gameStore } from '@/store/GameStore';
+import { storeToRefs } from 'pinia';
+import {
+    getAuth,
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+    GoogleAuthProvider,
+    signInWithPopup,
+    updateProfile,
+    onAuthStateChanged
+} from 'firebase/auth';
 
 const goToGame = ref<string>('Go to Lobby');
+const inLobby = ref<string>('In Lobby');
+
+const storeGame = gameStore();
+const { duel, gems, reflex } = storeToRefs(storeGame);
 
 const props = defineProps<{
     header: IGame['id'];
+    currentUser: IUser;
     video: any;
     desc: string;
     color: string;
     routeTo: string;
     maxPlayers: number;
 }>();
+const { currentUser } = toRefs(props);
 
 const game = ref<IGame>({
     id: props.header,
@@ -21,11 +38,41 @@ const game = ref<IGame>({
 });
 
 watch(
-    () => game.value.players,
+    () => duel.value.players,
     (newVal) => {
-        if (newVal.length === 0) game.value.status = 'Free';
-        else if (newVal.length === props.maxPlayers) game.value.status = 'Busy';
-        else game.value.status = 'Lobby';
+        if (game.value.id === 'Duel') {
+            game.value.players = newVal;
+
+            if (newVal.length === 0) game.value.status = 'Free';
+            else if (newVal.length === props.maxPlayers) game.value.status = 'Busy';
+            else game.value.status = 'Lobby';
+        }
+    }
+);
+
+watch(
+    () => gems.value.players,
+    (newVal) => {
+        if (game.value.id === 'Gems') {
+            game.value.players = newVal;
+
+            if (newVal.length === 0) game.value.status = 'Free';
+            else if (newVal.length === props.maxPlayers) game.value.status = 'Busy';
+            else game.value.status = 'Lobby';
+        }
+    }
+);
+
+watch(
+    () => reflex.value.players,
+    (newVal) => {
+        if (game.value.id === 'Reflex') {
+            game.value.players = newVal;
+
+            if (newVal.length === 0) game.value.status = 'Free';
+            else if (newVal.length === props.maxPlayers) game.value.status = 'Busy';
+            else game.value.status = 'Lobby';
+        }
     }
 );
 
@@ -45,8 +92,23 @@ function addPlayerToLobby(user: IUser): any {
             <h2>{{ game.id }}</h2>
             <p>{{ desc }}</p>
             <!-- <RouterLink :to="routeTo" :class="'cardButton'">{{ goToGame }}</RouterLink> -->
-            <button :disabled="maxPlayers === 0" :class="'cardButton'" @click="() => {}">
-                {{ goToGame }}
+            <button
+                :disabled="maxPlayers === 0"
+                :class="[
+                    'cardButton',
+                    !!game.players.find((user) => user.uid === currentUser.uid)
+                        ? 'cardButtonLobby'
+                        : ''
+                ]"
+                @click="() => {}"
+            >
+                {{
+                    maxPlayers === 0
+                        ? 'In progress'
+                        : !!game.players.find((user) => user.uid === currentUser.uid)
+                        ? inLobby
+                        : goToGame
+                }}
             </button>
         </div>
         <div class="circle">
@@ -190,6 +252,9 @@ function addPlayerToLobby(user: IUser): any {
 .cardButton:hover {
     letter-spacing: 0.25em;
     background-color: tomato;
+}
+.cardButtonLobby {
+    background-color: tomato !important;
 }
 h2 {
     font-size: 2em;

@@ -11,9 +11,9 @@ import {
 } from 'firebase/firestore';
 import type IUser from '@/interfaces/User';
 
-const gameDuelRef = collection(db, 'gameDuel');
-const tableGameDuelRef = doc(gameDuelRef, 'table1');
-let unSubFirebase: any;
+const gameStatusRef = collection(db, 'gameStatus');
+const statusGameDuelRef = doc(gameStatusRef, 'Duel');
+let unSubFirebaseStatusDuel: any;
 
 export interface IGameStore {
     duel: IGameCardInfo;
@@ -46,5 +46,20 @@ export const gameStore = defineStore('gameStore', {
     getters: {
         //
     },
-    actions: {}
+    actions: {
+        async subFirebaseConnect() {
+            // firebase - set game
+            unSubFirebaseStatusDuel = await onSnapshot(statusGameDuelRef, (doc) => {
+                if (doc.exists()) {
+                    const { isStarted, players } = doc.data();
+                    this.duel.isStarted = isStarted;
+                    this.duel.players = players;
+                }
+            });
+            // TODO in pgoress for Gems and Reflex Status
+        },
+        unSubFirebaseConnect() {
+            unSubFirebaseStatusDuel();
+        }
+    }
 });

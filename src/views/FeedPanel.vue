@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { onMounted, ref, provide } from 'vue';
-import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { useRouter } from 'vue-router';
 import type IRouteIndicatorNavi from '@/interfaces/RouteIndicatorNavi';
 import IndicatorNavi from '@/components/IndicatorNavi.vue';
 import TheGame from '@/components/TheGame.vue';
 import TheSettings from '@/components/TheSettings.vue';
 import TheLogout from '@/components/TheLogout.vue';
+import type IUser from '@/interfaces/User';
 
 const header = ref<string>('Feed Panel');
 const gamesPage = ref<string>('Games');
@@ -18,7 +19,8 @@ const iconSettings = ref<string>(`settings-outline`);
 const iconLogout = ref<string>(`log-out-outline`);
 
 const router = useRouter();
-const isLoggedIn = ref<boolean>(false);
+
+const currentUser = ref<IUser>({} as IUser);
 
 // ---
 const activeLink = ref<string>(gamesPage.value);
@@ -38,14 +40,13 @@ const colors = ref<string[]>([
 provide('indicatorNavi', { activeLink, routes, updateActiveLink, colors });
 
 // ---
-let auth: any;
-onMounted(() => {
-    auth = getAuth();
-    onAuthStateChanged(auth, (user) => {
-        console.log('%c auth n user -> ', 'background: #222; color: #bada55', auth, user);
-        if (user) {
-            isLoggedIn.value = true;
-        } else isLoggedIn.value = false;
+onMounted(async () => {
+    await getCurrentUser().then((user: any) => {
+        currentUser.value = {
+            uid: user.uid,
+            email: user.email || '',
+            displayName: user.displayName || ''
+        };
     });
 
     routes.value.find(({ name, to }) => {
@@ -56,6 +57,20 @@ onMounted(() => {
         return false;
     });
 });
+
+// ---
+const getCurrentUser = () => {
+    return new Promise((resolve, reject) => {
+        const removeListener = onAuthStateChanged(
+            getAuth(),
+            (user) => {
+                removeListener();
+                resolve(user);
+            },
+            reject
+        );
+    });
+};
 </script>
 
 <template>
@@ -65,9 +80,17 @@ onMounted(() => {
         </header>
 
         <section class="wrapper">
-            <TheGame v-if="activeLink === gamesPage" :header="gamesPage" />
-            <TheSettings v-if="activeLink === settings" :header="settings" />
-            <TheLogout v-if="activeLink === logOut" :header="logOut" />
+            <TheGame
+                v-if="activeLink === gamesPage"
+                :header="gamesPage"
+                :currentUser="currentUser"
+            />
+            <TheSettings
+                v-if="activeLink === settings"
+                :header="settings"
+                :currentUser="currentUser"
+            />
+            <TheLogout v-if="activeLink === logOut" :header="logOut" :currentUser="currentUser" />
         </section>
 
         <IndicatorNavi />
