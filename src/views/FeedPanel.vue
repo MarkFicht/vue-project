@@ -1,6 +1,18 @@
 <script setup lang="ts">
 import { onMounted, ref, provide } from 'vue';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import {
+    collection,
+    doc,
+    setDoc,
+    getDoc,
+    updateDoc,
+    arrayRemove,
+    arrayUnion,
+    increment,
+    serverTimestamp
+} from 'firebase/firestore';
+import db from '@/firebase/index';
 import { useRouter } from 'vue-router';
 import type IRouteIndicatorNavi from '@/interfaces/RouteIndicatorNavi';
 import IndicatorNavi from '@/components/IndicatorNavi.vue';
@@ -19,6 +31,9 @@ const iconSettings = ref<string>(`settings-outline`);
 const iconLogout = ref<string>(`log-out-outline`);
 
 const router = useRouter();
+
+const statusRef = collection(db, 'status');
+// const statusGameDuelRef = doc(statusRef, 'Duel');
 
 const currentUser = ref<IUser>({} as IUser);
 
@@ -41,12 +56,23 @@ provide('indicatorNavi', { activeLink, routes, updateActiveLink, colors });
 
 // ---
 onMounted(async () => {
-    await getCurrentUser().then((user: any) => {
+    await getCurrentUser().then(async (user: any) => {
         currentUser.value = {
             uid: user.uid,
             email: user.email || '',
             displayName: user.displayName || ''
         };
+
+        const docSnap = await getDoc(doc(statusRef, user.uid));
+
+        if (docSnap.exists()) {
+            console.log('%c status user -> ', 'background: #222; color: #bada55', docSnap.data());
+        } else {
+            await setDoc(doc(statusRef, user.uid), {
+                online: 'online',
+                timestamp: serverTimestamp()
+            });
+        }
     });
 
     routes.value.find(({ name, to }) => {
