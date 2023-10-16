@@ -16,6 +16,10 @@ import {
 
 const goToGame = ref<string>('Go to Lobby');
 const inLobby = ref<string>('In Lobby');
+const acceptBtn = ref<string>('Accept');
+const cancelBtn = ref<string>('Cancel');
+
+const emit = defineEmits(['click-lobby', 'click-accept']);
 
 const storeGame = gameStore();
 const { duel, gems, reflex } = storeToRefs(storeGame);
@@ -76,13 +80,11 @@ watch(
     }
 );
 
-function addPlayerToLobby(user: IUser): any {
-    // todo check that user is anywhere in other games
-    // todo check that user is in game
-    // todo check that user is online
-    // if (props.players.length < props.maxPlayers && !game.value.players.find(player => player.uid === user.uid)) {
-    // }
-}
+// todo check that user is anywhere in other games
+// todo check that user is in game
+// todo check that user is online
+// if (props.players.length < props.maxPlayers && !game.value.players.find(player => player.uid === user.uid)) {
+// }
 </script>
 
 <template>
@@ -92,7 +94,9 @@ function addPlayerToLobby(user: IUser): any {
             <h2>{{ game.id }}</h2>
             <p>{{ desc }}</p>
             <!-- <RouterLink :to="routeTo" :class="'cardButton'">{{ goToGame }}</RouterLink> -->
+            <!-- Process in Lobby -->
             <button
+                v-if="game.players.length < props.maxPlayers || maxPlayers === 0"
                 :disabled="maxPlayers === 0"
                 :class="[
                     'cardButton',
@@ -100,7 +104,7 @@ function addPlayerToLobby(user: IUser): any {
                         ? 'cardButtonLobby'
                         : ''
                 ]"
-                @click="() => {}"
+                @click="() => emit('click-lobby')"
             >
                 {{
                     maxPlayers === 0
@@ -110,6 +114,16 @@ function addPlayerToLobby(user: IUser): any {
                         : goToGame
                 }}
             </button>
+
+            <!-- Process for prepare game -->
+            <div v-else class="containerCardButtons">
+                <button :class="['cardButton']" @click="() => emit('click-accept')">
+                    {{ acceptBtn }}
+                </button>
+                <button :class="['cardButton']" @click="() => emit('click-lobby')">
+                    {{ cancelBtn }}
+                </button>
+            </div>
         </div>
         <div class="circle">
             <h2>{{ props.header }}</h2>
@@ -255,6 +269,19 @@ function addPlayerToLobby(user: IUser): any {
 }
 .cardButtonLobby {
     background-color: tomato !important;
+}
+.containerCardButtons {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.containerCardButtons button:first-child {
+    left: 5px;
+    font-size: 0.8em;
+}
+.containerCardButtons button:last-child {
+    right: 5px;
+    font-size: 0.8em;
 }
 h2 {
     font-size: 2em;

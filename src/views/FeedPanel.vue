@@ -57,20 +57,51 @@ provide('indicatorNavi', { activeLink, routes, updateActiveLink, colors });
 // ---
 onMounted(async () => {
     await getCurrentUser().then(async (user: any) => {
-        currentUser.value = {
-            uid: user.uid,
-            email: user.email || '',
-            displayName: user.displayName || ''
-        };
-
         const docSnap = await getDoc(doc(statusRef, user.uid));
 
         if (docSnap.exists()) {
+            currentUser.value.game = docSnap.data().game;
+            currentUser.value.readyToGame = docSnap.data().readyToGame;
+            currentUser.value.online = docSnap.data().online;
+            currentUser.value.timestamp = docSnap.data().timestamp;
             console.log('%c status user -> ', 'background: #222; color: #bada55', docSnap.data());
+            currentUser.value = {
+                uid: user.uid,
+                email: user.email || '',
+                displayName: user.displayName || '',
+                game: docSnap.data().game,
+                readyToGame: docSnap.data().readyToGame,
+                online: docSnap.data().online,
+                timestamp: docSnap.data().timestamp
+            };
         } else {
             await setDoc(doc(statusRef, user.uid), {
+                game: '',
+                readyToGame: false,
                 online: 'online',
                 timestamp: serverTimestamp()
+            }).then(async () => {
+                const docSnap2 = await getDoc(doc(statusRef, user.uid));
+                if (docSnap2.exists()) {
+                    currentUser.value.game = docSnap2.data().game;
+                    currentUser.value.readyToGame = docSnap2.data().readyToGame;
+                    currentUser.value.online = docSnap2.data().online;
+                    currentUser.value.timestamp = docSnap2.data().timestamp;
+                    console.log(
+                        '%c status user from create -> ',
+                        'background: #222; color: #bada55',
+                        docSnap2.data()
+                    );
+                    currentUser.value = {
+                        uid: user.uid,
+                        email: user.email || '',
+                        displayName: user.displayName || '',
+                        game: docSnap2.data().game,
+                        readyToGame: docSnap2.data().readyToGame,
+                        online: docSnap2.data().online,
+                        timestamp: docSnap2.data().timestamp
+                    };
+                }
             });
         }
     });

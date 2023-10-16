@@ -1,4 +1,6 @@
+import type IGame from './Game';
 // import {} from 'firebase/auth';
+
 export default interface IUser {
     password?: string;
     keepLogIn?: boolean;
@@ -8,6 +10,8 @@ export default interface IUser {
     refreshToken?: string;
     displayName: string;
     email: string;
-    online?: boolean;
     timestamp?: any;
+    readyToGame?: boolean;
+    game?: IGame['id'];
+    online?: string;
 }

@@ -247,7 +247,6 @@ onMounted(async () => {
     let auth: any;
     auth = getAuth();
     onAuthStateChanged(auth, (data) => {
-        console.log('%c data -> ', 'background: #222; color: #bada55', data);
         if (data) {
             isLoggedIn.value = true;
             user.value = {

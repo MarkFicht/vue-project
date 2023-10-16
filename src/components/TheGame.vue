@@ -26,6 +26,7 @@ const storeGame = gameStore();
 const { duel } = storeToRefs(storeGame);
 const gameStatusRef = collection(db, 'gameStatus');
 const statusGameDuelRef = doc(gameStatusRef, 'Duel');
+const statusRef = collection(db, 'status');
 
 watch(
     () => duel.value.players,
@@ -38,16 +39,42 @@ onBeforeMount(async () => {
     await storeGame.subFirebaseConnect();
 });
 
-async function addToLobby(user: IUser): Promise<any> {
-    // TODO - atm its only for Duel game - itf check user on other lobby
+// TODO - only for duel game atm
+async function addAndRemoveToLobby(): Promise<any> {
     if (duel.value.players.find((user) => user.uid === props.currentUser.uid)) {
+        await updateDoc(doc(statusRef, props.currentUser.uid), {
+            game: '',
+            readyToGame: false
+        });
         await updateDoc(statusGameDuelRef, {
             players: arrayRemove(props.currentUser)
         });
     } else {
+        await updateDoc(doc(statusRef, props.currentUser.uid), {
+            game: 'Duel',
+            readyToGame: false
+        });
         await updateDoc(statusGameDuelRef, {
             players: arrayUnion(props.currentUser)
         });
+    }
+}
+
+// TODO - 2 only for duel game atm - readyToGame
+async function acceptInLobby(): Promise<any> {
+    if (duel.value.players.length === 2) {
+        if (duel.value.players.find((user) => user.uid === props.currentUser.uid)) {
+            await updateDoc(doc(statusRef, props.currentUser.uid), {
+                readyToGame: true
+            });
+            // const newPlayers = duel.value.players.map((user) => {
+            //     user.uid === props.currentUser.uid ? { ...user, readyToGame: true } : user;
+            // });
+            // console.log('%c newPlayers -> ', 'background: #222; color: #bada55', newPlayers);
+            // await updateDoc(statusGameDuelRef, {
+            //     players: newPlayers
+            // });
+        }
     }
 }
 </script>
@@ -62,7 +89,8 @@ async function addToLobby(user: IUser): Promise<any> {
             :color="colors[0]"
             :route-to="'/feed/duel-game'"
             :max-players="2"
-            @click="addToLobby"
+            @click-lobby="addAndRemoveToLobby"
+            @click-accept="acceptInLobby"
         />
         <TheCardComponent
             :header="'Gems'"
