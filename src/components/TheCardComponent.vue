@@ -4,27 +4,11 @@ import type IUser from '@/interfaces/User';
 import type IGame from '@/interfaces/Game';
 import { gameStore } from '@/store/GameStore';
 import { storeToRefs } from 'pinia';
-import { useRouter } from 'vue-router';
-import LoadingSpinner from '@/components/LoadingSpinner.vue';
-import {
-    getAuth,
-    createUserWithEmailAndPassword,
-    signInWithEmailAndPassword,
-    GoogleAuthProvider,
-    signInWithPopup,
-    updateProfile,
-    onAuthStateChanged
-} from 'firebase/auth';
 
 const goToGame = ref<string>('Go to Lobby');
 const exitLobby = ref<string>('Exit Lobby');
-const acceptBtn = ref<string>('Accept');
-const cancelBtn = ref<string>('Cancel');
-const labelWaiting = ref<string>('Waiting for approval');
 
-const router = useRouter();
-
-const emit = defineEmits(['click-lobby', 'click-accept', 'click-cancel']);
+const emit = defineEmits(['click-lobby']);
 
 const storeGame = gameStore();
 const { duel, gems, reflex } = storeToRefs(storeGame);
@@ -55,9 +39,6 @@ watch(
             if (newVal.length === 0) game.value.status = 'Free';
             else if (newVal.length === props.maxPlayers) game.value.status = 'Busy';
             else game.value.status = 'Lobby';
-
-            // redirect to game
-            if (!newVal.find((user) => !user.readyToGame)) router.push('/feed/duel-game');
         }
     }
 );
@@ -97,44 +78,10 @@ watch(
 
 <template>
     <div :class="['card']" :style="`${color}`">
-        <div class="box">
-            <div
-                v-if="game.players.length === props.maxPlayers && maxPlayers !== 0"
-                class="infoAboutPlayers"
-            >
-                <p>{{ labelWaiting }}</p>
-                <div>
-                    <p>{{ game.players[0].displayName || game.players[0].email }}{{ ': ' }}</p>
-                    <LoadingSpinner
-                        v-if="!game.players[0].readyToGame"
-                        small
-                        :style="'margin-left: 10px;'"
-                    />
-                    <ion-icon
-                        v-else
-                        name="thumbs-up-sharp"
-                        :style="'margin-left: 10px;'"
-                    ></ion-icon>
-                </div>
-                <div>
-                    <p>{{ game.players[1].displayName || game.players[1].email }}{{ ': ' }}</p>
-                    <LoadingSpinner
-                        v-if="!game.players[1].readyToGame"
-                        small
-                        :style="'margin-left: 10px;'"
-                    />
-                    <ion-icon
-                        v-else
-                        name="thumbs-up-sharp"
-                        :style="'margin-left: 10px;'"
-                    ></ion-icon>
-                </div>
-            </div>
-        </div>
+        <div class="box"></div>
         <div class="box">
             <h2>{{ game.id }}</h2>
             <p>{{ desc }}</p>
-            <!-- <RouterLink :to="routeTo" :class="'cardButton'">{{ goToGame }}</RouterLink> -->
             <!-- Process in Lobby -->
             <button
                 v-if="game.players.length < props.maxPlayers || maxPlayers === 0"
@@ -155,19 +102,6 @@ watch(
                         : goToGame
                 }}
             </button>
-
-            <!-- Process for prepare game -->
-            <div
-                v-else-if="!game.players.find((user) => user.uid === currentUser.uid)?.readyToGame"
-                class="containerCardButtons"
-            >
-                <button :class="['cardButton']" @click="() => emit('click-accept')">
-                    {{ acceptBtn }}
-                </button>
-                <button :class="['cardButton']" @click="() => emit('click-cancel')">
-                    {{ cancelBtn }}
-                </button>
-            </div>
         </div>
         <div class="circle">
             <h2>{{ props.header }}</h2>
@@ -318,48 +252,12 @@ watch(
 .cardButtonLobby {
     background-color: tomato !important;
 }
-.containerCardButtons {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-.containerCardButtons button:first-child {
-    left: 5px;
-    font-size: 0.8em;
-}
-.containerCardButtons button:last-child {
-    right: 5px;
-    font-size: 0.8em;
-}
-.infoAboutPlayers {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
-    background-color: rgba(100, 50, 150, 0.66);
-    color: #eee;
-    border-radius: 10px;
-    transition: all 0.5s;
-}
-.infoAboutPlayers > p {
-    font-size: 1.1em !important;
-}
-.infoAboutPlayers > div {
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-    align-items: center;
-}
 h2 {
     font-size: 2em;
     line-height: 0.9em;
     margin-bottom: 10px;
     text-align: center;
 }
-
 @media (max-width: 720px) {
     h2 {
         font-size: 1.6em;

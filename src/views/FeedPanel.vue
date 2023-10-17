@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref, provide } from 'vue';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { getCurrentUser } from '@/helpers/HelpersFoo';
 import {
     collection,
     doc,
@@ -84,20 +85,6 @@ onMounted(async () => {
         return false;
     });
 });
-
-// ---
-const getCurrentUser = () => {
-    return new Promise((resolve, reject) => {
-        const removeListener = onAuthStateChanged(
-            getAuth(),
-            (user) => {
-                removeListener();
-                resolve(user);
-            },
-            reject
-        );
-    });
-};
 </script>
 
 <template>
@@ -163,15 +150,6 @@ section.wrapper {
     flex-direction: column;
     background-color: #eee;
     animation: showElement 2s linear;
-}
-@keyframes showElement {
-    0%,
-    30% {
-        opacity: 0;
-    }
-    100% {
-        opacity: 1;
-    }
 }
 @media (max-width: 720px) {
     .header {

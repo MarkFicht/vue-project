@@ -6,12 +6,12 @@ export default interface IUser {
     keepLogIn?: boolean;
     auth?: any;
     accessToken?: string;
-    uid?: string;
     refreshToken?: string;
+    uid: string;
     displayName: string;
     email: string;
-    timestamp?: any;
-    readyToGame?: boolean;
     game?: IGame['id'];
+    readyToGame?: boolean;
+    timestamp?: any;
     online?: string;
 }

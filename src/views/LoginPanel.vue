@@ -358,15 +358,6 @@ section.login form input[type='submit'] {
 .form-error-submit {
     margin-top: 6px;
 }
-@keyframes showElement {
-    0%,
-    30% {
-        opacity: 0;
-    }
-    100% {
-        opacity: 1;
-    }
-}
 
 @media (max-width: 720px) {
     section.login {

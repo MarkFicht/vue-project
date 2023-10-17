@@ -55,6 +55,31 @@
   font-size: 1.2em;
 }
 
+@keyframes showElement {
+  0%,
+  30% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes animateHand {
+  0% {
+    transform: rotate(-15deg);
+  }
+
+  50% {
+    transform: rotate(15deg) scale(1.1);
+  }
+
+  100% {
+    transform: rotate(-15deg);
+  }
+}
+
 @media (min-width: 1024px) {
   #app {
     /* display: grid; */

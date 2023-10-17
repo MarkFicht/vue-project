@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch, provide } from 'vue';
-import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { getCurrentUser } from '@/helpers/HelpersFoo';
 import {
     collection,
     doc,
@@ -97,9 +97,10 @@ const {
 } = storeToRefs(storeDuelGame);
 const gameDuelRef = collection(db, 'gameDuel');
 const tableGameDuelRef = doc(gameDuelRef, 'table1');
+const gameStatusRef = collection(db, 'gameStatus');
+const gameStatusDuelRef = doc(gameStatusRef, 'Duel');
 
 const user = ref<IUser>({} as IUser);
-const isLoggedIn = ref<boolean>(false);
 
 const actionForCards = ref<boolean>(false);
 const selectWonderCard = ref<boolean>(false);
@@ -244,91 +245,107 @@ watch(
 onMounted(async () => {
     isLoading.value = true;
 
-    let auth: any;
-    auth = getAuth();
-    onAuthStateChanged(auth, (data) => {
-        if (data) {
-            isLoggedIn.value = true;
-            user.value = {
-                uid: data.uid,
-                email: data.email || '',
-                displayName: data.displayName || ''
-            };
-        } else isLoggedIn.value = false;
+    const docGameStatusSnap = await getDoc(gameStatusDuelRef);
+
+    await getCurrentUser().then(async (dataAuth) => {
+        if (dataAuth) {
+            if (docGameStatusSnap.exists()) {
+                const userFb = docGameStatusSnap
+                    .data()
+                    .players.find((user: IUser) => user.uid === (dataAuth as IUser).uid);
+
+                user.value = {
+                    uid: userFb.uid,
+                    email: userFb.email,
+                    displayName: userFb.displayName,
+                    game: userFb.game,
+                    readyToGame: userFb.readyToGame
+                };
+            }
+        }
     });
 
     // firebase - set and check game cards
     const prepareRandomCoins = getCountRandomObjFromArr(coins, 10);
-    let prepareWonderCards = getCountRandomObjFromArr(cardsWonder, 8);
+    const prepareWonderCards = getCountRandomObjFromArr(cardsWonder, 8);
 
     const docSnap = await getDoc(tableGameDuelRef);
 
     if (docSnap.exists()) {
         console.log('Document data:', docSnap.data());
-
         if (
-            !docSnap.data()?.player2?.user?.uid &&
-            docSnap.data()?.player1?.user?.uid !== user.value.uid
+            !docSnap.data()?.player2.user.uid &&
+            docSnap.data()?.player1.user.uid !== user.value.uid
         ) {
-            // TODO - remove playes if leave, for 2 mins + build document correctly
-            // --- 'selectWondersForPlayers' - 9th uid is for start tier I
-            const p1 = docSnap.data().player1.user.uid;
-            const p2 = user.value.uid;
-            await updateDoc(tableGameDuelRef, {
-                player2: { ...new PlayerDuel(), user: user.value, _id: user.value.uid },
-                selectWondersForPlayers: [p1, p2, p2, p1, p2, p1, p1, p2, p1]
-            });
+            // Block create twice schema for game
         }
     } else {
-        // TODO - play for who starts - set turn on empty string + start for it
-        await setDoc(tableGameDuelRef, {
-            player1: { ...new PlayerDuel(), user: user.value, _id: user.value.uid },
-            player2: { ...new PlayerDuel() },
-            selectWondersForPlayers: [],
-            selectWondersForPlayersMove: 0,
-            chooseWhoWillStart: false,
-            turn: user.value.uid,
-            gameBoard: {
-                ...new BoardDuel(),
-                coins: [
-                    prepareRandomCoins[0],
-                    prepareRandomCoins[1],
-                    prepareRandomCoins[2],
-                    prepareRandomCoins[3],
-                    prepareRandomCoins[4]
-                ]
-            },
-            tierICards: prepareIdForCards(getCountRandomObjFromArr(cardsTierOne, 20), 'I'),
-            tierIICards: prepareIdForCards(getCountRandomObjFromArr(cardsTierTwo, 20), 'II'),
-            tierIIICards: prepareIdForCards(
-                getCountRandomObjFromArr(
-                    [
-                        ...getCountRandomObjFromArr(cardsTierThree, 17),
-                        ...getCountRandomObjFromArr(cardsTierGuild, 3)
-                    ],
-                    20
+        // --- Create all schema for game (build only in once from two players)
+        if (
+            docGameStatusSnap.exists() &&
+            docGameStatusSnap.data().players[0].uid === user.value.uid
+        ) {
+            const arrPlayers = docGameStatusSnap.data().players;
+            await setDoc(tableGameDuelRef, {
+                player1: { ...new PlayerDuel(), user: arrPlayers[0] },
+                player2: { ...new PlayerDuel(), user: arrPlayers[1] },
+                // --- Who starts + 'selectWondersForPlayers' - 9th uid is for start tier I
+                selectWondersForPlayers: [
+                    arrPlayers[0].uid,
+                    arrPlayers[1].uid,
+                    arrPlayers[1].uid,
+                    arrPlayers[0].uid,
+                    arrPlayers[1].uid,
+                    arrPlayers[0].uid,
+                    arrPlayers[0].uid,
+                    arrPlayers[1].uid,
+                    arrPlayers[0].uid
+                ],
+                selectWondersForPlayersMove: 0,
+                chooseWhoWillStart: false,
+                turn: user.value.uid,
+                gameBoard: {
+                    ...new BoardDuel(),
+                    coins: [
+                        prepareRandomCoins[0],
+                        prepareRandomCoins[1],
+                        prepareRandomCoins[2],
+                        prepareRandomCoins[3],
+                        prepareRandomCoins[4]
+                    ]
+                },
+                tierICards: prepareIdForCards(getCountRandomObjFromArr(cardsTierOne, 20), 'I'),
+                tierIICards: prepareIdForCards(getCountRandomObjFromArr(cardsTierTwo, 20), 'II'),
+                tierIIICards: prepareIdForCards(
+                    getCountRandomObjFromArr(
+                        [
+                            ...getCountRandomObjFromArr(cardsTierThree, 17),
+                            ...getCountRandomObjFromArr(cardsTierGuild, 3)
+                        ],
+                        20
+                    ),
+                    'III'
                 ),
-                'III'
-            ),
-            wonderCards: prepareWonderCards,
-            graveyard: [],
-            theRestOfCoins: [
-                prepareRandomCoins[5],
-                prepareRandomCoins[6],
-                prepareRandomCoins[7],
-                prepareRandomCoins[8],
-                prepareRandomCoins[9]
-            ],
-            tier: 'prepare',
-            move: 0,
-            pickCoin: '',
-            pickCoinOfThree: '',
-            pickCardFromGraveyard: '',
-            destroyBrown: '',
-            destroyGrey: '',
-            wonByArt: '',
-            wonByAggressive: ''
-        });
+                wonderCards: prepareWonderCards,
+                graveyard: [],
+                theRestOfCoins: [
+                    prepareRandomCoins[5],
+                    prepareRandomCoins[6],
+                    prepareRandomCoins[7],
+                    prepareRandomCoins[8],
+                    prepareRandomCoins[9]
+                ],
+                tier: 'prepare',
+                move: 0,
+                pickCoin: '',
+                pickCoinOfThree: '',
+                pickCardFromGraveyard: '',
+                destroyBrown: '',
+                destroyGrey: '',
+                wonByArt: '',
+                wonByAggressive: ''
+            });
+        }
 
         const docSnap2 = await getDoc(tableGameDuelRef);
         if (docSnap2.exists()) {
@@ -1043,7 +1060,7 @@ const countPointsFromCoins = (coins: IGameDuelCoin['effect'][]): number => {
                 @pick-card-from-graveyard="graveyardCardSelected"
             />
 
-            <DuelGamePlayersInfoComponent />
+            <DuelGamePlayersInfoComponent :user="user" />
 
             <DuelGamePlayersResComponent
                 :user="user"
@@ -1052,6 +1069,7 @@ const countPointsFromCoins = (coins: IGameDuelCoin['effect'][]): number => {
                 @destrooy-enemy-card-selected="destrooyEnemyCardSelected"
             />
 
+            <!-- MAIN WINDOW FOR CARDS -->
             <section class="cards cardsWonder" v-if="tier === 'prepare'">
                 <div v-if="!isSecondPick" class="pickWonders">
                     <DuelGameWonderComponent
@@ -1153,7 +1171,7 @@ const countPointsFromCoins = (coins: IGameDuelCoin['effect'][]): number => {
                 />
             </section>
 
-            <!-- MAIN CONTAINER WITH CARDS, ETC. -->
+            <!-- MAIN CONTAINER FOR END GAME WITH CARDS, ETC. -->
             <section class="cards countPoints" v-if="tier === 'end'">
                 <p :style="allPointsP1 > allPointsP2 ? 'font-weight: bold;' : ''">
                     {{ `${player1.user.displayName || player1.user.email}`
@@ -1399,7 +1417,7 @@ section.wrapper {
     display: grid;
     grid-template-areas:
         'w2   p2   p2   pi  '
-        '.    card duel .   '
+        '.    card duel pi  '
         '.    act  duel grv '
         'w1   p1   p1   grv ';
     grid-template-columns: 230px 450px 200px 190px;
@@ -1536,26 +1554,6 @@ section.wrapper {
     border-radius: 50%;
     margin: 0 1px;
     background-color: green;
-}
-@keyframes showElement {
-    0%,
-    30% {
-        opacity: 0;
-    }
-    100% {
-        opacity: 1;
-    }
-}
-@keyframes animateHand {
-    0% {
-        transform: rotate(-15deg);
-    }
-    50% {
-        transform: rotate(15deg) scale(1.1);
-    }
-    100% {
-        transform: rotate(-15deg);
-    }
 }
 @media (max-width: 1200px) {
     /* section.wrapper {

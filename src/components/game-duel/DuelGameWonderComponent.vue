@@ -331,13 +331,4 @@ div {
     border-radius: 50%;
     background-color: rgb(0, 163, 0);
 }
-@keyframes showElement {
-    0%,
-    30% {
-        opacity: 0;
-    }
-    100% {
-        opacity: 1;
-    }
-}
 </style>

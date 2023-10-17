@@ -1,3 +1,6 @@
+import type IUser from '@/interfaces/User';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
+
 export function getCountRandomObjFromArr<T>(arr: T[], n: number): T[] {
     const result = new Array(n);
     let len = arr.length;
@@ -12,3 +15,17 @@ export function getCountRandomObjFromArr<T>(arr: T[], n: number): T[] {
 
     return result;
 }
+
+// --- Async Foo with Firebase
+export const getCurrentUser = () => {
+    return new Promise((resolve, reject) => {
+        const removeListener = onAuthStateChanged(
+            getAuth(),
+            (user) => {
+                removeListener();
+                resolve(user);
+            },
+            reject
+        );
+    });
+};

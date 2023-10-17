@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { getCurrentUser } from '@/helpers/HelpersFoo';
 import LoginPanel from '../views/LoginPanel.vue';
 import FeedPanel from '../views/FeedPanel.vue';
 
@@ -70,19 +71,6 @@ const router = createRouter({
         }
     ]
 });
-
-const getCurrentUser = () => {
-    return new Promise((resolve, reject) => {
-        const removeListener = onAuthStateChanged(
-            getAuth(),
-            (user) => {
-                removeListener();
-                resolve(user);
-            },
-            reject
-        );
-    });
-};
 
 router.beforeEach(async (to, from, next) => {
     if (to.name === 'home' || to.name === 'not-found') {

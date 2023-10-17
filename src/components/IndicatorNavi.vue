@@ -142,16 +142,6 @@ section.nav nav a:nth-child(4).active ~ .indicator {
 section.nav nav a:nth-child(5).active ~ .indicator {
     transform: translateX(calc(70px * 4));
 }
-@keyframes showElement {
-    0%,
-    30% {
-        opacity: 0;
-    }
-    100% {
-        opacity: 1;
-    }
-}
-
 @media (max-width: 720px) {
     section.nav {
         transform: scale(0.9);
