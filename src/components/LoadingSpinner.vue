@@ -1,6 +1,11 @@
+<script setup lang="ts">
+const props = defineProps<{
+    small?: boolean;
+}>();
+</script>
 <template>
     <div class="loader-wrapper">
-        <div class="loader">
+        <div :class="['loader', small && 'smallLoader']">
             <span style="--i: 1"></span>
             <span style="--i: 2"></span>
             <span style="--i: 3"></span>
@@ -41,6 +46,10 @@
     width: 60px;
     height: 60px;
 }
+.smallLoader {
+    width: 16px;
+    height: 16px;
+}
 
 .loader span {
     position: absolute;
@@ -63,6 +72,10 @@
     border-radius: 50%;
     animation: animate 2s linear infinite;
     animation-delay: calc(0.1s * var(--i));
+}
+.smallLoader span::before {
+    width: 3px;
+    height: 3px;
 }
 @keyframes animate {
     0% {

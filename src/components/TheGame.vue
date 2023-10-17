@@ -12,7 +12,8 @@ import {
     updateDoc,
     arrayRemove,
     arrayUnion,
-    increment
+    increment,
+    serverTimestamp
 } from 'firebase/firestore';
 import db from '@/firebase/index';
 
@@ -28,12 +29,12 @@ const gameStatusRef = collection(db, 'gameStatus');
 const statusGameDuelRef = doc(gameStatusRef, 'Duel');
 const statusRef = collection(db, 'status');
 
-watch(
-    () => duel.value.players,
-    (newVal) => {
-        console.log('%c newVal -> ', 'background: #222; color: #bada55', newVal);
-    }
-);
+// watch(
+//     () => duel.value.players,
+//     (newVal) => {
+//         console.log('%c newVal -> ', 'background: #222; color: #bada55', newVal);
+//     }
+// );
 
 onBeforeMount(async () => {
     await storeGame.subFirebaseConnect();
@@ -44,18 +45,25 @@ async function addAndRemoveToLobby(): Promise<any> {
     if (duel.value.players.find((user) => user.uid === props.currentUser.uid)) {
         await updateDoc(doc(statusRef, props.currentUser.uid), {
             game: '',
-            readyToGame: false
+            readyToGame: false,
+            online: 'online',
+            timestamp: serverTimestamp()
+        });
+        const newPlayers = duel.value.players.filter((user) => {
+            return user.uid !== props.currentUser.uid ? user : null;
         });
         await updateDoc(statusGameDuelRef, {
-            players: arrayRemove(props.currentUser)
+            players: newPlayers
         });
     } else {
         await updateDoc(doc(statusRef, props.currentUser.uid), {
             game: 'Duel',
-            readyToGame: false
+            readyToGame: false,
+            online: 'online',
+            timestamp: serverTimestamp()
         });
         await updateDoc(statusGameDuelRef, {
-            players: arrayUnion(props.currentUser)
+            players: arrayUnion({ ...props.currentUser, game: 'Duel', readyToGame: false })
         });
     }
 }
@@ -67,13 +75,46 @@ async function acceptInLobby(): Promise<any> {
             await updateDoc(doc(statusRef, props.currentUser.uid), {
                 readyToGame: true
             });
-            // const newPlayers = duel.value.players.map((user) => {
-            //     user.uid === props.currentUser.uid ? { ...user, readyToGame: true } : user;
-            // });
-            // console.log('%c newPlayers -> ', 'background: #222; color: #bada55', newPlayers);
-            // await updateDoc(statusGameDuelRef, {
-            //     players: newPlayers
-            // });
+            const newPlayers = duel.value.players.map((user) => {
+                return user.uid === props.currentUser.uid
+                    ? { ...user, readyToGame: true }
+                    : { ...user };
+            });
+            await updateDoc(statusGameDuelRef, {
+                players: newPlayers
+            });
+        }
+    }
+}
+
+// TODO - 2 only for duel game atm - readyToGame
+async function cancelInLobby(): Promise<any> {
+    if (duel.value.players.length === 2) {
+        if (duel.value.players.find((user) => user.uid === props.currentUser.uid)) {
+            duel.value.players.forEach(async ({ uid }) => {
+                if (uid === props.currentUser.uid) {
+                    await updateDoc(doc(statusRef, uid), {
+                        game: '',
+                        readyToGame: false
+                    });
+                } else {
+                    await updateDoc(doc(statusRef, uid), {
+                        readyToGame: false
+                    });
+                }
+            });
+
+            const newPlayers = duel.value.players
+                .filter((user) => {
+                    return user.uid !== props.currentUser.uid ? user : null;
+                })
+                .map((user) => {
+                    return { ...user, readyToGame: false };
+                });
+
+            await updateDoc(statusGameDuelRef, {
+                players: newPlayers
+            });
         }
     }
 }
@@ -91,6 +132,7 @@ async function acceptInLobby(): Promise<any> {
             :max-players="2"
             @click-lobby="addAndRemoveToLobby"
             @click-accept="acceptInLobby"
+            @click-cancel="cancelInLobby"
         />
         <TheCardComponent
             :header="'Gems'"
