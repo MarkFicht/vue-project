@@ -7,6 +7,8 @@ import { ref, toRefs } from 'vue';
 const storeDuelGame = duelGameStore();
 const { player1, player2, turn } = storeToRefs(storeDuelGame);
 
+const emit = defineEmits(['prepare-game-to-remove-from-db']);
+
 const props = defineProps<{
     user: IUser;
 }>();
@@ -20,10 +22,6 @@ const player1Time = ref<number>(90);
 const player2Time = ref<number>(90);
 
 const surrenderPrepare = ref<boolean>(false);
-
-async function prepareGameToRemoveFromDB(): Promise<void> {
-    // TODO - who lose, who win, info players about it + remove db + show last cards for last player
-}
 </script>
 
 <template>
@@ -34,7 +32,12 @@ async function prepareGameToRemoveFromDB(): Promise<void> {
             <div>
                 <button
                     :class="['customInput']"
-                    @click="async () => await prepareGameToRemoveFromDB"
+                    @click="
+                        async () => (
+                            await emit('prepare-game-to-remove-from-db', user),
+                            (surrenderPrepare = false)
+                        )
+                    "
                 >
                     {{ 'Yes' }}
                 </button>

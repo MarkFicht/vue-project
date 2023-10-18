@@ -56,7 +56,7 @@ export const gameStore = defineStore('gameStore', {
                     this.duel.players = players;
                 }
             });
-            // TODO in pgoress for Gems and Reflex Status
+            // TODO in progress for Gems and Reflex Status
         },
         unSubFirebaseConnect() {
             unSubFirebaseStatusDuel();

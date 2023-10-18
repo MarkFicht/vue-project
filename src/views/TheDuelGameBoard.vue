@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch, provide } from 'vue';
+import { computed, onBeforeMount, onMounted, ref, watch, provide } from 'vue';
 import { getCurrentUser } from '@/helpers/HelpersFoo';
 import {
     collection,
@@ -7,9 +7,11 @@ import {
     setDoc,
     getDoc,
     updateDoc,
+    deleteDoc,
     arrayRemove,
     arrayUnion,
-    increment
+    increment,
+    serverTimestamp
 } from 'firebase/firestore';
 import db from '@/firebase/index';
 import {
@@ -45,7 +47,9 @@ import {
     type IGameDuelWonderCard
 } from '@/interfaces/GameDuel';
 import { duelGameStore } from '@/store/duelGameStore';
+import { gameStore } from '@/store/GameStore';
 import { storeToRefs } from 'pinia';
+import { useRouter } from 'vue-router';
 import type IUser from '@/interfaces/User';
 
 provide('showPrice', showPrice);
@@ -68,6 +72,9 @@ const allPointsP1 = ref<number>(0);
 const allPointsP2 = ref<number>(0);
 
 const storeDuelGame = duelGameStore();
+const storeGame = gameStore();
+const { duel } = storeToRefs(storeGame);
+
 const {
     tierOneCards,
     tierTwoCards,
@@ -95,12 +102,16 @@ const {
     selectedWonder,
     isLoading
 } = storeToRefs(storeDuelGame);
-const gameDuelRef = collection(db, 'gameDuel');
-const tableGameDuelRef = doc(gameDuelRef, 'table1');
+const statusRef = collection(db, 'status');
+
 const gameStatusRef = collection(db, 'gameStatus');
 const gameStatusDuelRef = doc(gameStatusRef, 'Duel');
 
+const gameDuelRef = collection(db, 'gameDuel');
+const tableGameDuelRef = doc(gameDuelRef, 'table1');
+
 const user = ref<IUser>({} as IUser);
+const router = useRouter();
 
 const actionForCards = ref<boolean>(false);
 const selectWonderCard = ref<boolean>(false);
@@ -241,11 +252,38 @@ watch(
         }
     }
 );
+
+// TODO - DOESNT WORK
+watch(
+    () => user.value,
+    (newVal) => {
+        if (newVal.game === '' || !newVal.readyToGame) {
+            // --- Redirect to game
+            router.push('/feed');
+            return null;
+        }
+    }
+);
+
+watch(
+    () => duel.value.players,
+    (newVal) => {
+        console.log('%c newVal Duel store -> ', 'background: #222; color: #bada55', newVal);
+    }
+);
 // ---
+onBeforeMount(async () => {
+    await storeGame.subFirebaseConnect();
+});
+
 onMounted(async () => {
     isLoading.value = true;
 
     const docGameStatusSnap = await getDoc(gameStatusDuelRef);
+
+    // TODO - REDIRECT if uid is not equal + stop doing code below
+    // TODO - add watch to redirect or Fn for it + 20s delay
+    // TODO - ADD THE SAME + info who win for opponent
 
     await getCurrentUser().then(async (dataAuth) => {
         if (dataAuth) {
@@ -259,8 +297,19 @@ onMounted(async () => {
                     email: userFb.email,
                     displayName: userFb.displayName,
                     game: userFb.game,
-                    readyToGame: userFb.readyToGame
+                    readyToGame: userFb.readyToGame,
+                    timestamp: userFb.timestamp,
+                    online: userFb.online
                 };
+
+                if (userFb.game === '' || !userFb.readyToGame) {
+                    isLoading.value = false;
+                    // --- Redirect to game
+                    router.push('/feed');
+                    return null;
+                }
+            } else {
+                // TODO - get fb status connect and check user
             }
         }
     });
@@ -1036,6 +1085,28 @@ const countPointsFromCoins = (coins: IGameDuelCoin['effect'][]): number => {
     });
     return points;
 };
+
+async function prepareGameToRemoveFromDB(user: IUser): Promise<void> {
+    // TODO - who lose, who win, info players about it + remove db + show last cards for last player + button redirect or redirect after 20s + redirect after refresh(check uid)
+
+    const playersUid = duel.value.players.map((user) => user.uid);
+
+    await updateDoc(gameStatusDuelRef, {
+        isStarted: false,
+        players: []
+    });
+
+    playersUid.forEach(async (uid) => {
+        await updateDoc(doc(statusRef, uid), {
+            game: '',
+            readyToGame: false,
+            online: 'online',
+            timestamp: serverTimestamp()
+        });
+    });
+
+    await deleteDoc(tableGameDuelRef);
+}
 </script>
 
 <template>
@@ -1060,7 +1131,10 @@ const countPointsFromCoins = (coins: IGameDuelCoin['effect'][]): number => {
                 @pick-card-from-graveyard="graveyardCardSelected"
             />
 
-            <DuelGamePlayersInfoComponent :user="user" />
+            <DuelGamePlayersInfoComponent
+                :user="user"
+                @prepare-game-to-remove-from-db="prepareGameToRemoveFromDB"
+            />
 
             <DuelGamePlayersResComponent
                 :user="user"

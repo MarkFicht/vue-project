@@ -34,7 +34,6 @@ const iconLogout = ref<string>(`log-out-outline`);
 const router = useRouter();
 
 const statusRef = collection(db, 'status');
-// const statusGameDuelRef = doc(statusRef, 'Duel');
 
 const currentUser = ref<IUser>({} as IUser);
 
@@ -66,13 +65,22 @@ onMounted(async () => {
         const docSnap = await getDoc(doc(statusRef, user.uid));
 
         if (docSnap.exists()) {
-            console.log('%c status user -> ', 'background: #222; color: #bada55', docSnap.data());
+            currentUser.value = docSnap.data() as IUser;
         } else {
-            await setDoc(doc(statusRef, user.uid), {
+            const newUser = {
+                uid: user.uid,
+                email: user.email || '',
+                displayName: user.displayName || '',
                 game: '',
                 readyToGame: false,
                 online: 'online',
                 timestamp: serverTimestamp()
+            };
+
+            currentUser.value = newUser as IUser;
+
+            await setDoc(doc(statusRef, user.uid), {
+                ...newUser
             });
         }
     });

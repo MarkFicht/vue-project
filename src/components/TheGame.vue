@@ -18,7 +18,6 @@ import {
     serverTimestamp
 } from 'firebase/firestore';
 import db from '@/firebase/index';
-import { getCurrentUser } from '@/helpers/HelpersFoo';
 
 const router = useRouter();
 
@@ -34,28 +33,22 @@ const labelWaiting = ref<string>('Waiting for approval');
 
 const storeGame = gameStore();
 const { duel } = storeToRefs(storeGame);
-const gameStatusRef = collection(db, 'gameStatus');
-const statusGameDuelRef = doc(gameStatusRef, 'Duel');
-const statusRef = collection(db, 'status');
 
-// watch(
-//     () => duel.value.players,
-//     (newVal) => {
-//         console.log('%c newVal -> ', 'background: #222; color: #bada55', newVal);
-//     }
-// );
+const gameStatusRef = collection(db, 'gameStatus');
+const gameStatusDuelRef = doc(gameStatusRef, 'Duel');
+const statusRef = collection(db, 'status');
 
 // TODO - create other redirections
 watch(
     () => duel.value.players,
     async (newVal) => {
-        // redirect to game
+        // --- Redirect to game
         if (
             newVal.length === 2 &&
             newVal.find((user) => user.uid === props.currentUser.uid) &&
             !newVal.find((user) => !user.readyToGame)
         ) {
-            await updateDoc(statusGameDuelRef, {
+            await updateDoc(gameStatusDuelRef, {
                 isStarted: true
             });
         }
@@ -64,8 +57,11 @@ watch(
 watch(
     () => duel.value.isStarted,
     async (newVal) => {
-        // redirect to game
-        if (duel.value.players.find((user) => user.uid === props.currentUser.uid)) {
+        // --- Redirect to game
+        if (
+            duel.value.players.find((user) => user.uid === props.currentUser.uid) &&
+            !duel.value.players.find((user) => !user.readyToGame)
+        ) {
             router.push('/feed/duel-game');
         }
     }
@@ -87,7 +83,7 @@ async function addAndRemoveToLobby(): Promise<any> {
         const newPlayers = duel.value.players.filter((user) => {
             return user.uid !== props.currentUser.uid ? user : null;
         });
-        await updateDoc(statusGameDuelRef, {
+        await updateDoc(gameStatusDuelRef, {
             players: newPlayers
         });
     } else {
@@ -97,7 +93,7 @@ async function addAndRemoveToLobby(): Promise<any> {
             online: 'online',
             timestamp: serverTimestamp()
         });
-        await updateDoc(statusGameDuelRef, {
+        await updateDoc(gameStatusDuelRef, {
             players: arrayUnion({ ...props.currentUser, game: 'Duel', readyToGame: false })
         });
     }
@@ -115,7 +111,7 @@ async function acceptInLobby(): Promise<any> {
                     ? { ...user, readyToGame: true }
                     : { ...user };
             });
-            await updateDoc(statusGameDuelRef, {
+            await updateDoc(gameStatusDuelRef, {
                 players: newPlayers
             });
         }
@@ -147,7 +143,7 @@ async function cancelInLobby(): Promise<any> {
                     return { ...user, readyToGame: false };
                 });
 
-            await updateDoc(statusGameDuelRef, {
+            await updateDoc(gameStatusDuelRef, {
                 players: newPlayers
             });
         }
@@ -159,7 +155,13 @@ async function cancelInLobby(): Promise<any> {
     <section class="gameContainer">
         <!-- Full screen + Process for prepare game -->
         <!-- TODO - atm its work only for duel game -->
-        <div v-if="duel.players.length === 2" class="infoAboutPlayers">
+        <div
+            v-if="
+                duel.players.length === 2 &&
+                duel.players.find((user) => user.uid === currentUser.uid)
+            "
+            class="infoAboutPlayers"
+        >
             <p>{{ labelWaiting + ': ' + 'Duel' + ' Game' }}</p>
             <div>
                 <p>{{ duel.players[0].displayName || duel.players[0].email }}{{ ': ' }}</p>

@@ -6,12 +6,16 @@ export const userStore = defineStore('userStore', {
         return {
             password: '',
             keepLogIn: false,
-            auth: '',
+            auth: null,
             accessToken: '',
-            uid: '',
             refreshToken: '',
+            uid: '',
             displayName: '',
-            email: ''
+            email: '',
+            game: '',
+            readyToGame: false,
+            timestamp: '',
+            online: ''
         };
     },
     getters: {
