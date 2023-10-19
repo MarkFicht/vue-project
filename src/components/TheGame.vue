@@ -3,7 +3,7 @@ import TheCardComponent from '@/components/TheCardComponent.vue';
 import { useRouter } from 'vue-router';
 import LoadingSpinner from '@/components/LoadingSpinner.vue';
 import type IUser from '@/interfaces/User';
-import { inject, onMounted, watch, onBeforeMount, ref } from 'vue';
+import { inject, watch, onBeforeMount, onBeforeUnmount, ref } from 'vue';
 import { gameStore } from '@/store/GameStore';
 import { storeToRefs } from 'pinia';
 import {
@@ -18,6 +18,9 @@ import {
     serverTimestamp
 } from 'firebase/firestore';
 import db from '@/firebase/index';
+import bellNotify from '@/assets/bell-notification.mp3';
+import bell from '@/assets/bell.mp3';
+import debounce from 'lodash-es/debounce';
 
 const router = useRouter();
 
@@ -29,7 +32,8 @@ const { colors } = inject<any>('indicatorNavi');
 
 const acceptBtn = ref<string>('Accept');
 const cancelBtn = ref<string>('Cancel');
-const labelWaiting = ref<string>('Waiting for approval');
+const labelRedirect = ref<string>('Redirect to');
+const labelWaiting = ref<string>('Approval');
 
 const storeGame = gameStore();
 const { duel } = storeToRefs(storeGame);
@@ -38,10 +42,22 @@ const gameStatusRef = collection(db, 'gameStatus');
 const gameStatusDuelRef = doc(gameStatusRef, 'Duel');
 const usersRef = collection(db, 'users');
 
+const audioNotify = ref<HTMLAudioElement>(new Audio(bellNotify));
+const audioBell = ref<HTMLAudioElement>(new Audio(bell));
+const debounceRedirect = ref<any>(
+    debounce(function () {
+        router.push('/feed/duel-game');
+    }, 2 * 1000)
+);
+
 // TODO - create other redirections
 watch(
     () => duel.value.players,
-    async (newVal) => {
+    async (newVal, oldVal) => {
+        if (newVal.length === 2 && oldVal.length !== newVal.length) {
+            audioNotify.value.play();
+        }
+
         // --- Redirect to game
         if (
             newVal.length === 2 &&
@@ -62,13 +78,20 @@ watch(
             duel.value.players.find((user) => user.uid === props.currentUser.uid) &&
             !duel.value.players.find((user) => !user.readyToGame)
         ) {
-            router.push('/feed/duel-game');
+            audioBell.value.play();
+            debounceRedirect.value();
         }
     }
 );
 
+// ---
 onBeforeMount(async () => {
     await storeGame.subFirebaseConnect();
+});
+
+onBeforeUnmount(async () => {
+    storeGame.unSubFirebaseConnect();
+    debounceRedirect.value.cancel();
 });
 
 // TODO - only for duel game atm
@@ -162,7 +185,10 @@ async function cancelInLobby(): Promise<any> {
             "
             class="infoAboutPlayers"
         >
-            <p>{{ labelWaiting + ': ' + 'Duel' + ' Game' }}</p>
+            <!-- <span v-if="duel.players.length === 2" hidden="true">{{ audioNotify.play() }}</span> -->
+            <p>
+                {{ duel.isStarted ? labelRedirect + ': ' + 'Duel' : labelWaiting + ': ' + 'Duel' }}
+            </p>
             <div>
                 <p>{{ duel.players[0].displayName || duel.players[0].email }}{{ ': ' }}</p>
                 <LoadingSpinner
@@ -220,7 +246,7 @@ async function cancelInLobby(): Promise<any> {
         <TheCardComponent
             :header="'Gems'"
             :currentUser="currentUser"
-            :desc="`IN PROGRESS`"
+            :desc="`A board game inspired by a strategy game called 'Splendor'`"
             video="'IN PROGRESS - Video soon!'"
             :color="colors[1]"
             :route-to="'/feed/splendor-game'"
@@ -229,7 +255,7 @@ async function cancelInLobby(): Promise<any> {
         <TheCardComponent
             :header="'Reflex'"
             :currentUser="currentUser"
-            :desc="`IN PROGRESS`"
+            :desc="`Game written from 0 in canvasJS. Cooperation against zombies`"
             video="'IN PROGRESS - Video soon!'"
             :color="colors[2]"
             :route-to="'/feed/reflex-game'"
@@ -246,6 +272,8 @@ async function cancelInLobby(): Promise<any> {
     justify-content: center;
     flex-wrap: wrap;
     align-items: center;
+    overflow-x: hidden;
+    overflow-y: scroll;
 }
 .infoAboutPlayers {
     position: absolute;
@@ -255,11 +283,10 @@ async function cancelInLobby(): Promise<any> {
     left: 0;
     z-index: 10;
     display: flex;
-    /* justify-content: center; */
-    padding-top: 22vh;
+    justify-content: center;
     align-items: center;
     flex-direction: column;
-    background-color: rgba(100, 50, 150, 0.9);
+    background-color: rgba(100, 50, 150, 0.93);
     color: #eee;
     border-radius: 19px;
     transition: all 0.5s;
@@ -269,6 +296,8 @@ async function cancelInLobby(): Promise<any> {
     font-size: 2.2em !important;
     letter-spacing: 2px;
     font-weight: bold;
+    padding: 0 20px;
+    text-align: center;
 }
 .infoAboutPlayers > div {
     display: flex;
@@ -327,5 +356,37 @@ async function cancelInLobby(): Promise<any> {
 }
 .animateHand {
     animation: animateHand 1.5s infinite ease-in-out;
+}
+@media (max-width: 1024px) {
+    .infoAboutPlayers > p {
+        font-size: 1.9em !important;
+        letter-spacing: 1px;
+        font-weight: bold;
+    }
+    .infoAboutPlayers > div {
+        margin-top: 20px;
+        font-size: 1.5em !important;
+        letter-spacing: 1px;
+    }
+}
+@media (max-width: 720px) {
+    .infoAboutPlayers > p {
+        font-size: 1.7em !important;
+        letter-spacing: 1px;
+        font-weight: bold;
+    }
+    .infoAboutPlayers > div {
+        margin-top: 20px;
+        font-size: 1.2em !important;
+        letter-spacing: 1px;
+    }
+
+    .containerApproveButtons {
+        width: 250px;
+    }
+    .containerApproveButtons > button {
+        height: 40px;
+        padding: 8px 16px;
+    }
 }
 </style>

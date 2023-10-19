@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeMount, onMounted, ref, watch, provide } from 'vue';
+import { computed, onBeforeMount, onMounted, onBeforeUnmount, ref, watch, provide } from 'vue';
 import { getCurrentUser } from '@/helpers/HelpersFoo';
 import {
     collection,
@@ -52,6 +52,9 @@ import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
 import type IUser from '@/interfaces/User';
 import debounce from 'lodash-es/debounce';
+import bell from '@/assets/bell.mp3';
+import soundWin from '@/assets/win.mp3';
+import soundLost from '@/assets/lost.mp3';
 
 provide('showPrice', showPrice);
 provide('wonderCardSelected', wonderCardSelected);
@@ -70,6 +73,10 @@ const labelDestroyCard = ref<string>('Destroy Enemy Card!');
 const labelWonByArt = ref<string>('Winner By Artefacts: ');
 const labelWonByAggressive = ref<string>('Winner By Aggressive: ');
 const labelWonBySurr = ref<string>('Winner By Surrender: ');
+
+const audioBell = ref<HTMLAudioElement>(new Audio(bell));
+const audioWin = ref<HTMLAudioElement>(new Audio(soundWin));
+const audioLost = ref<HTMLAudioElement>(new Audio(soundLost));
 
 const allPointsP1 = ref<number>(0);
 const allPointsP2 = ref<number>(0);
@@ -199,6 +206,8 @@ watch(
     async () => {
         actionForCards.value = true;
 
+        turn.value === user.value.uid && audioBell.value.play();
+
         if (move.value >= 20 && move.value < 40) {
             isLoading.value = true;
 
@@ -268,6 +277,18 @@ watch(
     async ([artNewVal, aggrNewVal, surNewVal]) => {
         // TODO - who lose, who win, info players about it + remove db + show last cards for last player + button redirect or redirect after 20s + redirect after refresh(check uid)
         if (surNewVal !== '' || artNewVal !== '' || aggrNewVal !== '') {
+            if (surNewVal !== '') {
+                surNewVal === user.value.uid ? audioWin.value.play() : audioLost.value.play();
+            }
+
+            if (artNewVal !== '') {
+                artNewVal === user.value.uid ? audioWin.value.play() : audioLost.value.play();
+            }
+
+            if (aggrNewVal !== '') {
+                aggrNewVal === user.value.uid ? audioWin.value.play() : audioLost.value.play();
+            }
+
             const playersUid = duel.value.players.map((user) => user.uid);
 
             await updateDoc(gameStatusDuelRef, {
@@ -289,7 +310,7 @@ watch(
             // router.push('/feed');
 
             // --- Redirect to game
-            // debounceEndGame.value();
+            debounceEndGame.value();
         }
     }
 );
@@ -481,6 +502,12 @@ onMounted(async () => {
     }
 
     isLoading.value = false;
+});
+
+onBeforeUnmount(async () => {
+    debounceEndGame.value.cancel();
+    storeDuelGame.unSubFirebaseConnect();
+    storeGame.unSubFirebaseConnect();
 });
 
 // ---

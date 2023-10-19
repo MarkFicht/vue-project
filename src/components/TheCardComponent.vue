@@ -96,7 +96,7 @@ watch(
             >
                 {{
                     maxPlayers === 0
-                        ? 'In progress'
+                        ? 'Soon'
                         : !!game.players.find((user) => user.uid === currentUser.uid)
                         ? exitLobby
                         : goToGame
@@ -105,35 +105,28 @@ watch(
         </div>
         <div class="circle">
             <h2>{{ props.header }}</h2>
-            <h3>{{ maxPlayers === 0 ? 'IN PROGRESS' : game.status }}</h3>
-            <p>{{ maxPlayers === 0 ? 'IN PROGRESS' : `${game.players.length}/${maxPlayers}` }}</p>
+            <p>{{ maxPlayers === 0 ? '-' : game.status }}</p>
+            <p>{{ maxPlayers === 0 ? '-' : `${game.players.length}/${maxPlayers}` }}</p>
         </div>
     </div>
 </template>
 
 <style scoped>
-.gameContainer {
-    height: 100%;
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
 .card {
     position: relative;
-    width: 300px;
-    height: 415px;
+    width: 280px;
+    height: 350px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    margin: 15px 60px 35px;
+    margin: 25px 70px 45px;
     transition: all 0.5s;
 }
 .card .box {
     position: relative;
     width: 100%;
     height: 200px;
-    background-color: #ccc;
+    background-color: #aaa;
     border-radius: 10px;
     display: flex;
     justify-content: center;
@@ -143,56 +136,58 @@ watch(
     padding: 20px;
     transition: all 0.5s;
 }
+.card .box:first-child {
+    height: 140px;
+}
 .card .box h2 {
     text-align: right;
     width: 100%;
     margin-bottom: 25px;
     font-weight: bold;
-    font-size: 1.9em;
+    font-size: 1.7em;
     filter: drop-shadow(0 0 25px rgba(0, 0, 0, 0.2));
 }
 .card .box p {
-    font-size: 0.9em;
+    font-size: 0.8em;
 }
 .card .box:nth-child(1)::before {
     content: '';
     position: absolute;
-    top: 106px;
-    left: -1px;
+    top: 50px;
+    left: 0;
     width: 20px;
     height: 20px;
+    border-radius: 50%;
     background-color: transparent;
-    border-bottom-left-radius: 20px;
-    box-shadow: -6px 6px #eee;
-    z-index: 1;
+    box-shadow: -10px 10px #eee;
 }
 .card .box:nth-child(1)::after {
     content: '';
     position: absolute;
     bottom: -1px;
-    left: 105px;
+    left: 95px;
     width: 20px;
     height: 20px;
-    background-color: transparent;
     border-bottom-left-radius: 20px;
+    background-color: transparent;
     box-shadow: -6px 6px #eee;
 }
 .card .box:nth-child(2)::before {
     content: '';
     position: absolute;
-    bottom: 106px;
-    left: -1px;
+    bottom: 90px;
+    left: 0;
     width: 20px;
     height: 20px;
+    border-radius: 50%;
     background-color: transparent;
-    border-top-left-radius: 20px;
-    box-shadow: -6px -6px #eee;
+    box-shadow: -10px -10px #eee;
 }
 .card .box:nth-child(2)::after {
     content: '';
     position: absolute;
     top: -1px;
-    left: 109px;
+    left: 99px;
     width: 20px;
     height: 20px;
     background-color: transparent;
@@ -202,14 +197,14 @@ watch(
 .card .circle {
     position: absolute;
     z-index: 2;
-    width: 180px;
-    height: 180px;
+    width: 170px;
+    height: 170px;
     background-color: var(--clr);
     border-radius: 50%;
-    top: 50%;
+    top: 70px;
     left: -70px;
     color: #eee;
-    transform: translateY(-50%);
+    /* transform: translateY(-50%); */
     border: 10px solid #eee;
     display: flex;
     justify-content: center;
@@ -220,13 +215,23 @@ watch(
         12px 12px 16px 0 rgba(255, 255, 255, 0.3) inset,
         -8px -8px 12px 0 rgba(0, 0, 0, 0.25) inset;
 }
+.circle > h2 {
+    font-size: 1.8em;
+    font-weight: bold;
+    letter-spacing: 2px;
+    margin-top: 10px;
+}
+.circle > p {
+    font-size: 1.1em;
+    letter-spacing: 1px;
+}
 .card .box:nth-child(2) {
-    background: #fff;
+    background: #cdcdcd;
 }
 .cardButton {
     padding: 8px 30px;
     position: absolute;
-    bottom: -30px;
+    bottom: -26px;
     border: none;
     outline: none;
     border-radius: 30px;
@@ -240,7 +245,7 @@ watch(
     cursor: pointer;
     /* border: 5px solid #eee; */
     /* box-shadow: 0 0 0 10px #fff; */
-    border: 12px solid #eee;
+    border: 10px solid #eee;
     box-shadow:
         12px 12px 16px 0 rgba(255, 255, 255, 0.3) inset,
         -8px -8px 12px 0 rgba(0, 0, 0, 0.25) inset;
@@ -263,6 +268,27 @@ h2 {
         font-size: 1.6em;
         margin-bottom: 15px;
         text-align: center;
+    }
+    .card {
+        margin: 25px 0 45px;
+    }
+}
+@media (max-width: 600px) {
+    .card {
+        transform: scale(0.8);
+        margin: 5px 0 15px;
+    }
+}
+@media (max-width: 560px) {
+    .card {
+        transform: scale(0.75);
+        margin: 0;
+    }
+}
+@media (max-width: 400px) {
+    .card {
+        transform: scale(0.65);
+        margin: 0;
     }
 }
 </style>

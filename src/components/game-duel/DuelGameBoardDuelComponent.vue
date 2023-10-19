@@ -70,7 +70,21 @@ const { isMyTurn } = toRefs(props);
     justify-content: center;
     align-items: center;
     filter: drop-shadow(0 0 35px rgba(0, 0, 0, 0.3));
+    border: none;
+    position: relative;
 }
+/* .duel::after {
+    content: '';
+    position: absolute;
+    width: 350px;
+    height: 104px;
+    left: -66px;
+    background-image: url('@/assets/duel/gameBoard.png');
+    background-size: 350px 104px;
+    background-repeat: no-repeat;
+    transform: rotate(90deg);
+    z-index: -1;
+} */
 .boardCoins {
     height: 200px;
     width: 50px;

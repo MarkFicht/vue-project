@@ -103,7 +103,7 @@ function takeReversColor(): void {
 </script>
 
 <template>
-    <div :class="['card']" :style="`--activeColor: ${reversColor};`">
+    <div :class="['card', `card${card.id}`]" :style="`--activeColor: ${reversColor};`">
         <div
             v-if="card.taken"
             :class="[
@@ -114,7 +114,7 @@ function takeReversColor(): void {
             {{ cash }}
         </div>
 
-        <div class="wonderIcon"><ion-icon name="prism"></ion-icon></div>
+        <!-- <div class="wonderIcon"><ion-icon name="prism"></ion-icon></div> -->
 
         <div class="cost">
             <div v-if="cashCost" class="resources" :style="'width: 100%;'">
@@ -137,7 +137,7 @@ function takeReversColor(): void {
             </div>
         </div>
 
-        <div class="power">
+        <!-- <div class="power">
             <div v-if="effect === 1"><ion-icon name="reload-outline"></ion-icon></div>
             <div v-if="effect === 2"><ion-icon name="trash-outline"></ion-icon></div>
             <div v-if="effect === 3" class="takeCoin"></div>
@@ -174,7 +174,7 @@ function takeReversColor(): void {
             </div>
 
             <div v-if="point">{{ point }}<ion-icon name="ribbon-sharp"></ion-icon></div>
-        </div>
+        </div> -->
     </div>
 </template>
 
@@ -330,5 +330,81 @@ div {
     border: 1px solid #333;
     border-radius: 50%;
     background-color: rgb(0, 163, 0);
+}
+
+.card9 {
+    background-image: url('@/assets/duel/wonders1.png');
+    background-size: 272px 62px;
+    background-position: -1px -1px;
+    border: none;
+}
+.card6 {
+    background-image: url('@/assets/duel/wonders1.png');
+    background-size: 272px 62px;
+    background-position: -95px -1px;
+    border: none;
+}
+.card1 {
+    background-image: url('@/assets/duel/wonders1.png');
+    background-size: 272px 62px;
+    background-position: -191px -1px;
+    border: none;
+}
+
+.card10 {
+    background-image: url('@/assets/duel/wonders2.png');
+    background-size: 272px 62px;
+    background-position: -1px -1px;
+    border: none;
+}
+.card5 {
+    background-image: url('@/assets/duel/wonders2.png');
+    background-size: 272px 62px;
+    background-position: -94px 0px;
+    border: none;
+}
+.card2 {
+    background-image: url('@/assets/duel/wonders2.png');
+    background-size: 272px 62px;
+    background-position: -191px -1px;
+    border: none;
+}
+
+.card11 {
+    background-image: url('@/assets/duel/wonders3.png');
+    background-size: 272px 62px;
+    background-position: -1px -1px;
+    border: none;
+}
+.card7 {
+    background-image: url('@/assets/duel/wonders3.png');
+    background-size: 272px 62px;
+    background-position: -95px -1px;
+    border: none;
+}
+.card3 {
+    background-image: url('@/assets/duel/wonders3.png');
+    background-size: 272px 62px;
+    background-position: -190px -1px;
+    border: none;
+}
+
+.card12 {
+    background-image: url('@/assets/duel/wonders4.png');
+    background-size: 272px 62px;
+    background-position: -1px -1px;
+    border: none;
+}
+.card8 {
+    background-image: url('@/assets/duel/wonders4.png');
+    background-size: 272px 62px;
+    background-position: -94px -1px;
+    border: none;
+}
+.card4 {
+    background-image: url('@/assets/duel/wonders4.png');
+    background-size: 272px 62px;
+    background-position: -191px -1px;
+    border: none;
 }
 </style>

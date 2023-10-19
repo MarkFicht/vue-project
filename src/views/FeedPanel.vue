@@ -126,15 +126,16 @@ main {
     flex-direction: column;
 }
 .header {
-    height: 30px;
-    line-height: 30px;
-    margin-top: 15px;
-    margin-bottom: 25px;
+    height: 25px;
+    margin-top: 10px;
+    margin-bottom: 20px;
     text-align: center;
 }
 h1 {
     font-weight: 600;
-    font-size: 2.1rem;
+    font-size: 1.9rem;
+    height: 25px;
+    line-height: 20px;
     color: #eee;
     filter: drop-shadow(0 0 25px rgba(255, 255, 255, 0.8));
     letter-spacing: 0.1em;
@@ -143,8 +144,8 @@ h1 {
 section.wrapper {
     position: relative;
     width: 80vw;
-    min-height: calc(100vh - 230px);
-    padding: 40px;
+    height: calc(100vh - 230px);
+    padding: 35px 20px;
     color: #444;
     box-shadow: 0 0 50px rgba(0, 0, 0, 0.25);
     /* box-shadow:
@@ -169,7 +170,7 @@ section.wrapper {
     }
     section.wrapper {
         /* width: 100%; */
-        padding: 20px 25px;
+        padding: 20px;
         margin: 0 auto;
         min-height: calc(100vh - 210px);
     }
@@ -180,7 +181,9 @@ section.wrapper {
         line-height: 25px;
     }
     section.wrapper {
+        padding: 15px;
         min-height: calc(100vh - 200px);
+        width: 90vw;
     }
     /* section.nav {
         transform: scale(0.7);
