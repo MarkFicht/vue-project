@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { onMounted, ref, provide } from 'vue';
-import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { getCurrentUser } from '@/helpers/HelpersFoo';
 import {
     collection,
@@ -33,7 +32,7 @@ const iconLogout = ref<string>(`log-out-outline`);
 
 const router = useRouter();
 
-const statusRef = collection(db, 'status');
+const usersRef = collection(db, 'users');
 
 const currentUser = ref<IUser>({} as IUser);
 
@@ -62,7 +61,7 @@ onMounted(async () => {
             email: user.email || '',
             displayName: user.displayName || ''
         };
-        const docSnap = await getDoc(doc(statusRef, user.uid));
+        const docSnap = await getDoc(doc(usersRef, user.uid));
 
         if (docSnap.exists()) {
             currentUser.value = docSnap.data() as IUser;
@@ -79,7 +78,7 @@ onMounted(async () => {
 
             currentUser.value = newUser as IUser;
 
-            await setDoc(doc(statusRef, user.uid), {
+            await setDoc(doc(usersRef, user.uid), {
                 ...newUser
             });
         }

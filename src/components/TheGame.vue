@@ -36,7 +36,7 @@ const { duel } = storeToRefs(storeGame);
 
 const gameStatusRef = collection(db, 'gameStatus');
 const gameStatusDuelRef = doc(gameStatusRef, 'Duel');
-const statusRef = collection(db, 'status');
+const usersRef = collection(db, 'users');
 
 // TODO - create other redirections
 watch(
@@ -74,7 +74,7 @@ onBeforeMount(async () => {
 // TODO - only for duel game atm
 async function addAndRemoveToLobby(): Promise<any> {
     if (duel.value.players.find((user) => user.uid === props.currentUser.uid)) {
-        await updateDoc(doc(statusRef, props.currentUser.uid), {
+        await updateDoc(doc(usersRef, props.currentUser.uid), {
             game: '',
             readyToGame: false,
             online: 'online',
@@ -87,7 +87,7 @@ async function addAndRemoveToLobby(): Promise<any> {
             players: newPlayers
         });
     } else {
-        await updateDoc(doc(statusRef, props.currentUser.uid), {
+        await updateDoc(doc(usersRef, props.currentUser.uid), {
             game: 'Duel',
             readyToGame: false,
             online: 'online',
@@ -103,7 +103,7 @@ async function addAndRemoveToLobby(): Promise<any> {
 async function acceptInLobby(): Promise<any> {
     if (duel.value.players.length === 2) {
         if (duel.value.players.find((user) => user.uid === props.currentUser.uid)) {
-            await updateDoc(doc(statusRef, props.currentUser.uid), {
+            await updateDoc(doc(usersRef, props.currentUser.uid), {
                 readyToGame: true
             });
             const newPlayers = duel.value.players.map((user) => {
@@ -124,12 +124,12 @@ async function cancelInLobby(): Promise<any> {
         if (duel.value.players.find((user) => user.uid === props.currentUser.uid)) {
             duel.value.players.forEach(async ({ uid }) => {
                 if (uid === props.currentUser.uid) {
-                    await updateDoc(doc(statusRef, uid), {
+                    await updateDoc(doc(usersRef, uid), {
                         game: '',
                         readyToGame: false
                     });
                 } else {
-                    await updateDoc(doc(statusRef, uid), {
+                    await updateDoc(doc(usersRef, uid), {
                         readyToGame: false
                     });
                 }

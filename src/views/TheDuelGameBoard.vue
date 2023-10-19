@@ -51,6 +51,7 @@ import { gameStore } from '@/store/GameStore';
 import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
 import type IUser from '@/interfaces/User';
+import debounce from 'lodash-es/debounce';
 
 provide('showPrice', showPrice);
 provide('wonderCardSelected', wonderCardSelected);
@@ -59,6 +60,7 @@ const headerGameDuel = ref<string>('Duel Game');
 const buttonBuyCard = ref<string>('Buy');
 const buttonSell = ref<string>('Sell');
 const buttonBuildWonder = ref<string>('Build Wonder');
+const buttonBackToFeed = ref<string>('Back To Home');
 const labelWhoStarts = ref<string>('Who Starts?');
 const labelPickCoin = ref<string>('Pick Coin!');
 const labelPickCoinOfThree = ref<string>('Pick one Coin of three!');
@@ -67,9 +69,16 @@ const labelPickWonder = ref<string>('Pick Wonder!');
 const labelDestroyCard = ref<string>('Destroy Enemy Card!');
 const labelWonByArt = ref<string>('Winner By Artefacts: ');
 const labelWonByAggressive = ref<string>('Winner By Aggressive: ');
+const labelWonBySurr = ref<string>('Winner By Surrender: ');
 
 const allPointsP1 = ref<number>(0);
 const allPointsP2 = ref<number>(0);
+const endGameTimeRedirect = ref<number>(20);
+const debounceEndGame = ref<any>(
+    debounce(function () {
+        router.push('/feed');
+    }, endGameTimeRedirect.value * 1000)
+);
 
 const storeDuelGame = duelGameStore();
 const storeGame = gameStore();
@@ -98,11 +107,12 @@ const {
     chooseWhoWillStart,
     wonByArt,
     wonByAggressive,
+    wonBySurr,
     selectedCard,
     selectedWonder,
     isLoading
 } = storeToRefs(storeDuelGame);
-const statusRef = collection(db, 'status');
+const usersRef = collection(db, 'users');
 
 const gameStatusRef = collection(db, 'gameStatus');
 const gameStatusDuelRef = doc(gameStatusRef, 'Duel');
@@ -253,24 +263,37 @@ watch(
     }
 );
 
-// TODO - DOESNT WORK
 watch(
-    () => user.value,
-    (newVal) => {
-        if (newVal.game === '' || !newVal.readyToGame) {
+    [() => wonByArt.value, () => wonByAggressive.value, () => wonBySurr.value],
+    async ([artNewVal, aggrNewVal, surNewVal]) => {
+        // TODO - who lose, who win, info players about it + remove db + show last cards for last player + button redirect or redirect after 20s + redirect after refresh(check uid)
+        if (surNewVal !== '' || artNewVal !== '' || aggrNewVal !== '') {
+            const playersUid = duel.value.players.map((user) => user.uid);
+
+            await updateDoc(gameStatusDuelRef, {
+                isStarted: false,
+                players: []
+            });
+
+            playersUid.forEach(async (uid) => {
+                await updateDoc(doc(usersRef, uid), {
+                    game: '',
+                    readyToGame: false,
+                    online: 'online',
+                    timestamp: serverTimestamp()
+                });
+            });
+
+            await deleteDoc(tableGameDuelRef);
+
+            // router.push('/feed');
+
             // --- Redirect to game
-            router.push('/feed');
-            return null;
+            // debounceEndGame.value();
         }
     }
 );
 
-watch(
-    () => duel.value.players,
-    (newVal) => {
-        console.log('%c newVal Duel store -> ', 'background: #222; color: #bada55', newVal);
-    }
-);
 // ---
 onBeforeMount(async () => {
     await storeGame.subFirebaseConnect();
@@ -278,10 +301,10 @@ onBeforeMount(async () => {
 
 onMounted(async () => {
     isLoading.value = true;
+    let stopCode = false;
 
     const docGameStatusSnap = await getDoc(gameStatusDuelRef);
 
-    // TODO - REDIRECT if uid is not equal + stop doing code below
     // TODO - add watch to redirect or Fn for it + 20s delay
     // TODO - ADD THE SAME + info who win for opponent
 
@@ -292,27 +315,46 @@ onMounted(async () => {
                     .data()
                     .players.find((user: IUser) => user.uid === (dataAuth as IUser).uid);
 
-                user.value = {
-                    uid: userFb.uid,
-                    email: userFb.email,
-                    displayName: userFb.displayName,
-                    game: userFb.game,
-                    readyToGame: userFb.readyToGame,
-                    timestamp: userFb.timestamp,
-                    online: userFb.online
-                };
+                if (userFb) {
+                    user.value = {
+                        uid: userFb.uid,
+                        email: userFb.email,
+                        displayName: userFb.displayName,
+                        game: userFb.game,
+                        readyToGame: userFb.readyToGame,
+                        timestamp: userFb.timestamp,
+                        online: userFb.online
+                    };
 
-                if (userFb.game === '' || !userFb.readyToGame) {
+                    if (userFb.game !== 'Duel' || !userFb.readyToGame) {
+                        isLoading.value = false;
+                        stopCode = true;
+                    }
+                } else {
                     isLoading.value = false;
-                    // --- Redirect to game
-                    router.push('/feed');
-                    return null;
+                    stopCode = true;
                 }
             } else {
-                // TODO - get fb status connect and check user
+                const usersSnap = await getDoc(doc(usersRef, (dataAuth as IUser).uid));
+
+                if (usersSnap.exists()) {
+                    if (usersSnap.data().game !== 'Duel') {
+                        isLoading.value = false;
+                        stopCode = true;
+                    }
+                } else {
+                    isLoading.value = false;
+                    stopCode = true;
+                }
             }
         }
     });
+
+    if (stopCode) {
+        // --- Redirect to game
+        router.push('/feed');
+        return null;
+    }
 
     // firebase - set and check game cards
     const prepareRandomCoins = getCountRandomObjFromArr(coins, 10);
@@ -392,7 +434,8 @@ onMounted(async () => {
                 destroyBrown: '',
                 destroyGrey: '',
                 wonByArt: '',
-                wonByAggressive: ''
+                wonByAggressive: '',
+                wonBySurr: ''
             });
         }
 
@@ -432,7 +475,7 @@ onMounted(async () => {
         selectedCard.value = {} as IGameDuelCard;
     }
     // --- check END GAME
-    else if (wonByArt.value !== '' || wonByAggressive.value !== '') {
+    else if (wonByArt.value !== '' || wonByAggressive.value !== '' || wonBySurr.value !== '') {
         actionForCards.value = false;
         selectedCard.value = {} as IGameDuelCard;
     }
@@ -815,7 +858,7 @@ function removeOptionalMaterials(
 }
 
 const wonderSelectedForPlayer = async (id: number) => {
-    if (!isMyTurn.value) return null;
+    if (!isMyTurn.value || wonBySurr.value !== '') return null;
 
     isLoading.value = true;
     let newCard = {} as IGameDuelWonderCard;
@@ -1087,25 +1130,10 @@ const countPointsFromCoins = (coins: IGameDuelCoin['effect'][]): number => {
 };
 
 async function prepareGameToRemoveFromDB(user: IUser): Promise<void> {
-    // TODO - who lose, who win, info players about it + remove db + show last cards for last player + button redirect or redirect after 20s + redirect after refresh(check uid)
-
-    const playersUid = duel.value.players.map((user) => user.uid);
-
-    await updateDoc(gameStatusDuelRef, {
-        isStarted: false,
-        players: []
+    await updateDoc(tableGameDuelRef, {
+        wonBySurr: user.uid
     });
-
-    playersUid.forEach(async (uid) => {
-        await updateDoc(doc(statusRef, uid), {
-            game: '',
-            readyToGame: false,
-            online: 'online',
-            timestamp: serverTimestamp()
-        });
-    });
-
-    await deleteDoc(tableGameDuelRef);
+    actionForCards.value = false;
 }
 </script>
 
@@ -1405,6 +1433,24 @@ async function prepareGameToRemoveFromDB(user: IUser): Promise<void> {
                         }`
                     }}<ion-icon class="animateHand" name="thumbs-up-sharp"></ion-icon>
                 </p>
+            </section>
+            <section v-else-if="wonBySurr !== ''" class="playerAction">
+                <p :style="'font-weight: bold;'">
+                    {{
+                        labelWonBySurr +
+                        `${
+                            wonByAggressive === player1.user.uid
+                                ? player1.user.displayName || player1.user.email
+                                : player2.user.displayName || player2.user.email
+                        }`
+                    }}<ion-icon class="animateHand" name="thumbs-up-sharp"></ion-icon>
+                </p>
+                <button
+                    class="customButton"
+                    @click="() => (debounceEndGame.cancel(), router.push('/feed'))"
+                >
+                    {{ buttonBackToFeed }}
+                </button>
             </section>
             <section v-else-if="isMyTurn && chooseWhoWillStart && !isLoading" class="playerAction">
                 <button

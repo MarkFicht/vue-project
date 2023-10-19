@@ -20,7 +20,6 @@ import {
     arrayRemove
 } from 'firebase/firestore';
 import { countPlayerResources, countPlayerResourcesFromWonders } from '@/helpers/GameDuelInit';
-import { debounce } from 'lodash-es';
 
 const gameDuelRef = collection(db, 'gameDuel');
 const tableGameDuelRef = doc(gameDuelRef, 'table1');
@@ -49,6 +48,7 @@ export interface IDuelGameStore {
     chooseWhoWillStart: boolean;
     wonByArt: string;
     wonByAggressive: string;
+    wonBySurr: string;
     selectedCard: IGameDuelCard;
     selectedWonder: IGameDuelWonderCard;
     isLoading: boolean;
@@ -79,6 +79,7 @@ export const duelGameStore = defineStore('duelGameStore', {
             chooseWhoWillStart: false,
             wonByArt: '',
             wonByAggressive: '',
+            wonBySurr: '',
             selectedCard: {} as IGameDuelCard,
             selectedWonder: {} as IGameDuelWonderCard,
             isLoading: false
@@ -114,7 +115,8 @@ export const duelGameStore = defineStore('duelGameStore', {
                         selectWondersForPlayersMove,
                         chooseWhoWillStart,
                         wonByArt,
-                        wonByAggressive
+                        wonByAggressive,
+                        wonBySurr
                     } = doc.data();
                     this.turn = turn;
                     this.tier = tier;
@@ -138,6 +140,7 @@ export const duelGameStore = defineStore('duelGameStore', {
                     this.chooseWhoWillStart = chooseWhoWillStart;
                     this.wonByArt = wonByArt;
                     this.wonByAggressive = wonByAggressive;
+                    this.wonBySurr = wonBySurr;
                 }
             });
         },

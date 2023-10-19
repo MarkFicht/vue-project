@@ -31,7 +31,7 @@ const surrenderPrepare = ref<boolean>(false);
             <p>{{ labelSurrender }}</p>
             <div>
                 <button
-                    :class="['customInput']"
+                    :class="['customInput', 'reverseInput']"
                     @click="
                         async () => (
                             await emit('prepare-game-to-remove-from-db', user),
@@ -41,7 +41,10 @@ const surrenderPrepare = ref<boolean>(false);
                 >
                     {{ 'Yes' }}
                 </button>
-                <button :class="['customInput']" @click="() => (surrenderPrepare = false)">
+                <button
+                    :class="['customInput', 'reverseInput']"
+                    @click="() => (surrenderPrepare = false)"
+                >
                     {{ 'NO!' }}
                 </button>
             </div>
@@ -92,16 +95,19 @@ const surrenderPrepare = ref<boolean>(false);
     top: 50%;
     left: 50%;
     transform: translateX(-50%) translateY(-50%);
-    width: 360px !important;
+    width: 340px !important;
     height: 200px !important;
     z-index: 10;
     border-radius: 20px;
-    background-color: rgba(100, 50, 150, 0.9);
+    background-color: rgba(100, 50, 150, 0.95);
     color: #eee;
     animation: showElement 0.7s linear;
     display: flex !important;
     justify-content: center !important;
     align-items: center !important;
+    box-shadow:
+        inset 3px 3px 10px rgba(0, 0, 0, 0.4),
+        inset -2px -2px 10px rgba(255, 255, 255, 0.45);
 }
 .surrenderPopUp p {
     font-size: 1.3em;
@@ -115,11 +121,11 @@ const surrenderPrepare = ref<boolean>(false);
     cursor: pointer;
     color: #efefef;
     box-shadow:
-        inset 3px 3px 10px rgba(0, 0, 0, 0.4),
-        inset -2px -2px 10px rgba(255, 255, 255, 0.45);
+        3px 3px 10px rgba(0, 0, 0, 0.4),
+        -2px -2px 10px rgba(255, 255, 255, 0.45);
 }
 .surrenderPopUp button:first-child {
-    color: silver;
+    color: #efefef;
 }
 .playerInfo > div {
     height: 120px;
