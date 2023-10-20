@@ -85,16 +85,16 @@ watch(
 function takeReversColor(): void {
     switch (card.value.activated) {
         case 'I':
-            reversColor.value = 'rgb(145, 19, 19)';
+            reversColor.value = 'calc(var(--width-tier) * -10) calc(var(--height-tier) * -6)';
             break;
         case 'II':
-            reversColor.value = 'rgb(58, 59, 160)';
+            reversColor.value = 'calc(var(--width-tier) * -11) calc(var(--height-tier) * -6)';
             break;
         case 'III':
-            reversColor.value = 'rgb(175, 85, 202)';
+            reversColor.value = '0 calc(var(--height-tier) * -7)';
             break;
         case 'guild':
-            reversColor.value = 'rgb(107, 36, 128)';
+            reversColor.value = 'calc(var(--width-tier) * -1) calc(var(--height-tier) * -7)';
             break;
         default:
             break;
@@ -103,308 +103,130 @@ function takeReversColor(): void {
 </script>
 
 <template>
-    <div :class="['card', `card${card.id}`]" :style="`--activeColor: ${reversColor};`">
+    <div :class="['cardWrapper']" :style="`--bg-position: ${reversColor};`">
+        <div :class="['card', `card${card.id}`]"></div>
+        <div :class="['tierCardForWonder']"></div>
         <div
-            v-if="card.taken"
+            v-if="card.taken && !card.activated"
             :class="[
                 'cashSum',
-                resCash !== undefined && cash !== undefined && cash > resCash && 'colorRed'
+                resCash !== undefined && cash !== undefined && cash > resCash && 'toHighPrice'
             ]"
         >
             {{ cash }}
         </div>
-
-        <!-- <div class="wonderIcon"><ion-icon name="prism"></ion-icon></div> -->
-
-        <div class="cost">
-            <div v-if="cashCost" class="resources" :style="'width: 100%;'">
-                <div class="cash">{{ cashCost + '$' }}</div>
-            </div>
-            <div v-if="clayCost" class="resources" :style="'width: 100%;'">
-                <div v-for="num in clayCost" :key="num" class="clay">c</div>
-            </div>
-            <div v-if="brickCost" class="resources" :style="'width: 100%;'">
-                <div v-for="num in brickCost" :key="num" class="brick">b</div>
-            </div>
-            <div v-if="woodCost" class="resources" :style="'width: 100%;'">
-                <div v-for="num in woodCost" :key="num" class="wood">w</div>
-            </div>
-            <div v-if="paperCost" class="resources" :style="'width: 100%;'">
-                <div v-for="num in paperCost" :key="num" class="paper">p</div>
-            </div>
-            <div v-if="glassCost" class="resources" :style="'width: 100%;'">
-                <div v-for="num in glassCost" :key="num" class="glass">g</div>
-            </div>
-        </div>
-
-        <!-- <div class="power">
-            <div v-if="effect === 1"><ion-icon name="reload-outline"></ion-icon></div>
-            <div v-if="effect === 2"><ion-icon name="trash-outline"></ion-icon></div>
-            <div v-if="effect === 3" class="takeCoin"></div>
-
-            <div v-if="cashPow" class="cash">
-                {{ cashPow + '$' }}
-            </div>
-
-            <div v-if="breakRes === 1" class="breakBrown">{{ '/' }}</div>
-            <div v-if="breakRes === 2" class="breakGrey">{{ '/' }}</div>
-            <div v-if="breakRes === 3" class="cash" :style="'text-decoration: line-through;'">
-                {{ breakRes + '$' }}
-            </div>
-
-            <div
-                v-if="materials === 1"
-                class="resources"
-                :style="'width: 100%; transform: scale(.8);'"
-            >
-                <div class="clay">c</div>
-                /
-                <div class="brick">b</div>
-                /
-                <div class="wood">w</div>
-            </div>
-            <div v-if="materials === 2" class="resources" :style="'width: 100%;'">
-                <div class="paper">p</div>
-                /
-                <div class="glass">g</div>
-            </div>
-
-            <div v-if="attack">
-                <ion-icon v-for="num in attack" :key="num" name="skull-sharp"></ion-icon>
-            </div>
-
-            <div v-if="point">{{ point }}<ion-icon name="ribbon-sharp"></ion-icon></div>
-        </div> -->
     </div>
 </template>
 
 <style scoped>
-div {
-    display: flex;
-    justify-content: center;
-    align-items: center;
+.cardWrapper {
+    position: relative;
+    --width-wonder: 87px;
+    --height-wonder: 62px;
+    --width-tier: 50px;
+    --height-tier: 77px;
+    /* margin: 0 20px 0 5px; */
+    margin: 0 12px 0 0;
+    border-radius: 5px;
+    width: var(--width-wonder);
+    height: var(--height-wonder);
+    transition: 0.3s;
+    cursor: pointer;
     animation: showElement 0.5s linear;
 }
+/* Cards main background */
+.card {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: var(--width-wonder);
+    height: var(--height-wonder);
+    border-radius: 5px;
+    background-repeat: no-repeat;
+    background-size: calc(var(--width-wonder) * 5) calc(var(--height-wonder) * 4);
+    background-image: url('@/assets/duel/wonders.webp');
+    z-index: 10;
+    /* box-shadow:
+        inset 5px 5px 10px rgba(0, 0, 0, 0.1),
+        inset -5px -5px 10px rgba(255, 255, 255, 0.2); */
+}
+.tierCardForWonder {
+    content: '';
+    position: absolute;
+    left: calc(var(--width-wonder));
+    border-radius: 5px;
+    background-repeat: no-repeat;
+    background-size: calc(var(--width-tier) * 12) calc(var(--height-tier) * 8);
+    background-image: url('@/assets/duel/cards.webp');
+    background-position: var(--bg-position);
+    top: -7px;
+    left: 34px;
+    transform: rotate(-90deg);
+    width: var(--width-tier);
+    height: var(--height-tier);
+    z-index: 1;
+    /* box-shadow:
+        inset 5px 5px 10px rgba(0, 0, 0, 0.15),
+        inset -5px -5px 10px rgba(255, 255, 255, 0.3); */
+}
+.card9 {
+    background-position: 0 0;
+}
+.card12 {
+    background-position: calc(var(--width-wonder) * -1) 0;
+}
+.card10 {
+    background-position: calc(var(--width-wonder) * -2) 0;
+}
+.card11 {
+    background-position: calc(var(--width-wonder) * -3) 0;
+}
+.card6 {
+    background-position: calc(var(--width-wonder) * -4) 0;
+}
+
+.card8 {
+    background-position: 0 calc(var(--height-wonder) * -1);
+}
+.card7 {
+    background-position: calc(var(--width-wonder) * -1) calc(var(--height-wonder) * -1);
+}
+.card5 {
+    background-position: calc(var(--width-wonder) * -2) calc(var(--height-wonder) * -1);
+}
+.card1 {
+    background-position: calc(var(--width-wonder) * -3) calc(var(--height-wonder) * -1);
+}
+.card4 {
+    background-position: calc(var(--width-wonder) * -4) calc(var(--height-wonder) * -1);
+}
+.card3 {
+    background-position: 0 calc(var(--height-wonder) * -2);
+}
+.card2 {
+    background-position: calc(var(--width-wonder) * -1) calc(var(--height-wonder) * -2);
+}
+
+/* Coin with sum */
 .cashSum {
     position: absolute;
+    background-repeat: no-repeat;
+    background-size: 136px 136px;
+    background-image: url('@/assets/duel/sprites.webp');
+    background-position: -48px -113.5px;
     width: 17px;
     height: 17px;
     font-size: 12px;
+    text-align: center;
     line-height: 17px;
     border-radius: 50%;
-    background-color: gold;
     bottom: -50%;
     left: 50%;
-    transform: translateX(-50%) translateY(-110%);
-    border: 1px solid #444;
+    transform: translateX(-50%) translateY(-120%);
     font-weight: bold;
+    z-index: 20;
 }
-.wonderIcon {
-    position: absolute;
-    top: 1px;
-    left: 50%;
-    transform: translateX(-50%);
-}
-.colorRed {
-    color: red;
-}
-.card {
-    position: relative;
-    border: 1px solid #333;
-    border-radius: 5px;
-    width: 80px;
-    height: 60px;
-    margin: 0 20px 0 5px;
-    display: grid;
-    grid-template-columns: 2fr 3fr;
-    font-size: 11px;
-    line-height: 11px;
-    transition: 0.3s;
-    cursor: pointer;
-    background-color: darksalmon;
-    box-shadow:
-        inset 5px 5px 10px rgba(0, 0, 0, 0.1),
-        inset -5px -5px 10px rgba(255, 255, 255, 0.2);
-}
-.card::before {
-    content: '';
-    position: absolute;
-    top: 4px;
-    border-top-right-radius: 5px;
-    border-bottom-right-radius: 5px;
-    background-color: var(--activeColor);
-    right: -10px;
-    width: 10px;
-    height: 50px;
-    border: 1px solid;
-    box-shadow:
-        inset 5px 5px 10px rgba(0, 0, 0, 0.15),
-        inset -5px -5px 10px rgba(255, 255, 255, 0.3);
-}
-.cost {
-    display: flex;
-    flex-direction: column;
-}
-.resources > div {
-    width: 10px;
-    height: 10px;
-    line-height: 10px;
-    font-size: 9px;
-    border: 1px solid gold;
-    border-radius: 50%;
-    margin-left: 1px;
-}
-.cash {
-    width: 15px;
-    height: 15px;
-    line-height: 15px;
-    font-size: 10px;
-    border: 1px solid goldenrod;
-    background-color: gold;
-    border-radius: 50%;
-    margin-left: 1px;
-}
-.clay {
-    background-color: crimson;
-}
-.brick {
-    background-color: slategrey;
-}
-.wood {
-    background-color: greenyellow;
-}
-.paper {
-    background-color: coral;
-}
-.glass {
-    background-color: cornflowerblue;
-}
-.power {
-    display: flex;
-    flex-direction: column;
-}
-.breakGrey {
-    height: 14px;
-    width: 9px;
-    background-color: gray;
-    border-radius: 2px;
-    font-size: 10px;
-    border: 1px solid #333;
-}
-.breakBrown {
-    height: 14px;
-    width: 9px;
-    background-color: brown;
-    border-radius: 2px;
-    font-size: 10px;
-    border: 1px solid #333;
-}
-.takeCoin {
-    position: relative;
-    width: 10px;
-    height: 10px;
-    border: 1px solid #333;
-    border-radius: 50%;
-    background-color: green;
-}
-.takeCoin::before {
-    content: '';
-    position: absolute;
-    top: -3px;
-    left: 1px;
-    z-index: 10;
-    width: 10px;
-    height: 10px;
-    border: 1px solid #333;
-    border-radius: 50%;
-    background-color: rgb(0, 148, 0);
-}
-.takeCoin::after {
-    content: '';
-    position: absolute;
-    top: -5px;
-    left: 3px;
-    z-index: 10;
-    width: 10px;
-    height: 10px;
-    border: 1px solid #333;
-    border-radius: 50%;
-    background-color: rgb(0, 163, 0);
-}
-
-.card9 {
-    background-image: url('@/assets/duel/wonders1.png');
-    background-size: 272px 62px;
-    background-position: -1px -1px;
-    border: none;
-}
-.card6 {
-    background-image: url('@/assets/duel/wonders1.png');
-    background-size: 272px 62px;
-    background-position: -95px -1px;
-    border: none;
-}
-.card1 {
-    background-image: url('@/assets/duel/wonders1.png');
-    background-size: 272px 62px;
-    background-position: -191px -1px;
-    border: none;
-}
-
-.card10 {
-    background-image: url('@/assets/duel/wonders2.png');
-    background-size: 272px 62px;
-    background-position: -1px -1px;
-    border: none;
-}
-.card5 {
-    background-image: url('@/assets/duel/wonders2.png');
-    background-size: 272px 62px;
-    background-position: -94px 0px;
-    border: none;
-}
-.card2 {
-    background-image: url('@/assets/duel/wonders2.png');
-    background-size: 272px 62px;
-    background-position: -191px -1px;
-    border: none;
-}
-
-.card11 {
-    background-image: url('@/assets/duel/wonders3.png');
-    background-size: 272px 62px;
-    background-position: -1px -1px;
-    border: none;
-}
-.card7 {
-    background-image: url('@/assets/duel/wonders3.png');
-    background-size: 272px 62px;
-    background-position: -95px -1px;
-    border: none;
-}
-.card3 {
-    background-image: url('@/assets/duel/wonders3.png');
-    background-size: 272px 62px;
-    background-position: -190px -1px;
-    border: none;
-}
-
-.card12 {
-    background-image: url('@/assets/duel/wonders4.png');
-    background-size: 272px 62px;
-    background-position: -1px -1px;
-    border: none;
-}
-.card8 {
-    background-image: url('@/assets/duel/wonders4.png');
-    background-size: 272px 62px;
-    background-position: -94px -1px;
-    border: none;
-}
-.card4 {
-    background-image: url('@/assets/duel/wonders4.png');
-    background-size: 272px 62px;
-    background-position: -191px -1px;
-    border: none;
+.toHighPrice {
+    color: tomato;
 }
 </style>

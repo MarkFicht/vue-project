@@ -50,73 +50,68 @@ onMounted(() => {
 </script>
 
 <template>
-    <span
-        :class="[
-            'boardSingleCoin',
-            (coin === 'lowCostWonder' || coin === 'lowCostBlue') && 'lowCost'
-        ]"
-    >
-        {{ displayVal }}
-        <ion-icon v-if="coin === 'artefact7'" name="sparkles-sharp"></ion-icon>
-        <ion-icon v-if="coin === 'attack1'" name="skull-sharp"></ion-icon>
-        <ion-icon v-if="coin === 'point7'" name="ribbon-sharp"></ion-icon>
-        <div v-if="coin === 'pointX3'" class="pointX3">
-            <ion-icon name="ribbon-sharp"></ion-icon>
-        </div>
-        <div v-if="coin === 'cash6n4special'" class="cash6n4special">{{ '4$ sp' }}</div>
-        <ion-icon v-if="coin === 'lowCostWonder'" name="prism"></ion-icon>
-        <div v-if="coin === 'lowCostBlue'" class="lowCostBlue"></div>
-        <ion-icon v-if="coin === 'cashBack'" class="cashBack" name="return-up-back"></ion-icon>
-        <div v-if="coin === 'point4n6cash'">4<ion-icon name="ribbon-sharp"></ion-icon></div>
-        <div v-if="coin === 'repeatWonder'">
-            <ion-icon name="reload-outline"></ion-icon><ion-icon name="prism"></ion-icon>
-        </div>
-    </span>
+    <span :class="['boardSingleCoin', `${coin}`]"></span>
 </template>
 
 <style scoped>
 .boardSingleCoin {
-    height: 36px;
-    width: 36px;
-    margin: 1px auto;
+    position: relative;
+    z-index: 10;
+    height: 31px;
+    width: 31px;
     border-radius: 50%;
-    font-size: 12px;
-    line-height: 12px;
-    border: 1px solid #222;
+    background-repeat: no-repeat;
     display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-wrap: wrap;
-    background-color: rgb(27, 207, 27);
-    box-shadow:
-        inset 5px 5px 10px rgba(0, 0, 0, 0.3),
-        inset -5px -5px 10px rgba(255, 255, 255, 0.4);
 }
-.pointX3 {
-    background-color: rgb(23, 179, 23);
-    border: 1px solid #222;
-    width: 16px;
-    height: 16px;
-    font-size: 13px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    border-radius: 50%;
+.point4n6cash {
+    background-image: url('@/assets/duel/coins.webp');
+    background-size: 124px 124px;
+    background-position: 0 0;
 }
-.cash6n4special {
-    font-size: 8px;
-}
-.lowCost {
-    text-decoration: line-through;
-    font-weight: bold;
-}
-.lowCostBlue {
-    height: 14px;
-    width: 10px;
-    background-color: blue;
-    border-radius: 3px;
+.lowCostWonder {
+    background-image: url('@/assets/duel/coins.webp');
+    background-size: 124px 124px;
+    background-position: -31px 0;
 }
 .cashBack {
-    font-size: 18px;
+    background-image: url('@/assets/duel/coins.webp');
+    background-size: 124px 124px;
+    background-position: -62px 0;
+}
+.artefact7 {
+    background-image: url('@/assets/duel/coins.webp');
+    background-size: 124px 124px;
+    background-position: -93px 0;
+}
+
+.lowCostBlue {
+    background-image: url('@/assets/duel/coins.webp');
+    background-size: 124px 124px;
+    background-position: 0 -31px;
+}
+.pointX3 {
+    background-image: url('@/assets/duel/coins.webp');
+    background-size: 124px 124px;
+    background-position: -31px -31px;
+}
+.point7 {
+    background-image: url('@/assets/duel/coins.webp');
+    background-size: 124px 124px;
+    background-position: -62px -31px;
+}
+.attack1 {
+    background-image: url('@/assets/duel/coins.webp');
+    background-size: 124px 124px;
+    background-position: -93px -31px;
+}
+.repeatWonder {
+    background-image: url('@/assets/duel/coins.webp');
+    background-size: 124px 124px;
+    background-position: 0px -62px;
+}
+.cash6n4special {
+    background-image: url('@/assets/duel/coins.webp');
+    background-size: 124px 124px;
+    background-position: -31px -62px;
 }
 </style>

@@ -15,7 +15,8 @@ import {
     arrayRemove,
     arrayUnion,
     increment,
-    serverTimestamp
+    serverTimestamp,
+    deleteDoc
 } from 'firebase/firestore';
 import db from '@/firebase/index';
 import bellNotify from '@/assets/bell-notification.mp3';
@@ -40,7 +41,11 @@ const { duel } = storeToRefs(storeGame);
 
 const gameStatusRef = collection(db, 'gameStatus');
 const gameStatusDuelRef = doc(gameStatusRef, 'Duel');
+
 const usersRef = collection(db, 'users');
+
+const gameDuelRef = collection(db, 'gameDuel');
+const tableGameDuelRef = doc(gameDuelRef, 'table1');
 
 const audioNotify = ref<HTMLAudioElement>(new Audio(bellNotify));
 const audioBell = ref<HTMLAudioElement>(new Audio(bell));
@@ -73,6 +78,9 @@ watch(
 watch(
     () => duel.value.isStarted,
     async (newVal) => {
+        if (duel.value.isStarted === false) {
+            deleteDoc(tableGameDuelRef);
+        }
         // --- Redirect to game
         if (
             duel.value.players.find((user) => user.uid === props.currentUser.uid) &&
@@ -87,6 +95,26 @@ watch(
 // ---
 onBeforeMount(async () => {
     await storeGame.subFirebaseConnect();
+
+    const statusDuelSnap = await getDoc(gameStatusDuelRef);
+
+    // --- Redirect to game + Check DB for Duel Game
+    if (statusDuelSnap.exists()) {
+        const users: IUser[] = statusDuelSnap.data().players;
+        const isStarted: boolean = statusDuelSnap.data().isStarted;
+
+        if (isStarted === false) {
+            deleteDoc(tableGameDuelRef);
+        }
+
+        if (
+            users.find((user) => user.uid === props.currentUser.uid) &&
+            !users.find((user) => !user.readyToGame)
+        ) {
+            audioBell.value.play();
+            debounceRedirect.value();
+        }
+    }
 });
 
 onBeforeUnmount(async () => {

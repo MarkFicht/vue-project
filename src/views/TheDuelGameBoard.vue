@@ -1157,8 +1157,9 @@ const countPointsFromCoins = (coins: IGameDuelCoin['effect'][]): number => {
 };
 
 async function prepareGameToRemoveFromDB(user: IUser): Promise<void> {
+    const pl = duel.value.players.find((player) => player.uid !== user.uid)?.uid;
     await updateDoc(tableGameDuelRef, {
-        wonBySurr: user.uid
+        wonBySurr: pl
     });
     actionForCards.value = false;
 }
@@ -1448,6 +1449,12 @@ async function prepareGameToRemoveFromDB(user: IUser): Promise<void> {
                         }`
                     }}<ion-icon class="animateHand" name="thumbs-up-sharp"></ion-icon>
                 </p>
+                <button
+                    class="customButton"
+                    @click="() => (debounceEndGame.cancel(), router.push('/feed'))"
+                >
+                    {{ buttonBackToFeed }}
+                </button>
             </section>
             <section v-else-if="wonByAggressive !== ''" class="playerAction">
                 <p :style="'font-weight: bold;'">
@@ -1460,13 +1467,19 @@ async function prepareGameToRemoveFromDB(user: IUser): Promise<void> {
                         }`
                     }}<ion-icon class="animateHand" name="thumbs-up-sharp"></ion-icon>
                 </p>
+                <button
+                    class="customButton"
+                    @click="() => (debounceEndGame.cancel(), router.push('/feed'))"
+                >
+                    {{ buttonBackToFeed }}
+                </button>
             </section>
             <section v-else-if="wonBySurr !== ''" class="playerAction">
                 <p :style="'font-weight: bold;'">
                     {{
                         labelWonBySurr +
                         `${
-                            wonByAggressive === player1.user.uid
+                            wonBySurr === player1.user.uid
                                 ? player1.user.displayName || player1.user.email
                                 : player2.user.displayName || player2.user.email
                         }`
@@ -1553,10 +1566,11 @@ h1 {
 /* --- Wrapper card --- */
 section.wrapper {
     position: relative;
-    width: 1110px;
+    width: 1100px;
     height: 720px;
-    padding: 20px;
+    padding: 10px;
     margin: 0 auto;
+    gap: 10px;
     margin-bottom: 20px;
     color: #444;
     box-shadow: 0 0 50px rgba(0, 0, 0, 0.3);
@@ -1567,8 +1581,8 @@ section.wrapper {
         '.    card duel pi  '
         '.    act  duel grv '
         'w1   p1   p1   grv ';
-    grid-template-columns: 230px 450px 200px 190px;
-    grid-template-rows: 155px 320px 50px 155px;
+    grid-template-columns: 250px 410px 200px 190px;
+    grid-template-rows: 160px 300px 50px 160px;
     background-color: #eee;
     animation: showElement 2s linear;
 }
