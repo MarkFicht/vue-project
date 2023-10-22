@@ -105,9 +105,9 @@ function takeReversColor(): void {
 <template>
     <div :class="['cardWrapper']" :style="`--bg-position: ${reversColor};`">
         <div :class="['card', `card${card.id}`]"></div>
-        <div :class="['tierCardForWonder']"></div>
+        <div :class="['tierCardForWonder', reversColor !== '' && 'getImg']"></div>
         <div
-            v-if="card.taken && !card.activated"
+            v-if="card.taken && card.activated === 'none'"
             :class="[
                 'cashSum',
                 resCash !== undefined && cash !== undefined && cash > resCash && 'toHighPrice'
@@ -121,12 +121,8 @@ function takeReversColor(): void {
 <style scoped>
 .cardWrapper {
     position: relative;
-    --width-wonder: 87px;
-    --height-wonder: 62px;
-    --width-tier: 50px;
-    --height-tier: 77px;
     /* margin: 0 20px 0 5px; */
-    margin: 0 12px 0 0;
+    margin: 0 15px 0 0;
     border-radius: 5px;
     width: var(--width-wonder);
     height: var(--height-wonder);
@@ -157,7 +153,6 @@ function takeReversColor(): void {
     border-radius: 5px;
     background-repeat: no-repeat;
     background-size: calc(var(--width-tier) * 12) calc(var(--height-tier) * 8);
-    background-image: url('@/assets/duel/cards.webp');
     background-position: var(--bg-position);
     top: -7px;
     left: 34px;
@@ -168,6 +163,9 @@ function takeReversColor(): void {
     /* box-shadow:
         inset 5px 5px 10px rgba(0, 0, 0, 0.15),
         inset -5px -5px 10px rgba(255, 255, 255, 0.3); */
+}
+.getImg {
+    background-image: url('@/assets/duel/cards.webp');
 }
 .card9 {
     background-position: 0 0;
@@ -209,24 +207,11 @@ function takeReversColor(): void {
 
 /* Coin with sum */
 .cashSum {
-    position: absolute;
-    background-repeat: no-repeat;
-    background-size: 136px 136px;
-    background-image: url('@/assets/duel/sprites.webp');
-    background-position: -48px -113.5px;
-    width: 17px;
-    height: 17px;
-    font-size: 12px;
-    text-align: center;
-    line-height: 17px;
-    border-radius: 50%;
-    bottom: -50%;
-    left: 50%;
-    transform: translateX(-50%) translateY(-120%);
-    font-weight: bold;
-    z-index: 20;
+    bottom: 50%;
+    right: -16px;
+    transform: translateY(50%);
 }
 .toHighPrice {
-    color: tomato;
+    color: red;
 }
 </style>

@@ -63,24 +63,17 @@ const { card } = toRefs(props);
     /* transform: translateY(var(--y)) translateX(var(--x)); */
     animation: prepareLayOut 1.2s calc(var(--z) * 0.25s) linear forwards;
 }
-.cardHide > div {
-    background-color: var(--reversCol) !important;
-    border: 3px solid #333 !important;
-    color: transparent !important;
-}
-.canSelect:hover {
-    /* transform: translateY(var(--y)) translateX(var(--x)) scale(1.05); */
-}
 .selected::before {
     content: '';
     position: absolute;
     z-index: 1;
-    width: 60px;
-    height: 69px;
+    width: var(--width-tier);
+    height: var(--height-tier);
     top: 0;
     left: 0;
-    border: 4px dotted tomato;
     border-radius: 5px;
+    border: 3px dotted tomato;
+    animation: pulseBorder 1.5s ease-in-out infinite;
 }
 .invisible {
     z-index: var(--z);

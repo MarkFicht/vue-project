@@ -32,6 +32,7 @@ const cashCost = ref<number>(0);
 
 // --- BG color
 const bgColor = ref<string>('');
+const reversBg = ref<string>('');
 
 const props = defineProps<{
     card: IGameDuelCard;
@@ -152,314 +153,313 @@ onMounted(() => {
         default:
             break;
     }
+
+    switch (card.value.tier) {
+        case 'I':
+            reversBg.value = 'calc(var(--width-tier) * -10) calc(var(--height-tier) * -6)';
+            break;
+        case 'II':
+            reversBg.value = 'calc(var(--width-tier) * -11) calc(var(--height-tier) * -6)';
+            break;
+        case 'III':
+            reversBg.value = '0 calc(var(--height-tier) * -7)';
+            break;
+        case 'guild':
+            reversBg.value = 'calc(var(--width-tier) * -1) calc(var(--height-tier) * -7)';
+            break;
+
+        default:
+            break;
+    }
 });
 </script>
 
 <template>
-    <div :class="['card', `card${card.id}`, small && 'small']" :style="`--bgColor:${bgColor};`">
+    <div
+        :class="[
+            'card',
+            `card${card.idImg}`,
+            !card.hide || card.coversBy?.length === 0 ? '' : 'hideCard',
+            small && 'small'
+        ]"
+        :style="`--reversBg:${reversBg};`"
+    >
         <div
             v-if="card.taken === 'inGame' && cash1P !== undefined && cash1P >= 0"
-            :class="['cashSumP1', res1P !== undefined && cash1P > res1P && 'colorRed']"
+            :class="['cashSum cashSumP1', res1P !== undefined && cash1P > res1P && 'toHighPrice']"
         >
             {{ cash1P }}
         </div>
         <div
             v-if="card.taken === 'inGame' && cash2P !== undefined && cash2P >= 0"
-            :class="['cashSumP2', res2P !== undefined && cash2P > res2P && 'colorRed']"
+            :class="['cashSum cashSumP2', res2P !== undefined && cash2P > res2P && 'toHighPrice']"
         >
             {{ cash2P }}
-        </div>
-        <!--  -->
-        <div v-if="specialChar" class="specialChar">
-            {{ specialChar + 's' }}
-        </div>
-
-        <div v-if="!card.hide || card.coversBy?.length === 0" class="standardPower">
-            <div v-if="artefact" :style="'margin-right: 1px;'">
-                {{ artefact }}<ion-icon name="sparkles-sharp"></ion-icon>
-            </div>
-            <div v-if="point">{{ point }}<ion-icon name="ribbon-sharp"></ion-icon></div>
-            <div v-if="attack">
-                <ion-icon v-for="num in attack" :key="num" name="skull-sharp"></ion-icon>
-            </div>
-
-            <div v-if="clay" class="resources" :style="'width: 100%;'">
-                <div v-for="num in clay" :key="num" class="clay">c</div>
-            </div>
-            <div v-if="brick" class="resources" :style="'width: 100%;'">
-                <div v-for="num in brick" :key="num" class="brick">b</div>
-            </div>
-            <div v-if="wood" class="resources" :style="'width: 100%;'">
-                <div v-for="num in wood" :key="num" class="wood">w</div>
-            </div>
-            <div v-if="paper" class="resources" :style="'width: 100%;'">
-                <div v-for="num in paper" :key="num" class="paper">p</div>
-            </div>
-            <div v-if="glass" class="resources" :style="'width: 100%;'">
-                <div v-for="num in glass" :key="num" class="glass">g</div>
-            </div>
-
-            <div v-if="cash">
-                {{ cash + '$' }}
-            </div>
-
-            <div v-if="discount" class="resources discount" :style="'width: 100%;'">
-                <div v-if="discount === 1" class="clay">c</div>
-                <div v-if="discount === 2" class="brick">b</div>
-                <div v-if="discount === 3" class="wood">w</div>
-                <div v-if="discount === 4" class="paper">p</div>
-                <div v-if="discount === 4" class="glass">g</div>
-            </div>
-            <div
-                v-if="materials === 1"
-                class="resources"
-                :style="'width: 100%; transform: scale(.8);'"
-            >
-                <div class="clay">c</div>
-                /
-                <div class="brick">b</div>
-                /
-                <div class="wood">w</div>
-            </div>
-            <div v-if="materials === 2" class="resources" :style="'width: 100%;'">
-                <div class="paper">p</div>
-                /
-                <div class="glass">g</div>
-            </div>
-
-            <div v-if="cashBack">
-                <div v-if="cashBack === 1"><ion-icon name="prism"></ion-icon>{{ 'x2$' }}</div>
-                <div v-if="cashBack === 2">
-                    <div class="miniCard" :style="'background: yellow'"></div>
-                    {{ 'x1$' }}
-                </div>
-                <div v-if="cashBack === 3">
-                    <div class="miniCard" :style="'background: grey'"></div>
-                    {{ 'x3$' }}
-                </div>
-                <div v-if="cashBack === 4">
-                    <div class="miniCard" :style="'background: brown'"></div>
-                    {{ 'x2$' }}
-                </div>
-                <div v-if="cashBack === 5">
-                    <div class="miniCard" :style="'background: red'"></div>
-                    {{ 'x1$' }}
-                </div>
-            </div>
-            <div v-if="guild">
-                <div v-if="guild === 1">
-                    <div class="miniCard" :style="'background: yellow'"></div>
-                    {{ 'x1' }}<ion-icon name="ribbon-sharp"></ion-icon>{{ '$' }}
-                </div>
-                <div v-if="guild === 2">
-                    <div class="miniCard" :style="'background: brown'"></div>
-                    <div class="miniCard" :style="'background: grey'"></div>
-                    {{ 'x1' }}<ion-icon name="ribbon-sharp"></ion-icon>{{ '$' }}
-                </div>
-                <div v-if="guild === 3">
-                    <ion-icon name="prism"></ion-icon>
-                    {{ 'x2' }}<ion-icon name="ribbon-sharp"></ion-icon>
-                </div>
-                <div v-if="guild === 4">
-                    <div class="miniCard" :style="'background: blue'"></div>
-                    {{ 'x1' }}<ion-icon name="ribbon-sharp"></ion-icon>{{ '$' }}
-                </div>
-                <div v-if="guild === 5">
-                    <div class="miniCard" :style="'background: green'"></div>
-                    {{ 'x1' }}<ion-icon name="ribbon-sharp"></ion-icon>{{ '$' }}
-                </div>
-                <div v-if="guild === 6">
-                    <div class="cash">{{ '3' }}</div>
-                    {{ '/' }}<ion-icon name="ribbon-sharp"></ion-icon>
-                </div>
-                <div v-if="guild === 7">
-                    <div class="miniCard" :style="'background: red'"></div>
-                    {{ 'x1' }}<ion-icon name="ribbon-sharp"></ion-icon>{{ '$' }}
-                </div>
-            </div>
-        </div>
-
-        <div v-if="!small && specialCharCost" class="specialCharCost">
-            {{ specialCharCost + 's' }}
-        </div>
-        <div v-if="!small && (!card.hide || card.coversBy?.length === 0)" class="standardCost">
-            <div v-if="cashCost" class="resources" :style="'width: 100%;'">
-                <div class="cash">{{ cashCost + '$' }}</div>
-            </div>
-            <div v-if="clayCost" class="resources" :style="'width: 100%;'">
-                <div v-for="num in clayCost" :key="num" class="clay">c</div>
-            </div>
-            <div v-if="brickCost" class="resources" :style="'width: 100%;'">
-                <div v-for="num in brickCost" :key="num" class="brick">b</div>
-            </div>
-            <div v-if="woodCost" class="resources" :style="'width: 100%;'">
-                <div v-for="num in woodCost" :key="num" class="wood">w</div>
-            </div>
-            <div v-if="paperCost" class="resources" :style="'width: 100%;'">
-                <div v-for="num in paperCost" :key="num" class="paper">p</div>
-            </div>
-            <div v-if="glassCost" class="resources" :style="'width: 100%;'">
-                <div v-for="num in glassCost" :key="num" class="glass">g</div>
-            </div>
         </div>
     </div>
 </template>
 
 <style scoped>
-div {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
 .cashSumP1 {
-    position: absolute;
-    width: 16px;
-    height: 16px;
-    font-size: 12px;
-    line-height: 17px;
-    border-radius: 50%;
-    background-color: gold;
     bottom: -50%;
     left: 50%;
-    transform: translateX(-50%) translateY(-140%);
-    border: 1px solid #333;
-    z-index: 1000;
-    font-weight: bold;
+    transform: translateX(-50%) translateY(-145%);
 }
 .cashSumP2 {
-    position: absolute;
-    width: 16px;
-    height: 16px;
-    font-size: 12px;
-    line-height: 17px;
-    border-radius: 50%;
-    background-color: silver;
+    background-position: -116px -89.5px;
     bottom: 0;
     left: 50%;
-    transform: translateX(-50%) translateY(-30%);
-    border: 1px solid #333;
-    z-index: 1000;
-    font-weight: bold;
+    transform: translateX(-50%) translateY(-40%);
 }
-.colorRed {
+.toHighPrice {
     color: red;
 }
+.small {
+    height: 17.5px !important;
+    margin-bottom: 1px;
+}
+
+/* Cards main background */
 .card {
     position: relative;
-    border: 1px solid #222;
     border-radius: 5px;
-    width: 60px;
-    height: 69px;
+    width: var(--width-tier);
+    height: var(--height-tier);
+    background-repeat: no-repeat;
+    background-size: calc(var(--width-tier) * 12) calc(var(--height-tier) * 8);
+    background-image: url('@/assets/duel/cards.webp');
+
     display: grid;
     grid-template-columns: 1fr 2fr 1fr;
     grid-template-rows: 1fr 1fr 1fr;
-    transition: 0.3s;
-    background-color: var(--bgColor);
+    /* transition: 0.3s; */
     color: #222;
     box-shadow:
         inset 5px 5px 10px rgba(0, 0, 0, 0.2),
         inset -5px -5px 10px rgba(255, 255, 255, 0.1);
 }
-.resources > div {
-    width: 13px;
-    height: 13px;
-    line-height: 13px;
-    font-size: 11px;
-    border: 1px solid gold;
-    border-radius: 50%;
-    margin-left: 2px;
+.hideCard {
+    background-position: var(--reversBg) !important;
+    background-color: red !important;
 }
-.discount > div {
-    position: relative;
+
+.card1 {
+    background-position: 0 0;
 }
-.discount > div::before {
-    content: '1';
-    position: absolute;
-    top: -1px;
-    right: 8px;
-    width: 7px;
-    height: 7px;
-    font-size: 5px;
-    line-height: 5px;
-    text-align: center;
-    background-color: gold;
-    border: 1px solid #222;
-    border-radius: 50%;
+.card2 {
+    background-position: calc(var(--width-tier) * -1) 0;
 }
-.clay {
-    background-color: crimson;
+.card3 {
+    background-position: calc(var(--width-tier) * -2) 0;
 }
-.brick {
-    background-color: slategrey;
+.card4 {
+    background-position: calc(var(--width-tier) * -3) 0;
 }
-.wood {
-    background-color: greenyellow;
+.card5 {
+    background-position: calc(var(--width-tier) * -4) 0;
 }
-.paper {
-    background-color: coral;
+.card6 {
+    background-position: calc(var(--width-tier) * -5) 0;
 }
-.glass {
-    background-color: cornflowerblue;
+.card7 {
+    background-position: calc(var(--width-tier) * -6) 0;
 }
-.miniCard {
-    height: 12px;
-    width: 9px;
-    border: 1px solid;
-    border-radius: 2px;
-    margin: 0 1px;
+.card8 {
+    background-position: calc(var(--width-tier) * -7) 0;
 }
-.small {
-    height: 20px !important;
-    grid-template-rows: 1fr !important;
-    width: 50px;
+.card9 {
+    background-position: calc(var(--width-tier) * -8) 0;
 }
-.small .standardPower {
-    font-size: 11px;
-    line-height: 11px;
+.card10 {
+    background-position: calc(var(--width-tier) * -9) 0;
 }
-/* ------------------- */
-.specialChar {
-    font-size: 10px;
-    position: absolute;
-    top: 1px;
-    right: 1px;
+.card11 {
+    background-position: calc(var(--width-tier) * -10) 0;
 }
-.standardPower {
-    grid-row: 1;
-    grid-column: 1 / 4;
-    font-size: 13px;
-    line-height: 13px;
+.card12 {
+    background-position: calc(var(--width-tier) * -11) 0;
 }
-/* ------------------- */
-.specialCharCost {
-    font-size: 9px;
-    position: absolute;
-    top: 7px;
-    left: 1px;
+.card13 {
+    background-position: 0 calc(var(--height-tier) * -1);
 }
-.standardCost {
-    grid-row: 2;
-    grid-column: 1;
-    display: flex;
-    justify-content: start;
-    /* flex-direction: column; */
+.card14 {
+    background-position: calc(var(--width-tier) * -1) calc(var(--height-tier) * -1);
 }
-.standardCost > .resources > div {
-    width: 9px;
-    height: 9px;
-    line-height: 8px;
-    font-size: 8px;
-    border: 1px solid gold;
-    border-radius: 50%;
-    margin-left: 1px;
+.card15 {
+    background-position: calc(var(--width-tier) * -2) calc(var(--height-tier) * -1);
 }
-.cash {
-    width: 12px !important;
-    height: 12px !important;
-    text-align: center;
-    font-size: 9px !important;
-    border: 1px solid goldenrod !important;
-    background-color: gold;
-    border-radius: 50%;
+.card16 {
+    background-position: calc(var(--width-tier) * -3) calc(var(--height-tier) * -1);
+}
+.card17 {
+    background-position: calc(var(--width-tier) * -4) calc(var(--height-tier) * -1);
+}
+.card18 {
+    background-position: calc(var(--width-tier) * -5) calc(var(--height-tier) * -1);
+}
+.card19 {
+    background-position: calc(var(--width-tier) * -6) calc(var(--height-tier) * -1);
+}
+.card20 {
+    background-position: calc(var(--width-tier) * -7) calc(var(--height-tier) * -1);
+}
+.card21 {
+    background-position: calc(var(--width-tier) * -8) calc(var(--height-tier) * -1);
+}
+.card22 {
+    background-position: calc(var(--width-tier) * -9) calc(var(--height-tier) * -1);
+}
+.card23 {
+    background-position: calc(var(--width-tier) * -10) calc(var(--height-tier) * -1);
+}
+.card24 {
+    background-position: calc(var(--width-tier) * -11) calc(var(--height-tier) * -1);
+}
+.card25 {
+    background-position: 0 calc(var(--height-tier) * -2);
+}
+.card26 {
+    background-position: calc(var(--width-tier) * -1) calc(var(--height-tier) * -2);
+}
+.card27 {
+    background-position: calc(var(--width-tier) * -2) calc(var(--height-tier) * -2);
+}
+.card28 {
+    background-position: calc(var(--width-tier) * -3) calc(var(--height-tier) * -2);
+}
+.card29 {
+    background-position: calc(var(--width-tier) * -4) calc(var(--height-tier) * -2);
+}
+.card30 {
+    background-position: calc(var(--width-tier) * -5) calc(var(--height-tier) * -2);
+}
+.card31 {
+    background-position: calc(var(--width-tier) * -6) calc(var(--height-tier) * -2);
+}
+.card32 {
+    background-position: calc(var(--width-tier) * -7) calc(var(--height-tier) * -2);
+}
+.card33 {
+    background-position: calc(var(--width-tier) * -8) calc(var(--height-tier) * -2);
+}
+.card34 {
+    background-position: calc(var(--width-tier) * -9) calc(var(--height-tier) * -2);
+}
+.card35 {
+    background-position: calc(var(--width-tier) * -10) calc(var(--height-tier) * -2);
+}
+.card36 {
+    background-position: calc(var(--width-tier) * -11) calc(var(--height-tier) * -2);
+}
+.card37 {
+    background-position: 0 calc(var(--height-tier) * -3);
+}
+.card38 {
+    background-position: calc(var(--width-tier) * -1) calc(var(--height-tier) * -3);
+}
+.card39 {
+    background-position: calc(var(--width-tier) * -2) calc(var(--height-tier) * -3);
+}
+.card40 {
+    background-position: calc(var(--width-tier) * -3) calc(var(--height-tier) * -3);
+}
+.card41 {
+    background-position: calc(var(--width-tier) * -4) calc(var(--height-tier) * -3);
+}
+.card42 {
+    background-position: calc(var(--width-tier) * -5) calc(var(--height-tier) * -3);
+}
+.card43 {
+    background-position: calc(var(--width-tier) * -6) calc(var(--height-tier) * -3);
+}
+.card44 {
+    background-position: calc(var(--width-tier) * -7) calc(var(--height-tier) * -3);
+}
+.card45 {
+    background-position: calc(var(--width-tier) * -8) calc(var(--height-tier) * -3);
+}
+.card46 {
+    background-position: calc(var(--width-tier) * -9) calc(var(--height-tier) * -3);
+}
+.card47 {
+    background-position: calc(var(--width-tier) * -10) calc(var(--height-tier) * -3);
+}
+.card48 {
+    background-position: calc(var(--width-tier) * -11) calc(var(--height-tier) * -3);
+}
+.card49 {
+    background-position: 0 calc(var(--height-tier) * -4);
+}
+.card50 {
+    background-position: calc(var(--width-tier) * -1) calc(var(--height-tier) * -4);
+}
+.card51 {
+    background-position: calc(var(--width-tier) * -2) calc(var(--height-tier) * -4);
+}
+.card52 {
+    background-position: calc(var(--width-tier) * -3) calc(var(--height-tier) * -4);
+}
+.card53 {
+    background-position: calc(var(--width-tier) * -4) calc(var(--height-tier) * -4);
+}
+.card54 {
+    background-position: calc(var(--width-tier) * -5) calc(var(--height-tier) * -4);
+}
+.card55 {
+    background-position: calc(var(--width-tier) * -6) calc(var(--height-tier) * -4);
+}
+.card56 {
+    background-position: calc(var(--width-tier) * -7) calc(var(--height-tier) * -4);
+}
+.card57 {
+    background-position: calc(var(--width-tier) * -8) calc(var(--height-tier) * -4);
+}
+.card58 {
+    background-position: calc(var(--width-tier) * -9) calc(var(--height-tier) * -4);
+}
+.card59 {
+    background-position: calc(var(--width-tier) * -10) calc(var(--height-tier) * -4);
+}
+.card60 {
+    background-position: calc(var(--width-tier) * -11) calc(var(--height-tier) * -4);
+}
+.card61 {
+    background-position: 0 calc(var(--height-tier) * -5);
+}
+.card62 {
+    background-position: calc(var(--width-tier) * -1) calc(var(--height-tier) * -5);
+}
+.card63 {
+    background-position: calc(var(--width-tier) * -2) calc(var(--height-tier) * -5);
+}
+.card64 {
+    background-position: calc(var(--width-tier) * -3) calc(var(--height-tier) * -5);
+}
+.card65 {
+    background-position: calc(var(--width-tier) * -4) calc(var(--height-tier) * -5);
+}
+.card66 {
+    background-position: calc(var(--width-tier) * -5) calc(var(--height-tier) * -5);
+}
+.card67 {
+    background-position: calc(var(--width-tier) * -6) calc(var(--height-tier) * -5);
+}
+.card68 {
+    background-position: calc(var(--width-tier) * -7) calc(var(--height-tier) * -5);
+}
+.card69 {
+    background-position: calc(var(--width-tier) * -8) calc(var(--height-tier) * -5);
+}
+.card70 {
+    background-position: calc(var(--width-tier) * -9) calc(var(--height-tier) * -5);
+}
+.card71 {
+    background-position: calc(var(--width-tier) * -10) calc(var(--height-tier) * -5);
+}
+.card72 {
+    background-position: calc(var(--width-tier) * -11) calc(var(--height-tier) * -5);
+}
+.card73 {
+    background-position: 0 calc(var(--height-tier) * -6);
 }
 </style>

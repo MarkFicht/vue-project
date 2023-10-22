@@ -2,6 +2,7 @@ import type IUser from './User';
 
 export interface IGameDuelCard {
     id?: number;
+    idImg: number;
     coversBy?: number[];
     hide: boolean;
     taken: 'inGame' | 'graveyard' | 'inPlayerBoard' | 'inWonder';

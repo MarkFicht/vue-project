@@ -129,6 +129,95 @@ cardsWonder = [
 cardsTierOne = [
     {
         tier: 'I',
+        idImg: 1,
+        taken: 'inGame',
+        hide: false,
+        color: 'brown',
+        valueCost: [],
+        cost: [],
+        valuePower: [1],
+        power: ['wood']
+    },
+    {
+        tier: 'I',
+        idImg: 2,
+        taken: 'inGame',
+        hide: false,
+        color: 'brown',
+        valueCost: [1],
+        cost: ['cash'],
+        valuePower: [1],
+        power: ['brick']
+    },
+    {
+        tier: 'I',
+        idImg: 3,
+        taken: 'inGame',
+        hide: false,
+        color: 'brown',
+        valueCost: [],
+        cost: [],
+        valuePower: [1],
+        power: ['clay']
+    },
+    {
+        tier: 'I',
+        idImg: 4,
+        taken: 'inGame',
+        hide: false,
+        color: 'brown',
+        valueCost: [1],
+        cost: ['cash'],
+        valuePower: [1],
+        power: ['wood']
+    },
+    {
+        tier: 'I',
+        idImg: 5,
+        taken: 'inGame',
+        hide: false,
+        color: 'brown',
+        valueCost: [],
+        cost: [],
+        valuePower: [1],
+        power: ['brick']
+    },
+    {
+        tier: 'I',
+        idImg: 6,
+        taken: 'inGame',
+        hide: false,
+        color: 'brown',
+        valueCost: [1],
+        cost: ['cash'],
+        valuePower: [1],
+        power: ['clay']
+    },
+    {
+        tier: 'I',
+        idImg: 7,
+        taken: 'inGame',
+        hide: false,
+        color: 'grey',
+        valueCost: [1],
+        cost: ['cash'],
+        valuePower: [1],
+        power: ['glass']
+    },
+    {
+        tier: 'I',
+        idImg: 8,
+        taken: 'inGame',
+        hide: false,
+        color: 'grey',
+        valueCost: [1],
+        cost: ['cash'],
+        valuePower: [1],
+        power: ['paper']
+    },
+    {
+        tier: 'I',
+        idImg: 9,
         taken: 'inGame',
         hide: false,
         color: 'red',
@@ -139,6 +228,7 @@ cardsTierOne = [
     },
     {
         tier: 'I',
+        idImg: 10,
         taken: 'inGame',
         hide: false,
         color: 'red',
@@ -149,6 +239,7 @@ cardsTierOne = [
     },
     {
         tier: 'I',
+        idImg: 11,
         taken: 'inGame',
         hide: false,
         color: 'red',
@@ -159,6 +250,7 @@ cardsTierOne = [
     },
     {
         tier: 'I',
+        idImg: 12,
         taken: 'inGame',
         hide: false,
         color: 'red',
@@ -169,6 +261,7 @@ cardsTierOne = [
     },
     {
         tier: 'I',
+        idImg: 13,
         taken: 'inGame',
         hide: false,
         color: 'green',
@@ -179,6 +272,18 @@ cardsTierOne = [
     },
     {
         tier: 'I',
+        idImg: 14,
+        taken: 'inGame',
+        hide: false,
+        color: 'green',
+        valueCost: [1],
+        cost: ['paper'],
+        valuePower: [3, 1],
+        power: ['artefact', 'points']
+    },
+    {
+        tier: 'I',
+        idImg: 15,
         taken: 'inGame',
         hide: false,
         color: 'green',
@@ -189,16 +294,7 @@ cardsTierOne = [
     },
     {
         tier: 'I',
-        taken: 'inGame',
-        hide: false,
-        color: 'green',
-        valueCost: [1],
-        cost: ['paper'],
-        valuePower: [3, 1],
-        power: ['artefact', 'points']
-    },
-    {
-        tier: 'I',
+        idImg: 16,
         taken: 'inGame',
         hide: false,
         color: 'green',
@@ -209,36 +305,7 @@ cardsTierOne = [
     },
     {
         tier: 'I',
-        taken: 'inGame',
-        hide: false,
-        color: 'blue',
-        valueCost: [],
-        cost: [],
-        valuePower: [6, 3],
-        power: ['specialChar', 'points']
-    },
-    {
-        tier: 'I',
-        taken: 'inGame',
-        hide: false,
-        color: 'blue',
-        valueCost: [],
-        cost: [],
-        valuePower: [7, 3],
-        power: ['specialChar', 'points']
-    },
-    {
-        tier: 'I',
-        taken: 'inGame',
-        hide: false,
-        color: 'blue',
-        valueCost: [1],
-        cost: ['brick'],
-        valuePower: [8, 3],
-        power: ['specialChar', 'points']
-    },
-    {
-        tier: 'I',
+        idImg: 17,
         taken: 'inGame',
         hide: false,
         color: 'yellow',
@@ -249,16 +316,7 @@ cardsTierOne = [
     },
     {
         tier: 'I',
-        taken: 'inGame',
-        hide: false,
-        color: 'yellow',
-        valueCost: [3],
-        cost: ['cash'],
-        valuePower: [1],
-        power: ['discount']
-    },
-    {
-        tier: 'I',
+        idImg: 18,
         taken: 'inGame',
         hide: false,
         color: 'yellow',
@@ -269,6 +327,18 @@ cardsTierOne = [
     },
     {
         tier: 'I',
+        idImg: 19,
+        taken: 'inGame',
+        hide: false,
+        color: 'yellow',
+        valueCost: [3],
+        cost: ['cash'],
+        valuePower: [1],
+        power: ['discount']
+    },
+    {
+        tier: 'I',
+        idImg: 20,
         taken: 'inGame',
         hide: false,
         color: 'yellow',
@@ -277,85 +347,39 @@ cardsTierOne = [
         valuePower: [3],
         power: ['discount']
     },
+
     {
         tier: 'I',
+        idImg: 21,
         taken: 'inGame',
         hide: false,
-        color: 'brown',
-        valueCost: [1],
-        cost: ['cash'],
-        valuePower: [1],
-        power: ['clay']
-    },
-    {
-        tier: 'I',
-        taken: 'inGame',
-        hide: false,
-        color: 'brown',
-        valueCost: [1],
-        cost: ['cash'],
-        valuePower: [1],
-        power: ['brick']
-    },
-    {
-        tier: 'I',
-        taken: 'inGame',
-        hide: false,
-        color: 'brown',
-        valueCost: [1],
-        cost: ['cash'],
-        valuePower: [1],
-        power: ['wood']
-    },
-    {
-        tier: 'I',
-        taken: 'inGame',
-        hide: false,
-        color: 'brown',
+        color: 'blue',
         valueCost: [],
         cost: [],
-        valuePower: [1],
-        power: ['clay']
+        valuePower: [6, 3],
+        power: ['specialChar', 'points']
     },
     {
         tier: 'I',
+        idImg: 22,
         taken: 'inGame',
         hide: false,
-        color: 'brown',
+        color: 'blue',
         valueCost: [],
         cost: [],
-        valuePower: [1],
-        power: ['brick']
+        valuePower: [7, 3],
+        power: ['specialChar', 'points']
     },
     {
         tier: 'I',
+        idImg: 23,
         taken: 'inGame',
         hide: false,
-        color: 'brown',
-        valueCost: [],
-        cost: [],
-        valuePower: [1],
-        power: ['wood']
-    },
-    {
-        tier: 'I',
-        taken: 'inGame',
-        hide: false,
-        color: 'grey',
+        color: 'blue',
         valueCost: [1],
-        cost: ['cash'],
-        valuePower: [1],
-        power: ['paper']
-    },
-    {
-        tier: 'I',
-        taken: 'inGame',
-        hide: false,
-        color: 'grey',
-        valueCost: [1],
-        cost: ['cash'],
-        valuePower: [1],
-        power: ['glass']
+        cost: ['brick'],
+        valuePower: [8, 3],
+        power: ['specialChar', 'points']
     }
 ];
 
@@ -363,6 +387,62 @@ cardsTierOne = [
 cardsTierTwo = [
     {
         tier: 'II',
+        idImg: 24,
+        taken: 'inGame',
+        hide: false,
+        color: 'brown',
+        valueCost: [2],
+        cost: ['cash'],
+        valuePower: [2],
+        power: ['wood']
+    },
+    {
+        tier: 'II',
+        idImg: 25,
+        taken: 'inGame',
+        hide: false,
+        color: 'brown',
+        valueCost: [2],
+        cost: ['cash'],
+        valuePower: [2],
+        power: ['brick']
+    },
+    {
+        tier: 'II',
+        idImg: 26,
+        taken: 'inGame',
+        hide: false,
+        color: 'brown',
+        valueCost: [2],
+        cost: ['cash'],
+        valuePower: [2],
+        power: ['clay']
+    },
+    {
+        tier: 'II',
+        idImg: 27,
+        taken: 'inGame',
+        hide: false,
+        color: 'grey',
+        valueCost: [],
+        cost: [],
+        valuePower: [1],
+        power: ['glass']
+    },
+    {
+        tier: 'II',
+        idImg: 28,
+        taken: 'inGame',
+        hide: false,
+        color: 'grey',
+        valueCost: [],
+        cost: [],
+        valuePower: [1],
+        power: ['paper']
+    },
+    {
+        tier: 'II',
+        idImg: 29,
         taken: 'inGame',
         hide: false,
         color: 'red',
@@ -373,6 +453,7 @@ cardsTierTwo = [
     },
     {
         tier: 'II',
+        idImg: 30,
         taken: 'inGame',
         hide: false,
         color: 'red',
@@ -383,26 +464,7 @@ cardsTierTwo = [
     },
     {
         tier: 'II',
-        taken: 'inGame',
-        hide: false,
-        color: 'red',
-        valueCost: [1, 1, 1],
-        cost: ['brick', 'wood', 'paper'],
-        valuePower: [2, 10],
-        power: ['attack', 'specialChar']
-    },
-    {
-        tier: 'II',
-        taken: 'inGame',
-        hide: false,
-        color: 'red',
-        valueCost: [2, 1],
-        cost: ['clay', 'glass'],
-        valuePower: [2, 11],
-        power: ['attack', 'specialChar']
-    },
-    {
-        tier: 'II',
+        idImg: 31,
         taken: 'inGame',
         hide: false,
         color: 'red',
@@ -413,26 +475,29 @@ cardsTierTwo = [
     },
     {
         tier: 'II',
+        idImg: 32,
         taken: 'inGame',
         hide: false,
-        color: 'green',
-        valueCost: [4, 1, 1, 1],
-        cost: ['specialChar', 'brick', 'wood', 'glass'],
-        valuePower: [1, 2],
-        power: ['artefact', 'points']
+        color: 'red',
+        valueCost: [1, 1, 1],
+        cost: ['brick', 'wood', 'paper'],
+        valuePower: [2, 10],
+        power: ['attack', 'specialChar']
     },
     {
         tier: 'II',
+        idImg: 33,
         taken: 'inGame',
         hide: false,
-        color: 'green',
-        valueCost: [5, 2, 1],
-        cost: ['specialChar', 'clay', 'brick'],
-        valuePower: [2, 2],
-        power: ['artefact', 'points']
+        color: 'red',
+        valueCost: [2, 1],
+        cost: ['clay', 'glass'],
+        valuePower: [2, 11],
+        power: ['attack', 'specialChar']
     },
     {
         tier: 'II',
+        idImg: 34,
         taken: 'inGame',
         hide: false,
         color: 'green',
@@ -443,6 +508,7 @@ cardsTierTwo = [
     },
     {
         tier: 'II',
+        idImg: 35,
         taken: 'inGame',
         hide: false,
         color: 'green',
@@ -453,56 +519,29 @@ cardsTierTwo = [
     },
     {
         tier: 'II',
+        idImg: 36,
         taken: 'inGame',
         hide: false,
-        color: 'blue',
-        valueCost: [6, 2],
-        cost: ['specialChar', 'clay'],
-        valuePower: [4, 14],
-        power: ['points', 'specialChar']
+        color: 'green',
+        valueCost: [5, 2, 1],
+        cost: ['specialChar', 'clay', 'brick'],
+        valuePower: [2, 2],
+        power: ['artefact', 'points']
     },
     {
         tier: 'II',
+        idImg: 37,
         taken: 'inGame',
         hide: false,
-        color: 'blue',
-        valueCost: [7, 1, 1],
-        cost: ['specialChar', 'wood', 'paper'],
-        valuePower: [4, 15],
-        power: ['points', 'specialChar']
+        color: 'green',
+        valueCost: [4, 1, 1, 1],
+        cost: ['specialChar', 'brick', 'wood', 'glass'],
+        valuePower: [1, 2],
+        power: ['artefact', 'points']
     },
     {
         tier: 'II',
-        taken: 'inGame',
-        hide: false,
-        color: 'blue',
-        valueCost: [8, 3],
-        cost: ['specialChar', 'brick'],
-        valuePower: [5],
-        power: ['points']
-    },
-    {
-        tier: 'II',
-        taken: 'inGame',
-        hide: false,
-        color: 'blue',
-        valueCost: [1, 1],
-        cost: ['brick', 'wood'],
-        valuePower: [4, 16],
-        power: ['points', 'specialChar']
-    },
-    {
-        tier: 'II',
-        taken: 'inGame',
-        hide: false,
-        color: 'blue',
-        valueCost: [2, 1],
-        cost: ['wood', 'glass'],
-        valuePower: [5],
-        power: ['points']
-    },
-    {
-        tier: 'II',
+        idImg: 38,
         taken: 'inGame',
         hide: false,
         color: 'yellow',
@@ -513,6 +552,7 @@ cardsTierTwo = [
     },
     {
         tier: 'II',
+        idImg: 39,
         taken: 'inGame',
         hide: false,
         color: 'yellow',
@@ -523,6 +563,7 @@ cardsTierTwo = [
     },
     {
         tier: 'II',
+        idImg: 40,
         taken: 'inGame',
         hide: false,
         color: 'yellow',
@@ -533,6 +574,7 @@ cardsTierTwo = [
     },
     {
         tier: 'II',
+        idImg: 41,
         taken: 'inGame',
         hide: false,
         color: 'yellow',
@@ -543,53 +585,58 @@ cardsTierTwo = [
     },
     {
         tier: 'II',
+        idImg: 42,
         taken: 'inGame',
         hide: false,
-        color: 'brown',
-        valueCost: [2],
-        cost: ['cash'],
-        valuePower: [2],
-        power: ['clay']
+        color: 'blue',
+        valueCost: [7, 1, 1],
+        cost: ['specialChar', 'wood', 'paper'],
+        valuePower: [4, 15],
+        power: ['points', 'specialChar']
     },
     {
         tier: 'II',
+        idImg: 43,
         taken: 'inGame',
         hide: false,
-        color: 'brown',
-        valueCost: [2],
-        cost: ['cash'],
-        valuePower: [2],
-        power: ['brick']
+        color: 'blue',
+        valueCost: [6, 2],
+        cost: ['specialChar', 'clay'],
+        valuePower: [4, 14],
+        power: ['points', 'specialChar']
     },
     {
         tier: 'II',
+        idImg: 44,
         taken: 'inGame',
         hide: false,
-        color: 'brown',
-        valueCost: [2],
-        cost: ['cash'],
-        valuePower: [2],
-        power: ['wood']
+        color: 'blue',
+        valueCost: [2, 1],
+        cost: ['wood', 'glass'],
+        valuePower: [5],
+        power: ['points']
     },
     {
         tier: 'II',
+        idImg: 45,
         taken: 'inGame',
         hide: false,
-        color: 'grey',
-        valueCost: [],
-        cost: [],
-        valuePower: [1],
-        power: ['paper']
+        color: 'blue',
+        valueCost: [8, 3],
+        cost: ['specialChar', 'brick'],
+        valuePower: [5],
+        power: ['points']
     },
     {
         tier: 'II',
+        idImg: 46,
         taken: 'inGame',
         hide: false,
-        color: 'grey',
-        valueCost: [],
-        cost: [],
-        valuePower: [1],
-        power: ['glass']
+        color: 'blue',
+        valueCost: [1, 1],
+        cost: ['brick', 'wood'],
+        valuePower: [4, 16],
+        power: ['points', 'specialChar']
     }
 ];
 
@@ -597,26 +644,7 @@ cardsTierTwo = [
 cardsTierThree = [
     {
         tier: 'III',
-        taken: 'inGame',
-        hide: false,
-        color: 'red',
-        valueCost: [3, 2, 1, 1],
-        cost: ['specialChar', 'brick', 'clay', 'paper'],
-        valuePower: [2],
-        power: ['attack']
-    },
-    {
-        tier: 'III',
-        taken: 'inGame',
-        hide: false,
-        color: 'red',
-        valueCost: [10, 3, 1],
-        cost: ['specialChar', 'wood', 'glass'],
-        valuePower: [2],
-        power: ['attack']
-    },
-    {
-        tier: 'III',
+        idImg: 47,
         taken: 'inGame',
         hide: false,
         color: 'red',
@@ -627,6 +655,7 @@ cardsTierThree = [
     },
     {
         tier: 'III',
+        idImg: 48,
         taken: 'inGame',
         hide: false,
         color: 'red',
@@ -637,6 +666,29 @@ cardsTierThree = [
     },
     {
         tier: 'III',
+        idImg: 49,
+        taken: 'inGame',
+        hide: false,
+        color: 'red',
+        valueCost: [10, 3, 1],
+        cost: ['specialChar', 'wood', 'glass'],
+        valuePower: [2],
+        power: ['attack']
+    },
+    {
+        tier: 'III',
+        idImg: 50,
+        taken: 'inGame',
+        hide: false,
+        color: 'red',
+        valueCost: [3, 2, 1, 1],
+        cost: ['specialChar', 'brick', 'clay', 'paper'],
+        valuePower: [2],
+        power: ['attack']
+    },
+    {
+        tier: 'III',
+        idImg: 51,
         taken: 'inGame',
         hide: false,
         color: 'red',
@@ -647,26 +699,7 @@ cardsTierThree = [
     },
     {
         tier: 'III',
-        taken: 'inGame',
-        hide: false,
-        color: 'green',
-        valueCost: [12, 1, 1, 1],
-        cost: ['specialChar', 'clay', 'paper', 'glass'],
-        valuePower: [5, 2],
-        power: ['artefact', 'points']
-    },
-    {
-        tier: 'III',
-        taken: 'inGame',
-        hide: false,
-        color: 'green',
-        valueCost: [13, 1, 2],
-        cost: ['specialChar', 'brick', 'paper'],
-        valuePower: [5, 2],
-        power: ['artefact', 'points']
-    },
-    {
-        tier: 'III',
+        idImg: 52,
         taken: 'inGame',
         hide: false,
         color: 'green',
@@ -677,6 +710,18 @@ cardsTierThree = [
     },
     {
         tier: 'III',
+        idImg: 53,
+        taken: 'inGame',
+        hide: false,
+        color: 'green',
+        valueCost: [12, 1, 1, 1],
+        cost: ['specialChar', 'clay', 'paper', 'glass'],
+        valuePower: [5, 2],
+        power: ['artefact', 'points']
+    },
+    {
+        tier: 'III',
+        idImg: 54,
         taken: 'inGame',
         hide: false,
         color: 'green',
@@ -687,66 +732,18 @@ cardsTierThree = [
     },
     {
         tier: 'III',
+        idImg: 55,
         taken: 'inGame',
         hide: false,
-        color: 'blue',
-        valueCost: [14, 2, 2],
-        cost: ['specialChar', 'clay', 'wood'],
-        valuePower: [6],
-        power: ['points']
+        color: 'green',
+        valueCost: [13, 1, 2],
+        cost: ['specialChar', 'brick', 'paper'],
+        valuePower: [5, 2],
+        power: ['artefact', 'points']
     },
     {
         tier: 'III',
-        taken: 'inGame',
-        hide: false,
-        color: 'blue',
-        valueCost: [15, 1, 1, 2],
-        cost: ['specialChar', 'clay', 'wood', 'paper'],
-        valuePower: [6],
-        power: ['points']
-    },
-    {
-        tier: 'III',
-        taken: 'inGame',
-        hide: false,
-        color: 'blue',
-        valueCost: [16, 2, 1, 1],
-        cost: ['specialChar', 'clay', 'brick', 'paper'],
-        valuePower: [5],
-        power: ['points']
-    },
-    {
-        tier: 'III',
-        taken: 'inGame',
-        hide: false,
-        color: 'blue',
-        valueCost: [1, 1, 1, 2],
-        cost: ['clay', 'brick', 'wood', 'glass'],
-        valuePower: [7],
-        power: ['points']
-    },
-    {
-        tier: 'III',
-        taken: 'inGame',
-        hide: false,
-        color: 'blue',
-        valueCost: [3, 2],
-        cost: ['brick', 'wood'],
-        valuePower: [7],
-        power: ['points']
-    },
-    {
-        tier: 'III',
-        taken: 'inGame',
-        hide: false,
-        color: 'blue',
-        valueCost: [2, 1],
-        cost: ['brick', 'glass'],
-        valuePower: [5],
-        power: ['points']
-    },
-    {
-        tier: 'III',
+        idImg: 56,
         taken: 'inGame',
         hide: false,
         color: 'yellow',
@@ -757,16 +754,7 @@ cardsTierThree = [
     },
     {
         tier: 'III',
-        taken: 'inGame',
-        hide: false,
-        color: 'yellow',
-        valueCost: [17, 2, 1],
-        cost: ['specialChar', 'clay', 'glass'],
-        valuePower: [3, 2],
-        power: ['points', 'cashBack']
-    },
-    {
-        tier: 'III',
+        idImg: 57,
         taken: 'inGame',
         hide: false,
         color: 'yellow',
@@ -777,6 +765,7 @@ cardsTierThree = [
     },
     {
         tier: 'III',
+        idImg: 58,
         taken: 'inGame',
         hide: false,
         color: 'yellow',
@@ -787,6 +776,18 @@ cardsTierThree = [
     },
     {
         tier: 'III',
+        idImg: 59,
+        taken: 'inGame',
+        hide: false,
+        color: 'yellow',
+        valueCost: [17, 2, 1],
+        cost: ['specialChar', 'clay', 'glass'],
+        valuePower: [3, 2],
+        power: ['points', 'cashBack']
+    },
+    {
+        tier: 'III',
+        idImg: 60,
         taken: 'inGame',
         hide: false,
         color: 'yellow',
@@ -794,6 +795,72 @@ cardsTierThree = [
         cost: ['brick', 'glass'],
         valuePower: [3, 5],
         power: ['points', 'cashBack']
+    },
+    {
+        tier: 'III',
+        idImg: 61,
+        taken: 'inGame',
+        hide: false,
+        color: 'blue',
+        valueCost: [1, 1, 1, 2],
+        cost: ['clay', 'brick', 'wood', 'glass'],
+        valuePower: [7],
+        power: ['points']
+    },
+    {
+        tier: 'III',
+        idImg: 62,
+        taken: 'inGame',
+        hide: false,
+        color: 'blue',
+        valueCost: [14, 2, 2],
+        cost: ['specialChar', 'clay', 'wood'],
+        valuePower: [6],
+        power: ['points']
+    },
+    {
+        tier: 'III',
+        idImg: 63,
+        taken: 'inGame',
+        hide: false,
+        color: 'blue',
+        valueCost: [15, 1, 1, 2],
+        cost: ['specialChar', 'clay', 'wood', 'paper'],
+        valuePower: [6],
+        power: ['points']
+    },
+    {
+        tier: 'III',
+        idImg: 64,
+        taken: 'inGame',
+        hide: false,
+        color: 'blue',
+        valueCost: [3, 2],
+        cost: ['brick', 'wood'],
+        valuePower: [7],
+        power: ['points']
+    },
+    {
+        tier: 'III',
+        idImg: 65,
+        taken: 'inGame',
+        hide: false,
+        color: 'blue',
+        valueCost: [16, 2, 1, 1],
+        cost: ['specialChar', 'clay', 'brick', 'paper'],
+        valuePower: [5],
+        power: ['points']
+    },
+    {
+        tier: 'III',
+        idImg: 66,
+        taken: 'inGame',
+        hide: false,
+        color: 'blue',
+        valueCost: [2, 1],
+        cost: ['brick', 'glass'],
+        valuePower: [5],
+        power: ['points']
     }
 ];
 
@@ -801,6 +868,7 @@ cardsTierThree = [
 cardsTierGuild = [
     {
         tier: 'guild',
+        idImg: 67,
         taken: 'inGame',
         hide: false,
         color: 'purple',
@@ -811,6 +879,7 @@ cardsTierGuild = [
     },
     {
         tier: 'guild',
+        idImg: 68,
         taken: 'inGame',
         hide: false,
         color: 'purple',
@@ -821,6 +890,7 @@ cardsTierGuild = [
     },
     {
         tier: 'guild',
+        idImg: 69,
         taken: 'inGame',
         hide: false,
         color: 'purple',
@@ -831,6 +901,7 @@ cardsTierGuild = [
     },
     {
         tier: 'guild',
+        idImg: 70,
         taken: 'inGame',
         hide: false,
         color: 'purple',
@@ -841,6 +912,7 @@ cardsTierGuild = [
     },
     {
         tier: 'guild',
+        idImg: 71,
         taken: 'inGame',
         hide: false,
         color: 'purple',
@@ -851,6 +923,7 @@ cardsTierGuild = [
     },
     {
         tier: 'guild',
+        idImg: 72,
         taken: 'inGame',
         hide: false,
         color: 'purple',
@@ -861,6 +934,7 @@ cardsTierGuild = [
     },
     {
         tier: 'guild',
+        idImg: 73,
         taken: 'inGame',
         hide: false,
         color: 'purple',
@@ -899,8 +973,8 @@ export const tierTwoY = [
 ];
 export const tierTwoX = [...tierOneX].reverse();
 export const tierThreeY = [
-    -265, -265, -200, -200, -200, -135, -135, -135, -135, -70, -70, -5, -5, -5, -5, 60, 60, 60, 125,
-    125
+    -265, -265, -210, -210, -210, -155, -155, -155, -155, -100, -100, -45, -45, -45, -45, 10, 10,
+    10, 65, 65
 ];
 export const tierThreeX = [
     -120, 20, -190, -50, 90, -260, -120, 20, 160, -190, 90, 160, 20, -120, -260, 90, -50, -190, 20,

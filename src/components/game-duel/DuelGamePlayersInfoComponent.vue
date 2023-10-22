@@ -58,6 +58,9 @@ const surrenderPrepare = ref<boolean>(false);
             <p>
                 {{ `Timer: ${player1Time}` }}
             </p>
+            <div v-if="turn === player1.user.uid" class="animateHand">
+                <ion-icon name="time-sharp"></ion-icon>
+            </div>
             <button
                 :disabled="player2.user.uid === user.uid && player2Time > 0"
                 :class="['customButton']"
@@ -73,6 +76,9 @@ const surrenderPrepare = ref<boolean>(false);
             <p>
                 {{ `Timer: ${player2Time}` }}
             </p>
+            <div v-if="turn === player2.user.uid" class="animateHand">
+                <ion-icon name="time-sharp"></ion-icon>
+            </div>
             <button
                 :disabled="player1.user.uid === user.uid && player1Time > 0"
                 :class="['customButton']"
@@ -91,7 +97,7 @@ const surrenderPrepare = ref<boolean>(false);
     width: 100%;
 }
 .surrenderPopUp {
-    position: fixed;
+    position: fixed !important;
     top: 50%;
     left: 50%;
     transform: translateX(-50%) translateY(-50%);
@@ -128,6 +134,7 @@ const surrenderPrepare = ref<boolean>(false);
     color: #efefef;
 }
 .playerInfo > div {
+    position: relative;
     height: 120px;
     margin-bottom: 15px;
     display: flex;
@@ -145,6 +152,13 @@ const surrenderPrepare = ref<boolean>(false);
     padding: 0 15px !important;
     font-weight: 600;
     letter-spacing: 1px;
+}
+.animateHand {
+    position: absolute;
+    top: 47px;
+    left: 28px;
+    margin-left: 5px;
+    animation: animateHand 1s infinite ease-in-out;
 }
 .boldParagraf > p {
     font-weight: bold;

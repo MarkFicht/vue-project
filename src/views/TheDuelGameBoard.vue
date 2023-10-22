@@ -63,7 +63,7 @@ const headerGameDuel = ref<string>('Duel Game');
 const buttonBuyCard = ref<string>('Buy');
 const buttonSell = ref<string>('Sell');
 const buttonBuildWonder = ref<string>('Build Wonder');
-const buttonBackToFeed = ref<string>('Back To Home');
+const buttonBackToFeed = ref<string>('Go Back');
 const labelWhoStarts = ref<string>('Who Starts?');
 const labelPickCoin = ref<string>('Pick Coin!');
 const labelPickCoinOfThree = ref<string>('Pick one Coin of three!');
@@ -320,7 +320,7 @@ onBeforeMount(async () => {
     await storeGame.subFirebaseConnect();
 });
 
-onMounted(async () => {
+onBeforeMount(async () => {
     isLoading.value = true;
     let stopCode = false;
 
@@ -1517,6 +1517,7 @@ async function prepareGameToRemoveFromDB(user: IUser): Promise<void> {
                 <p>{{ labelPickCoinOfThree }}</p>
                 <DuelGameCoinComponent
                     v-for="i in 3"
+                    :class="'selectCardOfThreeBorder'"
                     :key="theRestOfCoins[i]"
                     :coin="theRestOfCoins[i]"
                     @click="coinSelectedOfThree(theRestOfCoins[i])"
@@ -1566,7 +1567,7 @@ h1 {
 /* --- Wrapper card --- */
 section.wrapper {
     position: relative;
-    width: 1100px;
+    width: 1050px;
     height: 720px;
     padding: 10px;
     margin: 0 auto;
@@ -1581,7 +1582,7 @@ section.wrapper {
         '.    card duel pi  '
         '.    act  duel grv '
         'w1   p1   p1   grv ';
-    grid-template-columns: 250px 410px 200px 190px;
+    grid-template-columns: 220px 410px 200px 170px;
     grid-template-rows: 160px 300px 50px 160px;
     background-color: #eee;
     animation: showElement 2s linear;
@@ -1636,7 +1637,7 @@ section.wrapper {
     align-items: center;
     flex-wrap: wrap;
     height: 155px;
-    width: 230px;
+    width: 220px;
     animation: showElement 0.5s linear;
     filter: drop-shadow(0 15px 35px rgba(0, 0, 0, 0.35));
 }
@@ -1716,6 +1717,18 @@ section.wrapper {
     margin: 0 1px;
     background-color: green;
 }
+
+/* === === */
+.selectCardOfThreeBorder::after {
+    content: '';
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 3px dotted tomato;
+    animation: pulseBorder 1.5s ease-in-out infinite;
+}
+
 @media (max-width: 1200px) {
     /* section.wrapper {
         transform: scale(0.8);

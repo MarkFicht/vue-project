@@ -38,19 +38,32 @@ const props = defineProps<{
 
 <style scoped>
 .graveyard {
+    position: relative;
     grid-area: grv;
-    padding: 10px;
+    padding: 8px !important;
     height: 100%;
     display: flex;
     flex-wrap: wrap;
-    gap: 5px 7px;
+    gap: 2px;
     justify-content: center;
     /* display: inline-flex;
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap; */
 }
-.selectFromGraveyard {
+.selectFromGraveyard::after {
+    position: absolute;
+    content: '';
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    border-radius: 10px;
     border: 3px dotted tomato;
+    animation: pulseBorder 1.5s ease-in-out infinite;
+}
+.selectFromGraveyard > div {
+    cursor: pointer !important;
+    z-index: 10;
 }
 </style>

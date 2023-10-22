@@ -188,6 +188,9 @@ const { isMyTurn } = toRefs(props);
 /* --------------- */
 .selectCoin {
     border: 3px dotted tomato;
+    border-top-right-radius: 15px;
+    border-bottom-right-radius: 15px;
+    animation: pulseBorder 1.5s ease-in-out infinite;
 }
 
 .pawnWin::after {
@@ -200,16 +203,5 @@ const { isMyTurn } = toRefs(props);
     border: 3px double tomato;
     transform: scale(1.1);
     animation: pulse 1.5s infinite ease-in-out;
-}
-@keyframes pulse {
-    0% {
-        transform: scale(1);
-    }
-    50% {
-        transform: scale(1.1);
-    }
-    100% {
-        transform: scale(1);
-    }
 }
 </style>
