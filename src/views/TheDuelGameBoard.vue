@@ -77,6 +77,9 @@ const labelWonBySurr = ref<string>('Winner By Surrender: ');
 const audioBell = ref<HTMLAudioElement>(new Audio(bell));
 const audioWin = ref<HTMLAudioElement>(new Audio(soundWin));
 const audioLost = ref<HTMLAudioElement>(new Audio(soundLost));
+audioBell.value.volume = 0.66;
+audioWin.value.volume = 0.66;
+audioLost.value.volume = 0.66;
 
 const allPointsP1 = ref<number>(0);
 const allPointsP2 = ref<number>(0);
@@ -85,6 +88,11 @@ const debounceEndGame = ref<any>(
     debounce(function () {
         router.push('/feed');
     }, endGameTimeRedirect.value * 1000)
+);
+const debounceBetweenActions = ref<any>(
+    debounce(function (foo: any) {
+        foo;
+    }, 0.5 * 1000)
 );
 
 const storeDuelGame = duelGameStore();
@@ -900,12 +908,9 @@ const wonderSelectedForPlayer = async (id: number) => {
                 wonderCards: [...player1.value.wonderCards, { ...newCard }]
             },
             wonderCards: newArrWonders,
-            selectWondersForPlayersMove: increment(1)
+            selectWondersForPlayersMove: increment(1),
+            turn: `${selectWondersForPlayers.value[selectWondersForPlayersMove.value + 1]}`
         });
-        storeDuelGame.upgradeTurnAndMove(
-            `${selectWondersForPlayers.value[selectWondersForPlayersMove.value]}`,
-            true
-        );
     } else {
         await updateDoc(tableGameDuelRef, {
             player2: {
@@ -913,12 +918,27 @@ const wonderSelectedForPlayer = async (id: number) => {
                 wonderCards: [...player2.value.wonderCards, { ...newCard }]
             },
             wonderCards: newArrWonders,
-            selectWondersForPlayersMove: increment(1)
+            selectWondersForPlayersMove: increment(1),
+            turn: `${selectWondersForPlayers.value[selectWondersForPlayersMove.value + 1]}`
         });
-        storeDuelGame.upgradeTurnAndMove(
-            `${selectWondersForPlayers.value[selectWondersForPlayersMove.value]}`,
-            true
-        );
+    }
+
+    // Pick auto for 4th and 8th card
+    // if (selectWondersForPlayersMove.value === 3 || selectWondersForPlayersMove.value === 7) {
+    //     await debounceBetweenActions.value(
+    //         wonderSelectedForPlayer(newArrWonders.find((card) => card.taken === false)?.id || 0)
+    //     );
+    // }
+    // TODO - change await deb with code upper
+    if (selectWondersForPlayersMove.value === 3 || selectWondersForPlayersMove.value === 7) {
+        const deb = debounce(async function () {
+            await wonderSelectedForPlayer(
+                newArrWonders.find((card) => card.taken === false)?.id || 0
+            );
+            console.log('%c work? -> ', 'background: #222; color: #bada55');
+        }, 0.5 * 1000);
+        await deb();
+        console.log('%c test -> ', 'background: #222; color: #bada55');
     }
 
     isLoading.value = false;
@@ -1200,7 +1220,7 @@ async function prepareGameToRemoveFromDB(user: IUser): Promise<void> {
             />
 
             <!-- MAIN WINDOW FOR CARDS -->
-            <section class="cards cardsWonder" v-if="tier === 'prepare'">
+            <section class="cards cardsWonderPrepre" v-if="tier === 'prepare'">
                 <div v-if="!isSecondPick" class="pickWonders">
                     <DuelGameWonderComponent
                         v-if="wonderCards[0] && !wonderCards[0].taken"
@@ -1564,7 +1584,7 @@ h1 {
     filter: drop-shadow(0 0 25px rgba(255, 255, 255, 0.8));
     letter-spacing: 0.1em;
 }
-/* --- Wrapper card --- */
+/* --- Main Wrapper --- */
 section.wrapper {
     position: relative;
     width: 1050px;
@@ -1597,6 +1617,8 @@ section.wrapper {
     height: 100%;
     z-index: 100000;
 }
+
+/* --- Actions Player --- */
 .playerAction {
     grid-area: act;
     display: flex;
@@ -1617,6 +1639,8 @@ section.wrapper {
     margin-left: 10px;
     cursor: pointer;
 }
+
+/* --- Cards Container --- */
 .cards {
     position: relative;
     grid-area: card;
@@ -1625,7 +1649,8 @@ section.wrapper {
     align-items: center;
     flex-direction: column;
 }
-.cardsWonder {
+.cardsWonderPrepre {
+    transform: scale(1.4);
     filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.05));
 }
 .cardsTier {
@@ -1645,7 +1670,7 @@ section.wrapper {
     margin-left: 5px;
     animation: animateHand 1.5s infinite ease-in-out;
 }
-/* END GAME */
+/* --- END GAME --- */
 .countPoints {
     width: 360px;
     height: 240px;

@@ -22,7 +22,7 @@ const glassCost = ref<number>(0);
 const cashCost = ref<number>(0);
 
 //---
-const reversColor = ref<string>('');
+const bgPosition = ref<string>('');
 
 onMounted(() => {
     card.value.power.forEach((pow, i) => {
@@ -72,29 +72,29 @@ onMounted(() => {
                 break;
         }
     });
-    takeReversColor();
+    takeBgPosition();
 });
 
 watch(
     () => card.value.activated,
     () => {
-        takeReversColor();
+        takeBgPosition();
     }
 );
 
-function takeReversColor(): void {
+function takeBgPosition(): void {
     switch (card.value.activated) {
         case 'I':
-            reversColor.value = 'calc(var(--width-tier) * -10) calc(var(--height-tier) * -6)';
+            bgPosition.value = 'calc(var(--width-tier) * -10) calc(var(--height-tier) * -6)';
             break;
         case 'II':
-            reversColor.value = 'calc(var(--width-tier) * -11) calc(var(--height-tier) * -6)';
+            bgPosition.value = 'calc(var(--width-tier) * -11) calc(var(--height-tier) * -6)';
             break;
         case 'III':
-            reversColor.value = '0 calc(var(--height-tier) * -7)';
+            bgPosition.value = '0 calc(var(--height-tier) * -7)';
             break;
         case 'guild':
-            reversColor.value = 'calc(var(--width-tier) * -1) calc(var(--height-tier) * -7)';
+            bgPosition.value = 'calc(var(--width-tier) * -1) calc(var(--height-tier) * -7)';
             break;
         default:
             break;
@@ -103,9 +103,33 @@ function takeReversColor(): void {
 </script>
 
 <template>
-    <div :class="['cardWrapper']" :style="`--bg-position: ${reversColor};`">
+    <!-- <div class="flip-card">
+        <div class="flip-card-inner" :style="card.taken ? 'transform: rotateY(180deg)' : ''">
+            <div class="flip-card-front">
+                <div :class="['cardWrapper']" :style="`--bg-position: ${bgPosition};`">
+                    <div :class="['card', `card${card.id}`]"></div>
+                    <div :class="['tierCardForWonder', bgPosition !== '' && 'getImg']"></div>
+                    <div
+                        v-if="card.taken && card.activated === 'none'"
+                        :class="[
+                            'cashSum',
+                            resCash !== undefined &&
+                                cash !== undefined &&
+                                cash > resCash &&
+                                'toHighPrice'
+                        ]"
+                    >
+                        {{ cash }}
+                    </div>
+                </div>
+            </div>
+            <div class="flip-card-back bgWonderCard"></div>
+        </div>
+    </div> -->
+
+    <div :class="['cardWrapper']" :style="`--bg-position: ${bgPosition};`">
         <div :class="['card', `card${card.id}`]"></div>
-        <div :class="['tierCardForWonder', reversColor !== '' && 'getImg']"></div>
+        <div :class="['tierCardForWonder', bgPosition !== '' && 'getImg']"></div>
         <div
             v-if="card.taken && card.activated === 'none'"
             :class="[
@@ -214,4 +238,40 @@ function takeReversColor(): void {
 .toHighPrice {
     color: red;
 }
+
+/* === FLIP CARD IN THE FUTURE === */
+/* The flip card container - set the width and height */
+.flip-card {
+    width: var(--width-wonder);
+    height: var(--height-wonder);
+    perspective: 400px; /* Remove this if you don't want the 3D effect */
+}
+
+/* This container is needed to position the front and back side */
+.flip-card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    text-align: center;
+    transition: transform 0.8s;
+    transform-style: preserve-3d;
+}
+
+.flip-card-front,
+.flip-card-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    -webkit-backface-visibility: hidden; /* Safari */
+    backface-visibility: hidden;
+}
+.flip-card-front {
+    /*  */
+}
+.flip-card-back {
+    transform: rotateY(180deg);
+}
+/* .flip-card:hover .flip-card-inner {
+    transform: rotateY(180deg);
+} */
 </style>

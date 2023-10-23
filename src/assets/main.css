@@ -102,6 +102,20 @@
   z-index: 20;
 }
 
+.bgWonderCard {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: var(--width-wonder);
+    height: var(--height-wonder);
+    border-radius: 5px;
+    background-repeat: no-repeat;
+    background-size: calc(var(--width-wonder) * 5) calc(var(--height-wonder) * 4);
+    background-image: url('@/assets/duel/wonders.webp');
+    background-position: calc(var(--width-wonder) * -1) calc(var(--height-wonder) * -3);
+    z-index: 10;
+}
+
 @keyframes showElement {
   0%,
   30% {
