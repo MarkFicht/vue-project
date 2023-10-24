@@ -69,6 +69,7 @@ const labelPickCoin = ref<string>('Pick Coin!');
 const labelPickCoinOfThree = ref<string>('Pick one Coin of three!');
 const labelPickCardFromGraveyard = ref<string>('Pick card from graveyard!');
 const labelPickWonder = ref<string>('Pick Wonder!');
+const labelOpponentPickWonder = ref<string>('Opponent Need To Pick Wonder...');
 const labelDestroyCard = ref<string>('Destroy Enemy Card!');
 const labelWonByArt = ref<string>('Winner By Artefacts: ');
 const labelWonByAggressive = ref<string>('Winner By Aggressive: ');
@@ -91,8 +92,8 @@ const debounceEndGame = ref<any>(
 );
 const debounceBetweenActions = ref<any>(
     debounce(function (foo: any) {
-        foo;
-    }, 0.5 * 1000)
+        foo();
+    }, 0.33 * 1000)
 );
 
 const storeDuelGame = duelGameStore();
@@ -206,6 +207,16 @@ watch(
             }),
             (actionForCards.value = true));
         isLoading.value = false;
+    }
+);
+watch(
+    () => selectWondersForPlayersMove.value,
+    async (newVal) => {
+        // Pick auto for 4th and 8th card
+        if (newVal === 3 || newVal === 7) {
+            const LastCard = wonderCards.value.find((card) => card.taken === false);
+            LastCard && (await chooseWonderForPlayer(LastCard.id));
+        }
     }
 );
 
@@ -892,12 +903,20 @@ function removeOptionalMaterials(
     return arr;
 }
 
-const wonderSelectedForPlayer = async (id: number) => {
+const chooseWonderForPlayer = async (id: number) => {
     if (!isMyTurn.value || wonBySurr.value !== '') return null;
 
     isLoading.value = true;
+    const timer = setTimeout(() => {
+        clearTimeout(timer);
+        setWonderCardTaken(id);
+        isLoading.value = true;
+    }, 500);
+};
+
+async function setWonderCardTaken(id: number): Promise<void> {
     let newCard = {} as IGameDuelWonderCard;
-    const newArrWonders = wonderCards.value.map((data) => {
+    const newArrWonders: IGameDuelWonderCard[] = wonderCards.value.map((data) => {
         return data.id === id ? ((newCard = { ...data, taken: true }), newCard) : data;
     });
 
@@ -922,27 +941,7 @@ const wonderSelectedForPlayer = async (id: number) => {
             turn: `${selectWondersForPlayers.value[selectWondersForPlayersMove.value + 1]}`
         });
     }
-
-    // Pick auto for 4th and 8th card
-    // if (selectWondersForPlayersMove.value === 3 || selectWondersForPlayersMove.value === 7) {
-    //     await debounceBetweenActions.value(
-    //         wonderSelectedForPlayer(newArrWonders.find((card) => card.taken === false)?.id || 0)
-    //     );
-    // }
-    // TODO - change await deb with code upper
-    if (selectWondersForPlayersMove.value === 3 || selectWondersForPlayersMove.value === 7) {
-        const deb = debounce(async function () {
-            await wonderSelectedForPlayer(
-                newArrWonders.find((card) => card.taken === false)?.id || 0
-            );
-            console.log('%c work? -> ', 'background: #222; color: #bada55');
-        }, 0.5 * 1000);
-        await deb();
-        console.log('%c test -> ', 'background: #222; color: #bada55');
-    }
-
-    isLoading.value = false;
-};
+}
 
 const tierCardClick = (gameCard: IGameDuelCard) => {
     if (!isMyTurn.value) return null;
@@ -1225,44 +1224,92 @@ async function prepareGameToRemoveFromDB(user: IUser): Promise<void> {
                     <DuelGameWonderComponent
                         v-if="wonderCards[0] && !wonderCards[0].taken"
                         :card="wonderCards[0]"
-                        @click="wonderSelectedForPlayer(wonderCards[0].id)"
+                        @click="
+                            () =>
+                                selectWondersForPlayersMove === 3 ||
+                                selectWondersForPlayersMove === 7
+                                    ? null
+                                    : chooseWonderForPlayer(wonderCards[0].id)
+                        "
                     />
                     <DuelGameWonderComponent
                         v-if="wonderCards[1] && !wonderCards[1].taken"
                         :card="wonderCards[1]"
-                        @click="wonderSelectedForPlayer(wonderCards[1].id)"
+                        @click="
+                            () =>
+                                selectWondersForPlayersMove === 3 ||
+                                selectWondersForPlayersMove === 7
+                                    ? null
+                                    : chooseWonderForPlayer(wonderCards[1].id)
+                        "
                     />
                     <DuelGameWonderComponent
                         v-if="wonderCards[2] && !wonderCards[2].taken"
                         :card="wonderCards[2]"
-                        @click="wonderSelectedForPlayer(wonderCards[2].id)"
+                        @click="
+                            () =>
+                                selectWondersForPlayersMove === 3 ||
+                                selectWondersForPlayersMove === 7
+                                    ? null
+                                    : chooseWonderForPlayer(wonderCards[2].id)
+                        "
                     />
                     <DuelGameWonderComponent
                         v-if="wonderCards[3] && !wonderCards[3].taken"
                         :card="wonderCards[3]"
-                        @click="wonderSelectedForPlayer(wonderCards[3].id)"
+                        @click="
+                            () =>
+                                selectWondersForPlayersMove === 3 ||
+                                selectWondersForPlayersMove === 7
+                                    ? null
+                                    : chooseWonderForPlayer(wonderCards[3].id)
+                        "
                     />
                 </div>
                 <div v-if="isSecondPick" class="pickWonders">
                     <DuelGameWonderComponent
                         v-if="wonderCards[4] && !wonderCards[4].taken"
                         :card="wonderCards[4]"
-                        @click="wonderSelectedForPlayer(wonderCards[4].id)"
+                        @click="
+                            () =>
+                                selectWondersForPlayersMove === 3 ||
+                                selectWondersForPlayersMove === 7
+                                    ? null
+                                    : chooseWonderForPlayer(wonderCards[4].id)
+                        "
                     />
                     <DuelGameWonderComponent
                         v-if="wonderCards[5] && !wonderCards[5].taken"
                         :card="wonderCards[5]"
-                        @click="wonderSelectedForPlayer(wonderCards[5].id)"
+                        @click="
+                            () =>
+                                selectWondersForPlayersMove === 3 ||
+                                selectWondersForPlayersMove === 7
+                                    ? null
+                                    : chooseWonderForPlayer(wonderCards[5].id)
+                        "
                     />
                     <DuelGameWonderComponent
                         v-if="wonderCards[6] && !wonderCards[6].taken"
                         :card="wonderCards[6]"
-                        @click="wonderSelectedForPlayer(wonderCards[6].id)"
+                        @click="
+                            () =>
+                                selectWondersForPlayersMove === 3 ||
+                                selectWondersForPlayersMove === 7
+                                    ? null
+                                    : chooseWonderForPlayer(wonderCards[6].id)
+                        "
                     />
                     <DuelGameWonderComponent
                         v-if="wonderCards[7] && !wonderCards[7].taken"
                         :card="wonderCards[7]"
-                        @click="wonderSelectedForPlayer(wonderCards[7].id)"
+                        @click="
+                            () =>
+                                selectWondersForPlayersMove === 3 ||
+                                selectWondersForPlayersMove === 7
+                                    ? null
+                                    : chooseWonderForPlayer(wonderCards[7].id)
+                        "
                     />
                 </div>
             </section>
@@ -1557,6 +1604,9 @@ async function prepareGameToRemoveFromDB(user: IUser): Promise<void> {
             </section>
             <section v-else-if="isMyTurn && tier === 'prepare' && !isLoading" class="playerAction">
                 <p>{{ labelPickWonder }}</p>
+            </section>
+            <section v-else-if="!isMyTurn && tier === 'prepare' && !isLoading" class="playerAction">
+                <p>{{ labelOpponentPickWonder }}</p>
             </section>
             <section v-else class="playerAction"></section>
         </section>
