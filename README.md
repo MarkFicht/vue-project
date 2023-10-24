@@ -1,27 +1,41 @@
-# Vue dashboard with games
+# Vue dashboard with board games
 
-Developing with Vue 3 in Vite.
+Developing with Vue 3 in Vite + Firebase, project online with database in real life.
 
-## Plans for the future
+After user authorization, we will be able to play one of 3 online games.
 
--   Implement firebase auth
--   Implement realtime data base
--   Prepare some simple games for 2 logged in users
--   Prepare stroe
--   etc.
+Two of the games are modeled on classic board games: `Splendor` and `7 Wonders Duel`.
+
+The third game written in `Canvas and JS`, in which we fight zombies in cooperation mode
+
+## In construction
+
+-   Implements missing redirection cases
+-   Implements rules in Firestore
+-   Implements the `Settings` page
+-   Adds DEMO video from game + screenshots
+-   Prepares mechanism for `Splendor` game
+-   Prepares mechanism for `Canvas + Js` game
+-   Fixes and tests other bugs in `7 Wonders Duel`
+-   etc...
 
 ## DEMO
 
-[Click for DEMO Vue project](https://markficht.github.io/vue-project/)
+[DEMO here](https://markficht.github.io/vue-project/) - `At this moment deployed on gh pages`
 
-## Screen
+## Screens and Videos
 
 -   Soon
 
-## Recommended IDE Setup
-
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur) + [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin).
-
 ## Status
 
-Project: <b>Started</b>
+Project: <b>In progress</b>
+Auth: <b>Done</b>
+Duel Game: <b>In tested</b>
+Splendor Game: <b>In the future</b>
+Reflex Game: <b>In the future</b>
+Settings: <b>In the future</b>
+
+## License
+
+-   MIT
