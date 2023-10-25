@@ -30,10 +30,15 @@ The third game written in `Canvas and JS`, in which we fight zombies in cooperat
 ## Status
 
 Project: <b>In progress</b>
+
 Auth: <b>Done</b>
+
 Duel Game: <b>In tested</b>
+
 Splendor Game: <b>In the future</b>
+
 Reflex Game: <b>In the future</b>
+
 Settings: <b>In the future</b>
 
 ## License

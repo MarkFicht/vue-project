@@ -60,8 +60,8 @@ provide('showPrice', showPrice);
 provide('wonderCardSelected', wonderCardSelected);
 
 const headerGameDuel = ref<string>('Duel Game');
-const buttonBuyCard = ref<string>('Buy');
-const buttonSell = ref<string>('Sell');
+const buttonBuyCard = ref<string>('Buy for');
+const buttonSell = ref<string>('Sell for');
 const buttonBuildWonder = ref<string>('Build Wonder');
 const buttonBackToFeed = ref<string>('Go Back');
 const labelWhoStarts = ref<string>('Who Starts?');
@@ -1226,6 +1226,7 @@ async function prepareGameToRemoveFromDB(user: IUser): Promise<void> {
                         :card="wonderCards[0]"
                         @click="
                             () =>
+                                wonderCards[0].taken ||
                                 selectWondersForPlayersMove === 3 ||
                                 selectWondersForPlayersMove === 7
                                     ? null
@@ -1237,6 +1238,7 @@ async function prepareGameToRemoveFromDB(user: IUser): Promise<void> {
                         :card="wonderCards[1]"
                         @click="
                             () =>
+                                wonderCards[1].taken ||
                                 selectWondersForPlayersMove === 3 ||
                                 selectWondersForPlayersMove === 7
                                     ? null
@@ -1248,6 +1250,7 @@ async function prepareGameToRemoveFromDB(user: IUser): Promise<void> {
                         :card="wonderCards[2]"
                         @click="
                             () =>
+                                wonderCards[2].taken ||
                                 selectWondersForPlayersMove === 3 ||
                                 selectWondersForPlayersMove === 7
                                     ? null
@@ -1259,6 +1262,7 @@ async function prepareGameToRemoveFromDB(user: IUser): Promise<void> {
                         :card="wonderCards[3]"
                         @click="
                             () =>
+                                wonderCards[3].taken ||
                                 selectWondersForPlayersMove === 3 ||
                                 selectWondersForPlayersMove === 7
                                     ? null
@@ -1272,6 +1276,7 @@ async function prepareGameToRemoveFromDB(user: IUser): Promise<void> {
                         :card="wonderCards[4]"
                         @click="
                             () =>
+                                wonderCards[4].taken ||
                                 selectWondersForPlayersMove === 3 ||
                                 selectWondersForPlayersMove === 7
                                     ? null
@@ -1283,6 +1288,7 @@ async function prepareGameToRemoveFromDB(user: IUser): Promise<void> {
                         :card="wonderCards[5]"
                         @click="
                             () =>
+                                wonderCards[5].taken ||
                                 selectWondersForPlayersMove === 3 ||
                                 selectWondersForPlayersMove === 7
                                     ? null
@@ -1294,6 +1300,7 @@ async function prepareGameToRemoveFromDB(user: IUser): Promise<void> {
                         :card="wonderCards[6]"
                         @click="
                             () =>
+                                wonderCards[6].taken ||
                                 selectWondersForPlayersMove === 3 ||
                                 selectWondersForPlayersMove === 7
                                     ? null
@@ -1305,6 +1312,7 @@ async function prepareGameToRemoveFromDB(user: IUser): Promise<void> {
                         :card="wonderCards[7]"
                         @click="
                             () =>
+                                wonderCards[7].taken ||
                                 selectWondersForPlayersMove === 3 ||
                                 selectWondersForPlayersMove === 7
                                     ? null
@@ -1495,7 +1503,14 @@ async function prepareGameToRemoveFromDB(user: IUser): Promise<void> {
                                 : null
                     "
                 >
-                    {{ buttonSell }}
+                    {{
+                        buttonSell +
+                        ` ${
+                            turn === player1.user.uid
+                                ? player1.cards.yellow.length + 2
+                                : player2.cards.yellow.length + 2
+                        }`
+                    }}
                 </button>
                 <button
                     :disabled="!canBuyWonderCard"
