@@ -347,6 +347,7 @@ onBeforeMount(async () => {
 
     // TODO - add watch to redirect or Fn for it + 20s delay
     // TODO - ADD THE SAME + info who win for opponent
+    // todo - check end game with all 60 cards
 
     await getCurrentUser().then(async (dataAuth) => {
         if (dataAuth) {
