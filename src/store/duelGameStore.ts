@@ -212,17 +212,32 @@ export const duelGameStore = defineStore('duelGameStore', {
             if (uid === this.player1.user.uid) {
                 for (let index = 0; index < howManyMovePawn; index++) {
                     if (this.board.pawn <= -8) {
-                        await updateDoc(tableGameDuelRef, {
-                            'gameBoard.pawn': increment(-1),
-                            wonByAggressive: uid
-                        });
-                        // TODO - end game!
-                        console.log('%c END GAME - ATTACK -> ', 'background: #222; color: #bada55');
+                        const timer = setTimeout(async () => {
+                            clearTimeout(timer);
+
+                            await updateDoc(tableGameDuelRef, {
+                                'gameBoard.pawn': increment(-1),
+                                wonByAggressive: uid
+                            });
+                            // TODO - end game!
+                            console.log(
+                                '%c END GAME - ATTACK -> ',
+                                'background: #222; color: #bada55'
+                            );
+                        }, 333);
+
                         return;
+                    } else {
+                        const timer = setTimeout(async () => {
+                            clearTimeout(timer);
+
+                            await updateDoc(tableGameDuelRef, {
+                                'gameBoard.pawn': increment(-1)
+                            });
+                        }, 333);
                     }
-                    await updateDoc(tableGameDuelRef, {
-                        'gameBoard.pawn': increment(-1)
-                    });
+
+                    // Check punishment
                     if (this.board.pawn <= -6 && this.board.punishment1) {
                         await updateDoc(tableGameDuelRef, {
                             'gameBoard.punishment1': false,
@@ -244,17 +259,32 @@ export const duelGameStore = defineStore('duelGameStore', {
             } else {
                 for (let index = 0; index < howManyMovePawn; index++) {
                     if (this.board.pawn >= 8) {
-                        await updateDoc(tableGameDuelRef, {
-                            'gameBoard.pawn': increment(1),
-                            wonByAggressive: uid
-                        });
-                        // TODO - end game!
-                        console.log('%c END GAME - ATTACK -> ', 'background: #222; color: #bada55');
+                        const timer = setTimeout(async () => {
+                            clearTimeout(timer);
+
+                            await updateDoc(tableGameDuelRef, {
+                                'gameBoard.pawn': increment(1),
+                                wonByAggressive: uid
+                            });
+                            // TODO - end game!
+                            console.log(
+                                '%c END GAME - ATTACK -> ',
+                                'background: #222; color: #bada55'
+                            );
+                        }, 333);
+
                         return;
+                    } else {
+                        const timer = setTimeout(async () => {
+                            clearTimeout(timer);
+
+                            await updateDoc(tableGameDuelRef, {
+                                'gameBoard.pawn': increment(1)
+                            });
+                        }, 333);
                     }
-                    await updateDoc(tableGameDuelRef, {
-                        'gameBoard.pawn': increment(1)
-                    });
+
+                    // Check punishment
                     if (this.board.pawn >= 3 && this.board.punishment3) {
                         await updateDoc(tableGameDuelRef, {
                             'gameBoard.punishment3': false,
