@@ -196,6 +196,7 @@ onMounted(() => {
         >
             {{ cash2P }}
         </div>
+        <p>{{ card.color === 'green' && card.valuePower[0] }}</p>
     </div>
 </template>
 
@@ -343,10 +344,10 @@ onMounted(() => {
     background-position: calc(var(--width-tier) * -8) calc(var(--height-tier) * -2);
 }
 .card34 {
-    background-position: calc(var(--width-tier) * -9) calc(var(--height-tier) * -2);
+    background-position: calc(var(--width-tier) * -10) calc(var(--height-tier) * -2);
 }
 .card35 {
-    background-position: calc(var(--width-tier) * -10) calc(var(--height-tier) * -2);
+    background-position: calc(var(--width-tier) * -9) calc(var(--height-tier) * -2);
 }
 .card36 {
     background-position: calc(var(--width-tier) * -11) calc(var(--height-tier) * -2);
