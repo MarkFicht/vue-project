@@ -209,100 +209,86 @@ export const duelGameStore = defineStore('duelGameStore', {
             });
         },
         async setMovePawn(howManyMovePawn: number, uid: string): Promise<void> {
+            let index = 0;
+
             if (uid === this.player1.user.uid) {
-                for (let index = 0; index < howManyMovePawn; index++) {
+                const timer = setInterval(async () => {
+                    // --- Check end game!
                     if (this.board.pawn <= -8) {
-                        const timer = setTimeout(async () => {
-                            clearTimeout(timer);
+                        clearInterval(timer);
 
-                            await updateDoc(tableGameDuelRef, {
-                                'gameBoard.pawn': increment(-1),
-                                wonByAggressive: uid
-                            });
-                            // TODO - end game!
-                            console.log(
-                                '%c END GAME - ATTACK -> ',
-                                'background: #222; color: #bada55'
-                            );
-                        }, 333);
-
-                        return;
-                    } else {
-                        const timer = setTimeout(async () => {
-                            clearTimeout(timer);
-
-                            await updateDoc(tableGameDuelRef, {
-                                'gameBoard.pawn': increment(-1)
-                            });
-                        }, 333);
+                        await updateDoc(tableGameDuelRef, {
+                            'gameBoard.pawn': increment(-1),
+                            wonByAggressive: uid
+                        });
+                        console.log('%c END GAME - ATTACK -> ', 'background: #222; color: #bada55');
                     }
-
-                    // Check punishment
-                    if (this.board.pawn <= -6 && this.board.punishment1) {
+                    // --- Check punishment
+                    if (this.board.punishment1 && this.board.pawn <= -5) {
                         await updateDoc(tableGameDuelRef, {
                             'gameBoard.punishment1': false,
+                            'gameBoard.pawn': increment(-1),
                             'player2.resources.cash':
                                 this.player2.resources.cash <= 5
                                     ? 0
                                     : (this.player2.resources.cash -= 5)
                         });
-                    } else if (this.board.pawn <= -3 && this.board.punishment2) {
+                    } else if (this.board.punishment2 && this.board.pawn <= -2) {
                         await updateDoc(tableGameDuelRef, {
                             'gameBoard.punishment2': false,
+                            'gameBoard.pawn': increment(-1),
                             'player2.resources.cash':
                                 this.player2.resources.cash <= 2
                                     ? 0
                                     : (this.player2.resources.cash -= 2)
                         });
-                    }
-                }
-            } else {
-                for (let index = 0; index < howManyMovePawn; index++) {
-                    if (this.board.pawn >= 8) {
-                        const timer = setTimeout(async () => {
-                            clearTimeout(timer);
-
-                            await updateDoc(tableGameDuelRef, {
-                                'gameBoard.pawn': increment(1),
-                                wonByAggressive: uid
-                            });
-                            // TODO - end game!
-                            console.log(
-                                '%c END GAME - ATTACK -> ',
-                                'background: #222; color: #bada55'
-                            );
-                        }, 333);
-
-                        return;
                     } else {
-                        const timer = setTimeout(async () => {
-                            clearTimeout(timer);
-
-                            await updateDoc(tableGameDuelRef, {
-                                'gameBoard.pawn': increment(1)
-                            });
-                        }, 333);
+                        await updateDoc(tableGameDuelRef, {
+                            'gameBoard.pawn': increment(-1)
+                        });
+                        index++;
+                        index >= howManyMovePawn && clearInterval(timer);
                     }
+                }, 333);
+            } else {
+                const timer = setInterval(async () => {
+                    // --- Check end game!
+                    if (this.board.pawn >= 8) {
+                        clearInterval(timer);
 
-                    // Check punishment
-                    if (this.board.pawn >= 3 && this.board.punishment3) {
+                        await updateDoc(tableGameDuelRef, {
+                            'gameBoard.pawn': increment(1),
+                            wonByAggressive: uid
+                        });
+                        console.log('%c END GAME - ATTACK -> ', 'background: #222; color: #bada55');
+                    }
+                    // --- Check punishment
+                    if (this.board.punishment3 && this.board.pawn >= 2) {
                         await updateDoc(tableGameDuelRef, {
                             'gameBoard.punishment3': false,
-                            'player1.resources.cash':
-                                this.player1.resources.cash <= 2
-                                    ? 0
-                                    : (this.player1.resources.cash -= 2)
-                        });
-                    } else if (this.board.pawn >= 6 && this.board.punishment4) {
-                        await updateDoc(tableGameDuelRef, {
-                            'gameBoard.punishment4': false,
+                            'gameBoard.pawn': increment(1),
                             'player1.resources.cash':
                                 this.player1.resources.cash <= 5
                                     ? 0
                                     : (this.player1.resources.cash -= 5)
                         });
+                    } else if (this.board.punishment4 && this.board.pawn >= 5) {
+                        await updateDoc(tableGameDuelRef, {
+                            'gameBoard.punishment4': false,
+                            'gameBoard.pawn': increment(1),
+                            'player1.resources.cash':
+                                this.player1.resources.cash <= 2
+                                    ? 0
+                                    : (this.player1.resources.cash -= 2)
+                        });
+                    } else {
+                        await updateDoc(tableGameDuelRef, {
+                            'gameBoard.pawn': increment(1)
+                        });
+                        index++;
+                        index >= howManyMovePawn && clearInterval(timer);
                     }
-                }
+                }, 333);
             }
         },
         async countArtefacts(uid: string): Promise<void> {
