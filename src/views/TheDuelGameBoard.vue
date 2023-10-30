@@ -83,18 +83,11 @@ audioBell.value.volume = 0.66;
 audioWin.value.volume = 0.66;
 audioLost.value.volume = 0.66;
 
-// const allPointsP1 = ref<number>(0);
-// const allPointsP2 = ref<number>(0);
 const endGameTimeRedirect = ref<number>(20);
 const debounceEndGame = ref<any>(
     debounce(function () {
         router.push('/feed');
     }, endGameTimeRedirect.value * 1000)
-);
-const debounceBetweenActions = ref<any>(
-    debounce(function (foo: any) {
-        foo();
-    }, 0.33 * 1000)
 );
 
 const storeDuelGame = duelGameStore();
@@ -266,32 +259,6 @@ watch(
     }
 );
 
-// watch(
-//     () => tier.value,
-//     () => {
-//         if (tier.value === 'end') {
-//             allPointsP1.value =
-//                 player1.value.points +
-//                 Math.floor(player1.value.resources.cash / 3) +
-//                 ((board.value.pawn <= -6 && 10) ||
-//                     (board.value.pawn <= -3 && 5) ||
-//                     (board.value.pawn <= -1 && 2) ||
-//                     0) +
-//                 countPointsFromCoins(player1.value.resources.coins) +
-//                 countPointsFromPurple(player1.value.cards.purple.map((pur) => pur.valuePower[0]));
-//             allPointsP2.value =
-//                 player2.value.points +
-//                 Math.floor(player2.value.resources.cash / 3) +
-//                 ((board.value.pawn >= 6 && 10) ||
-//                     (board.value.pawn >= 3 && 5) ||
-//                     (board.value.pawn >= 1 && 2) ||
-//                     0) +
-//                 countPointsFromCoins(player2.value.resources.coins) +
-//                 countPointsFromPurple(player2.value.cards.purple.map((pur) => pur.valuePower[0]));
-//         }
-//     }
-// );
-
 watch(
     [() => wonByArt.value, () => wonByAggressive.value, () => wonBySurr.value],
     async ([artNewVal, aggrNewVal, surNewVal]) => {
@@ -327,9 +294,8 @@ watch(
 
             await deleteDoc(tableGameDuelRef);
 
-            // router.push('/feed');
-
             // --- Redirect to game
+            // router.push('/feed');
             debounceEndGame.value();
         }
     }

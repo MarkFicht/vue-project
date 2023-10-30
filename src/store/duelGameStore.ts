@@ -325,7 +325,7 @@ export const duelGameStore = defineStore('duelGameStore', {
             let howManyMovePawn: number = 0;
             let extraCashFromCoin: number = 0;
 
-            if (this.tier === 'I' || tierFromGraveyard === 'I') {
+            if (tierFromGraveyard === 'I' || this.tier === 'I') {
                 this.tierOneCards = this.$state.tierOneCards.map((card) => {
                     card.id === this.selectedCard.id && (cardToTake = card);
                     return {
@@ -341,7 +341,7 @@ export const duelGameStore = defineStore('duelGameStore', {
                 await updateDoc(tableGameDuelRef, {
                     tierICards: this.tierOneCards
                 });
-            } else if (this.tier === 'II' || tierFromGraveyard === 'II') {
+            } else if (tierFromGraveyard === 'II' || this.tier === 'II') {
                 this.tierTwoCards = this.$state.tierTwoCards.map((card) => {
                     card.id === this.selectedCard.id && (cardToTake = card);
                     return {
@@ -358,9 +358,9 @@ export const duelGameStore = defineStore('duelGameStore', {
                     tierIICards: this.tierTwoCards
                 });
             } else if (
-                this.tier === 'III' ||
                 tierFromGraveyard === 'III' ||
-                tierFromGraveyard === 'guild'
+                tierFromGraveyard === 'guild' ||
+                this.tier === 'III'
             ) {
                 this.tierThreeCards = this.$state.tierThreeCards.map((card) => {
                     card.id === this.selectedCard.id && (cardToTake = card);
@@ -477,15 +477,19 @@ export const duelGameStore = defineStore('duelGameStore', {
 
                 // --- coin: cash back
                 if (cash > 0 && this.player2.resources.coins.find((coin) => coin === 'cashBack')) {
+                    console.log('%c cash -> ', 'background: #222; color: #bada55', cash);
                     let cashBack = cash;
+
                     cardToTake.cost.find((cost, i) => {
                         if (cost === 'cash') {
                             cashBack -= cardToTake.valueCost[i];
-                            updateDoc(tableGameDuelRef, {
-                                'player2.resources.cash': increment(cashBack)
-                            });
                             return true;
                         } else return false;
+                    });
+
+                    console.log('%c cash -> ', 'background: #222; color: #bada55', cash);
+                    updateDoc(tableGameDuelRef, {
+                        'player2.resources.cash': increment(cashBack)
                     });
                 }
 
@@ -500,7 +504,21 @@ export const duelGameStore = defineStore('duelGameStore', {
                 }
 
                 if (this.wonByArt === '' && this.wonByAggressive === '' && this.pickCoin === '') {
-                    this.upgradeTurnAndMove(`${this.player2.user.uid}`);
+                    if (this.turn === this.player1.user.uid && tierFromGraveyard) {
+                        if (this.player1.resources.coins.find((coin) => coin === 'repeatWonder')) {
+                            this.upgradeTurnAndMove(`${this.player1.user.uid}`);
+                        } else {
+                            this.upgradeTurnAndMove(`${this.player2.user.uid}`);
+                        }
+                    } else if (this.turn === this.player2.user.uid && tierFromGraveyard) {
+                        if (this.player2.resources.coins.find((coin) => coin === 'repeatWonder')) {
+                            this.upgradeTurnAndMove(`${this.player2.user.uid}`);
+                        } else {
+                            this.upgradeTurnAndMove(`${this.player1.user.uid}`);
+                        }
+                    } else {
+                        await this.upgradeTurnAndMove(`${this.player2.user.uid}`);
+                    }
                 }
             } else {
                 // --- coin: cash back from sp
@@ -603,11 +621,11 @@ export const duelGameStore = defineStore('duelGameStore', {
                     cardToTake.cost.find((cost, i) => {
                         if (cost === 'cash') {
                             cashBack -= cardToTake.valueCost[i];
-                            updateDoc(tableGameDuelRef, {
-                                'player1.resources.cash': increment(cashBack)
-                            });
                             return true;
                         } else return false;
+                    });
+                    updateDoc(tableGameDuelRef, {
+                        'player1.resources.cash': increment(cashBack)
                     });
                 }
 
@@ -646,7 +664,7 @@ export const duelGameStore = defineStore('duelGameStore', {
         async setCardGraveyard(tierFromDestroyedCard?: string): Promise<void> {
             let cardToGraveyard: IGameDuelCard = {} as IGameDuelCard;
 
-            if (this.tier === 'I' || tierFromDestroyedCard === 'I') {
+            if (tierFromDestroyedCard === 'I' || this.tier === 'I') {
                 this.tierOneCards = this.$state.tierOneCards.map((card) => {
                     card.id === this.selectedCard.id && (cardToGraveyard = card);
                     return {
@@ -662,7 +680,7 @@ export const duelGameStore = defineStore('duelGameStore', {
                 await updateDoc(tableGameDuelRef, {
                     tierICards: this.tierOneCards
                 });
-            } else if (this.tier === 'II' || tierFromDestroyedCard === 'II') {
+            } else if (tierFromDestroyedCard === 'II' || this.tier === 'II') {
                 this.tierTwoCards = this.$state.tierTwoCards.map((card) => {
                     card.id === this.selectedCard.id && (cardToGraveyard = card);
                     return {
@@ -679,9 +697,9 @@ export const duelGameStore = defineStore('duelGameStore', {
                     tierIICards: this.tierTwoCards
                 });
             } else if (
-                this.tier === 'III' ||
                 tierFromDestroyedCard === 'III' ||
-                tierFromDestroyedCard === 'guild'
+                tierFromDestroyedCard === 'guild' ||
+                this.tier === 'III'
             ) {
                 this.tierThreeCards = this.$state.tierThreeCards.map((card) => {
                     card.id === this.selectedCard.id && (cardToGraveyard = card);
