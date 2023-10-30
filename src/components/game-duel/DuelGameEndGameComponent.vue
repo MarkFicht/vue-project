@@ -6,9 +6,14 @@ import { onBeforeMount, ref, toRefs, watch } from 'vue';
 import soundWin from '@/assets/win.mp3';
 import soundLost from '@/assets/lost.mp3';
 import type IUser from '@/interfaces/User';
+import { collection, doc, updateDoc } from 'firebase/firestore';
+import db from '@/firebase/index';
 
 const storeDuelGame = duelGameStore();
-const { player1, player2, tier, board } = storeToRefs(storeDuelGame);
+const { player1, player2, tier, board, endGameAnimationEnd } = storeToRefs(storeDuelGame);
+
+const gameDuelRef = collection(db, 'gameDuel');
+const tableGameDuelRef = doc(gameDuelRef, 'table1');
 
 const props = defineProps<{
     user: IUser;
@@ -54,9 +59,10 @@ const p2AttackDisplay = ref<number>(0);
 
 watch(
     () => tier.value,
-    () => {
+    async () => {
         if (tier.value === 'end') {
             initPoints();
+            await setWonByPoints();
         }
     }
 );
@@ -182,11 +188,14 @@ const checkWhoWin = () => {
             }, 777);
         }
     }, 777);
+
+    endGameAnimationEnd.value = true;
 };
 
 // ---
-onBeforeMount(() => {
+onBeforeMount(async () => {
     initPoints();
+    await setWonByPoints();
 });
 
 const initPoints = () => {
@@ -227,6 +236,35 @@ const initPoints = () => {
     // TODO - ADD who win to fb - here - before all animation
     // TODO - add redirection + button redirect
     // TODO - add imgs for mini icons
+};
+
+const setWonByPoints = async () => {
+    const allP1Points =
+        allPointsP1.value + p1Cash.value + p1Purple.value + p1Coin.value + p1Attack.value;
+    const allP2Points =
+        allPointsP2.value + p2Cash.value + p2Purple.value + p2Coin.value + p2Attack.value;
+
+    if (allP1Points > allP2Points) {
+        await updateDoc(tableGameDuelRef, {
+            wonByPoints: player1.value.user.uid
+        });
+    } else if (allP1Points < allP2Points) {
+        await updateDoc(tableGameDuelRef, {
+            wonByPoints: player2.value.user.uid
+        });
+    } else if (p1Blue.value > p2Blue.value) {
+        await updateDoc(tableGameDuelRef, {
+            wonByPoints: player1.value.user.uid
+        });
+    } else if (p1Blue.value < p2Blue.value) {
+        await updateDoc(tableGameDuelRef, {
+            wonByPoints: player2.value.user.uid
+        });
+    } else {
+        await updateDoc(tableGameDuelRef, {
+            wonByPoints: 'draw'
+        });
+    }
 };
 
 const countPointsWonders = (res: IGameDuelPlayer['wonderCards']): number => {

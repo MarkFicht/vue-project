@@ -49,9 +49,11 @@ export interface IDuelGameStore {
     wonByArt: string;
     wonByAggressive: string;
     wonBySurr: string;
+    wonByPoints: string;
     selectedCard: IGameDuelCard;
     selectedWonder: IGameDuelWonderCard;
     isLoading: boolean;
+    endGameAnimationEnd: boolean;
 }
 
 export const duelGameStore = defineStore('duelGameStore', {
@@ -80,9 +82,11 @@ export const duelGameStore = defineStore('duelGameStore', {
             wonByArt: '',
             wonByAggressive: '',
             wonBySurr: '',
+            wonByPoints: '',
             selectedCard: {} as IGameDuelCard,
             selectedWonder: {} as IGameDuelWonderCard,
-            isLoading: false
+            isLoading: false,
+            endGameAnimationEnd: false
         };
     },
     getters: {
@@ -116,7 +120,8 @@ export const duelGameStore = defineStore('duelGameStore', {
                         chooseWhoWillStart,
                         wonByArt,
                         wonByAggressive,
-                        wonBySurr
+                        wonBySurr,
+                        wonByPoints
                     } = doc.data();
                     this.turn = turn;
                     this.tier = tier;
@@ -141,6 +146,7 @@ export const duelGameStore = defineStore('duelGameStore', {
                     this.wonByArt = wonByArt;
                     this.wonByAggressive = wonByAggressive;
                     this.wonBySurr = wonBySurr;
+                    this.wonByPoints = wonByPoints;
                 }
             });
         },

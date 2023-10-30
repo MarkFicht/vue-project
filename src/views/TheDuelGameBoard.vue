@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeMount, onMounted, onBeforeUnmount, ref, watch, provide } from 'vue';
+import { computed, onBeforeMount, onBeforeUnmount, ref, watch, provide } from 'vue';
 import { getCurrentUser } from '@/helpers/HelpersFoo';
 import {
     collection,
@@ -75,6 +75,7 @@ const labelDestroyCard = ref<string>('Destroy Enemy Card!');
 const labelWonByArt = ref<string>('Winner By Artefacts: ');
 const labelWonByAggressive = ref<string>('Winner By Aggressive: ');
 const labelWonBySurr = ref<string>('Winner By Surrender: ');
+const labelWonByPoints = ref<string>('Winner By Points: ');
 
 const audioBell = ref<HTMLAudioElement>(new Audio(bell));
 const audioWin = ref<HTMLAudioElement>(new Audio(soundWin));
@@ -118,9 +119,11 @@ const {
     wonByArt,
     wonByAggressive,
     wonBySurr,
+    wonByPoints,
     selectedCard,
     selectedWonder,
-    isLoading
+    isLoading,
+    endGameAnimationEnd
 } = storeToRefs(storeDuelGame);
 const usersRef = collection(db, 'users');
 
@@ -443,7 +446,8 @@ onBeforeMount(async () => {
                 destroyGrey: '',
                 wonByArt: '',
                 wonByAggressive: '',
-                wonBySurr: ''
+                wonBySurr: '',
+                wonByPoints: ''
             });
         }
 
@@ -483,7 +487,12 @@ onBeforeMount(async () => {
         selectedCard.value = {} as IGameDuelCard;
     }
     // --- check END GAME
-    else if (wonByArt.value !== '' || wonByAggressive.value !== '' || wonBySurr.value !== '') {
+    else if (
+        wonByArt.value !== '' ||
+        wonByAggressive.value !== '' ||
+        wonBySurr.value !== '' ||
+        wonByPoints.value !== ''
+    ) {
         actionForCards.value = false;
         selectedCard.value = {} as IGameDuelCard;
     }
@@ -1388,6 +1397,26 @@ async function prepareGameToRemoveFromDB(user: IUser): Promise<void> {
                         labelWonBySurr +
                         `${
                             wonBySurr === player1.user.uid
+                                ? player1.user.displayName || player1.user.email
+                                : player2.user.displayName || player2.user.email
+                        }`
+                    }}<ion-icon class="animateHand" name="thumbs-up-sharp"></ion-icon>
+                </p>
+                <button
+                    class="customButton"
+                    @click="() => (debounceEndGame.cancel(), router.push('/feed'))"
+                >
+                    {{ buttonBackToFeed }}
+                </button>
+            </section>
+            <section v-else-if="wonByPoints !== '' && endGameAnimationEnd" class="playerAction">
+                <p :style="'font-weight: bold;'">
+                    {{
+                        labelWonByPoints +
+                        `${
+                            wonByPoints === 'draw'
+                                ? 'DRAW'
+                                : wonByPoints === player1.user.uid
                                 ? player1.user.displayName || player1.user.email
                                 : player2.user.displayName || player2.user.email
                         }`
