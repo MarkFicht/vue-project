@@ -366,6 +366,14 @@ function countArtefacts(uid: string): number {
     border-radius: 5px;
     margin: 0 5px;
 }
+.playerCardColorContainer:first-child {
+    margin: 0;
+    margin-right: 5px;
+}
+.playerCardColorContainer:last-child {
+    margin: 0;
+    margin-left: 5px;
+}
 .playerCard1 {
     background-image: linear-gradient(to bottom, rgba(197, 96, 13, 0.33), 60%, transparent);
 }
@@ -400,13 +408,10 @@ function countArtefacts(uid: string): number {
 .playerPointsContainer {
     height: 100%;
     width: 200px;
-    margin-right: 3px;
-    margin-left: 7px;
-
     border-radius: 10px;
     box-shadow:
-        5px 5px 10px rgba(0, 0, 0, 0.1),
-        -5px -5px 10px rgba(255, 255, 255, 1);
+        inset 5px 5px 10px rgba(0, 0, 0, 0.1),
+        inset -5px -5px 10px rgba(255, 255, 255, 1);
     display: flex;
     justify-content: center;
     align-items: start;
@@ -426,7 +431,8 @@ function countArtefacts(uid: string): number {
     width: 100%;
     line-height: 24px;
     margin: 0;
-    padding: 0 15px;
+    padding: 0 20px;
+    font-size: 0.9em;
     display: flex;
     justify-content: start;
     align-items: center;

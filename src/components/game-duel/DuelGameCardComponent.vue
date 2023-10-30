@@ -196,7 +196,6 @@ onMounted(() => {
         >
             {{ cash2P }}
         </div>
-        <p>{{ card.color === 'green' && card.valuePower[0] }}</p>
     </div>
 </template>
 
