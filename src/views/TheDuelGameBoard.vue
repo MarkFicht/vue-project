@@ -7,11 +7,9 @@ import {
     setDoc,
     getDoc,
     updateDoc,
-    deleteDoc,
     arrayRemove,
     arrayUnion,
-    increment,
-    serverTimestamp
+    increment
 } from 'firebase/firestore';
 import db from '@/firebase/index';
 import {
@@ -91,10 +89,10 @@ const debounceEndGame = ref<any>(
     }, endGameTimeRedirect.value * 1000)
 );
 
-const storeDuelGame = duelGameStore();
 const storeGame = gameStore();
 const { duel } = storeToRefs(storeGame);
 
+const storeDuelGame = duelGameStore();
 const {
     tierOneCards,
     tierTwoCards,
@@ -263,10 +261,15 @@ watch(
 );
 
 watch(
-    [() => wonByArt.value, () => wonByAggressive.value, () => wonBySurr.value],
-    async ([artNewVal, aggrNewVal, surNewVal]) => {
+    [
+        () => wonByArt.value,
+        () => wonByAggressive.value,
+        () => wonBySurr.value,
+        () => wonByPoints.value
+    ],
+    async ([artNewVal, aggrNewVal, surNewVal, ptNewVal]) => {
         // TODO - who lose, who win, info players about it + remove db + show last cards for last player + button redirect or redirect after 20s + redirect after refresh(check uid)
-        if (surNewVal !== '' || artNewVal !== '' || aggrNewVal !== '') {
+        if (surNewVal !== '' || artNewVal !== '' || aggrNewVal !== '' || ptNewVal !== '') {
             if (surNewVal !== '') {
                 surNewVal === user.value.uid ? audioWin.value.play() : audioLost.value.play();
             }
@@ -279,39 +282,33 @@ watch(
                 aggrNewVal === user.value.uid ? audioWin.value.play() : audioLost.value.play();
             }
 
-            const playersUid = duel.value.players.map((user) => user.uid);
-
-            await updateDoc(gameStatusDuelRef, {
-                isStarted: false,
-                players: []
-            });
-
-            playersUid.forEach(async (uid) => {
-                await updateDoc(doc(usersRef, uid), {
-                    game: '',
-                    readyToGame: false,
-                    online: 'online',
-                    timestamp: serverTimestamp()
-                });
-            });
-
-            await deleteDoc(tableGameDuelRef);
+            // --- Remove Game from DB
+            await storeGame.deleteGameDuel();
 
             // --- Redirect to game
-            // router.push('/feed');
             debounceEndGame.value();
         }
     }
 );
 
-// ---
-onBeforeMount(async () => {
-    await storeGame.subFirebaseConnect();
+watch([() => endGameAnimationEnd.value], ([newVal]) => {
+    if (newVal) {
+        if (wonByPoints.value === 'draw') {
+            audioWin.value.play();
+        }
+
+        if (wonByPoints.value !== '') {
+            wonByPoints.value === user.value.uid ? audioWin.value.play() : audioLost.value.play();
+        }
+    }
 });
 
+// ---
 onBeforeMount(async () => {
     isLoading.value = true;
     let stopCode = false;
+
+    await storeGame.subFirebaseConnect();
 
     const docGameStatusSnap = await getDoc(gameStatusDuelRef);
 

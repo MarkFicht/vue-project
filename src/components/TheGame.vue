@@ -15,8 +15,7 @@ import {
     arrayRemove,
     arrayUnion,
     increment,
-    serverTimestamp,
-    deleteDoc
+    serverTimestamp
 } from 'firebase/firestore';
 import db from '@/firebase/index';
 import bellNotify from '@/assets/bell-notification.mp3';
@@ -33,7 +32,7 @@ const { colors } = inject<any>('indicatorNavi');
 
 const acceptBtn = ref<string>('Accept');
 const cancelBtn = ref<string>('Cancel');
-const labelRedirect = ref<string>('Redirect to');
+const labelRedirect = ref<string>('Redirect for a few sec to');
 const labelWaiting = ref<string>('Approval');
 
 const storeGame = gameStore();
@@ -52,7 +51,7 @@ const audioBell = ref<HTMLAudioElement>(new Audio(bell));
 const debounceRedirect = ref<any>(
     debounce(function () {
         router.push('/feed/duel-game');
-    }, 2 * 1000)
+    }, 3 * 1000)
 );
 
 // TODO - create other redirections
@@ -79,8 +78,9 @@ watch(
     () => duel.value.isStarted,
     async (newVal) => {
         if (duel.value.isStarted === false) {
-            deleteDoc(tableGameDuelRef);
+            await storeGame.deleteGameDuel();
         }
+
         // --- Redirect to game
         if (
             duel.value.players.find((user) => user.uid === props.currentUser.uid) &&
@@ -104,7 +104,7 @@ onBeforeMount(async () => {
         const isStarted: boolean = statusDuelSnap.data().isStarted;
 
         if (isStarted === false) {
-            deleteDoc(tableGameDuelRef);
+            await storeGame.deleteGameDuel();
         }
 
         if (
@@ -275,7 +275,7 @@ async function cancelInLobby(): Promise<any> {
             :header="'Gems'"
             :currentUser="currentUser"
             :desc="`A board game inspired by a strategy game called 'Splendor'`"
-            video="'IN PROGRESS - Video soon!'"
+            video="Video soon!"
             :color="colors[1]"
             :route-to="'/feed/splendor-game'"
             :max-players="0"
@@ -284,7 +284,7 @@ async function cancelInLobby(): Promise<any> {
             :header="'Reflex'"
             :currentUser="currentUser"
             :desc="`Game written from 0 in canvasJS. Cooperation against zombies`"
-            video="'IN PROGRESS - Video soon!'"
+            video="Video soon!"
             :color="colors[2]"
             :route-to="'/feed/reflex-game'"
             :max-players="0"

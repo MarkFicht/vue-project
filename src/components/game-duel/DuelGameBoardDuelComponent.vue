@@ -154,7 +154,7 @@ const { isMyTurn } = toRefs(props);
 .boardCoins {
     position: absolute;
     height: var(--board-height);
-    width: 19.5%;
+    width: 26%;
     height: 54%;
     top: 23%;
     left: 58%;
@@ -197,7 +197,7 @@ const { isMyTurn } = toRefs(props);
     content: '';
     position: absolute;
     top: -3px;
-    left: -2px;
+    left: -1px;
     width: 41px;
     height: 19px;
     border: 3px double tomato;

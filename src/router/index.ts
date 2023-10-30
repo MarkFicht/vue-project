@@ -30,14 +30,6 @@ const router = createRouter({
             }
         },
         {
-            path: '/feed/reflex-game',
-            name: 'reflex',
-            component: () => import('../views/FeedPanel.vue'),
-            meta: {
-                requiresAuth: true
-            }
-        },
-        {
             path: '/feed/duel-game',
             name: 'duel',
             component: () => import('../views/TheDuelGameBoard.vue'),
@@ -48,6 +40,14 @@ const router = createRouter({
         {
             path: '/feed/gems-game',
             name: 'gems',
+            component: () => import('../views/FeedPanel.vue'),
+            meta: {
+                requiresAuth: true
+            }
+        },
+        {
+            path: '/feed/reflex-game',
+            name: 'reflex',
             component: () => import('../views/FeedPanel.vue'),
             meta: {
                 requiresAuth: true

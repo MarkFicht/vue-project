@@ -160,14 +160,8 @@ const checkWhoWin = () => {
         clearInterval(mainTimer);
         if (allPointsP1.value > allPointsP2.value) {
             focusOn.value = 9;
-            user.value.uid === player1.value.user.uid
-                ? audioWin.value.play()
-                : audioLost.value.play();
         } else if (allPointsP1.value < allPointsP2.value) {
             focusOn.value = 10;
-            user.value.uid === player2.value.user.uid
-                ? audioWin.value.play()
-                : audioLost.value.play();
         } else if (allPointsP1.value === allPointsP2.value) {
             focusOn.value = 11;
 
@@ -176,14 +170,8 @@ const checkWhoWin = () => {
 
                 if (p1Blue.value > p2Blue.value) {
                     focusOn.value = 12;
-                    user.value.uid === player1.value.user.uid
-                        ? audioWin.value.play()
-                        : audioLost.value.play();
                 } else if (p2Blue.value > p1Blue.value) {
                     focusOn.value = 13;
-                    user.value.uid === player2.value.user.uid
-                        ? audioWin.value.play()
-                        : audioLost.value.play();
                 }
             }, 777);
         }

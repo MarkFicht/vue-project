@@ -252,9 +252,9 @@ export const duelGameStore = defineStore('duelGameStore', {
                         await updateDoc(tableGameDuelRef, {
                             'gameBoard.pawn': increment(-1)
                         });
-                        index++;
-                        index >= howManyMovePawn && clearInterval(timer);
                     }
+                    index++;
+                    index >= howManyMovePawn && clearInterval(timer);
                 }, 333);
             } else {
                 const timer = setInterval(async () => {
@@ -291,9 +291,9 @@ export const duelGameStore = defineStore('duelGameStore', {
                         await updateDoc(tableGameDuelRef, {
                             'gameBoard.pawn': increment(1)
                         });
-                        index++;
-                        index >= howManyMovePawn && clearInterval(timer);
                     }
+                    index++;
+                    index >= howManyMovePawn && clearInterval(timer);
                 }, 333);
             }
         },
@@ -483,7 +483,6 @@ export const duelGameStore = defineStore('duelGameStore', {
 
                 // --- coin: cash back
                 if (cash > 0 && this.player2.resources.coins.find((coin) => coin === 'cashBack')) {
-                    console.log('%c cash -> ', 'background: #222; color: #bada55', cash);
                     let cashBack = cash;
 
                     cardToTake.cost.find((cost, i) => {
@@ -493,7 +492,6 @@ export const duelGameStore = defineStore('duelGameStore', {
                         } else return false;
                     });
 
-                    console.log('%c cash -> ', 'background: #222; color: #bada55', cash);
                     updateDoc(tableGameDuelRef, {
                         'player2.resources.cash': increment(cashBack)
                     });

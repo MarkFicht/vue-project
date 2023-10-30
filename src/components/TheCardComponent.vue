@@ -78,7 +78,7 @@ watch(
 
 <template>
     <div :class="['card']" :style="`${color}`">
-        <div class="box"></div>
+        <div class="box">{{ video }}</div>
         <div class="box">
             <h2>{{ game.id }}</h2>
             <p>{{ desc }}</p>

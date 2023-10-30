@@ -4,15 +4,21 @@ import {
     collection,
     doc,
     updateDoc,
+    deleteDoc,
     onSnapshot,
-    increment,
-    arrayUnion,
-    arrayRemove
+    serverTimestamp
 } from 'firebase/firestore';
 import type IUser from '@/interfaces/User';
 
+const usersRef = collection(db, 'users');
+
 const gameStatusRef = collection(db, 'gameStatus');
-const statusGameDuelRef = doc(gameStatusRef, 'Duel');
+const gameStatusDuelRef = doc(gameStatusRef, 'Duel');
+
+// --- Duel Game Ref
+const gameDuelRef = collection(db, 'gameDuel');
+const tableGameDuelRef = doc(gameDuelRef, 'table1');
+
 let unSubFirebaseStatusDuel: any;
 
 export interface IGameStore {
@@ -49,7 +55,7 @@ export const gameStore = defineStore('gameStore', {
     actions: {
         async subFirebaseConnect() {
             // firebase - set game
-            unSubFirebaseStatusDuel = await onSnapshot(statusGameDuelRef, (doc) => {
+            unSubFirebaseStatusDuel = await onSnapshot(gameStatusDuelRef, (doc) => {
                 if (doc.exists()) {
                     const { isStarted, players } = doc.data();
                     this.duel.isStarted = isStarted;
@@ -60,6 +66,27 @@ export const gameStore = defineStore('gameStore', {
         },
         unSubFirebaseConnect() {
             unSubFirebaseStatusDuel();
+        },
+        async deleteGameDuel(): Promise<void> {
+            const playersUid = this.duel.players.map((user) => user);
+
+            await updateDoc(gameStatusDuelRef, {
+                isStarted: false,
+                players: []
+            });
+
+            playersUid.forEach(async ({ uid, game }) => {
+                if (game === 'Duel') {
+                    await updateDoc(doc(usersRef, uid), {
+                        game: '',
+                        readyToGame: false,
+                        online: 'online',
+                        timestamp: serverTimestamp()
+                    });
+                }
+            });
+
+            await deleteDoc(tableGameDuelRef);
         }
     }
 });

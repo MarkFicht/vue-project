@@ -146,7 +146,13 @@ function countArtefacts(uid: string): number {
                     small
                 />
             </div>
-            <div :class="['playerCardColorContainer', 'playerCard6', wonByArt !== '' && 'artWin']">
+            <div
+                :class="[
+                    'playerCardColorContainer',
+                    'playerCard6',
+                    wonByArt !== '' && wonByArt === player1.user.uid && 'artWin'
+                ]"
+            >
                 <div class="countArt">
                     {{ countArtefacts(`${player1.user.uid}`) + '/6' }}
                 </div>
@@ -298,7 +304,13 @@ function countArtefacts(uid: string): number {
                     small
                 />
             </div>
-            <div :class="['playerCardColorContainer', 'playerCard6', wonByArt !== '' && 'artWin']">
+            <div
+                :class="[
+                    'playerCardColorContainer',
+                    'playerCard6',
+                    wonByArt !== '' && wonByArt === player2.user.uid && 'artWin'
+                ]"
+            >
                 <div class="countArt">
                     {{ countArtefacts(`${player2.user.uid}`) + '/6' }}
                 </div>
