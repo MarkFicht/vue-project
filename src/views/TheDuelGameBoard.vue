@@ -234,7 +234,7 @@ watch(
             isLoading.value = false;
         }
 
-        if (move.value >= 40 && move.value <= 60) {
+        if (move.value >= 40 && move.value < 60) {
             isLoading.value = true;
 
             await updateDoc(tableGameDuelRef, {
@@ -1112,8 +1112,8 @@ async function prepareGameToRemoveFromDB(user: IUser): Promise<void> {
             </div>
 
             <DuelGameBoardDuelComponent
-                :isMyTurn="isMyTurn"
                 :user="user"
+                :isMyTurn="isMyTurn"
                 @coin-selected="coinSelected"
             />
 
@@ -1129,8 +1129,8 @@ async function prepareGameToRemoveFromDB(user: IUser): Promise<void> {
 
             <DuelGamePlayersResComponent
                 :user="user"
-                :selectWonderCard="selectWonderCard"
                 :isMyTurn="isMyTurn"
+                :selectWonderCard="selectWonderCard"
                 @destrooy-enemy-card-selected="destrooyEnemyCardSelected"
             />
 
@@ -1293,7 +1293,7 @@ async function prepareGameToRemoveFromDB(user: IUser): Promise<void> {
             </section>
 
             <!-- MAIN CONTAINER FOR END GAME -->
-            <DuelGameEndGameComponent class="cards" v-if="tier === 'end'" />
+            <DuelGameEndGameComponent class="cards" v-if="tier === 'end'" :user="user" />
 
             <!-- ACTIONS -->
             <section v-if="actionForCards && selectedCard?.id && !isLoading" class="playerAction">

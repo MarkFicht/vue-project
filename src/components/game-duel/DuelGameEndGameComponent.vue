@@ -1,17 +1,30 @@
 <script setup lang="ts">
 import type { IGameDuelCoin, IGameDuelPlayer } from '@/interfaces/GameDuel';
-import type IUser from '@/interfaces/User';
 import { duelGameStore } from '@/store/duelGameStore';
 import { storeToRefs } from 'pinia';
 import { onBeforeMount, ref, toRefs, watch } from 'vue';
+import soundWin from '@/assets/win.mp3';
+import soundLost from '@/assets/lost.mp3';
+import type IUser from '@/interfaces/User';
 
 const storeDuelGame = duelGameStore();
 const { player1, player2, tier, board } = storeToRefs(storeDuelGame);
 
+const props = defineProps<{
+    user: IUser;
+}>();
+const { user } = toRefs(props);
+
 // ---
 const allPointsP1 = ref<number>(0);
 const allPointsP2 = ref<number>(0);
+const startAnimation = ref<boolean>(false);
 const focusOn = ref<number>(0);
+
+const audioWin = ref<HTMLAudioElement>(new Audio(soundWin));
+const audioLost = ref<HTMLAudioElement>(new Audio(soundLost));
+audioWin.value.volume = 0.66;
+audioLost.value.volume = 0.66;
 
 const p1Wonder = ref<number>(0);
 const p1Blue = ref<number>(0);
@@ -48,7 +61,7 @@ watch(
     }
 );
 
-watch([() => p1Cash.value, () => p2Cash.value], () => {
+watch([() => startAnimation.value], () => {
     startCountingPointsCash();
 });
 
@@ -84,7 +97,7 @@ const startCountingPointsPurple = () => {
                     focusOn.value = 3;
                     p1PurpleDisplay.value++;
                     allPointsP1.value++;
-                } else if (p2PurpleDisplay.value < p1Purple.value) {
+                } else if (p2PurpleDisplay.value < p2Purple.value) {
                     focusOn.value = 4;
                     p2PurpleDisplay.value++;
                     allPointsP2.value++;
@@ -141,8 +154,14 @@ const checkWhoWin = () => {
         clearInterval(mainTimer);
         if (allPointsP1.value > allPointsP2.value) {
             focusOn.value = 9;
+            user.value.uid === player1.value.user.uid
+                ? audioWin.value.play()
+                : audioLost.value.play();
         } else if (allPointsP1.value < allPointsP2.value) {
             focusOn.value = 10;
+            user.value.uid === player2.value.user.uid
+                ? audioWin.value.play()
+                : audioLost.value.play();
         } else if (allPointsP1.value === allPointsP2.value) {
             focusOn.value = 11;
 
@@ -151,8 +170,14 @@ const checkWhoWin = () => {
 
                 if (p1Blue.value > p2Blue.value) {
                     focusOn.value = 12;
+                    user.value.uid === player1.value.user.uid
+                        ? audioWin.value.play()
+                        : audioLost.value.play();
                 } else if (p2Blue.value > p1Blue.value) {
                     focusOn.value = 13;
+                    user.value.uid === player2.value.user.uid
+                        ? audioWin.value.play()
+                        : audioLost.value.play();
                 }
             }, 777);
         }
@@ -196,6 +221,8 @@ const initPoints = () => {
         (board.value.pawn >= 3 && 5) ||
         (board.value.pawn >= 1 && 2) ||
         0;
+
+    startAnimation.value = true;
 
     // TODO - ADD who win to fb - here - before all animation
     // TODO - add redirection + button redirect
@@ -252,7 +279,7 @@ const countPointsFromPurple = (valPowPurple: number[]): number => {
             const b = player2.value.cards.green.length;
             points += a > b ? a : b;
         }
-        if (purplePow === 1) {
+        if (purplePow === 6) {
             const a = Math.floor(player1.value.resources.cash / 3);
             const b = Math.floor(player2.value.resources.cash / 3);
             points += a > b ? a : b;
@@ -291,55 +318,55 @@ const countPointsFromCoins = (coins: IGameDuelCoin['effect'][]): number => {
 
         <div class="containerPoints customInput">
             <div class="wonderPoints">
-                <div class="wonderCard"></div>
+                <div class="cashSum wonderCard"></div>
                 <p>
                     {{ `${p1Wonder}` }}
                 </p>
             </div>
             <div class="bluePoints">
-                <div class="blueCard"></div>
+                <div class="cashSum blueCard"></div>
                 <p :class="[focusOn === 12 && 'animatePulse']">
                     {{ `${p1Blue}` }}
                 </p>
             </div>
             <div class="yellowPoints">
-                <div class="yellowCard"></div>
+                <div class="cashSum yellowCard"></div>
                 <p>
                     {{ `${p1Yellow}` }}
                 </p>
             </div>
             <div class="greenPoints">
-                <div class="greenCard"></div>
+                <div class="cashSum greenCard"></div>
                 <p>
                     {{ `${p1Green}` }}
                 </p>
             </div>
             <div class="cashPoints">
-                <div class="cashCard"></div>
+                <div class="cashSum cashCard"></div>
                 <p :class="[focusOn === 1 && 'scalePlus']">
                     {{ `${p1CashDisplay}` }}
                 </p>
             </div>
             <div class="purplePoints">
-                <div class="purpleCard"></div>
+                <div class="cashSum purpleCard"></div>
                 <p :class="[focusOn === 3 && 'scalePlus']">
                     {{ `${p1PurpleDisplay}` }}
                 </p>
             </div>
             <div class="coinsPoints">
-                <div class="miniCoin"></div>
+                <div class="cashSum miniCoin"></div>
                 <p :class="[focusOn === 5 && 'scalePlus']">
                     {{ `${p1CoinDisplay}` }}
                 </p>
             </div>
             <div class="pawnPoints">
-                <div class="attackImg"></div>
+                <div class="cashSum attackImg"></div>
                 <p :class="[focusOn === 7 && 'scalePlus']">
                     {{ `${p1AttackDisplay}` }}
                 </p>
             </div>
             <div class="sumPoints">
-                <div class="pointsImg"></div>
+                <div class="cashSum pointsImg"></div>
                 <p :class="[(focusOn === 9 || focusOn >= 11) && 'animatePulse']">
                     {{ `${allPointsP1}` }}
                 </p>
@@ -358,55 +385,55 @@ const countPointsFromCoins = (coins: IGameDuelCoin['effect'][]): number => {
 
         <div class="containerPoints customInput">
             <div class="wonderPoints">
-                <div class="wonderCard"></div>
+                <div class="cashSum wonderCard"></div>
                 <p>
                     {{ `${p2Wonder}` }}
                 </p>
             </div>
             <div class="bluePoints">
-                <div class="blueCard"></div>
+                <div class="cashSum blueCard"></div>
                 <p :class="[focusOn === 13 && 'animatePulse']">
                     {{ `${p2Blue}` }}
                 </p>
             </div>
             <div class="yellowPoints">
-                <div class="yellowCard"></div>
+                <div class="cashSum yellowCard"></div>
                 <p>
                     {{ `${p2Yellow}` }}
                 </p>
             </div>
             <div class="greenPoints">
-                <div class="greenCard"></div>
+                <div class="cashSum greenCard"></div>
                 <p>
                     {{ `${p2Green}` }}
                 </p>
             </div>
             <div class="cashPoints">
-                <div class="cashCard"></div>
+                <div class="cashSum cashCard"></div>
                 <p :class="[focusOn === 2 && 'scalePlus']">
                     {{ `${p2CashDisplay}` }}
                 </p>
             </div>
             <div class="purplePoints">
-                <div class="purpleCard"></div>
+                <div class="cashSum purpleCard"></div>
                 <p :class="[focusOn === 4 && 'scalePlus']">
                     {{ `${p2PurpleDisplay}` }}
                 </p>
             </div>
             <div class="coinsPoints">
-                <div class="miniCoin"></div>
+                <div class="cashSum miniCoin"></div>
                 <p :class="[focusOn === 6 && 'scalePlus']">
                     {{ `${p2CoinDisplay}` }}
                 </p>
             </div>
             <div class="pawnPoints">
-                <div class="attackImg"></div>
+                <div class="cashSum attackImg"></div>
                 <p :class="[focusOn === 8 && 'scalePlus']">
                     {{ `${p2AttackDisplay}` }}
                 </p>
             </div>
             <div class="sumPoints">
-                <div class="pointsImg"></div>
+                <div class="cashSum pointsImg"></div>
                 <p :class="[(focusOn === 10 || focusOn >= 11) && 'animatePulse']">
                     {{ `${allPointsP2}` }}
                 </p>
@@ -490,76 +517,73 @@ const countPointsFromCoins = (coins: IGameDuelCoin['effect'][]): number => {
 
 /* --- Imgs --- */
 .wonderCard {
-    height: 12px;
-    width: 9px;
-    border: 1px solid;
-    border-radius: 2px;
-    margin: 0 1px;
-    background-color: tomato;
+    height: 17px;
+    width: 20px;
+    left: 11px;
+    background-size: 124px 124px;
+    background-position: -86px -82px;
+    border-radius: 0;
 }
 .blueCard {
-    height: 12px;
-    width: 9px;
-    border: 1px solid;
-    border-radius: 2px;
-    margin: 0 1px;
-    background-color: blue;
+    height: 16px;
+    width: 15px;
+    background-size: 124px 124px;
+    left: 12px;
+    background-position: -103px -3px;
+    border-radius: 0;
 }
 .yellowCard {
-    height: 12px;
-    width: 9px;
-    border: 1px solid;
-    border-radius: 2px;
-    margin: 0 1px;
-    background-color: yellow;
+    height: 16px;
+    width: 15px;
+    background-size: 124px 124px;
+    left: 12px;
+    background-position: -66px -3px;
+    border-radius: 0;
 }
 .greenCard {
-    height: 12px;
-    width: 9px;
-    border: 1px solid;
-    border-radius: 2px;
-    margin: 0 1px;
-    background-color: green;
+    height: 16px;
+    width: 15px;
+    background-size: 124px 124px;
+    left: 12px;
+    background-position: -88px -47px;
+    border-radius: 0;
 }
 .cashCard {
-    height: 12px;
-    width: 9px;
-    border: 1px solid;
-    border-radius: 2px;
-    margin: 0 1px;
-    background-color: gold;
+    height: 17px;
+    width: 17px;
+    left: 11px;
 }
 .purpleCard {
-    height: 12px;
-    width: 9px;
-    border: 1px solid;
-    border-radius: 2px;
-    margin: 0 1px;
-    background-color: purple;
+    height: 16px;
+    width: 15px;
+    background-size: 124px 124px;
+    left: 12px;
+    background-position: -102px -47px;
+    border-radius: 0;
 }
 .miniCoin {
-    height: 9px;
-    width: 9px;
-    border: 1px solid;
-    border-radius: 50%;
-    margin: 0 1px;
-    background-color: green;
+    height: 16px;
+    width: 16px;
+    background-size: 91px 91px;
+    left: 12px;
+    background-position: 0px -60px;
+    border-radius: 0;
 }
 .attackImg {
-    height: 9px;
-    width: 9px;
-    border: 1px solid;
-    border-radius: 50%;
-    margin: 0 1px;
-    background-color: red;
+    height: 16px;
+    width: 15px;
+    background-size: 91px 91px;
+    left: 12px;
+    background-position: -32px -60px;
+    border-radius: 0;
 }
 .pointsImg {
-    height: 9px;
-    width: 9px;
-    border: 1px solid;
-    border-radius: 50%;
-    margin: 0 1px;
-    background-color: red;
+    height: 16px;
+    width: 16px;
+    background-size: 91px 91px;
+    left: 12px;
+    background-position: -47px -60px;
+    border-radius: 0;
 }
 
 /* --- --- */
