@@ -58,7 +58,7 @@ const { isMyTurn } = toRefs(props);
 
 <style scoped>
 .duel {
-    --board-width: 200px;
+    --board-width: 150px;
     --board-height: calc(350px + 10px);
 
     grid-area: duel;
@@ -80,7 +80,7 @@ const { isMyTurn } = toRefs(props);
     height: var(--board-height);
     width: 10%;
     top: 0;
-    left: 28%;
+    left: 23.9%;
     transition: 0.5s;
 }
 .punishment div {
@@ -129,7 +129,7 @@ const { isMyTurn } = toRefs(props);
     height: var(--board-height);
     width: 14%;
     top: 0;
-    left: 39.5%;
+    left: 35.9%;
     transition: 0.5s;
 }
 .pawn {
@@ -157,7 +157,7 @@ const { isMyTurn } = toRefs(props);
     width: 19.5%;
     height: 54%;
     top: 23%;
-    left: 56%;
+    left: 58%;
     transition: 0.5s;
     border: 3px dotted transparent;
 }

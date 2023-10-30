@@ -407,7 +407,7 @@ function countArtefacts(uid: string): number {
 /* Players res, points, coins, cash, etc.. background */
 .playerPointsContainer {
     height: 100%;
-    width: 200px;
+    width: 150px;
     border-radius: 10px;
     box-shadow:
         inset 5px 5px 10px rgba(0, 0, 0, 0.1),
@@ -427,12 +427,12 @@ function countArtefacts(uid: string): number {
     width: 100%;
 }
 .playerResContainer > p {
-    height: 24px;
+    height: 22px;
     width: 100%;
-    line-height: 24px;
+    line-height: 22px;
     margin: 0;
-    padding: 0 20px;
-    font-size: 0.9em;
+    padding: 0 12px;
+    font-size: 0.85em;
     display: flex;
     justify-content: start;
     align-items: center;
@@ -459,14 +459,14 @@ function countArtefacts(uid: string): number {
 }
 .animateHand {
     position: absolute;
-    top: 49px;
-    left: 40px;
+    top: 46px;
+    left: 18px;
     margin-left: 5px;
     animation: animateHand 1s infinite ease-in-out;
 }
 .playerCoins {
     height: 50px;
-    width: 170px;
+    width: 130px;
     margin: 10px auto 0;
     display: flex;
     justify-content: center;

@@ -25,7 +25,7 @@ const surrenderPrepare = ref<boolean>(false);
 </script>
 
 <template>
-    <section class="playerInfo">
+    <section class="playerInfoContainer">
         <!-- ACTION: Surrender -->
         <div v-if="surrenderPrepare" class="surrenderPopUp">
             <p>{{ labelSurrender }}</p>
@@ -53,7 +53,7 @@ const surrenderPrepare = ref<boolean>(false);
         <!-- PLAYERS INFO -->
         <div :class="['player1info', 'customInput', turn === player1.user.uid && 'boldParagraf']">
             <p>
-                {{ `Nick: ${player1.user.displayName || player1.user.email}` }}
+                {{ `${player1.user.displayName || player1.user.email}` }}
             </p>
             <p>
                 {{ `Timer: ${player1Time}` }}
@@ -71,7 +71,7 @@ const surrenderPrepare = ref<boolean>(false);
         </div>
         <div :class="['player2info', 'customInput', turn === player2.user.uid && 'boldParagraf']">
             <p>
-                {{ `Nick: ${player2.user.displayName || player2.user.email}` }}
+                {{ `${player2.user.displayName || player2.user.email}` }}
             </p>
             <p>
                 {{ `Timer: ${player2Time}` }}
@@ -91,11 +91,6 @@ const surrenderPrepare = ref<boolean>(false);
 </template>
 
 <style scoped>
-.playerInfo {
-    grid-area: pi;
-    margin: 0 auto;
-    width: 100%;
-}
 .surrenderPopUp {
     position: fixed !important;
     top: 50%;
@@ -133,30 +128,41 @@ const surrenderPrepare = ref<boolean>(false);
 .surrenderPopUp button:first-child {
     color: #efefef;
 }
-.playerInfo > div {
+/* --- player info --- */
+.playerInfoContainer {
+    grid-area: pi;
+    margin: 0 auto;
+    width: 100%;
+}
+.playerInfoContainer > div {
     position: relative;
     height: 120px;
-    margin-bottom: 15px;
+    margin-bottom: 10px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-direction: column;
     padding: 15px 25px !important;
-    font-size: 0.9em;
+    font-size: 0.88em;
     letter-spacing: 0.02em;
 }
-.playerInfo button {
+.playerInfoContainer button {
     font-size: 1em;
     line-height: 30px;
+    margin-bottom: 5px;
     height: 30px;
     padding: 0 15px !important;
     font-weight: 600;
     letter-spacing: 1px;
 }
+.player1info p:nth-child(2),
+.player2info p:nth-child(2) {
+    margin-bottom: 10px;
+}
 .animateHand {
     position: absolute;
-    top: 47px;
-    left: 28px;
+    top: 41px;
+    left: 27px;
     margin-left: 5px;
     animation: animateHand 1s infinite ease-in-out;
 }

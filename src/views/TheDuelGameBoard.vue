@@ -1478,7 +1478,7 @@ h1 {
 /* --- Main Wrapper --- */
 section.wrapper {
     position: relative;
-    width: 1050px;
+    width: 1000px;
     height: 720px;
     padding: 10px;
     margin: 0 auto;
@@ -1493,7 +1493,7 @@ section.wrapper {
         '.    card duel pi  '
         '.    act  duel grv '
         'w1   p1   p1   grv ';
-    grid-template-columns: 220px 410px 200px 170px;
+    grid-template-columns: 220px 410px 150px 170px;
     grid-template-rows: 160px 300px 50px 160px;
     background-color: #eee;
     animation: showElement 2s linear;
