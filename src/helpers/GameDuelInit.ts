@@ -495,7 +495,7 @@ cardsTierTwo = [
         taken: 'inGame',
         hide: false,
         color: 'green',
-        valueCost: [2, 1],
+        valueCost: [1, 2],
         cost: ['wood', 'paper'],
         valuePower: [3, 1, 12],
         power: ['artefact', 'points', 'specialChar']
@@ -506,7 +506,7 @@ cardsTierTwo = [
         taken: 'inGame',
         hide: false,
         color: 'green',
-        valueCost: [2, 1],
+        valueCost: [1, 2],
         cost: ['wood', 'glass'],
         valuePower: [4, 1, 13],
         power: ['artefact', 'points', 'specialChar']
