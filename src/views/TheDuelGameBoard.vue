@@ -661,13 +661,23 @@ const coinSelectedOfThree = async (coin: IGameDuelCoin['effect']) => {
 
     if (wonByArt.value === '' && wonByAggressive.value === '' && pickCoinOfThree.value === '') {
         if (turn.value === player1.value.user.uid) {
-            if (player1.value.resources.coins.find((coin) => coin === 'repeatWonder')) {
+            if (coin === 'repeatWonder') {
+                storeDuelGame.upgradeTurnAndMove(`${player2.value.user.uid}`);
+            } else if (
+                player1.value.resources.coins.find((coin) => coin === 'repeatWonder') &&
+                (move.value + 1 !== 20 || move.value + 1 !== 40)
+            ) {
                 storeDuelGame.upgradeTurnAndMove(`${player1.value.user.uid}`);
             } else {
                 storeDuelGame.upgradeTurnAndMove(`${player2.value.user.uid}`);
             }
         } else {
-            if (player2.value.resources.coins.find((coin) => coin === 'repeatWonder')) {
+            if (coin === 'repeatWonder') {
+                storeDuelGame.upgradeTurnAndMove(`${player1.value.user.uid}`);
+            } else if (
+                player2.value.resources.coins.find((coin) => coin === 'repeatWonder') &&
+                (move.value + 1 !== 20 || move.value + 1 !== 40)
+            ) {
                 storeDuelGame.upgradeTurnAndMove(`${player2.value.user.uid}`);
             } else {
                 storeDuelGame.upgradeTurnAndMove(`${player1.value.user.uid}`);

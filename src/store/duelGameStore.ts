@@ -805,7 +805,8 @@ export const duelGameStore = defineStore('duelGameStore', {
                             })
                         });
                     }
-                    this.player1.resources.coins.find((coin) => coin === 'repeatWonder')
+                    this.player1.resources.coins.find((coin) => coin === 'repeatWonder') &&
+                    (this.move + 1 !== 20 || this.move + 1 !== 40)
                         ? this.upgradeTurnAndMove(`${this.player1.user.uid}`)
                         : this.upgradeTurnAndMove(`${this.player2.user.uid}`);
                 } else {
@@ -854,7 +855,8 @@ export const duelGameStore = defineStore('duelGameStore', {
                             })
                         });
                     }
-                    this.player2.resources.coins.find((coin) => coin === 'repeatWonder')
+                    this.player2.resources.coins.find((coin) => coin === 'repeatWonder') &&
+                    (this.move + 1 !== 20 || this.move + 1 !== 40)
                         ? this.upgradeTurnAndMove(`${this.player2.user.uid}`)
                         : this.upgradeTurnAndMove(`${this.player1.user.uid}`);
                 }
