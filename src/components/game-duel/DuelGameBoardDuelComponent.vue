@@ -190,7 +190,7 @@ const { isMyTurn } = toRefs(props);
     border: 3px dotted tomato;
     border-top-right-radius: 15px;
     border-bottom-right-radius: 15px;
-    animation: pulseBorder 1.5s ease-in-out infinite;
+    animation: pulseBorder 1.5s 1.5s ease-in-out infinite;
 }
 
 .pawnWin::after {

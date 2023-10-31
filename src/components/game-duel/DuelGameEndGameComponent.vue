@@ -57,20 +57,24 @@ const p2CoinDisplay = ref<number>(0);
 const p2Attack = ref<number>(0);
 const p2AttackDisplay = ref<number>(0);
 
-watch(
-    () => tier.value,
-    async () => {
-        if (tier.value === 'end') {
-            initPoints();
-            await setWonByPoints();
-        }
+// --- Watchers --- //
+watch(tier, async () => {
+    if (tier.value === 'end') {
+        initPoints();
+        await setWonByPoints();
     }
-);
-
+});
 watch([() => startAnimation.value], () => {
     startCountingPointsCash();
 });
 
+// --- Component Life Cycle --- //
+onBeforeMount(async () => {
+    initPoints();
+    await setWonByPoints();
+});
+
+// --- Functions --- //
 const startCountingPointsCash = () => {
     if (p1Cash.value === 0 && p2Cash.value === 0) {
         startCountingPointsPurple();
@@ -180,12 +184,7 @@ const checkWhoWin = () => {
     endGameAnimationEnd.value = true;
 };
 
-// ---
-onBeforeMount(async () => {
-    initPoints();
-    await setWonByPoints();
-});
-
+// --- Flow game
 const initPoints = () => {
     p1Wonder.value = countPointsWonders(player1.value.wonderCards);
     p1Blue.value = countPointsCards(player1.value.cards.blue);

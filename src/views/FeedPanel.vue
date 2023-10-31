@@ -1,17 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref, provide } from 'vue';
 import { getCurrentUser } from '@/helpers/HelpersFoo';
-import {
-    collection,
-    doc,
-    setDoc,
-    getDoc,
-    updateDoc,
-    arrayRemove,
-    arrayUnion,
-    increment,
-    serverTimestamp
-} from 'firebase/firestore';
+import { collection, doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import db from '@/firebase/index';
 import { useRouter } from 'vue-router';
 import type IRouteIndicatorNavi from '@/interfaces/RouteIndicatorNavi';

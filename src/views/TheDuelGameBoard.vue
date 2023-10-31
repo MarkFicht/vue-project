@@ -23,10 +23,10 @@ import {
     tierTwoY,
     tierThreeX,
     tierThreeY,
-    prepareIdForCards,
     cardsWonder,
     coins
-} from '../helpers/GameDuelInit';
+} from '@/helpers/GameDuelInit';
+import { prepareIdForCards, showPrice } from '@/helpers/GameDuelHelpersFoo';
 import { getCountRandomObjFromArr } from '@/helpers/HelpersFoo';
 import LoadingSpinner from '@/components/LoadingSpinner.vue';
 import DuelGameLayOutTiersComponent from '@/components/game-duel/DuelGameLayOutTiersComponent.vue';
@@ -55,7 +55,6 @@ import bell from '@/assets/bell.mp3';
 import soundWin from '@/assets/win.mp3';
 import soundLost from '@/assets/lost.mp3';
 
-provide('showPrice', showPrice);
 provide('wonderCardSelected', wonderCardSelected);
 
 const headerGameDuel = ref<string>('Duel Game');
@@ -88,6 +87,9 @@ const debounceEndGame = ref<any>(
         router.push('/feed');
     }, endGameTimeRedirect.value * 1000)
 );
+
+const actionForCards = ref<boolean>(false);
+const selectWonderCard = ref<boolean>(false);
 
 const storeGame = gameStore();
 const { duel } = storeToRefs(storeGame);
@@ -123,6 +125,7 @@ const {
     isLoading,
     endGameAnimationEnd
 } = storeToRefs(storeDuelGame);
+
 const usersRef = collection(db, 'users');
 
 const gameStatusRef = collection(db, 'gameStatus');
@@ -134,14 +137,13 @@ const tableGameDuelRef = doc(gameDuelRef, 'table1');
 const user = ref<IUser>({} as IUser);
 const router = useRouter();
 
-const actionForCards = ref<boolean>(false);
-const selectWonderCard = ref<boolean>(false);
-
+// --- Computed --- //
 const isMyTurn = computed((): boolean => {
     return turn.value === user.value.uid;
 });
 
 const isSecondPick = computed((): boolean => {
+    // TODO - fixed animation + pending with 'taken' key
     return (
         wonderCards.value[0]?.taken &&
         wonderCards.value[1]?.taken &&
@@ -156,8 +158,7 @@ const canBuyTierCard = computed((): number => {
 });
 
 const canBuyWonderCard = computed((): boolean => {
-    if (!isMyTurn.value) return false;
-    if (!selectedCard.value.id) return false;
+    if (!isMyTurn.value || !selectedCard.value.id) return false;
 
     if (user.value.uid === player1.value.user.uid) {
         if (!player1.value.wonderCards.find((wc) => wc.activated === 'none')) return false;
@@ -186,80 +187,61 @@ const canBuyWonderCard = computed((): boolean => {
     }
 });
 
+// --- Watchers --- //
 watch([() => selectedWonder.value, () => selectedCard.value], () => {
-    if (!selectedWonder.value?.id || !selectedCard.value?.id) {
-        selectWonderCard.value = false;
+    if (!selectedWonder.value?.id || !selectedCard.value?.id) selectWonderCard.value = false;
+});
+watch([() => player2.value.wonderCards], async () => {
+    isLoading.value = true;
+    player2.value.wonderCards.length === 4 &&
+        move.value === 0 &&
+        (await updateDoc(tableGameDuelRef, {
+            tier: 'I'
+        }),
+        (actionForCards.value = true));
+    isLoading.value = false;
+});
+watch([() => selectWondersForPlayersMove.value], async ([newVal]) => {
+    // Pick auto for 4th and 8th card
+    if ((newVal === 3 || newVal === 7) && isMyTurn.value) {
+        const LastCard = wonderCards.value.find((card) => card.taken === false);
+        LastCard && (await chooseWonderForPlayer(LastCard.id));
     }
 });
-watch(
-    () => player2.value.wonderCards,
-    async () => {
+
+// --- Flow game
+watch(move, async () => {
+    actionForCards.value = true;
+
+    isMyTurn.value && audioBell.value.play();
+
+    if (move.value >= 20 && move.value < 40) {
         isLoading.value = true;
-        player2.value.wonderCards.length === 4 &&
-            move.value === 0 &&
-            (await updateDoc(tableGameDuelRef, {
-                tier: 'I'
-            }),
-            (actionForCards.value = true));
+
+        await updateDoc(tableGameDuelRef, { tier: 'II' });
+        if (chooseWhoWillStart.value && isMyTurn.value) actionForCards.value = false;
+
         isLoading.value = false;
     }
-);
-watch(
-    () => selectWondersForPlayersMove.value,
-    async (newVal) => {
-        // Pick auto for 4th and 8th card
-        if (newVal === 3 || newVal === 7) {
-            const LastCard = wonderCards.value.find((card) => card.taken === false);
-            LastCard && (await chooseWonderForPlayer(LastCard.id));
-        }
+
+    if (move.value >= 40 && move.value < 60) {
+        isLoading.value = true;
+
+        await updateDoc(tableGameDuelRef, { tier: 'III' });
+        if (chooseWhoWillStart.value && isMyTurn.value) actionForCards.value = false;
+
+        isLoading.value = false;
     }
-);
 
-watch(
-    () => move.value,
-    async () => {
-        actionForCards.value = true;
+    if (move.value === 60) {
+        isLoading.value = true;
 
-        turn.value === user.value.uid && audioBell.value.play();
+        actionForCards.value = false;
+        await updateDoc(tableGameDuelRef, { tier: 'end' });
 
-        if (move.value >= 20 && move.value < 40) {
-            isLoading.value = true;
-
-            await updateDoc(tableGameDuelRef, {
-                tier: 'II'
-            });
-
-            if (chooseWhoWillStart.value && isMyTurn.value) {
-                actionForCards.value = false;
-            }
-            isLoading.value = false;
-        }
-
-        if (move.value >= 40 && move.value < 60) {
-            isLoading.value = true;
-
-            await updateDoc(tableGameDuelRef, {
-                tier: 'III'
-            });
-
-            if (chooseWhoWillStart.value && isMyTurn.value) {
-                actionForCards.value = false;
-            }
-            isLoading.value = false;
-        }
-        if (move.value === 60) {
-            isLoading.value = true;
-            actionForCards.value = false;
-
-            await updateDoc(tableGameDuelRef, {
-                tier: 'end'
-            });
-
-            isLoading.value = false;
-        }
+        isLoading.value = false;
     }
-);
-
+});
 watch(
     [
         () => wonByArt.value,
@@ -268,7 +250,6 @@ watch(
         () => wonByPoints.value
     ],
     async ([artNewVal, aggrNewVal, surNewVal, ptNewVal]) => {
-        // TODO - who lose, who win, info players about it + remove db + show last cards for last player + button redirect or redirect after 20s + redirect after refresh(check uid)
         if (surNewVal !== '' || artNewVal !== '' || aggrNewVal !== '' || ptNewVal !== '') {
             if (surNewVal !== '') {
                 surNewVal === user.value.uid ? audioWin.value.play() : audioLost.value.play();
@@ -290,12 +271,9 @@ watch(
         }
     }
 );
-
 watch([() => endGameAnimationEnd.value], ([newVal]) => {
     if (newVal) {
-        if (wonByPoints.value === 'draw') {
-            audioWin.value.play();
-        }
+        if (wonByPoints.value === 'draw') audioWin.value.play();
 
         if (wonByPoints.value !== '') {
             wonByPoints.value === user.value.uid ? audioWin.value.play() : audioLost.value.play();
@@ -303,18 +281,13 @@ watch([() => endGameAnimationEnd.value], ([newVal]) => {
     }
 });
 
-// ---
+// --- Component Life Cycle --- //
 onBeforeMount(async () => {
     isLoading.value = true;
     let stopCode = false;
 
     await storeGame.subFirebaseConnect();
-
     const docGameStatusSnap = await getDoc(gameStatusDuelRef);
-
-    // TODO - add watch to redirect or Fn for it + 20s delay
-    // TODO - ADD THE SAME + info who win for opponent
-    // todo - check end game with all 60 cards
 
     await getCurrentUser().then(async (dataAuth) => {
         if (dataAuth) {
@@ -364,7 +337,7 @@ onBeforeMount(async () => {
         return null;
     }
 
-    // firebase - set and check game cards
+    // Firebase - set and check game cards
     const prepareRandomCoins = getCountRandomObjFromArr(coins, 10);
     const prepareWonderCards = getCountRandomObjFromArr(cardsWonder, 8);
 
@@ -458,7 +431,7 @@ onBeforeMount(async () => {
 
     await storeDuelGame.subFirebaseConnect(`${user.value.uid}`);
 
-    // Check state after refresh or leave
+    // --- Check state after refresh or leave
     tier.value !== 'prepare' || docSnap.data()?.tier !== 'prepare'
         ? (actionForCards.value = true)
         : null;
@@ -503,380 +476,7 @@ onBeforeUnmount(async () => {
     storeGame.unSubFirebaseConnect();
 });
 
-// ---
-async function chooseWhoStarts(id: string): Promise<void> {
-    isLoading.value = true;
-
-    await storeDuelGame.upgradeTurnAndMove(`${id}`, true);
-    await updateDoc(tableGameDuelRef, {
-        chooseWhoWillStart: false
-    });
-
-    actionForCards.value = true;
-    isLoading.value = false;
-}
-
-function showPrice(selectedCard: IGameDuelWonderCard | IGameDuelCard, uid: string): number {
-    if (!selectedCard?.id) return -1;
-    let buyForCash = 0;
-    let arrCBW: { type: Materials; val: number }[] = [];
-    let arrPG: { type: Materials; val: number }[] = [];
-    let missingMaterials: string[] = [];
-    let buyForFree = false;
-    const p1Res = player1.value.resources;
-    const p2Res = player2.value.resources;
-
-    if (player1.value.user.uid === uid) {
-        arrCBW = [
-            {
-                type: 'clay',
-                val: p1Res.clayOne ? 1 : 2 + p2Res.clayValue
-            },
-            {
-                type: 'brick',
-                val: p1Res.brickOne ? 1 : 2 + p2Res.brickValue
-            },
-            {
-                type: 'wood',
-                val: p1Res.woodOne ? 1 : 2 + p2Res.woodValue
-            }
-        ];
-        arrCBW = arrCBW.sort((a, b) => b.val - a.val);
-        arrPG = [
-            {
-                type: 'paper',
-                val: p1Res.paperGlassOne ? 1 : 2 + p2Res.paperValue
-            },
-            {
-                type: 'glass',
-                val: p1Res.paperGlassOne ? 1 : 2 + p2Res.glassValue
-            }
-        ];
-        arrPG = arrPG.sort((a, b) => b.val - a.val);
-
-        selectedCard.cost.forEach((cost, i) => {
-            if (cost === 'specialChar') {
-                p1Res.specialChars.find((sc) => {
-                    if (sc === selectedCard.valueCost[i]) {
-                        buyForFree = true;
-                        return true;
-                    }
-                });
-            } else if (cost === 'cash') {
-                buyForCash += selectedCard.valueCost[i];
-            } else if (cost === 'clay') {
-                let numberOfClay = selectedCard.valueCost[i] - p1Res.clayValue;
-                if (numberOfClay <= 0) {
-                    return null;
-                } else {
-                    for (let index = 0; index < numberOfClay; index++) {
-                        missingMaterials.push('clay');
-                    }
-                }
-            } else if (cost === 'brick') {
-                let numberOfBrick = selectedCard.valueCost[i] - p1Res.brickValue;
-                if (numberOfBrick <= 0) {
-                    return null;
-                } else {
-                    for (let index = 0; index < numberOfBrick; index++) {
-                        missingMaterials.push('brick');
-                    }
-                }
-            } else if (cost === 'wood') {
-                let numberOfWood = selectedCard.valueCost[i] - p1Res.woodValue;
-                if (numberOfWood <= 0) {
-                    return null;
-                } else {
-                    for (let index = 0; index < numberOfWood; index++) {
-                        missingMaterials.push('wood');
-                    }
-                }
-            } else if (cost === 'paper') {
-                let numberOfPaper = selectedCard.valueCost[i] - p1Res.paperValue;
-                if (numberOfPaper <= 0) {
-                    return null;
-                } else {
-                    for (let index = 0; index < numberOfPaper; index++) {
-                        missingMaterials.push('paper');
-                    }
-                }
-            } else if (cost === 'glass') {
-                let numberOfGlass = selectedCard.valueCost[i] - p1Res.glassValue;
-                if (numberOfGlass <= 0) {
-                    return null;
-                } else {
-                    for (let index = 0; index < numberOfGlass; index++) {
-                        missingMaterials.push('glass');
-                    }
-                }
-            }
-        });
-    } else {
-        arrCBW = [
-            {
-                type: 'clay',
-                val: p2Res.clayOne ? 1 : 2 + p1Res.clayValue
-            },
-            {
-                type: 'brick',
-                val: p2Res.brickOne ? 1 : 2 + p1Res.brickValue
-            },
-            {
-                type: 'wood',
-                val: p2Res.woodOne ? 1 : 2 + p1Res.woodValue
-            }
-        ];
-        arrCBW = arrCBW.sort((a, b) => b.val - a.val);
-        arrPG = [
-            {
-                type: 'paper',
-                val: p2Res.paperGlassOne ? 1 : 2 + p1Res.paperValue
-            },
-            {
-                type: 'glass',
-                val: p2Res.paperGlassOne ? 1 : 2 + p1Res.glassValue
-            }
-        ];
-        arrPG = arrPG.sort((a, b) => b.val - a.val);
-
-        selectedCard.cost.forEach((cost, i) => {
-            if (cost === 'specialChar') {
-                p2Res.specialChars.find((sc) => {
-                    if (sc === selectedCard.valueCost[i]) {
-                        buyForFree = true;
-                        return true;
-                    }
-                });
-            } else if (cost === 'cash') {
-                buyForCash += selectedCard.valueCost[i];
-            } else if (cost === 'clay') {
-                let numberOfClay = selectedCard.valueCost[i] - p2Res.clayValue;
-                if (numberOfClay <= 0) {
-                    return null;
-                } else {
-                    for (let index = 0; index < numberOfClay; index++) {
-                        missingMaterials.push('clay');
-                    }
-                }
-            } else if (cost === 'brick') {
-                let numberOfBrick = selectedCard.valueCost[i] - p2Res.brickValue;
-                if (numberOfBrick <= 0) {
-                    return null;
-                } else {
-                    for (let index = 0; index < numberOfBrick; index++) {
-                        missingMaterials.push('brick');
-                    }
-                }
-            } else if (cost === 'wood') {
-                let numberOfWood = selectedCard.valueCost[i] - p2Res.woodValue;
-                if (numberOfWood <= 0) {
-                    return null;
-                } else {
-                    for (let index = 0; index < numberOfWood; index++) {
-                        missingMaterials.push('wood');
-                    }
-                }
-            } else if (cost === 'paper') {
-                let numberOfPaper = selectedCard.valueCost[i] - p2Res.paperValue;
-                if (numberOfPaper <= 0) {
-                    return null;
-                } else {
-                    for (let index = 0; index < numberOfPaper; index++) {
-                        missingMaterials.push('paper');
-                    }
-                }
-            } else if (cost === 'glass') {
-                let numberOfGlass = selectedCard.valueCost[i] - p2Res.glassValue;
-                if (numberOfGlass <= 0) {
-                    return null;
-                } else {
-                    for (let index = 0; index < numberOfGlass; index++) {
-                        missingMaterials.push('glass');
-                    }
-                }
-            }
-        });
-    }
-
-    missingMaterials = removeOptionalMaterials(missingMaterials, arrCBW, arrPG, uid);
-    if ((selectedCard as IGameDuelCard)?.color === 'blue') {
-        if (player1.value.user.uid === uid) {
-            if (player1.value.resources.coins.find((coin) => coin === 'lowCostBlue')) {
-                missingMaterials.shift();
-                missingMaterials.shift();
-            }
-        } else {
-            if (player2.value.resources.coins.find((coin) => coin === 'lowCostBlue')) {
-                missingMaterials.shift();
-                missingMaterials.shift();
-            }
-        }
-    }
-
-    if ((selectedCard as IGameDuelWonderCard)?.activated) {
-        if (player1.value.user.uid === uid) {
-            if (player1.value.resources.coins.find((coin) => coin === 'lowCostWonder')) {
-                missingMaterials.shift();
-                missingMaterials.shift();
-            }
-        } else {
-            if (player2.value.resources.coins.find((coin) => coin === 'lowCostWonder')) {
-                missingMaterials.shift();
-                missingMaterials.shift();
-            }
-        }
-    }
-
-    missingMaterials.forEach((mat) => {
-        buyForCash +=
-            arrCBW.find(({ type }) => type === mat)?.val ||
-            arrPG.find(({ type }) => type === mat)?.val ||
-            0;
-    });
-
-    if (buyForFree) return 0;
-    else return buyForCash;
-}
-
-function removeOptionalMaterials(
-    missingMaterials: string[],
-    arrCBW: { type: Materials; val: number }[],
-    arrPG: { type: Materials; val: number }[],
-    uid: string
-): string[] {
-    let arr = missingMaterials;
-    const p1Res = player1.value.resources;
-    const p2Res = player2.value.resources;
-
-    if (player1.value.user.uid === uid) {
-        for (let index = 0; index < p1Res.materialsCBW; index++) {
-            let found = false;
-            let j: number = 0;
-            arr.find((str, i) => {
-                if (str === arrCBW[0].type) {
-                    found = true;
-                    j = i;
-                    return true;
-                } else return false;
-            });
-            if (found) {
-                arr.splice(j, 1);
-            } else {
-                arr.find((str, i) => {
-                    if (str === arrCBW[1].type) {
-                        found = true;
-                        j = i;
-                        return true;
-                    } else return false;
-                });
-                if (found) {
-                    arr.splice(j, 1);
-                } else {
-                    arr.find((str, i) => {
-                        if (str === arrCBW[2].type) {
-                            found = true;
-                            j = i;
-                            return true;
-                        } else return false;
-                    });
-                    if (found) {
-                        arr.splice(j, 1);
-                    } else null;
-                }
-            }
-        }
-        for (let index = 0; index < p1Res.materialsPG; index++) {
-            let found = false;
-            let j: number = 0;
-            arr.find((str, i) => {
-                if (str === arrPG[0].type) {
-                    found = true;
-                    j = i;
-                    return true;
-                } else return false;
-            });
-            if (found) {
-                arr.splice(j, 1);
-            } else {
-                arr.find((str, i) => {
-                    if (str === arrPG[1].type) {
-                        found = true;
-                        j = i;
-                        return true;
-                    } else return false;
-                });
-                if (found) {
-                    arr.splice(j, 1);
-                } else null;
-            }
-        }
-    } else {
-        for (let index = 0; index < p2Res.materialsCBW; index++) {
-            let found = false;
-            let j: number = 0;
-            arr.find((str, i) => {
-                if (str === arrCBW[0].type) {
-                    found = true;
-                    j = i;
-                    return true;
-                } else return false;
-            });
-            if (found) {
-                arr.splice(j, 1);
-            } else {
-                arr.find((str, i) => {
-                    if (str === arrCBW[1].type) {
-                        found = true;
-                        j = i;
-                        return true;
-                    } else return false;
-                });
-                if (found) {
-                    arr.splice(j, 1);
-                } else {
-                    arr.find((str, i) => {
-                        if (str === arrCBW[2].type) {
-                            found = true;
-                            j = i;
-                            return true;
-                        } else return false;
-                    });
-                    if (found) {
-                        arr.splice(j, 1);
-                    } else null;
-                }
-            }
-        }
-        for (let index = 0; index < p2Res.materialsPG; index++) {
-            let found = false;
-            let j: number = 0;
-            arr.find((str, i) => {
-                if (str === arrPG[0].type) {
-                    found = true;
-                    j = i;
-                    return true;
-                } else return false;
-            });
-            if (found) {
-                arr.splice(j, 1);
-            } else {
-                arr.find((str, i) => {
-                    if (str === arrPG[1].type) {
-                        found = true;
-                        j = i;
-                        return true;
-                    } else return false;
-                });
-                if (found) {
-                    arr.splice(j, 1);
-                } else null;
-            }
-        }
-    }
-
-    return arr;
-}
-
+// --- Functions --- //
 const chooseWonderForPlayer = async (id: number) => {
     if (!isMyTurn.value || wonBySurr.value !== '') return null;
 
@@ -889,6 +489,8 @@ const chooseWonderForPlayer = async (id: number) => {
 };
 
 async function setWonderCardTaken(id: number): Promise<void> {
+    if (wonderCards.value.find((card) => card.id === id)?.taken) return;
+
     let newCard = {} as IGameDuelWonderCard;
     const newArrWonders: IGameDuelWonderCard[] = wonderCards.value.map((data) => {
         return data.id === id ? ((newCard = { ...data, taken: true }), newCard) : data;
@@ -917,11 +519,19 @@ async function setWonderCardTaken(id: number): Promise<void> {
     }
 }
 
+async function chooseWhoStarts(id: string): Promise<void> {
+    isLoading.value = true;
+
+    await storeDuelGame.upgradeTurnAndMove(`${id}`, true);
+    await updateDoc(tableGameDuelRef, { chooseWhoWillStart: false });
+
+    actionForCards.value = true;
+    isLoading.value = false;
+}
+
 const tierCardClick = (gameCard: IGameDuelCard) => {
-    if (!isMyTurn.value) return null;
-    if (chooseWhoWillStart.value) return null;
-    if (wonByArt.value) return null;
-    if (wonByAggressive.value) return null;
+    if (!isMyTurn.value || chooseWhoWillStart.value || wonByArt.value || wonByAggressive.value)
+        return null;
 
     selectedCard.value = {} as IGameDuelCard;
     selectedWonder.value = {} as IGameDuelWonderCard;
@@ -945,6 +555,7 @@ const prepareSelectWonder = () => {
 function wonderCardSelected(wonderCard: IGameDuelWonderCard, cash: number): any {
     if (!isMyTurn.value) return null;
     let fullPrice = showPrice(wonderCard, `${user.value.uid}`);
+
     if (fullPrice > cash) return null;
     else selectedWonder.value = wonderCard;
 
@@ -1099,9 +710,7 @@ const destrooyEnemyCardSelected = async (gameCard: IGameDuelCard, color: 'brown'
 
 async function prepareGameToRemoveFromDB(user: IUser): Promise<void> {
     const pl = duel.value.players.find((player) => player.uid !== user.uid)?.uid;
-    await updateDoc(tableGameDuelRef, {
-        wonBySurr: pl
-    });
+    await updateDoc(tableGameDuelRef, { wonBySurr: pl });
     actionForCards.value = false;
 }
 </script>

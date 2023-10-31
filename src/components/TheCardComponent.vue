@@ -68,12 +68,6 @@ watch(
         }
     }
 );
-
-// todo check that user is anywhere in other games
-// todo check that user is in game
-// todo check that user is online
-// if (props.players.length < props.maxPlayers && !game.value.players.find(player => player.uid === user.uid)) {
-// }
 </script>
 
 <template>

@@ -10,16 +10,11 @@ import {
     type Tier
 } from '@/interfaces/GameDuel';
 import db from '@/firebase/index';
+import { collection, doc, updateDoc, onSnapshot, increment, arrayRemove } from 'firebase/firestore';
 import {
-    collection,
-    doc,
-    updateDoc,
-    onSnapshot,
-    increment,
-    arrayUnion,
-    arrayRemove
-} from 'firebase/firestore';
-import { countPlayerResources, countPlayerResourcesFromWonders } from '@/helpers/GameDuelInit';
+    countPlayerResources,
+    countPlayerResourcesFromWonders
+} from '@/helpers/GameDuelHelpersFoo';
 
 const gameDuelRef = collection(db, 'gameDuel');
 const tableGameDuelRef = doc(gameDuelRef, 'table1');

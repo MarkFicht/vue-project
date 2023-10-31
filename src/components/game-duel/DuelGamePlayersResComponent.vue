@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { duelGameStore } from '@/store/duelGameStore';
+import { showPrice } from '@/helpers/GameDuelHelpersFoo';
 import { storeToRefs } from 'pinia';
 import DuelGameCardComponent from '@/components/game-duel/DuelGameCardComponent.vue';
 import DuelGameWonderComponent from '@/components/game-duel/DuelGameWonderComponent.vue';
@@ -19,10 +20,9 @@ const props = defineProps<{
 }>();
 const { user } = toRefs(props);
 
-const showPrice = inject<any>('showPrice');
 const wonderCardSelected = inject<any>('wonderCardSelected');
 
-function countArtefacts(uid: string): number {
+function getNumberOfArtefacts(uid: string): number {
     if (uid === player1.value.user.uid) {
         let art = 0;
         if (player1.value.resources.coins.find((coin) => coin === 'artefact7')) {
@@ -154,7 +154,7 @@ function countArtefacts(uid: string): number {
                 ]"
             >
                 <div class="countArt">
-                    {{ countArtefacts(`${player1.user.uid}`) + '/6' }}
+                    {{ getNumberOfArtefacts(`${player1.user.uid}`) + '/6' }}
                 </div>
                 <DuelGameCardComponent
                     v-for="card in player1.cards.green.sort(
@@ -312,7 +312,7 @@ function countArtefacts(uid: string): number {
                 ]"
             >
                 <div class="countArt">
-                    {{ countArtefacts(`${player2.user.uid}`) + '/6' }}
+                    {{ getNumberOfArtefacts(`${player2.user.uid}`) + '/6' }}
                 </div>
                 <DuelGameCardComponent
                     v-for="card in player2.cards.green.sort(

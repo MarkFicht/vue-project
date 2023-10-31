@@ -9,12 +9,9 @@ import { storeToRefs } from 'pinia';
 import {
     collection,
     doc,
-    setDoc,
     getDoc,
     updateDoc,
-    arrayRemove,
     arrayUnion,
-    increment,
     serverTimestamp
 } from 'firebase/firestore';
 import db from '@/firebase/index';
@@ -32,16 +29,16 @@ const { colors } = inject<any>('indicatorNavi');
 
 const acceptBtn = ref<string>('Accept');
 const cancelBtn = ref<string>('Cancel');
-const labelRedirect = ref<string>('Redirect for a few sec to');
-const labelWaiting = ref<string>('Approval');
+const labelRedirect = ref<string>('Redirect for a few sec...');
+const labelWaiting = ref<string>('Approval game: ');
 
 const storeGame = gameStore();
 const { duel } = storeToRefs(storeGame);
 
+const usersRef = collection(db, 'users');
+
 const gameStatusRef = collection(db, 'gameStatus');
 const gameStatusDuelRef = doc(gameStatusRef, 'Duel');
-
-const usersRef = collection(db, 'users');
 
 const gameDuelRef = collection(db, 'gameDuel');
 const tableGameDuelRef = doc(gameDuelRef, 'table1');
@@ -54,13 +51,10 @@ const debounceRedirect = ref<any>(
     }, 3 * 1000)
 );
 
-// TODO - create other redirections
 watch(
     () => duel.value.players,
     async (newVal, oldVal) => {
-        if (newVal.length === 2 && oldVal.length !== newVal.length) {
-            audioNotify.value.play();
-        }
+        if (newVal.length === 2 && oldVal.length !== newVal.length) audioNotify.value.play();
 
         // --- Redirect to game
         if (
@@ -68,18 +62,14 @@ watch(
             newVal.find((user) => user.uid === props.currentUser.uid) &&
             !newVal.find((user) => !user.readyToGame)
         ) {
-            await updateDoc(gameStatusDuelRef, {
-                isStarted: true
-            });
+            await updateDoc(gameStatusDuelRef, { isStarted: true });
         }
     }
 );
 watch(
     () => duel.value.isStarted,
     async (newVal) => {
-        if (duel.value.isStarted === false) {
-            await storeGame.deleteGameDuel();
-        }
+        if (duel.value.isStarted === false) await storeGame.deleteGameDuel();
 
         // --- Redirect to game
         if (
@@ -91,6 +81,10 @@ watch(
         }
     }
 );
+
+// TODO watchers for other games + Modify foo below
+// TODO timers with timestamp + remove away/offline players from lobby
+// TODO remove players and game if all players Disconnected/away
 
 // ---
 onBeforeMount(async () => {
@@ -122,7 +116,7 @@ onBeforeUnmount(async () => {
     debounceRedirect.value.cancel();
 });
 
-// TODO - only for duel game atm
+// ---
 async function addAndRemoveToLobby(): Promise<any> {
     if (duel.value.players.find((user) => user.uid === props.currentUser.uid)) {
         await updateDoc(doc(usersRef, props.currentUser.uid), {
@@ -150,7 +144,6 @@ async function addAndRemoveToLobby(): Promise<any> {
     }
 }
 
-// TODO - 2 only for duel game atm - readyToGame
 async function acceptInLobby(): Promise<any> {
     if (duel.value.players.length === 2) {
         if (duel.value.players.find((user) => user.uid === props.currentUser.uid)) {
@@ -169,7 +162,6 @@ async function acceptInLobby(): Promise<any> {
     }
 }
 
-// TODO - 2 only for duel game atm - readyToGame
 async function cancelInLobby(): Promise<any> {
     if (duel.value.players.length === 2) {
         if (duel.value.players.find((user) => user.uid === props.currentUser.uid)) {
@@ -204,8 +196,7 @@ async function cancelInLobby(): Promise<any> {
 
 <template>
     <section class="gameContainer">
-        <!-- Full screen + Process for prepare game -->
-        <!-- TODO - atm its work only for duel game -->
+        <!-- LOADING FOR PLAYERS CONTAINTERS -->
         <div
             v-if="
                 duel.players.length === 2 &&
@@ -213,9 +204,8 @@ async function cancelInLobby(): Promise<any> {
             "
             class="infoAboutPlayers"
         >
-            <!-- <span v-if="duel.players.length === 2" hidden="true">{{ audioNotify.play() }}</span> -->
             <p>
-                {{ duel.isStarted ? labelRedirect + ': ' + 'Duel' : labelWaiting + ': ' + 'Duel' }}
+                {{ duel.isStarted ? labelRedirect : labelWaiting + 'Duel' }}
             </p>
             <div>
                 <p>{{ duel.players[0].displayName || duel.players[0].email }}{{ ': ' }}</p>
