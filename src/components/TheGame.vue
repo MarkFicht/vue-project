@@ -50,7 +50,7 @@ const audioNotify = ref<HTMLAudioElement>(new Audio(bellNotify));
 const audioBell = ref<HTMLAudioElement>(new Audio(bell));
 const debounceRedirect = ref<any>(
     debounce(function () {
-        router.push('/feed/duel-game');
+        router.push('/duel-game');
     }, 3 * 1000)
 );
 
@@ -265,7 +265,7 @@ async function cancelInLobby(): Promise<any> {
             :desc="`A board game inspired by a strategy game called '7 Wonders of the World'`"
             :video="'Video soon!'"
             :color="colors[0]"
-            :route-to="'/feed/duel-game'"
+            :route-to="'/duel-game'"
             :max-players="2"
             @click-lobby="addAndRemoveToLobby"
             @click-accept="acceptInLobby"
@@ -277,7 +277,7 @@ async function cancelInLobby(): Promise<any> {
             :desc="`A board game inspired by a strategy game called 'Splendor'`"
             video="Video soon!"
             :color="colors[1]"
-            :route-to="'/feed/splendor-game'"
+            :route-to="'/gems-game'"
             :max-players="0"
         />
         <TheCardComponent
@@ -286,7 +286,7 @@ async function cancelInLobby(): Promise<any> {
             :desc="`Game written from 0 in canvasJS. Cooperation against zombies`"
             video="Video soon!"
             :color="colors[2]"
-            :route-to="'/feed/reflex-game'"
+            :route-to="'/reflex-game'"
             :max-players="0"
         />
     </section>

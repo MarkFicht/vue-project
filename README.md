@@ -8,6 +8,8 @@ Two of the games are modeled on classic board games: `Splendor` and `7 Wonders D
 
 The third game written in `Canvas and JS`, in which we fight zombies in cooperation mode
 
+Ultimately, the website is intended for `desktop computers` and tested in the `Chrome` browser
+
 ## In construction
 
 -   Implements missing redirection cases
@@ -17,11 +19,12 @@ The third game written in `Canvas and JS`, in which we fight zombies in cooperat
 -   Prepares mechanism for `Splendor` game
 -   Prepares mechanism for `Canvas + Js` game
 -   Fixes and tests other bugs in `7 Wonders Duel`
+-   Implements responsive for all devices
 -   etc...
 
 ## DEMO
 
-[DEMO here](https://markficht.github.io/vue-project/) - `At this moment deployed on gh pages`
+[DEMO here](https://vue-project-d53d4.web.app/) - `https://vue-project-d53d4.web.app/`
 
 ## Screens and Videos
 

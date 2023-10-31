@@ -1,15 +1,10 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { getCurrentUser } from '@/helpers/HelpersFoo';
 import LoginPanel from '../views/LoginPanel.vue';
-import FeedPanel from '../views/FeedPanel.vue';
-
-// -------------------
-// WARINING - lazy loading doesnt work correctly on github pages from dist build
-// -------------------
+// import FeedPanel from '../views/FeedPanel.vue';
 
 const router = createRouter({
-    history: createWebHistory(import.meta.env.BASE_URL),
+    history: createWebHistory(),
     routes: [
         {
             path: '/',
@@ -30,7 +25,7 @@ const router = createRouter({
             }
         },
         {
-            path: '/feed/duel-game',
+            path: '/duel-game',
             name: 'duel',
             component: () => import('../views/TheDuelGameBoard.vue'),
             meta: {
@@ -38,7 +33,7 @@ const router = createRouter({
             }
         },
         {
-            path: '/feed/gems-game',
+            path: '/gems-game',
             name: 'gems',
             component: () => import('../views/FeedPanel.vue'),
             meta: {
@@ -46,7 +41,7 @@ const router = createRouter({
             }
         },
         {
-            path: '/feed/reflex-game',
+            path: '/reflex-game',
             name: 'reflex',
             component: () => import('../views/FeedPanel.vue'),
             meta: {

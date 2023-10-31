@@ -2,7 +2,7 @@
     "name": "vue-project",
     "version": "0.0.0",
     "private": true,
-    "homepage": "https://markficht.github.io/vue-project/",
+    "homepage": "https://vue-project-d53d4.web.app/",
     "scripts": {
         "dev": "vite",
         "build": "run-p type-check build-only",
