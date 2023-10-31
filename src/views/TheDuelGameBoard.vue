@@ -218,7 +218,9 @@ watch(move, async () => {
     if (move.value >= 20 && move.value < 40) {
         isLoading.value = true;
 
-        await updateDoc(tableGameDuelRef, { tier: 'II' });
+        if (wonBySurr.value === '') {
+            await updateDoc(tableGameDuelRef, { tier: 'II' });
+        }
         if (chooseWhoWillStart.value && isMyTurn.value) actionForCards.value = false;
 
         isLoading.value = false;
@@ -227,7 +229,9 @@ watch(move, async () => {
     if (move.value >= 40 && move.value < 60) {
         isLoading.value = true;
 
-        await updateDoc(tableGameDuelRef, { tier: 'III' });
+        if (wonByAggressive.value === '' && wonByArt.value === '' && wonBySurr.value === '') {
+            await updateDoc(tableGameDuelRef, { tier: 'III' });
+        }
         if (chooseWhoWillStart.value && isMyTurn.value) actionForCards.value = false;
 
         isLoading.value = false;
@@ -237,8 +241,9 @@ watch(move, async () => {
         isLoading.value = true;
 
         actionForCards.value = false;
-        await updateDoc(tableGameDuelRef, { tier: 'end' });
-
+        if (wonByAggressive.value === '' && wonByArt.value === '' && wonBySurr.value === '') {
+            await updateDoc(tableGameDuelRef, { tier: 'end' });
+        }
         isLoading.value = false;
     }
 });

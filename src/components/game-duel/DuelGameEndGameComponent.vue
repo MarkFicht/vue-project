@@ -219,10 +219,6 @@ const initPoints = () => {
         0;
 
     startAnimation.value = true;
-
-    // TODO - ADD who win to fb - here - before all animation
-    // TODO - add redirection + button redirect
-    // TODO - add imgs for mini icons
 };
 
 const setWonByPoints = async () => {

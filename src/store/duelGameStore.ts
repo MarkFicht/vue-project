@@ -152,12 +152,21 @@ export const duelGameStore = defineStore('duelGameStore', {
             this.selectedCard = {} as IGameDuelCard;
             this.selectedWonder = {} as IGameDuelWonderCard;
         },
-        async upgradeTurnAndMove(uid: string, withOutMove?: boolean): Promise<void> {
+        async upgradeTurnAndMove(
+            uid: string,
+            withOutMove?: boolean,
+            currentPawnPosition?: number
+        ): Promise<void> {
             if (withOutMove) {
                 await updateDoc(tableGameDuelRef, {
                     turn: uid
                 });
-            } else if (this.move + 1 === 60) {
+            } else if (
+                this.move + 1 === 60 &&
+                this.wonByAggressive === '' &&
+                this.wonByArt === '' &&
+                this.wonBySurr === ''
+            ) {
                 await updateDoc(tableGameDuelRef, {
                     tier: 'end',
                     move: increment(1)
@@ -169,8 +178,10 @@ export const duelGameStore = defineStore('duelGameStore', {
                         ? `${this.player2.user.uid}`
                         : `${this.player1.user.uid}`;
 
-                if (this.board.pawn > 0) checkTurn = `${this.player1.user.uid}`;
-                else if (this.board.pawn < 0) checkTurn = `${this.player2.user.uid}`;
+                if (this.board.pawn > 0 || (!!currentPawnPosition && currentPawnPosition > 0))
+                    checkTurn = `${this.player1.user.uid}`;
+                else if (this.board.pawn < 0 || (!!currentPawnPosition && currentPawnPosition < 0))
+                    checkTurn = `${this.player2.user.uid}`;
 
                 await updateDoc(tableGameDuelRef, {
                     chooseWhoWillStart: true,
@@ -215,7 +226,7 @@ export const duelGameStore = defineStore('duelGameStore', {
             if (uid === this.player1.user.uid) {
                 const timer = setInterval(async () => {
                     // --- Check end game!
-                    if (this.board.pawn <= -8) {
+                    if (this.board.pawn < -7) {
                         clearInterval(timer);
 
                         await updateDoc(tableGameDuelRef, {
@@ -254,7 +265,7 @@ export const duelGameStore = defineStore('duelGameStore', {
             } else {
                 const timer = setInterval(async () => {
                     // --- Check end game!
-                    if (this.board.pawn >= 8) {
+                    if (this.board.pawn > 7) {
                         clearInterval(timer);
 
                         await updateDoc(tableGameDuelRef, {
@@ -313,7 +324,6 @@ export const duelGameStore = defineStore('duelGameStore', {
                 await updateDoc(tableGameDuelRef, {
                     wonByArt: uid
                 });
-                // TODO - end game!
                 console.log('%c END GAME - ARTEFACT -> ', 'background: #222; color: #bada55');
                 return;
             }
@@ -504,13 +514,28 @@ export const duelGameStore = defineStore('duelGameStore', {
 
                 if (this.wonByArt === '' && this.wonByAggressive === '' && this.pickCoin === '') {
                     if (this.turn === this.player1.user.uid && tierFromGraveyard) {
-                        if (this.player1.resources.coins.find((coin) => coin === 'repeatWonder')) {
+                        if (
+                            (this.move + 1 === 20 || this.move + 1 === 40) &&
+                            howManyMovePawn !== 0
+                        ) {
+                            await this.upgradeTurnAndMove(
+                                `${this.player2.user.uid}`,
+                                false,
+                                this.board.pawn + howManyMovePawn
+                            );
+                        } else if (
+                            this.player1.resources.coins.find((coin) => coin === 'repeatWonder') &&
+                            (this.move + 1 !== 20 || this.move + 1 !== 40)
+                        ) {
                             this.upgradeTurnAndMove(`${this.player1.user.uid}`);
                         } else {
                             this.upgradeTurnAndMove(`${this.player2.user.uid}`);
                         }
                     } else if (this.turn === this.player2.user.uid && tierFromGraveyard) {
-                        if (this.player2.resources.coins.find((coin) => coin === 'repeatWonder')) {
+                        if (
+                            this.player2.resources.coins.find((coin) => coin === 'repeatWonder') &&
+                            (this.move + 1 !== 20 || this.move + 1 !== 40)
+                        ) {
                             this.upgradeTurnAndMove(`${this.player2.user.uid}`);
                         } else {
                             this.upgradeTurnAndMove(`${this.player1.user.uid}`);
@@ -639,14 +664,26 @@ export const duelGameStore = defineStore('duelGameStore', {
                 }
 
                 if (this.wonByArt === '' && this.wonByAggressive === '' && this.pickCoin === '') {
-                    if (this.turn === this.player1.user.uid && tierFromGraveyard) {
-                        if (this.player1.resources.coins.find((coin) => coin === 'repeatWonder')) {
+                    if ((this.move + 1 === 20 || this.move + 1 === 40) && howManyMovePawn !== 0) {
+                        await this.upgradeTurnAndMove(
+                            `${this.player1.user.uid}`,
+                            false,
+                            this.board.pawn - howManyMovePawn
+                        );
+                    } else if (this.turn === this.player1.user.uid && tierFromGraveyard) {
+                        if (
+                            this.player1.resources.coins.find((coin) => coin === 'repeatWonder') &&
+                            (this.move + 1 !== 20 || this.move + 1 !== 40)
+                        ) {
                             this.upgradeTurnAndMove(`${this.player1.user.uid}`);
                         } else {
                             this.upgradeTurnAndMove(`${this.player2.user.uid}`);
                         }
                     } else if (this.turn === this.player2.user.uid && tierFromGraveyard) {
-                        if (this.player2.resources.coins.find((coin) => coin === 'repeatWonder')) {
+                        if (
+                            this.player2.resources.coins.find((coin) => coin === 'repeatWonder') &&
+                            (this.move + 1 !== 20 || this.move + 1 !== 40)
+                        ) {
                             this.upgradeTurnAndMove(`${this.player2.user.uid}`);
                         } else {
                             this.upgradeTurnAndMove(`${this.player1.user.uid}`);
