@@ -19,20 +19,21 @@ const props = defineProps<{
             'customInput',
             isMyTurn && pickCardFromGraveyard !== '' && 'selectFromGraveyard'
         ]"
-        :style="graveyard.length >= 24 ? 'overflow-y: scroll;' : ''"
     >
-        <DuelGameCardComponent
-            v-for="card in graveyard"
-            :key="card.id"
-            :card="card"
-            small
-            :style="isMyTurn && pickCardFromGraveyard !== '' && `cursor: pointer;`"
-            @click="
-                isMyTurn && pickCardFromGraveyard !== ''
-                    ? emit('pick-card-from-graveyard', card)
-                    : null
-            "
-        />
+        <div :class="[graveyard.length >= 16 && 'addScrollbar']">
+            <DuelGameCardComponent
+                v-for="card in graveyard"
+                :key="card.id"
+                :card="card"
+                small
+                :style="isMyTurn && pickCardFromGraveyard !== '' && `cursor: pointer;`"
+                @click="
+                    isMyTurn && pickCardFromGraveyard !== ''
+                        ? emit('pick-card-from-graveyard', card)
+                        : null
+                "
+            />
+        </div>
     </section>
 </template>
 
@@ -40,16 +41,21 @@ const props = defineProps<{
 .graveyard {
     position: relative;
     grid-area: grv;
-    padding: 8px !important;
+    padding: 0 !important;
     height: 100%;
+}
+.graveyard > div {
     display: flex;
     flex-wrap: wrap;
+    flex-direction: row;
+    justify-content: start;
+    max-height: 100%;
+    padding: 10px 23px;
     gap: 2px;
-    justify-content: center;
-    /* display: inline-flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap; */
+}
+.addScrollbar {
+    padding: 10px 12px !important;
+    overflow-y: scroll;
 }
 .selectFromGraveyard::after {
     position: absolute;

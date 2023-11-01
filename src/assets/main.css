@@ -79,27 +79,39 @@
 
 /* ===== Duel Game ===== */
 :root {
-  --width-wonder: 87px;
-  --height-wonder: 62px;
-  --width-tier: 50px;
-  --height-tier: 77px;
+  --width-wonder: 130px;
+  --height-wonder: 85px;
+  --width-tier: 66px;
+  --height-tier: 100px;
+  --width-board: 200px;
+  --height-board: 500px;
 }
 
-.cashSum {
+.cashSum,
+.pointSum {
   position: absolute;
   background-repeat: no-repeat;
-  background-size: 136px 136px;
+  background-size: 154px 154px;
   background-image: url('@/assets/duel/sprites.webp');
-  background-position: -48px -114px;
-  width: 17px;
-  height: 17px;
+  background-position: -54px -129px;
+  width: 19px;
+  height: 19px;
   font-size: 10px;
   text-align: center;
-  line-height: 17px;
+  line-height: 19px;
   border-radius: 50%;
   bottom: 50%;
   font-weight: bold;
   z-index: 20;
+  font-size: 11px;
+}
+
+.pointSum {
+  background-position: -80px -103px;
+  width: 27px;
+  height: 23px;
+  font-size: 12px;
+  line-height: 23px;
 }
 
 .bgWonderCard {

@@ -43,9 +43,7 @@ function getNumberOfArtefacts(uid: string): number {
 
 <template>
     <!-- UP SECTION -->
-    <section
-        :class="['wonders', user.uid === player1.user.uid ? 'wonders1' : 'wonders2', 'customInput']"
-    >
+    <section :class="['wonders', user.uid === player1.user.uid ? 'wonders1' : 'wonders2']">
         <DuelGameWonderComponent
             v-for="wonderCard in player1.wonderCards"
             :card="wonderCard"
@@ -66,8 +64,13 @@ function getNumberOfArtefacts(uid: string): number {
             "
         />
     </section>
-    <section :class="['playerSection', user.uid === player1.user.uid ? 'player1' : 'player2']">
-        <div class="playerCardContainer">
+    <section
+        :class="[
+            'playerCardsTierSection',
+            user.uid === player1.user.uid ? 'playerCardsTierSection1' : 'playerCardsTierSection2'
+        ]"
+    >
+        <div class="playerCardsContainer">
             <div
                 :class="[
                     'playerCardColorContainer',
@@ -174,36 +177,39 @@ function getNumberOfArtefacts(uid: string): number {
                 />
             </div>
         </div>
-        <div class="playerPointsContainer">
-            <div class="playerResContainer">
-                <div v-if="turn === player1.user.uid" class="animateHand">
-                    <ion-icon name="time-sharp"></ion-icon>
-                </div>
-                <p :style="turn === player1.user.uid ? `font-weight: bold;` : ''">
-                    {{ `${player1.user.displayName || player1.user.email}` }}
-                </p>
-                <p :style="turn === player1.user.uid ? `font-weight: bold;` : ''">
-                    {{ `Status: online` }}
-                </p>
-                <div class="cashPointsContainer">
-                    <div class="cashSum">{{ player1.resources.cash }}</div>
-                    <div class="cashSum pointSum">{{ player1.points }}</div>
-                </div>
+    </section>
+    <section
+        :class="[
+            'playerResContainer',
+            user.uid === player1.user.uid ? 'playerResContainer1' : 'playerResContainer2'
+        ]"
+    >
+        <div class="playerCashPointsContainer">
+            <div v-if="turn === player1.user.uid" class="animateHand">
+                <ion-icon name="time-sharp"></ion-icon>
             </div>
-            <div class="playerCoins customInput">
-                <DuelGameCoinComponent
-                    v-for="coin in player1.resources.coins"
-                    :key="coin"
-                    :coin="coin"
-                />
+            <p :style="turn === player1.user.uid ? `font-weight: bold;` : ''">
+                {{ `${player1.user.displayName || player1.user.email}` }}
+            </p>
+            <p :style="turn === player1.user.uid ? `font-weight: bold;` : ''">
+                {{ `Status: online` }}
+            </p>
+            <div class="cashPointsContainer">
+                <div class="cashSum">{{ player1.resources.cash }}</div>
+                <div class="cashSum pointSum">{{ player1.points }}</div>
             </div>
+        </div>
+        <div class="playerCoins customInput">
+            <DuelGameCoinComponent
+                v-for="coin in player1.resources.coins"
+                :key="coin"
+                :coin="coin"
+            />
         </div>
     </section>
 
     <!-- DOWN SECTION -->
-    <section
-        :class="['wonders', user.uid === player1.user.uid ? 'wonders2' : 'wonders1', 'customInput']"
-    >
+    <section :class="['wonders', user.uid === player1.user.uid ? 'wonders2' : 'wonders1']">
         <DuelGameWonderComponent
             v-for="wonderCard in player2.wonderCards"
             :card="wonderCard"
@@ -224,8 +230,13 @@ function getNumberOfArtefacts(uid: string): number {
             "
         />
     </section>
-    <section :class="['playerSection', user.uid === player1.user.uid ? 'player2' : 'player1']">
-        <div class="playerCardContainer">
+    <section
+        :class="[
+            'playerCardsTierSection',
+            user.uid === player1.user.uid ? 'playerCardsTierSection2' : 'playerCardsTierSection1'
+        ]"
+    >
+        <div class="playerCardsContainer">
             <div
                 :class="[
                     'playerCardColorContainer',
@@ -332,59 +343,82 @@ function getNumberOfArtefacts(uid: string): number {
                 />
             </div>
         </div>
-        <div class="playerPointsContainer">
-            <div class="playerResContainer">
-                <div v-if="turn === player2.user.uid" class="animateHand">
-                    <ion-icon name="time-sharp"></ion-icon>
-                </div>
-                <p :style="turn === player2.user.uid ? `font-weight: bold;` : ''">
-                    {{ `${player2.user.displayName || player2.user.email}` }}
-                </p>
-                <p :style="turn === player2.user.uid ? `font-weight: bold;` : ''">
-                    {{ `Status: online` }}
-                </p>
-                <div class="cashPointsContainer">
-                    <div class="cashSum">{{ player2.resources.cash }}</div>
-                    <div class="cashSum pointSum">{{ player2.points }}</div>
-                </div>
+    </section>
+    <section
+        :class="[
+            'playerResContainer',
+            user.uid === player1.user.uid ? 'playerResContainer2' : 'playerResContainer1'
+        ]"
+    >
+        <div class="playerCashPointsContainer">
+            <div v-if="turn === player2.user.uid" class="animateHand">
+                <ion-icon name="time-sharp"></ion-icon>
             </div>
-            <div class="playerCoins customInput">
-                <DuelGameCoinComponent
-                    v-for="coin in player2.resources.coins"
-                    :key="coin"
-                    :coin="coin"
-                />
+            <p :style="turn === player2.user.uid ? `font-weight: bold;` : ''">
+                {{ `${player2.user.displayName || player2.user.email}` }}
+            </p>
+            <p :style="turn === player2.user.uid ? `font-weight: bold;` : ''">
+                {{ `Status: online` }}
+            </p>
+            <div class="cashPointsContainer">
+                <div class="cashSum">{{ player2.resources.cash }}</div>
+                <div class="cashSum pointSum">{{ player2.points }}</div>
             </div>
+        </div>
+        <div class="playerCoins customInput">
+            <DuelGameCoinComponent
+                v-for="coin in player2.resources.coins"
+                :key="coin"
+                :coin="coin"
+            />
         </div>
     </section>
 </template>
 
 <style scoped>
-.playerSection {
+/* === CARDS WONDERS - background === */
+.wonders {
+    height: 100%;
+    width: calc(var(--width-wonder) * 2 + 35px);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    padding: 0;
+    filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.15));
+}
+.wonders > div {
+    /* transform: scale(1.25); */
+}
+.wonders1 {
+    grid-area: w1;
+    align-items: end;
+}
+.wonders2 {
+    grid-area: w2;
+    align-items: start;
+}
+/* === CARDS TIER - background === */
+.playerCardsTierSection {
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
-/* Cards main background */
-.playerCardContainer {
-    /* width: 420px; */
+.playerCardsTierSection1 {
+    grid-area: p1;
+}
+.playerCardsTierSection2 {
+    grid-area: p2;
+}
+.playerCardsContainer {
+    width: calc(var(--width-tier) * 7 + 24px);
     display: flex;
-    justify-content: center;
+    justify-content: space-around;
     align-items: center;
 }
 .playerCardColorContainer {
     width: var(--width-tier);
-    height: 150px;
+    height: calc(1 / 4 * var(--height-tier) * 7 + 6px);
     border-radius: 5px;
-    margin: 0 5px;
-}
-.playerCardColorContainer:first-child {
-    margin: 0;
-    margin-right: 5px;
-}
-.playerCardColorContainer:last-child {
-    margin: 0;
-    margin-left: 5px;
 }
 .playerCard1 {
     background-image: linear-gradient(to bottom, rgba(197, 96, 13, 0.33), 60%, transparent);
@@ -416,20 +450,29 @@ function getNumberOfArtefacts(uid: string): number {
     background-image: linear-gradient(to bottom, rgba(124, 11, 189, 0.33), 60%, transparent);
 }
 
-/* Players res, points, coins, cash, etc.. background */
-.playerPointsContainer {
-    height: 100%;
-    width: 150px;
+/* === PLAYER RESOURCES - cash, points, coins === */
+.playerResContainer {
+    height: calc(1 / 4 * var(--height-tier) * 7 - 44px);
+    width: var(--width-board);
     border-radius: 10px;
-    box-shadow:
+    /* box-shadow:
         inset 5px 5px 10px rgba(0, 0, 0, 0.1),
-        inset -5px -5px 10px rgba(255, 255, 255, 1);
+        inset -5px -5px 10px rgba(255, 255, 255, 1); */
+    gap: 7px;
     display: flex;
-    justify-content: center;
     align-items: start;
     flex-direction: column;
 }
-.playerResContainer {
+.playerResContainer1 {
+    grid-area: c1;
+    justify-content: end;
+}
+.playerResContainer2 {
+    grid-area: c2;
+    justify-content: start;
+    flex-direction: column-reverse;
+}
+.playerCashPointsContainer {
     position: relative;
     display: flex;
     flex-direction: column;
@@ -438,7 +481,7 @@ function getNumberOfArtefacts(uid: string): number {
     text-align: center;
     width: 100%;
 }
-.playerResContainer > p {
+.playerCashPointsContainer > p {
     height: 22px;
     width: 100%;
     line-height: 22px;
@@ -463,11 +506,9 @@ function getNumberOfArtefacts(uid: string): number {
     transform: translateX(-50%) translateY(50%) scale(1.35);
 }
 .pointSum {
-    background-size: 110px 110px;
-    background-position: -58px -73px;
     bottom: 50%;
     right: 50%;
-    transform: translateX(150%) translateY(50%) scale(1.35);
+    transform: translateX(150%) translateY(50%) scale(1.25);
 }
 .animateHand {
     position: absolute;
@@ -477,9 +518,9 @@ function getNumberOfArtefacts(uid: string): number {
     animation: animateHand 1s infinite ease-in-out;
 }
 .playerCoins {
-    height: 50px;
-    width: 130px;
-    margin: 10px auto 0;
+    height: 46px;
+    width: calc(var(--width-board) - 20px);
+    margin: 0 auto;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -487,30 +528,6 @@ function getNumberOfArtefacts(uid: string): number {
 }
 .playerCoins > span {
     margin: 0 5px;
-}
-.player1 {
-    grid-area: p1;
-}
-.player2 {
-    grid-area: p2;
-}
-
-/* Cards WONDERS main background */
-.wonders {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    height: 155px;
-    width: 220px;
-    padding: 5px;
-    filter: drop-shadow(0 0 35px rgba(0, 0, 0, 0.15));
-}
-.wonders1 {
-    grid-area: w1;
-}
-.wonders2 {
-    grid-area: w2;
 }
 
 /* === === */
@@ -526,13 +543,13 @@ function getNumberOfArtefacts(uid: string): number {
     animation: pulseBorder 1.5s ease-in-out infinite;
 }
 .selectCardToDestroy > div {
-    margin-bottom: 4px;
+    margin-bottom: 3px;
 }
 .selectCardToDestroy > div::after {
     content: '';
     position: relative;
     width: var(--width-tier);
-    height: 17.5px;
+    height: calc(var(--height-tier) / 4.5);
     border-radius: 5px;
     border: 3px dotted tomato;
     animation: pulseBorder 1.5s ease-in-out infinite;

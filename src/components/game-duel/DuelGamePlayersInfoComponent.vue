@@ -136,7 +136,7 @@ const surrenderPrepare = ref<boolean>(false);
 }
 .playerInfoContainer > div {
     position: relative;
-    height: 120px;
+    height: 125px;
     margin-bottom: 10px;
     display: flex;
     justify-content: space-between;

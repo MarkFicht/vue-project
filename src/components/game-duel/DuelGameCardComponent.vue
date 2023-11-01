@@ -201,13 +201,13 @@ onMounted(() => {
 
 <style scoped>
 .cashSumP1 {
-    bottom: -50%;
+    bottom: -42%;
     left: 50%;
     transform: translateX(-50%) translateY(-145%);
 }
 .cashSumP2 {
-    background-position: -116px -89.5px;
-    bottom: 0;
+    background-position: -132px -102px;
+    bottom: 3%;
     left: 50%;
     transform: translateX(-50%) translateY(-40%);
 }
@@ -215,7 +215,7 @@ onMounted(() => {
     color: red;
 }
 .small {
-    height: 17.5px !important;
+    height: calc(var(--height-tier) / 4.5) !important;
     margin-bottom: 1px;
 }
 

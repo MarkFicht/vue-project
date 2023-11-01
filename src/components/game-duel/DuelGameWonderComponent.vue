@@ -103,30 +103,6 @@ function takeBgPosition(): void {
 </script>
 
 <template>
-    <!-- <div class="flip-card">
-        <div class="flip-card-inner" :style="card.taken ? 'transform: rotateY(180deg)' : ''">
-            <div class="flip-card-front">
-                <div :class="['cardWrapper']" :style="`--bg-position: ${bgPosition};`">
-                    <div :class="['card', `card${card.id}`]"></div>
-                    <div :class="['tierCardForWonder', bgPosition !== '' && 'getImg']"></div>
-                    <div
-                        v-if="card.taken && card.activated === 'none'"
-                        :class="[
-                            'cashSum',
-                            resCash !== undefined &&
-                                cash !== undefined &&
-                                cash > resCash &&
-                                'toHighPrice'
-                        ]"
-                    >
-                        {{ cash }}
-                    </div>
-                </div>
-            </div>
-            <div class="flip-card-back bgWonderCard"></div>
-        </div>
-    </div> -->
-
     <div :class="['cardWrapper']" :style="`--bg-position: ${bgPosition};`">
         <div :class="['card', `card${card.id}`]"></div>
         <div :class="['tierCardForWonder', bgPosition !== '' && 'getImg']"></div>
@@ -179,7 +155,7 @@ function takeBgPosition(): void {
     background-size: calc(var(--width-tier) * 12) calc(var(--height-tier) * 8);
     background-position: var(--bg-position);
     top: -7px;
-    left: 34px;
+    left: 61px;
     transform: rotate(-90deg);
     width: var(--width-tier);
     height: var(--height-tier);
@@ -232,7 +208,7 @@ function takeBgPosition(): void {
 /* Coin with sum */
 .cashSum {
     bottom: 50%;
-    right: -16px;
+    right: -15px;
     transform: translateY(50%);
 }
 .toHighPrice {

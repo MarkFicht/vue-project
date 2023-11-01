@@ -58,17 +58,14 @@ const { isMyTurn } = toRefs(props);
 
 <style scoped>
 .duel {
-    --board-width: 150px;
-    --board-height: calc(350px + 10px);
-
     grid-area: duel;
     position: relative;
     display: flex;
     justify-content: center;
     align-items: center;
-    width: var(--board-width);
-    height: var(--board-height);
-    filter: drop-shadow(0 0 35px rgba(0, 0, 0, 0.3));
+    width: var(--width-board);
+    height: var(--height-board);
+    filter: drop-shadow(0 0 35px rgba(0, 0, 0, 0.2));
     background-image: url('@/assets/duel/board.webp');
     background-size: contain;
     background-repeat: no-repeat;
@@ -77,10 +74,11 @@ const { isMyTurn } = toRefs(props);
 /* Punishment cards */
 .punishment {
     position: absolute;
-    height: var(--board-height);
+    height: var(--height-board);
     width: 10%;
     top: 0;
     left: 23.9%;
+    border: 1px solid;
     transition: 0.5s;
 }
 .punishment div {
@@ -126,7 +124,7 @@ const { isMyTurn } = toRefs(props);
 /* Pawn */
 .boardPawn {
     position: absolute;
-    height: var(--board-height);
+    height: var(--height-board);
     width: 14%;
     top: 0;
     left: 35.9%;
@@ -153,7 +151,7 @@ const { isMyTurn } = toRefs(props);
 /* Coins field */
 .boardCoins {
     position: absolute;
-    height: var(--board-height);
+    height: var(--height-board);
     width: 26%;
     height: 54%;
     top: 23%;

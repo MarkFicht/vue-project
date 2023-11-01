@@ -57,7 +57,6 @@ import soundLost from '@/assets/lost.mp3';
 
 provide('wonderCardSelected', wonderCardSelected);
 
-const headerGameDuel = ref<string>('Duel Game');
 const buttonBuyCard = ref<string>('Buy for');
 const buttonSell = ref<string>('Sell for');
 const buttonBuildWonder = ref<string>('Build Wonder');
@@ -732,10 +731,6 @@ async function prepareGameToRemoveFromDB(user: IUser): Promise<void> {
 
 <template>
     <main>
-        <header class="header">
-            <h1>{{ headerGameDuel }}</h1>
-        </header>
-
         <section class="wrapper">
             <div v-if="isLoading" class="loading">
                 <LoadingSpinner />
@@ -875,7 +870,6 @@ async function prepareGameToRemoveFromDB(user: IUser): Promise<void> {
                     :user="user"
                     :x="tierOneX[index]"
                     :y="tierOneY[index]"
-                    :reversColor="'rgb(145, 19, 19)'"
                     :cash1P="
                         card.coversBy?.length === 0 ? showPrice(card, `${player1.user.uid}`) : -1
                     "
@@ -893,7 +887,6 @@ async function prepareGameToRemoveFromDB(user: IUser): Promise<void> {
                     :user="user"
                     :x="tierTwoX[index]"
                     :y="tierTwoY[index]"
-                    :reversColor="'rgb(58, 59, 160)'"
                     :cash1P="
                         card.coversBy?.length === 0 ? showPrice(card, `${player1.user.uid}`) : -1
                     "
@@ -911,7 +904,6 @@ async function prepareGameToRemoveFromDB(user: IUser): Promise<void> {
                     :user="user"
                     :x="tierThreeX[index]"
                     :y="tierThreeY[index]"
-                    :reversColor="card.tier === 'guild' ? 'rgb(107, 36, 128)' : 'rgb(175, 85, 202)'"
                     :cash1P="
                         card.coversBy?.length === 0 ? showPrice(card, `${player1.user.uid}`) : -1
                     "
@@ -1111,40 +1103,34 @@ main {
     align-items: center;
     flex-direction: column;
 }
-.header {
-    height: 30px;
-    line-height: 30px;
-    margin: 15px auto;
-    text-align: center;
-    width: 1110px;
-}
-h1 {
-    font-weight: 600;
-    font-size: 2.1rem;
-    color: #eee;
-    filter: drop-shadow(0 0 25px rgba(255, 255, 255, 0.8));
-    letter-spacing: 0.1em;
-}
 /* --- Main Wrapper --- */
 section.wrapper {
     position: relative;
-    width: 1000px;
-    height: 720px;
+    width: 1192px;
+    height: 780px;
     padding: 10px;
     margin: 0 auto;
-    gap: 10px;
+    /* gap: 10px; */
     margin-bottom: 20px;
+    margin-top: 20px;
     color: #444;
     box-shadow: 0 0 50px rgba(0, 0, 0, 0.3);
     border-radius: 20px;
     display: grid;
     grid-template-areas:
-        'w2   p2   p2   pi  '
+        'w2   p2   c2   pi  '
+        'w2   p2   duel pi  '
         '.    card duel pi  '
         '.    act  duel grv '
-        'w1   p1   p1   grv ';
-    grid-template-columns: 220px 410px 150px 170px;
-    grid-template-rows: 160px 300px 50px 160px;
+        'w1   p1   duel grv '
+        'w1   p1   c1   grv ';
+    grid-template-columns:
+        calc(var(--width-wonder) * 2 + 40px) calc(var(--width-tier) * 7 + 24px) var(--width-board)
+        180px;
+
+    grid-template-rows: calc(1 / 4 * var(--height-tier) * 7 - 44px) 50px 348px 50px 50px calc(
+            1 / 4 * var(--height-tier) * 7 - 44px
+        );
     background-color: #eee;
     animation: showElement 2s linear;
 }
@@ -1191,19 +1177,17 @@ section.wrapper {
     flex-direction: column;
 }
 .cardsWonderPrepre {
-    transform: scale(1.4);
-    filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.05));
-}
-.cardsTier {
-    filter: drop-shadow(0 0 35px rgba(0, 0, 0, 0.3));
+    transform: scale(1.3);
+    filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.15));
 }
 .pickWonders {
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
-    height: 155px;
-    width: 220px;
+    height: 200px;
+    width: calc(var(--width-wonder) * 2 + 60px);
+    margin-left: 15px;
     animation: showElement 0.5s linear;
     filter: drop-shadow(0 15px 35px rgba(0, 0, 0, 0.35));
 }

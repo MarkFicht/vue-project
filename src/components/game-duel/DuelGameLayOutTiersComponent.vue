@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { toRefs } from 'vue';
 import type { IGameDuelCard } from '@/interfaces/GameDuel';
 import DuelGameCardComponent from '@/components/game-duel/DuelGameCardComponent.vue';
 import { duelGameStore } from '@/store/duelGameStore';
@@ -9,58 +8,76 @@ import type IUser from '@/interfaces/User';
 const storeDuelGame = duelGameStore();
 const { selectedCard, player1, player2 } = storeToRefs(storeDuelGame);
 
-const props = defineProps<{
+defineProps<{
     card: IGameDuelCard;
     x: number;
     y: number;
-    reversColor: string;
     cash1P?: number;
     cash2P?: number;
     user: IUser;
 }>();
-const { card } = toRefs(props);
 </script>
 
 <template>
     <div
-        v-if="card.taken === 'inGame'"
         :class="[
             'cardWrapper',
+            card.taken === 'inGame' ? '' : 'invisible',
             card.coversBy?.length !== 0 && card.hide && 'cardHide',
             card.coversBy?.length === 0 && 'canSelect',
             selectedCard.id === card.id && 'selected'
         ]"
-        :style="`--x:${x}%; --y:${y}%; --z:${card.id}; --reversCol:${reversColor}; cursor: ${
+        :style="`--x:${x}%; --y:${y}%; --z:${card.id}; cursor: ${
             card.coversBy?.length === 0 ? 'pointer' : 'default'
         };`"
     >
         <DuelGameCardComponent
             :card="card"
-            :cash1P="user.uid === player1.user.uid ? cash1P : cash2P"
-            :cash2P="user.uid === player1.user.uid ? cash2P : cash1P"
-            :res1P="user.uid === player1.user.uid ? player1.resources.cash : player2.resources.cash"
-            :res2P="user.uid === player1.user.uid ? player2.resources.cash : player1.resources.cash"
+            :cash1P="
+                card.taken === 'inGame'
+                    ? user.uid === player1.user.uid
+                        ? cash1P
+                        : cash2P
+                    : undefined
+            "
+            :cash2P="
+                card.taken === 'inGame'
+                    ? user.uid === player1.user.uid
+                        ? cash2P
+                        : cash1P
+                    : undefined
+            "
+            :res1P="
+                card.taken === 'inGame'
+                    ? user.uid === player1.user.uid
+                        ? player1.resources.cash
+                        : player2.resources.cash
+                    : undefined
+            "
+            :res2P="
+                card.taken === 'inGame'
+                    ? user.uid === player1.user.uid
+                        ? player2.resources.cash
+                        : player1.resources.cash
+                    : undefined
+            "
         />
-    </div>
-    <div v-else :class="['cardWrapper', 'invisible']" :style="`--x:${x}%; --y:${y}%; --z:${-10};`">
-        <DuelGameCardComponent :card="card" />
     </div>
 </template>
 
 <style scoped>
 .cardWrapper {
-    border-radius: 5px;
-    width: 50px;
-    height: 60px;
-    transition: 0.3s;
     position: absolute;
+    width: var(--width-tier);
+    height: var(--height-tier);
     top: 50%;
     left: 50%;
-    opacity: 0;
+    border-radius: 5px;
     user-select: none;
-    transform: translateY(-250%) translateX(-250%);
+    box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.25);
+    transition: 0.3s all;
     /* z-index: var(--z); */
-    /* transform: translateY(var(--y)) translateX(var(--x)); */
+    opacity: 0;
     animation: prepareLayOut 1.2s calc(var(--z) * 0.25s) linear forwards;
 }
 .selected::before {
@@ -76,7 +93,6 @@ const { card } = toRefs(props);
     animation: pulseBorder 1.5s ease-in-out infinite;
 }
 .invisible {
-    z-index: var(--z);
     transform: translateY(var(--y)) translateX(var(--x));
     animation: invisible 0.5s linear forwards;
 }
@@ -87,6 +103,8 @@ const { card } = toRefs(props);
     100% {
         opacity: 0;
         display: none;
+        cursor: default;
+        z-index: -100;
     }
 }
 @keyframes prepareLayOut {
