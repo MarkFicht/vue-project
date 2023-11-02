@@ -13,14 +13,13 @@ const props = defineProps<{
 </script>
 
 <template>
-    <section
-        :class="[
-            'graveyard',
-            'customInput',
-            isMyTurn && pickCardFromGraveyard !== '' && 'selectFromGraveyard'
-        ]"
-    >
-        <div :class="[graveyard.length >= 16 && 'addScrollbar']">
+    <section :class="['graveyard', 'customInput']">
+        <div
+            :class="[
+                graveyard.length >= 16 && 'addScrollbar',
+                isMyTurn && pickCardFromGraveyard !== '' && 'selectFromGraveyard'
+            ]"
+        >
             <DuelGameCardComponent
                 v-for="card in graveyard"
                 :key="card.id"

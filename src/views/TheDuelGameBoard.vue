@@ -1184,7 +1184,7 @@ section.wrapper {
 }
 .cardsWonderPrepre {
     transform: scale(1.3);
-    filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.15));
+    filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.33));
 }
 .pickWonders {
     display: flex;
@@ -1195,7 +1195,7 @@ section.wrapper {
     width: calc(var(--width-wonder) * 2 + 60px);
     margin-left: 15px;
     animation: showElement 0.5s linear;
-    filter: drop-shadow(0 15px 35px rgba(0, 0, 0, 0.35));
+    filter: drop-shadow(0 0px 5px rgba(0, 0, 0, 0.33));
 }
 .animateHand {
     margin-left: 5px;
