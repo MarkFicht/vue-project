@@ -278,8 +278,7 @@ watch(
 watch([() => endGameAnimationEnd.value], ([newVal]) => {
     if (newVal) {
         if (wonByPoints.value === 'draw') audioWin.value.play();
-
-        if (wonByPoints.value !== '') {
+        else if (wonByPoints.value !== '') {
             wonByPoints.value === user.value.uid ? audioWin.value.play() : audioLost.value.play();
         }
     }
@@ -1106,13 +1105,18 @@ main {
 /* --- Main Wrapper --- */
 section.wrapper {
     position: relative;
-    width: 1192px;
-    height: 780px;
+    width: calc(
+        calc(var(--width-wonder) * 2 + 40px) + calc(var(--width-tier) * 7 + 24px) +
+            var(--width-board) + 180px + 20px
+    );
+    height: calc(
+        calc(1 / 4 * var(--height-tier) * 7 - 44px) + calc(var(--height-board) * 1 / 10) +
+            calc(var(--height-board) * 7 / 10) + calc(var(--height-board) * 1 / 10) + 50px +
+            calc(1 / 4 * var(--height-tier) * 7 - 44px) + 20px
+    );
     padding: 10px;
-    margin: 0 auto;
+    margin: 20px auto;
     /* gap: 10px; */
-    margin-bottom: 20px;
-    margin-top: 20px;
     color: #444;
     box-shadow: 0 0 50px rgba(0, 0, 0, 0.3);
     border-radius: 20px;
@@ -1128,9 +1132,11 @@ section.wrapper {
         calc(var(--width-wonder) * 2 + 40px) calc(var(--width-tier) * 7 + 24px) var(--width-board)
         180px;
 
-    grid-template-rows: calc(1 / 4 * var(--height-tier) * 7 - 44px) 50px 348px 50px 50px calc(
-            1 / 4 * var(--height-tier) * 7 - 44px
-        );
+    grid-template-rows:
+        calc(1 / 4 * var(--height-tier) * 7 - 44px) calc(var(--height-board) * 1 / 10)
+        calc(var(--height-board) * 7 / 10)
+        calc(var(--height-board) * 1 / 10)
+        50px calc(1 / 4 * var(--height-tier) * 7 - 44px);
     background-color: #eee;
     animation: showElement 2s linear;
 }
@@ -1209,7 +1215,12 @@ section.wrapper {
 
 @media (max-width: 1200px) {
     /* section.wrapper {
-        transform: scale(0.8);
+        --width-tier: 50px;
+        --height-tier: 77px;
+        --width-wonder: 100px;
+        --height-wonder: 69px;
+        --width-board: 150px;
+        --height-board: 350px;
     } */
 }
 @media (max-width: 720px) {

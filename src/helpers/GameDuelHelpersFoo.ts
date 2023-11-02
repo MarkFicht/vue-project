@@ -64,8 +64,8 @@ export function prepareIdForCards(arr: IGameDuelCard[], tier: Tier): IGameDuelCa
         prepareCards[6] = { ...arr[6], id: 7, coversBy: [10] };
         prepareCards[7] = { ...arr[7], id: 8, coversBy: [11] };
         prepareCards[8] = { ...arr[8], id: 9, coversBy: [11] };
-        prepareCards[9] = { ...arr[9], id: 10, coversBy: [14, 15], hide: true };
-        prepareCards[10] = { ...arr[10], id: 11, coversBy: [12, 13], hide: true };
+        prepareCards[9] = { ...arr[9], id: 10, coversBy: [12, 13], hide: true };
+        prepareCards[10] = { ...arr[10], id: 11, coversBy: [14, 15], hide: true };
         prepareCards[11] = { ...arr[11], id: 12, coversBy: [16] };
         prepareCards[12] = { ...arr[12], id: 13, coversBy: [16, 17] };
         prepareCards[13] = { ...arr[13], id: 14, coversBy: [17, 18] };

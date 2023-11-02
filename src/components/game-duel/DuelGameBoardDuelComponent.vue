@@ -78,7 +78,6 @@ const { isMyTurn } = toRefs(props);
     width: 10%;
     top: 0;
     left: 23.9%;
-    border: 1px solid;
     transition: 0.5s;
 }
 .punishment div {
@@ -87,63 +86,63 @@ const { isMyTurn } = toRefs(props);
     transition: 0.5s;
 }
 .punishment1 {
-    top: 10.5%;
+    top: 10%;
     right: 0;
-    width: 18.5px;
-    height: 42px;
+    width: 27px;
+    height: 60px;
+    background-size: 92px 92px;
     background-image: url('@/assets/duel/sprites.webp');
-    background-size: 64px 64px;
 }
 .punishment2 {
-    top: 25.7%;
-    right: 9%;
-    width: 15.5px;
-    height: 36px;
+    top: 25.5%;
+    right: 16%;
+    width: 22.5px;
+    height: 51px;
+    background-size: 92px 92px;
     background-image: url('@/assets/duel/sprites.webp');
-    background-size: 64px 64px;
-    background-position: 45.5px 0px;
+    background-position: 66px 0px;
 }
 .punishment3 {
     top: 64.2%;
-    right: 9%;
-    width: 15.5px;
-    height: 36px;
+    right: 16%;
+    width: 22.5px;
+    height: 51px;
+    background-size: 92px 92px;
     background-image: url('@/assets/duel/sprites.webp');
-    background-size: 64px 64px;
-    background-position: 45.5px 0px;
+    background-position: 66px 0px;
 }
 .punishment4 {
-    top: 78%;
+    top: 77.8%;
     right: 0;
-    width: 18.5px;
-    height: 42px;
+    width: 27px;
+    height: 60px;
+    background-size: 92px 92px;
     background-image: url('@/assets/duel/sprites.webp');
-    background-size: 64px 64px;
 }
 
 /* Pawn */
 .boardPawn {
     position: absolute;
     height: var(--height-board);
-    width: 14%;
+    width: calc(var(--width-board) * 1 / 5.35);
     top: 0;
     left: 35.9%;
     transition: 0.5s;
 }
 .pawn {
     position: absolute;
-    width: 39px;
-    height: 14px;
+    width: 55px;
+    height: 20px;
     background-image: url('@/assets/duel/sprites.webp');
-    background-size: 118px 118px;
+    background-size: 170px 170px;
     background-repeat: no-repeat;
-    background-position: -55px -98px;
-    left: -6px;
+    background-position: -81px -142px;
+    left: -9px;
     top: 50%;
     font-size: 10px;
     text-align: center;
     line-height: 18px;
-    transform: translateY(calc(var(--position) * 125% - 50%));
+    transform: translateY(calc(var(--position) * 120.5% - 50%));
     transition: 0.5s;
     z-index: 10;
 }
@@ -152,31 +151,31 @@ const { isMyTurn } = toRefs(props);
 .boardCoins {
     position: absolute;
     height: var(--height-board);
-    width: 26%;
-    height: 54%;
-    top: 23%;
-    left: 58%;
+    width: 26.5%;
+    height: 53.8%;
+    top: 23.1%;
+    left: 58.7%;
     transition: 0.5s;
     border: 3px dotted transparent;
 }
 .boardCoins > span {
     position: absolute;
-    left: 1px;
+    left: 2px;
 }
 .boardCoins > span:nth-child(1) {
-    top: 5px;
+    top: 8px;
 }
 .boardCoins > span:nth-child(2) {
-    top: 42px;
+    top: 60px;
 }
 .boardCoins > span:nth-child(3) {
-    top: 79px;
+    top: 111px;
 }
 .boardCoins > span:nth-child(4) {
-    top: 116px;
+    top: 162px;
 }
 .boardCoins > span:nth-child(5) {
-    top: 152px;
+    top: 211px;
 }
 /* ROTATE */
 .rotatePawnDuel {
@@ -186,8 +185,8 @@ const { isMyTurn } = toRefs(props);
 /* --------------- */
 .selectCoin {
     border: 3px dotted tomato;
-    border-top-right-radius: 15px;
-    border-bottom-right-radius: 15px;
+    border-top-right-radius: 18px;
+    border-bottom-right-radius: 18px;
     animation: pulseBorder 1.5s 1.5s ease-in-out infinite;
 }
 

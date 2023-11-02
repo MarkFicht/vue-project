@@ -57,61 +57,43 @@ onMounted(() => {
 .boardSingleCoin {
     position: relative;
     z-index: 10;
-    height: 31px;
-    width: 31px;
+    height: var(--coin-size);
+    width: var(--coin-size);
     border-radius: 50%;
     background-repeat: no-repeat;
     display: flex;
+    background-image: url('@/assets/duel/coins.webp');
+    background-size: calc(var(--coin-size) * 4) calc(var(--coin-size) * 4);
 }
 .point4n6cash {
-    background-image: url('@/assets/duel/coins.webp');
-    background-size: 124px 124px;
     background-position: 0 0;
 }
 .lowCostWonder {
-    background-image: url('@/assets/duel/coins.webp');
-    background-size: 124px 124px;
-    background-position: -31px 0;
+    background-position: calc(var(--coin-size) * -1) 0;
 }
 .cashBack {
-    background-image: url('@/assets/duel/coins.webp');
-    background-size: 124px 124px;
-    background-position: -62px 0;
+    background-position: calc(var(--coin-size) * -2) 0;
 }
 .artefact7 {
-    background-image: url('@/assets/duel/coins.webp');
-    background-size: 124px 124px;
-    background-position: -93px 0;
+    background-position: calc(var(--coin-size) * -3) 0;
 }
 
 .lowCostBlue {
-    background-image: url('@/assets/duel/coins.webp');
-    background-size: 124px 124px;
-    background-position: 0 -31px;
+    background-position: 0 calc(var(--coin-size) * -1);
 }
 .pointX3 {
-    background-image: url('@/assets/duel/coins.webp');
-    background-size: 124px 124px;
-    background-position: -31px -31px;
+    background-position: calc(var(--coin-size) * -1) calc(var(--coin-size) * -1);
 }
 .point7 {
-    background-image: url('@/assets/duel/coins.webp');
-    background-size: 124px 124px;
-    background-position: -62px -31px;
+    background-position: calc(var(--coin-size) * -2) calc(var(--coin-size) * -1);
 }
 .attack1 {
-    background-image: url('@/assets/duel/coins.webp');
-    background-size: 124px 124px;
-    background-position: -93px -31px;
+    background-position: calc(var(--coin-size) * -3) calc(var(--coin-size) * -1);
 }
 .repeatWonder {
-    background-image: url('@/assets/duel/coins.webp');
-    background-size: 124px 124px;
-    background-position: 0px -62px;
+    background-position: 0px calc(var(--coin-size) * -2);
 }
 .cash6n4special {
-    background-image: url('@/assets/duel/coins.webp');
-    background-size: 124px 124px;
-    background-position: -31px -62px;
+    background-position: calc(var(--coin-size) * -1) calc(var(--coin-size) * -2);
 }
 </style>

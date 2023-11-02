@@ -156,7 +156,7 @@ function getNumberOfArtefacts(uid: string): number {
                     wonByArt !== '' && wonByArt === player1.user.uid && 'artWin'
                 ]"
             >
-                <div class="countArt">
+                <div :class="['countArt', user.uid === player1.user.uid ? '' : 'reverseCountArt']">
                     {{ getNumberOfArtefacts(`${player1.user.uid}`) + '/6' }}
                 </div>
                 <DuelGameCardComponent
@@ -322,7 +322,7 @@ function getNumberOfArtefacts(uid: string): number {
                     wonByArt !== '' && wonByArt === player2.user.uid && 'artWin'
                 ]"
             >
-                <div class="countArt">
+                <div :class="['countArt', user.uid === player1.user.uid ? 'reverseCountArt' : '']">
                     {{ getNumberOfArtefacts(`${player2.user.uid}`) + '/6' }}
                 </div>
                 <DuelGameCardComponent
@@ -446,6 +446,10 @@ function getNumberOfArtefacts(uid: string): number {
     left: 50%;
     transform: translateX(-50%);
 }
+.reverseCountArt {
+    left: 110%;
+    top: 182px;
+}
 .playerCard7 {
     background-image: linear-gradient(to bottom, rgba(124, 11, 189, 0.33), 60%, transparent);
 }
@@ -560,7 +564,7 @@ function getNumberOfArtefacts(uid: string): number {
     top: -3px;
     left: -2px;
     width: calc(var(--width-tier) + 4px);
-    height: calc(150px + 6px);
+    height: calc(1 / 4 * var(--height-tier) * 7 + 6px);
     border: 3px double tomato;
     transform: scale(1.1);
     animation: pulse 1.5s infinite ease-in-out;
