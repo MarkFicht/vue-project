@@ -83,7 +83,7 @@ watch(
 );
 
 // TODO watchers for other games + Modify foo below
-// TODO timers with timestamp + remove away/offline players from lobby
+// TODO timers with timestamp + remove away/offline players from lobby + set 30s from timestamp
 // TODO remove players and game if all players Disconnected/away
 
 // ---

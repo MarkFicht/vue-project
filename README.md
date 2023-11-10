@@ -30,6 +30,10 @@ Ultimately, the website is intended for `desktop computers` and tested in the `C
 
 -   Soon
 
+## Rules of games
+
+-   Soon
+
 ## Status
 
 Project: <b>In progress</b>
