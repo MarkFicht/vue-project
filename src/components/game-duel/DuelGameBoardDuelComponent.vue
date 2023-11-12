@@ -44,7 +44,7 @@ const { isMyTurn } = toRefs(props);
             ></div>
         </div>
 
-        <div :class="['boardCoins', isMyTurn && pickCoin !== '' && 'selectCoin']">
+        <div :class="['boardCoins', pickCoin !== '' && 'selectCoin']">
             <DuelGameCoinComponent
                 v-for="coin in board.coins"
                 :key="coin"

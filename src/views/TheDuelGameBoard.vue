@@ -72,6 +72,7 @@ const labelWonByArt = ref<string>('Winner By Artefacts: ');
 const labelWonByAggressive = ref<string>('Winner By Aggressive: ');
 const labelWonBySurr = ref<string>('Winner By Surrender: ');
 const labelWonByPoints = ref<string>('Winner By Points: ');
+const labelOpponentsMove = ref<string>(`Opponent's move...`);
 
 const audioBell = ref<HTMLAudioElement>(new Audio(bell));
 const audioWin = ref<HTMLAudioElement>(new Audio(soundWin));
@@ -1090,7 +1091,10 @@ async function prepareGameToRemoveFromDB(user: IUser): Promise<void> {
             <section v-else-if="!isMyTurn && tier === 'prepare' && !isLoading" class="playerAction">
                 <p>{{ labelOpponentPickWonder }}</p>
             </section>
-            <section v-else class="playerAction"></section>
+            <section v-else class="playerAction">
+                <p v-if="pickCoinOfThree && !isMyTurn">{{ 'Opponent: ' + labelPickCoinOfThree }}</p>
+                <p v-else-if="!isMyTurn">{{ labelOpponentsMove }}</p>
+            </section>
         </section>
     </main>
 </template>

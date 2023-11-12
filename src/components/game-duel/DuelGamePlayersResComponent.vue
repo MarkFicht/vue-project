@@ -75,8 +75,7 @@ function getNumberOfArtefacts(uid: string): number {
                 :class="[
                     'playerCardColorContainer',
                     'playerCard1',
-                    user.uid === player2.user.uid &&
-                        isMyTurn &&
+                    destroyBrown === player2.user.uid &&
                         destroyBrown !== '' &&
                         'selectCardToDestroy'
                 ]"
@@ -102,10 +101,7 @@ function getNumberOfArtefacts(uid: string): number {
                 :class="[
                     'playerCardColorContainer',
                     'playerCard2',
-                    user.uid === player2.user.uid &&
-                        isMyTurn &&
-                        destroyGrey !== '' &&
-                        'selectCardToDestroy'
+                    destroyGrey === player2.user.uid && destroyGrey !== '' && 'selectCardToDestroy'
                 ]"
             >
                 <DuelGameCardComponent
@@ -241,8 +237,7 @@ function getNumberOfArtefacts(uid: string): number {
                 :class="[
                     'playerCardColorContainer',
                     'playerCard1',
-                    user.uid === player1.user.uid &&
-                        isMyTurn &&
+                    destroyBrown === player1.user.uid &&
                         destroyBrown !== '' &&
                         'selectCardToDestroy'
                 ]"
@@ -268,10 +263,7 @@ function getNumberOfArtefacts(uid: string): number {
                 :class="[
                     'playerCardColorContainer',
                     'playerCard2',
-                    user.uid === player1.user.uid &&
-                        isMyTurn &&
-                        destroyGrey !== '' &&
-                        'selectCardToDestroy'
+                    destroyGrey === player1.user.uid && destroyGrey !== '' && 'selectCardToDestroy'
                 ]"
             >
                 <DuelGameCardComponent

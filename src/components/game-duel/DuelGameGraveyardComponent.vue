@@ -17,7 +17,8 @@ const props = defineProps<{
         <div
             :class="[
                 graveyard.length >= 16 && 'addScrollbar',
-                isMyTurn && pickCardFromGraveyard !== '' && 'selectFromGraveyard'
+                pickCardFromGraveyard !== '' && 'selectFromGraveyard',
+                isMyTurn && 'addCursorPointer'
             ]"
         >
             <DuelGameCardComponent
@@ -67,7 +68,7 @@ const props = defineProps<{
     border: 3px dotted tomato;
     animation: pulseBorder 1.5s ease-in-out infinite;
 }
-.selectFromGraveyard > div {
+.addCursorPointer > div {
     cursor: pointer !important;
     z-index: 10;
 }
