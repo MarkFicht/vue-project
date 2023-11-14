@@ -18,9 +18,11 @@ import IndicatorNavi from '@/components/IndicatorNavi.vue';
 const header: Ref<string> = ref('Vue Project');
 const signIn = ref<string>('Sign In');
 const register = ref<string>('Register');
+// === TO DO === - Prepared register with google (on android) + forget password
+
 // const forgetPassword = ref<string>('Forgotten');
-const signInGoogle = ref<string>('Sign In Google');
-const signUpGoogle = ref<string>('Sign Up Google');
+// const signInGoogle = ref<string>('Sign In Google');
+// const signUpGoogle = ref<string>('Sign Up Google');
 const displayName = ref<string>('User Name');
 const password = ref<string>('Password');
 const emailLabel = ref<string>('E-mail');
@@ -53,11 +55,6 @@ const state = reactive({
     keepLogIn: false
 });
 const rules = reactive({
-    // displayName: {
-    //     required: activeLink.value === `${register}` ? required : {},
-    //     minLength: minLength(6),
-    //     maxLength: maxLength(20)
-    // },
     password: { required, minLength: minLength(6), maxLength: maxLength(20) },
     email: {
         required,
@@ -65,8 +62,16 @@ const rules = reactive({
     },
     keepLogIn: {}
 });
+const rulesDisplayNick = reactive({
+    displayName: {
+        required,
+        minLength: minLength(4),
+        maxLength: maxLength(16)
+    }
+});
 
 const v$ = useValidate(rules, state);
+const v2$ = useValidate(rulesDisplayNick, state);
 
 // ---
 onBeforeMount(async () => {
@@ -85,7 +90,7 @@ onBeforeMount(async () => {
 });
 
 watch([() => state.email, () => state.password], ([newValEmail, newValPassword]) => {
-    state.email = newValEmail.replace(' ', '');
+    state.email = newValEmail.replace(' ', '').toLowerCase();
     errMsg.value = '';
 });
 
@@ -94,9 +99,11 @@ const submitForm = async (e: MouseEvent) => {
     e.preventDefault();
 
     const result = await v$.value.$validate();
+    const resultDisplayNick =
+        activeLink.value === register.value ? await v2$.value.$validate() : null;
     const auth = getAuth();
 
-    if (result && activeLink.value === register.value) {
+    if (result && activeLink.value === register.value && resultDisplayNick) {
         createUserWithEmailAndPassword(auth, state.email, state.password)
             .then((data) => {
                 state.displayName !== '' &&
@@ -142,16 +149,16 @@ const submitForm = async (e: MouseEvent) => {
     }
 };
 
-const signInWithGoogle = (e: MouseEvent) => {
-    e.preventDefault();
+// const signInWithGoogle = (e: MouseEvent) => {
+//     e.preventDefault();
 
-    const provider = new GoogleAuthProvider();
-    signInWithPopup(getAuth(), provider)
-        .then((res) => router.push('/feed'))
-        .catch((err) => {
-            console.error(err.message);
-        });
-};
+//     const provider = new GoogleAuthProvider();
+//     signInWithPopup(getAuth(), provider)
+//         .then((res) => router.push('/feed'))
+//         .catch((err) => {
+//             console.error(err.message);
+//         });
+// };
 </script>
 
 <template>
@@ -178,9 +185,12 @@ const signInWithGoogle = (e: MouseEvent) => {
                         <ion-icon name="person-circle-outline"></ion-icon>
                     </span>
                 </span>
-                <!-- <span v-if="v$.displayName.$error" class="form-error">
-                    {{ v$.displayName.$errors[0].$message }}</span
-                > -->
+                <span
+                    v-if="activeLink === `${register}` && v2$.displayName.$error"
+                    class="form-error"
+                >
+                    {{ v2$.displayName.$errors[0].$message }}</span
+                >
 
                 <span class="input-box">
                     <label for="email-input">{{ emailLabel }}</label>
@@ -228,7 +238,7 @@ const signInWithGoogle = (e: MouseEvent) => {
                         @click="(e) => submitForm(e)"
                     />
                 </span>
-                <span class="input-box submit-google">
+                <!-- <span class="input-box submit-google">
                     <input
                         type="submit"
                         :class="'customButton'"
@@ -238,7 +248,7 @@ const signInWithGoogle = (e: MouseEvent) => {
                     <span class="icon">
                         <ion-icon name="logo-google"></ion-icon>
                     </span>
-                </span>
+                </span> -->
                 <span v-if="errMsg" class="form-error form-error-submit"> {{ errMsg }}</span>
             </form>
         </section>
@@ -386,6 +396,28 @@ section.login form input[type='submit'] {
 
     section.login form .input-box input {
         height: 36px;
+    }
+
+    section.login form h2 {
+        font-size: 1.4em;
+        margin-bottom: 15px;
+        text-align: center;
+    }
+
+    section.login form span {
+        font-size: 0.65em;
+    }
+
+    section.login form > label {
+        font-size: 0.65em;
+    }
+
+    section.login form input[type='submit'] {
+        font-size: 1.2em;
+    }
+
+    .form-error {
+        font-size: 0.8em !important;
     }
 }
 </style>
