@@ -105,13 +105,11 @@ const submitForm = async (e: MouseEvent) => {
 
     if (result && activeLink.value === register.value && resultDisplayNick) {
         createUserWithEmailAndPassword(auth, state.email, state.password)
-            .then((data) => {
+            .then(async (data) => {
                 state.displayName !== '' &&
-                    updateProfile(auth.currentUser as any, {
+                    (await updateProfile(getAuth().currentUser as any, {
                         displayName: state.displayName
-                    });
-
-                router.push('/feed');
+                    }).finally(() => router.push('/feed')));
             })
             .catch((error) => {
                 console.error(error.message);

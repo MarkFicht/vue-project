@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, provide } from 'vue';
+import { onMounted, onBeforeMount, ref, provide } from 'vue';
 import { getCurrentUser } from '@/helpers/HelpersFoo';
 import { collection, doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import db from '@/firebase/index';
@@ -29,7 +29,7 @@ const currentUser = ref<IUser>({} as IUser);
 // ---
 const activeLink = ref<string>(gamesPage.value);
 const routes = ref<IRouteIndicatorNavi[]>([
-    { name: `${gamesPage.value}`, ionIconClass: iconGame.value, to: `/feed/games` },
+    { name: `${gamesPage.value}`, ionIconClass: iconGame.value, to: `/feed` },
     { name: `${settings.value}`, ionIconClass: iconSettings.value, to: `/feed/settings` },
     { name: `${logOut.value}`, ionIconClass: iconLogout.value, to: `/feed/logout` }
 ]);
@@ -44,7 +44,7 @@ const colors = ref<string[]>([
 provide('indicatorNavi', { activeLink, routes, updateActiveLink, colors });
 
 // ---
-onMounted(async () => {
+onBeforeMount(async () => {
     await getCurrentUser().then(async (user: any) => {
         currentUser.value = {
             uid: user.uid,
@@ -109,6 +109,7 @@ onMounted(async () => {
 </template>
 
 <style scoped>
+/* Changed responsive */
 main {
     display: flex;
     justify-content: center;
