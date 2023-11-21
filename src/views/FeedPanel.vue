@@ -109,7 +109,6 @@ onBeforeMount(async () => {
 </template>
 
 <style scoped>
-/*  */
 main {
     display: flex;
     justify-content: center;
