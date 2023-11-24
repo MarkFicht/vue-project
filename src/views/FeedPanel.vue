@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { onMounted, onBeforeMount, ref, provide } from 'vue';
+import { onBeforeMount, ref, provide } from 'vue';
 import { getCurrentUser } from '@/helpers/HelpersFoo';
-import { collection, doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
-import db from '@/firebase/index';
+import { usersRef } from '@/helpers/HelpersFirebaseConst';
+import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { useRouter } from 'vue-router';
 import type IRouteIndicatorNavi from '@/interfaces/RouteIndicatorNavi';
 import IndicatorNavi from '@/components/IndicatorNavi.vue';
@@ -21,8 +21,6 @@ const iconSettings = ref<string>(`settings-outline`);
 const iconLogout = ref<string>(`log-out-outline`);
 
 const router = useRouter();
-
-const usersRef = collection(db, 'users');
 
 const currentUser = ref<IUser>({} as IUser);
 
@@ -43,6 +41,8 @@ const colors = ref<string[]>([
 ]);
 provide('indicatorNavi', { activeLink, routes, updateActiveLink, colors });
 
+// TO DO - add WCAG 2.2
+
 // ---
 onBeforeMount(async () => {
     await getCurrentUser().then(async (user: any) => {
@@ -51,8 +51,8 @@ onBeforeMount(async () => {
             email: user.email || '',
             displayName: user.displayName || ''
         };
-        const docSnap = await getDoc(doc(usersRef, user.uid));
 
+        const docSnap = await getDoc(doc(usersRef, user.uid));
         if (docSnap.exists()) {
             currentUser.value = docSnap.data() as IUser;
         } else {

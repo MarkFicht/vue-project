@@ -7,17 +7,15 @@ import { inject, watch, onBeforeMount, onBeforeUnmount, ref } from 'vue';
 import { gameStore } from '@/store/GameStore';
 import { storeToRefs } from 'pinia';
 import {
-    collection,
-    doc,
-    getDoc,
-    updateDoc,
-    arrayUnion,
-    serverTimestamp
-} from 'firebase/firestore';
-import db from '@/firebase/index';
+    usersRef,
+    gameStatusDuelRef,
+    gameStatusGemsRef,
+    gameStatusReflexRef
+} from '@/helpers/HelpersFirebaseConst';
+import { doc, updateDoc, arrayUnion, serverTimestamp } from 'firebase/firestore';
 import bellNotify from '@/assets/bell-notification.mp3';
 import bell from '@/assets/bell.mp3';
-import debounce from 'lodash-es/debounce';
+import type IGame from '@/interfaces/Game';
 
 const router = useRouter();
 
@@ -33,119 +31,212 @@ const labelRedirect = ref<string>('Redirect for a few sec...');
 const labelWaiting = ref<string>('Approval game: ');
 
 const storeGame = gameStore();
-const { duel } = storeToRefs(storeGame);
-
-const usersRef = collection(db, 'users');
-
-const gameStatusRef = collection(db, 'gameStatus');
-const gameStatusDuelRef = doc(gameStatusRef, 'Duel');
-
-const gameDuelRef = collection(db, 'gameDuel');
-const tableGameDuelRef = doc(gameDuelRef, 'table1');
+const { duel, gems, reflex } = storeToRefs(storeGame);
 
 const audioNotify = ref<HTMLAudioElement>(new Audio(bellNotify));
 const audioBell = ref<HTMLAudioElement>(new Audio(bell));
-const debounceRedirect = ref<any>(
-    debounce(function () {
-        router.push('/duel-game');
-    }, 3 * 1000)
-);
 
-watch(
-    () => duel.value.players,
-    async (newVal, oldVal) => {
-        if (newVal.length === 2 && oldVal.length !== newVal.length) audioNotify.value.play();
+watch([() => duel.value.players], async ([newVal], [oldVal]) => {
+    if (newVal.length === 2 && oldVal.length !== newVal.length) audioNotify.value.play();
 
-        // --- Redirect to game
-        if (
-            newVal.length === 2 &&
-            newVal.find((user) => user.uid === props.currentUser.uid) &&
-            !newVal.find((user) => !user.readyToGame)
-        ) {
-            await updateDoc(gameStatusDuelRef, { isStarted: true });
-        }
+    // --- Redirect to game
+    if (
+        newVal.length === 2 &&
+        newVal.find((user) => user.uid === props.currentUser.uid) &&
+        !newVal.find((user) => !user.readyToGame)
+    ) {
+        await updateDoc(gameStatusDuelRef, { isStarted: true });
     }
-);
-watch(
-    () => duel.value.isStarted,
-    async (newVal) => {
-        if (duel.value.isStarted === false) await storeGame.deleteGameDuel();
+});
+watch([() => duel.value.isStarted], async ([newVal]) => {
+    if (newVal === false) await storeGame.deleteGameDuel();
 
-        // --- Redirect to game
-        if (
-            duel.value.players.find((user) => user.uid === props.currentUser.uid) &&
-            !duel.value.players.find((user) => !user.readyToGame)
-        ) {
-            audioBell.value.play();
-            debounceRedirect.value();
-        }
+    // --- Redirect to game
+    if (
+        duel.value.players.find((user) => user.uid === props.currentUser.uid) &&
+        !duel.value.players.find((user) => !user.readyToGame)
+    ) {
+        audioBell.value.play();
+        const timer = setTimeout(() => {
+            clearTimeout(timer);
+            router.push('/duel-game');
+        }, 3 * 1000);
     }
-);
+});
 
-// TODO watchers for other games + Modify foo below
+watch([() => gems.value.players], async ([newVal], [oldVal]) => {
+    // if (newVal.length === 2 && oldVal.length !== newVal.length) audioNotify.value.play();
+    // // --- Redirect to game
+    // if (
+    //     newVal.length === 2 &&
+    //     newVal.find((user) => user.uid === props.currentUser.uid) &&
+    //     !newVal.find((user) => !user.readyToGame)
+    // ) {
+    //     await updateDoc(gameStatusGemsRef, { isStarted: true });
+    // }
+});
+watch([() => gems.value.isStarted], async ([newVal]) => {
+    console.log('%c gems val isStarted -> ', 'background: #222; color: #bada55', newVal);
+    if (newVal === false) await storeGame.deleteGameGems();
+    // TODO --- Redirect to game
+});
+
+watch([() => reflex.value.players], async ([newVal], [oldVal]) => {
+    // if (newVal.length === 2 && oldVal.length !== newVal.length) audioNotify.value.play();
+    // // --- Redirect to game
+    // if (
+    //     newVal.length === 2 &&
+    //     newVal.find((user) => user.uid === props.currentUser.uid) &&
+    //     !newVal.find((user) => !user.readyToGame)
+    // ) {
+    //     await updateDoc(gameStatusReflexRef, { isStarted: true });
+    // }
+});
+watch([() => reflex.value.isStarted], async ([newVal]) => {
+    console.log('%c reflex val isStarted -> ', 'background: #222; color: #bada55', newVal);
+    if (newVal === false) await storeGame.deleteGameReflex();
+    // TODO --- Redirect to game
+});
+
 // TODO timers with timestamp + remove away/offline players from lobby + set 30s from timestamp
-// TODO move fn to store
 // TODO remove players and game if all players Disconnected/away
 
 // ---
 onBeforeMount(async () => {
     await storeGame.subFirebaseConnect();
-
-    const statusDuelSnap = await getDoc(gameStatusDuelRef);
-
-    // --- Redirect to game + Check DB for Duel Game
-    if (statusDuelSnap.exists()) {
-        const users: IUser[] = statusDuelSnap.data().players;
-        const isStarted: boolean = statusDuelSnap.data().isStarted;
-
-        if (isStarted === false) {
-            await storeGame.deleteGameDuel();
-        }
-
-        if (
-            users.find((user) => user.uid === props.currentUser.uid) &&
-            !users.find((user) => !user.readyToGame)
-        ) {
-            audioBell.value.play();
-            debounceRedirect.value();
-        }
-    }
 });
 
 onBeforeUnmount(async () => {
     storeGame.unSubFirebaseConnect();
-    debounceRedirect.value.cancel();
 });
 
 // ---
-async function addAndRemoveToLobby(): Promise<any> {
-    if (duel.value.players.find((user) => user.uid === props.currentUser.uid)) {
-        await updateDoc(doc(usersRef, props.currentUser.uid), {
-            game: '',
-            readyToGame: false,
-            online: 'online',
-            timestamp: serverTimestamp()
-        });
-        const newPlayers = duel.value.players.filter((user) => {
-            return user.uid !== props.currentUser.uid ? user : null;
-        });
-        await updateDoc(gameStatusDuelRef, {
-            players: newPlayers
-        });
-    } else {
-        await updateDoc(doc(usersRef, props.currentUser.uid), {
-            game: 'Duel',
-            readyToGame: false,
-            online: 'online',
-            timestamp: serverTimestamp()
-        });
-        await updateDoc(gameStatusDuelRef, {
-            players: arrayUnion({ ...props.currentUser, game: 'Duel', readyToGame: false })
-        });
+async function addAndRemoveToLobby(selectedGame: IGame['id']): Promise<any> {
+    if (selectedGame === 'Duel') {
+        if (duel.value.players.find((user) => user.uid === props.currentUser.uid)) {
+            await updateDoc(doc(usersRef, props.currentUser.uid), {
+                game: '',
+                readyToGame: false,
+                online: 'online',
+                timestamp: serverTimestamp()
+            });
+
+            const newPlayersDuel = duel.value.players.filter((user) => {
+                return user.uid !== props.currentUser.uid ? user : null;
+            });
+            await updateDoc(gameStatusDuelRef, {
+                players: newPlayersDuel
+            });
+        } else {
+            await updateDoc(doc(usersRef, props.currentUser.uid), {
+                game: 'Duel',
+                readyToGame: false,
+                online: 'online',
+                timestamp: serverTimestamp()
+            });
+            await updateDoc(gameStatusDuelRef, {
+                players: arrayUnion({ ...props.currentUser, game: 'Duel', readyToGame: false })
+            });
+
+            const newPlayersGems = gems.value.players.filter((user) => {
+                return user.uid !== props.currentUser.uid ? user : null;
+            });
+            await updateDoc(gameStatusGemsRef, {
+                players: newPlayersGems
+            });
+
+            const newPlayersReflex = reflex.value.players.filter((user) => {
+                return user.uid !== props.currentUser.uid ? user : null;
+            });
+            await updateDoc(gameStatusReflexRef, {
+                players: newPlayersReflex
+            });
+        }
+    } else if (selectedGame === 'Gems') {
+        if (gems.value.players.find((user) => user.uid === props.currentUser.uid)) {
+            await updateDoc(doc(usersRef, props.currentUser.uid), {
+                game: '',
+                readyToGame: false,
+                online: 'online',
+                timestamp: serverTimestamp()
+            });
+
+            const newPlayersGems = gems.value.players.filter((user) => {
+                return user.uid !== props.currentUser.uid ? user : null;
+            });
+            await updateDoc(gameStatusGemsRef, {
+                players: newPlayersGems
+            });
+        } else {
+            await updateDoc(doc(usersRef, props.currentUser.uid), {
+                game: 'Gems',
+                readyToGame: false,
+                online: 'online',
+                timestamp: serverTimestamp()
+            });
+            await updateDoc(gameStatusGemsRef, {
+                players: arrayUnion({ ...props.currentUser, game: 'Gems', readyToGame: false })
+            });
+
+            const newPlayersDuel = duel.value.players.filter((user) => {
+                return user.uid !== props.currentUser.uid ? user : null;
+            });
+            await updateDoc(gameStatusDuelRef, {
+                players: newPlayersDuel
+            });
+
+            const newPlayersReflex = reflex.value.players.filter((user) => {
+                return user.uid !== props.currentUser.uid ? user : null;
+            });
+            await updateDoc(gameStatusReflexRef, {
+                players: newPlayersReflex
+            });
+        }
+    } else if (selectedGame === 'Reflex') {
+        if (reflex.value.players.find((user) => user.uid === props.currentUser.uid)) {
+            await updateDoc(doc(usersRef, props.currentUser.uid), {
+                game: '',
+                readyToGame: false,
+                online: 'online',
+                timestamp: serverTimestamp()
+            });
+
+            const newPlayersReflex = reflex.value.players.filter((user) => {
+                return user.uid !== props.currentUser.uid ? user : null;
+            });
+            await updateDoc(gameStatusReflexRef, {
+                players: newPlayersReflex
+            });
+        } else {
+            await updateDoc(doc(usersRef, props.currentUser.uid), {
+                game: 'Reflex',
+                readyToGame: false,
+                online: 'online',
+                timestamp: serverTimestamp()
+            });
+            await updateDoc(gameStatusReflexRef, {
+                players: arrayUnion({ ...props.currentUser, game: 'Reflex', readyToGame: false })
+            });
+
+            const newPlayersDuel = duel.value.players.filter((user) => {
+                return user.uid !== props.currentUser.uid ? user : null;
+            });
+            await updateDoc(gameStatusDuelRef, {
+                players: newPlayersDuel
+            });
+
+            const newPlayersGems = gems.value.players.filter((user) => {
+                return user.uid !== props.currentUser.uid ? user : null;
+            });
+            await updateDoc(gameStatusGemsRef, {
+                players: newPlayersGems
+            });
+        }
     }
 }
 
-async function acceptInLobby(): Promise<any> {
+// TODO - foo for other games in lobby
+async function acceptDuelGame(): Promise<any> {
     if (duel.value.players.length === 2) {
         if (duel.value.players.find((user) => user.uid === props.currentUser.uid)) {
             await updateDoc(doc(usersRef, props.currentUser.uid), {
@@ -163,7 +254,7 @@ async function acceptInLobby(): Promise<any> {
     }
 }
 
-async function cancelInLobby(): Promise<any> {
+async function cancelDuelGame(): Promise<any> {
     if (duel.value.players.length === 2) {
         if (duel.value.players.find((user) => user.uid === props.currentUser.uid)) {
             duel.value.players.forEach(async ({ uid }) => {
@@ -240,10 +331,10 @@ async function cancelInLobby(): Promise<any> {
                 v-if="!duel.players.find((user) => user.uid === currentUser.uid)?.readyToGame"
                 class="containerApproveButtons"
             >
-                <button @click="acceptInLobby">
+                <button @click="acceptDuelGame">
                     {{ acceptBtn }}
                 </button>
-                <button @click="cancelInLobby">
+                <button @click="cancelDuelGame">
                     {{ cancelBtn }}
                 </button>
             </div>
@@ -258,9 +349,7 @@ async function cancelInLobby(): Promise<any> {
             :color="colors[0]"
             :route-to="'/duel-game'"
             :max-players="2"
-            @click-lobby="addAndRemoveToLobby"
-            @click-accept="acceptInLobby"
-            @click-cancel="cancelInLobby"
+            @click-lobby="addAndRemoveToLobby('Duel')"
         />
         <TheCardComponent
             :header="'Gems'"

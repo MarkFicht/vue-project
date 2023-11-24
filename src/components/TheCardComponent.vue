@@ -5,8 +5,8 @@ import type IGame from '@/interfaces/Game';
 import { gameStore } from '@/store/GameStore';
 import { storeToRefs } from 'pinia';
 
-const goToGame = ref<string>('Go to Lobby');
-const exitLobby = ref<string>('Exit Lobby');
+const goToGame = ref<string>('Lobby');
+const exitLobby = ref<string>('Exit');
 
 const emit = defineEmits(['click-lobby']);
 
@@ -30,44 +30,35 @@ const game = ref<IGame>({
     players: []
 });
 
-watch(
-    () => duel.value.players,
-    (newVal) => {
-        if (game.value.id === 'Duel') {
-            game.value.players = newVal;
+watch([() => duel.value.players], ([newVal]) => {
+    if (game.value.id === 'Duel') {
+        game.value.players = newVal;
 
-            if (newVal.length === 0) game.value.status = 'Free';
-            else if (newVal.length === props.maxPlayers) game.value.status = 'Busy';
-            else game.value.status = 'Lobby';
-        }
+        if (newVal.length === 0) game.value.status = 'Free';
+        else if (newVal.length === props.maxPlayers) game.value.status = 'Busy';
+        else game.value.status = 'Lobby';
     }
-);
+});
 
-watch(
-    () => gems.value.players,
-    (newVal) => {
-        if (game.value.id === 'Gems') {
-            game.value.players = newVal;
+watch([() => gems.value.players], ([newVal]) => {
+    if (game.value.id === 'Gems') {
+        game.value.players = newVal;
 
-            if (newVal.length === 0) game.value.status = 'Free';
-            else if (newVal.length === props.maxPlayers) game.value.status = 'Busy';
-            else game.value.status = 'Lobby';
-        }
+        if (newVal.length === 0) game.value.status = 'Free';
+        else if (newVal.length === props.maxPlayers) game.value.status = 'Busy';
+        else game.value.status = 'Lobby';
     }
-);
+});
 
-watch(
-    () => reflex.value.players,
-    (newVal) => {
-        if (game.value.id === 'Reflex') {
-            game.value.players = newVal;
+watch([() => reflex.value.players], ([newVal]) => {
+    if (game.value.id === 'Reflex') {
+        game.value.players = newVal;
 
-            if (newVal.length === 0) game.value.status = 'Free';
-            else if (newVal.length === props.maxPlayers) game.value.status = 'Busy';
-            else game.value.status = 'Lobby';
-        }
+        if (newVal.length === 0) game.value.status = 'Free';
+        else if (newVal.length === props.maxPlayers) game.value.status = 'Busy';
+        else game.value.status = 'Lobby';
     }
-);
+});
 </script>
 
 <template>
@@ -246,7 +237,7 @@ watch(
 }
 .cardButton:hover {
     letter-spacing: 0.25em;
-    background-color: tomato;
+    /* background-color: tomato; */
 }
 .cardButtonLobby {
     background-color: tomato !important;

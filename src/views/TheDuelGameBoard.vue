@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, onBeforeMount, onBeforeUnmount, ref, watch, provide } from 'vue';
 import { getCurrentUser } from '@/helpers/HelpersFoo';
+import { usersRef, gameStatusDuelRef, tableGameDuelRef } from '@/helpers/HelpersFirebaseConst';
 import {
-    collection,
     doc,
     setDoc,
     getDoc,
@@ -11,7 +11,6 @@ import {
     arrayUnion,
     increment
 } from 'firebase/firestore';
-import db from '@/firebase/index';
 import {
     cardsTierOne,
     cardsTierTwo,
@@ -125,14 +124,6 @@ const {
     isLoading,
     endGameAnimationEnd
 } = storeToRefs(storeDuelGame);
-
-const usersRef = collection(db, 'users');
-
-const gameStatusRef = collection(db, 'gameStatus');
-const gameStatusDuelRef = doc(gameStatusRef, 'Duel');
-
-const gameDuelRef = collection(db, 'gameDuel');
-const tableGameDuelRef = doc(gameDuelRef, 'table1');
 
 const user = ref<IUser>({} as IUser);
 const router = useRouter();
