@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, inject } from 'vue';
+import { inject } from 'vue';
 import { RouterLink } from 'vue-router';
 
 const { activeLink, routes, updateActiveLink, colors } = inject<any>('indicatorNavi');
@@ -7,7 +7,7 @@ const { activeLink, routes, updateActiveLink, colors } = inject<any>('indicatorN
 
 <template>
     <section class="nav show-nav" :style="`--widthSection:${70 * routes.length + 50}px;`">
-        <nav :style="`--widthNavTag:${70 * routes.length}px;`">
+        <nav :style="`--widthNavTag:${routes.length};`">
             <RouterLink
                 v-for="(route, index) in routes"
                 :key="route.name"
@@ -26,16 +26,12 @@ const { activeLink, routes, updateActiveLink, colors } = inject<any>('indicatorN
 
 <style scoped>
 section.nav {
-    /* position: fixed; */
-    /* z-index: 10000; */
-    /* bottom: 50px; */
-    /* left: 50%; */
-    /* transform: translateX(-50%); */
+    --widthLink: 60px;
     margin: 0 auto;
-    margin-top: 60px;
-    margin-bottom: 15px;
+    margin-top: 50px;
+    margin-bottom: 20px;
     width: var(--widthSection);
-    height: 60px;
+    height: 50px;
     background-color: #eee;
     display: flex;
     justify-content: center;
@@ -49,13 +45,13 @@ section.nav {
 }
 section.nav nav {
     display: flex;
-    width: var(--widthNavTag);
+    width: calc(var(--widthNavTag) * var(--widthLink));
 }
 section.nav nav a {
     position: relative;
     list-style: none;
-    width: 70px;
-    height: 60px;
+    width: var(--widthLink);
+    height: 50px;
     z-index: 2;
     display: flex;
     justify-content: center;
@@ -68,8 +64,8 @@ section.nav nav a {
 section.nav nav a .icon {
     position: relative;
     display: block;
-    line-height: 65px;
-    font-size: 1.5em;
+    line-height: 55px;
+    font-size: 20px;
     text-align: center;
     transition: 0.5s;
     color: #666;
@@ -82,9 +78,9 @@ section.nav nav a .text {
     position: absolute;
     color: #fff;
     padding: 2px 7px;
-    border-radius: 12px;
+    border-radius: 10px;
     font-weight: 400;
-    font-size: 0.75em;
+    font-size: 10px;
     letter-spacing: 0.05em;
     transition: 0.5s;
     transform: translateY(15px);
@@ -98,8 +94,8 @@ section.nav nav a.active .text {
 .indicator {
     position: absolute;
     top: -35px;
-    width: 70px;
-    height: 70px;
+    width: var(--widthLink);
+    height: var(--widthLink);
     background: #eee;
     border-radius: 50%;
     transition: 0.5s;
@@ -128,24 +124,26 @@ section.nav nav a.active .text {
     box-shadow: -15px 18px #eee;
 }
 section.nav nav a:nth-child(1).active ~ .indicator {
-    transform: translateX(calc(70px * 0));
+    transform: translateX(calc(var(--widthLink) * 0));
 }
 section.nav nav a:nth-child(2).active ~ .indicator {
-    transform: translateX(calc(70px * 1));
+    transform: translateX(calc(var(--widthLink) * 1));
 }
 section.nav nav a:nth-child(3).active ~ .indicator {
-    transform: translateX(calc(70px * 2));
+    transform: translateX(calc(var(--widthLink) * 2));
 }
 section.nav nav a:nth-child(4).active ~ .indicator {
-    transform: translateX(calc(70px * 3));
+    transform: translateX(calc(var(--widthLink) * 3));
 }
 section.nav nav a:nth-child(5).active ~ .indicator {
-    transform: translateX(calc(70px * 4));
+    transform: translateX(calc(var(--widthLink) * 4));
 }
-@media (max-width: 720px) {
+
+@media (min-width: 560px) {
     section.nav {
-        transform: scale(0.9);
-        margin-top: 50px;
+        --widthLink: 70px;
+        margin-top: 60px;
+        height: 56px;
     }
 }
 </style>

@@ -1,7 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { getCurrentUser } from '@/helpers/HelpersFoo';
 import LoginPanel from '../views/LoginPanel.vue';
-// import FeedPanel from '../views/FeedPanel.vue';
 
 const router = createRouter({
     history: createWebHistory(),

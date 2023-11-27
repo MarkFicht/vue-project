@@ -135,6 +135,7 @@ section.wrapper {
     position: relative;
     width: 80vw;
     height: calc(100vh - 230px);
+    min-height: 520px;
     padding: 35px 20px;
     color: #444;
     box-shadow: 0 0 50px rgba(0, 0, 0, 0.25);
@@ -160,7 +161,7 @@ section.wrapper {
     }
     section.wrapper {
         /* width: 100%; */
-        padding: 20px;
+        padding: 15px;
         margin: 0 auto;
         min-height: calc(100vh - 210px);
     }
