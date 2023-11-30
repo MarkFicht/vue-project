@@ -99,12 +99,12 @@ watch([() => reflex.value.players], ([newVal]) => {
 <style scoped>
 .card {
     position: relative;
-    width: 280px;
+    width: 200px;
     height: 350px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    margin: 25px 70px 45px;
+    margin: 10px auto 30px;
     transition: all 0.5s;
 }
 .card .box {
@@ -127,94 +127,48 @@ watch([() => reflex.value.players], ([newVal]) => {
 .card .box h2 {
     text-align: right;
     width: 100%;
-    margin-bottom: 25px;
+    margin-bottom: 20px;
     font-weight: bold;
-    font-size: 1.7em;
+    font-size: 20px;
     filter: drop-shadow(0 0 25px rgba(0, 0, 0, 0.2));
 }
 .card .box p {
-    font-size: 0.8em;
-}
-.card .box:nth-child(1)::before {
-    content: '';
-    position: absolute;
-    top: 50px;
-    left: 0;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background-color: transparent;
-    box-shadow: -10px 10px #eee;
-}
-.card .box:nth-child(1)::after {
-    content: '';
-    position: absolute;
-    bottom: -1px;
-    left: 95px;
-    width: 20px;
-    height: 20px;
-    border-bottom-left-radius: 20px;
-    background-color: transparent;
-    box-shadow: -6px 6px #eee;
-}
-.card .box:nth-child(2)::before {
-    content: '';
-    position: absolute;
-    bottom: 90px;
-    left: 0;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background-color: transparent;
-    box-shadow: -10px -10px #eee;
-}
-.card .box:nth-child(2)::after {
-    content: '';
-    position: absolute;
-    top: -1px;
-    left: 99px;
-    width: 20px;
-    height: 20px;
-    background-color: transparent;
-    border-top-left-radius: 20px;
-    box-shadow: -6px -6px #eee;
+    font-size: 12px;
 }
 .card .circle {
     position: absolute;
     z-index: 2;
-    width: 170px;
-    height: 170px;
+    width: 160px;
+    height: 130px;
     background-color: var(--clr);
     border-radius: 50%;
-    top: 70px;
-    left: -70px;
+    top: 80px;
+    left: -25px;
     color: #eee;
-    /* transform: translateY(-50%); */
     border: 10px solid #eee;
     display: flex;
     justify-content: center;
     align-items: center;
     flex-direction: column;
-    /* filter: drop-shadow(0 15px 35px rgba(0, 0, 0, 0.3)); */
     box-shadow:
         12px 12px 16px 0 rgba(255, 255, 255, 0.3) inset,
         -8px -8px 12px 0 rgba(0, 0, 0, 0.25) inset;
 }
 .circle > h2 {
-    font-size: 1.8em;
+    font-size: 20px;
     font-weight: bold;
-    letter-spacing: 2px;
-    margin-top: 10px;
+    letter-spacing: 1px;
+    margin-bottom: 5px;
 }
 .circle > p {
-    font-size: 1.1em;
+    font-size: 14px;
     letter-spacing: 1px;
 }
 .card .box:nth-child(2) {
     background: #cdcdcd;
 }
 .cardButton {
-    padding: 8px 30px;
+    padding: 8px 22px;
     position: absolute;
     bottom: -26px;
     border: none;
@@ -222,58 +176,105 @@ watch([() => reflex.value.players], ([newVal]) => {
     border-radius: 30px;
     color: #fff;
     background-color: var(--clr);
-    font-size: 1em;
-    letter-spacing: 0.1em;
+    font-size: 14px;
+    letter-spacing: 1px;
     text-transform: uppercase;
     text-decoration: none;
     transition: all 0.5s;
     cursor: pointer;
-    /* border: 5px solid #eee; */
-    /* box-shadow: 0 0 0 10px #fff; */
     border: 10px solid #eee;
     box-shadow:
         12px 12px 16px 0 rgba(255, 255, 255, 0.3) inset,
         -8px -8px 12px 0 rgba(0, 0, 0, 0.25) inset;
 }
 .cardButton:hover {
-    letter-spacing: 0.25em;
-    /* background-color: tomato; */
+    letter-spacing: 3px;
 }
 .cardButtonLobby {
     background-color: tomato !important;
 }
-h2 {
-    font-size: 2em;
-    line-height: 0.9em;
-    margin-bottom: 10px;
-    text-align: center;
-}
-@media (max-width: 720px) {
-    h2 {
-        font-size: 1.6em;
-        margin-bottom: 15px;
-        text-align: center;
-    }
+
+@media (min-width: 400px) {
     .card {
-        margin: 25px 0 45px;
+        margin: 15px 40px 40px;
     }
 }
-@media (max-width: 600px) {
+
+@media (min-width: 720px) {
     .card {
-        transform: scale(0.8);
-        margin: 5px 0 15px;
+        width: 300px;
+        margin: 15px 60px 40px;
     }
-}
-@media (max-width: 560px) {
-    .card {
-        transform: scale(0.75);
-        margin: 0;
+
+    .card .box h2 {
+        font-size: 24px;
     }
-}
-@media (max-width: 400px) {
-    .card {
-        transform: scale(0.65);
-        margin: 0;
+    .card .box p {
+        font-size: 14px;
+    }
+
+    .card .box:nth-child(1)::before {
+        content: '';
+        position: absolute;
+        top: 52px;
+        left: 0;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background-color: transparent;
+        box-shadow: -10px 10px #eee;
+    }
+    .card .box:nth-child(1)::after {
+        content: '';
+        position: absolute;
+        bottom: -1px;
+        left: 100px;
+        width: 20px;
+        height: 20px;
+        border-bottom-left-radius: 20px;
+        background-color: transparent;
+        box-shadow: -6px 6px #eee;
+    }
+    .card .box:nth-child(2)::before {
+        content: '';
+        position: absolute;
+        bottom: 102px;
+        left: 0;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background-color: transparent;
+        box-shadow: -10px -10px #eee;
+    }
+    .card .box:nth-child(2)::after {
+        content: '';
+        position: absolute;
+        top: -1px;
+        left: 102px;
+        width: 20px;
+        height: 20px;
+        background-color: transparent;
+        border-top-left-radius: 20px;
+        box-shadow: -6px -6px #eee;
+    }
+
+    .card .circle {
+        width: 160px;
+        height: 160px;
+        top: 70px;
+        left: -55px;
+    }
+    .circle > h2 {
+        font-size: 24px;
+    }
+    .circle > p {
+        font-size: 18px;
+    }
+
+    .cardButton {
+        padding: 8px 30px;
+        font-size: 16px;
+        bottom: -27px;
     }
 }
 </style>

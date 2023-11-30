@@ -383,6 +383,7 @@ async function cancelDuelGame(): Promise<any> {
     overflow-x: hidden;
     overflow-y: scroll;
 }
+/* --- Lobby with full party --- */
 .infoAboutPlayers {
     position: absolute;
     width: 100%;
@@ -465,6 +466,7 @@ async function cancelDuelGame(): Promise<any> {
 .animateHand {
     animation: animateHand 1.5s infinite ease-in-out;
 }
+
 @media (max-width: 1024px) {
     .infoAboutPlayers > p {
         font-size: 1.9em !important;

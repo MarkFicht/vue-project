@@ -116,16 +116,15 @@ main {
     flex-direction: column;
 }
 .header {
-    height: 25px;
-    margin-top: 10px;
-    margin-bottom: 20px;
+    display: block;
+    min-height: 30px;
+    line-height: 30px;
+    margin: 20px 0;
     text-align: center;
 }
 h1 {
     font-weight: 600;
-    font-size: 1.9rem;
-    height: 25px;
-    line-height: 20px;
+    font-size: 32px;
     color: #eee;
     filter: drop-shadow(0 0 25px rgba(255, 255, 255, 0.8));
     letter-spacing: 0.1em;
@@ -133,15 +132,12 @@ h1 {
 /* --- Wrapper card --- */
 section.wrapper {
     position: relative;
-    width: 80vw;
-    height: calc(100vh - 230px);
-    min-height: 520px;
-    padding: 35px 20px;
+    width: 96vw;
+    height: calc(100vh - 210px);
+    min-height: 420px;
+    padding: 15px 10px;
     color: #444;
     box-shadow: 0 0 50px rgba(0, 0, 0, 0.25);
-    /* box-shadow:
-        15px 15px 20px rgba(0, 0, 0, 0.1),
-        -15px -15px 20px rgba(0, 0, 0, 0.1); */
     border-radius: 20px;
     display: flex;
     justify-content: center;
@@ -150,39 +146,32 @@ section.wrapper {
     background-color: #eee;
     animation: showElement 2s linear;
 }
-@media (max-width: 720px) {
+
+@media (min-width: 560px) {
     .header {
-        height: 25px;
-        line-height: 25px;
-        margin-bottom: 20px;
+        min-height: 40px;
+        line-height: 40px;
+        margin: 25px 0;
     }
     h1 {
-        font-size: 1.8rem;
+        font-size: 36px;
     }
     section.wrapper {
-        /* width: 100%; */
-        padding: 15px;
+        height: calc(100vh - 230px);
+    }
+}
+
+@media (min-width: 720px) {
+    section.wrapper {
+        padding: 20px 15px;
         margin: 0 auto;
-        min-height: calc(100vh - 210px);
     }
 }
-@media (max-width: 560px) {
-    .header {
-        height: 25px;
-        line-height: 25px;
-    }
+
+@media (min-width: 1024px) {
     section.wrapper {
-        padding: 15px;
-        min-height: calc(100vh - 200px);
-        width: 90vw;
+        margin: 0 auto;
+        width: 990px;
     }
-    /* section.nav {
-        transform: scale(0.7);
-        margin: 0;
-        margin-top: 35px;
-    } */
-}
-@media (max-width: 360px) {
-    /*  */
 }
 </style>
