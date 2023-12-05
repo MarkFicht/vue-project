@@ -44,8 +44,9 @@ import {
     type IGameDuelCoin,
     type IGameDuelWonderCard
 } from '@/interfaces/GameDuel';
+import { userStore } from '@/store/userStore';
+import { gameStore } from '@/store/gameStore';
 import { duelGameStore } from '@/store/duelGameStore';
-import { gameStore } from '@/store/GameStore';
 import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
 import type IUser from '@/interfaces/User';
@@ -89,6 +90,9 @@ const debounceEndGame = ref<any>(
 
 const actionForCards = ref<boolean>(false);
 const selectWonderCard = ref<boolean>(false);
+
+const storeUser = userStore();
+const { fbUser } = storeToRefs(storeUser);
 
 const storeGame = gameStore();
 const { duel } = storeToRefs(storeGame);
@@ -292,6 +296,8 @@ onBeforeMount(async () => {
                     .players.find((user: IUser) => user.uid === (dataAuth as IUser).uid);
 
                 if (userFb) {
+                    await storeUser.subFirebaseConnect(userFb.uid);
+
                     user.value = {
                         uid: userFb.uid,
                         email: userFb.email,
@@ -317,6 +323,8 @@ onBeforeMount(async () => {
                     if (usersSnap.data().game !== 'Duel') {
                         isLoading.value = false;
                         stopCode = true;
+                    } else {
+                        await storeUser.subFirebaseConnect(usersSnap.data().uid);
                     }
                 } else {
                     isLoading.value = false;
@@ -469,6 +477,7 @@ onBeforeUnmount(async () => {
     debounceEndGame.value.cancel();
     storeDuelGame.unSubFirebaseConnect();
     storeGame.unSubFirebaseConnect();
+    storeUser.unSubFirebaseConnect();
 });
 
 // --- Functions --- //
@@ -721,384 +730,358 @@ async function prepareGameToRemoveFromDB(user: IUser): Promise<void> {
 </script>
 
 <template>
-    <main>
-        <section class="wrapper">
-            <div v-if="isLoading" class="loading">
-                <LoadingSpinner />
+    <main v-show="!!fbUser.uid" class="wrapper">
+        <div v-if="isLoading" class="loading">
+            <LoadingSpinner />
+        </div>
+
+        <DuelGameBoardDuelComponent
+            :currentUserId="fbUser.uid"
+            :isMyTurn="isMyTurn"
+            @coin-selected="coinSelected"
+        />
+
+        <DuelGameGraveyardComponent
+            :isMyTurn="isMyTurn"
+            @pick-card-from-graveyard="graveyardCardSelected"
+        />
+
+        <DuelGamePlayersInfoComponent @prepare-game-to-remove-from-db="prepareGameToRemoveFromDB" />
+
+        <DuelGamePlayersResComponent
+            :currentUserId="fbUser.uid"
+            :isMyTurn="isMyTurn"
+            :selectWonderCard="selectWonderCard"
+            @destrooy-enemy-card-selected="destrooyEnemyCardSelected"
+        />
+
+        <!-- MAIN WINDOW FOR CARDS -->
+        <section class="cards cardsWonderPrepre" v-if="tier === 'prepare'">
+            <div v-if="!isSecondPick" class="pickWonders">
+                <DuelGameWonderComponent
+                    v-if="wonderCards[0] && !wonderCards[0].taken"
+                    :card="wonderCards[0]"
+                    @click="
+                        () =>
+                            wonderCards[0].taken ||
+                            selectWondersForPlayersMove === 3 ||
+                            selectWondersForPlayersMove === 7
+                                ? null
+                                : chooseWonderForPlayer(wonderCards[0].id)
+                    "
+                />
+                <DuelGameWonderComponent
+                    v-if="wonderCards[1] && !wonderCards[1].taken"
+                    :card="wonderCards[1]"
+                    @click="
+                        () =>
+                            wonderCards[1].taken ||
+                            selectWondersForPlayersMove === 3 ||
+                            selectWondersForPlayersMove === 7
+                                ? null
+                                : chooseWonderForPlayer(wonderCards[1].id)
+                    "
+                />
+                <DuelGameWonderComponent
+                    v-if="wonderCards[2] && !wonderCards[2].taken"
+                    :card="wonderCards[2]"
+                    @click="
+                        () =>
+                            wonderCards[2].taken ||
+                            selectWondersForPlayersMove === 3 ||
+                            selectWondersForPlayersMove === 7
+                                ? null
+                                : chooseWonderForPlayer(wonderCards[2].id)
+                    "
+                />
+                <DuelGameWonderComponent
+                    v-if="wonderCards[3] && !wonderCards[3].taken"
+                    :card="wonderCards[3]"
+                    @click="
+                        () =>
+                            wonderCards[3].taken ||
+                            selectWondersForPlayersMove === 3 ||
+                            selectWondersForPlayersMove === 7
+                                ? null
+                                : chooseWonderForPlayer(wonderCards[3].id)
+                    "
+                />
             </div>
-
-            <DuelGameBoardDuelComponent
-                :user="user"
-                :isMyTurn="isMyTurn"
-                @coin-selected="coinSelected"
-            />
-
-            <DuelGameGraveyardComponent
-                :isMyTurn="isMyTurn"
-                @pick-card-from-graveyard="graveyardCardSelected"
-            />
-
-            <DuelGamePlayersInfoComponent
-                :user="user"
-                @prepare-game-to-remove-from-db="prepareGameToRemoveFromDB"
-            />
-
-            <DuelGamePlayersResComponent
-                :user="user"
-                :isMyTurn="isMyTurn"
-                :selectWonderCard="selectWonderCard"
-                @destrooy-enemy-card-selected="destrooyEnemyCardSelected"
-            />
-
-            <!-- MAIN WINDOW FOR CARDS -->
-            <section class="cards cardsWonderPrepre" v-if="tier === 'prepare'">
-                <div v-if="!isSecondPick" class="pickWonders">
-                    <DuelGameWonderComponent
-                        v-if="wonderCards[0] && !wonderCards[0].taken"
-                        :card="wonderCards[0]"
-                        @click="
-                            () =>
-                                wonderCards[0].taken ||
-                                selectWondersForPlayersMove === 3 ||
-                                selectWondersForPlayersMove === 7
-                                    ? null
-                                    : chooseWonderForPlayer(wonderCards[0].id)
-                        "
-                    />
-                    <DuelGameWonderComponent
-                        v-if="wonderCards[1] && !wonderCards[1].taken"
-                        :card="wonderCards[1]"
-                        @click="
-                            () =>
-                                wonderCards[1].taken ||
-                                selectWondersForPlayersMove === 3 ||
-                                selectWondersForPlayersMove === 7
-                                    ? null
-                                    : chooseWonderForPlayer(wonderCards[1].id)
-                        "
-                    />
-                    <DuelGameWonderComponent
-                        v-if="wonderCards[2] && !wonderCards[2].taken"
-                        :card="wonderCards[2]"
-                        @click="
-                            () =>
-                                wonderCards[2].taken ||
-                                selectWondersForPlayersMove === 3 ||
-                                selectWondersForPlayersMove === 7
-                                    ? null
-                                    : chooseWonderForPlayer(wonderCards[2].id)
-                        "
-                    />
-                    <DuelGameWonderComponent
-                        v-if="wonderCards[3] && !wonderCards[3].taken"
-                        :card="wonderCards[3]"
-                        @click="
-                            () =>
-                                wonderCards[3].taken ||
-                                selectWondersForPlayersMove === 3 ||
-                                selectWondersForPlayersMove === 7
-                                    ? null
-                                    : chooseWonderForPlayer(wonderCards[3].id)
-                        "
-                    />
-                </div>
-                <div v-if="isSecondPick" class="pickWonders">
-                    <DuelGameWonderComponent
-                        v-if="wonderCards[4] && !wonderCards[4].taken"
-                        :card="wonderCards[4]"
-                        @click="
-                            () =>
-                                wonderCards[4].taken ||
-                                selectWondersForPlayersMove === 3 ||
-                                selectWondersForPlayersMove === 7
-                                    ? null
-                                    : chooseWonderForPlayer(wonderCards[4].id)
-                        "
-                    />
-                    <DuelGameWonderComponent
-                        v-if="wonderCards[5] && !wonderCards[5].taken"
-                        :card="wonderCards[5]"
-                        @click="
-                            () =>
-                                wonderCards[5].taken ||
-                                selectWondersForPlayersMove === 3 ||
-                                selectWondersForPlayersMove === 7
-                                    ? null
-                                    : chooseWonderForPlayer(wonderCards[5].id)
-                        "
-                    />
-                    <DuelGameWonderComponent
-                        v-if="wonderCards[6] && !wonderCards[6].taken"
-                        :card="wonderCards[6]"
-                        @click="
-                            () =>
-                                wonderCards[6].taken ||
-                                selectWondersForPlayersMove === 3 ||
-                                selectWondersForPlayersMove === 7
-                                    ? null
-                                    : chooseWonderForPlayer(wonderCards[6].id)
-                        "
-                    />
-                    <DuelGameWonderComponent
-                        v-if="wonderCards[7] && !wonderCards[7].taken"
-                        :card="wonderCards[7]"
-                        @click="
-                            () =>
-                                wonderCards[7].taken ||
-                                selectWondersForPlayersMove === 3 ||
-                                selectWondersForPlayersMove === 7
-                                    ? null
-                                    : chooseWonderForPlayer(wonderCards[7].id)
-                        "
-                    />
-                </div>
-            </section>
-            <section class="cards cardsTier" v-if="tier === 'I'">
-                <DuelGameLayOutTiersComponent
-                    v-for="(card, index) in tierOneCards"
-                    :key="index"
-                    :card="card"
-                    :user="user"
-                    :x="tierOneX[index]"
-                    :y="tierOneY[index]"
-                    :cash1P="
-                        card.coversBy?.length === 0 ? showPrice(card, `${player1.user.uid}`) : -1
-                    "
-                    :cash2P="
-                        card.coversBy?.length === 0 ? showPrice(card, `${player2.user.uid}`) : -1
-                    "
-                    @click="tierCardClick(card)"
-                />
-            </section>
-            <section class="cards cardsTier" v-if="tier === 'II'">
-                <DuelGameLayOutTiersComponent
-                    v-for="(card, index) in tierTwoCards"
-                    :key="index"
-                    :card="card"
-                    :user="user"
-                    :x="tierTwoX[index]"
-                    :y="tierTwoY[index]"
-                    :cash1P="
-                        card.coversBy?.length === 0 ? showPrice(card, `${player1.user.uid}`) : -1
-                    "
-                    :cash2P="
-                        card.coversBy?.length === 0 ? showPrice(card, `${player2.user.uid}`) : -1
-                    "
-                    @click="tierCardClick(card)"
-                />
-            </section>
-            <section class="cards cardsTier" v-if="tier === 'III'">
-                <DuelGameLayOutTiersComponent
-                    v-for="(card, index) in tierThreeCards"
-                    :key="index"
-                    :card="card"
-                    :user="user"
-                    :x="tierThreeX[index]"
-                    :y="tierThreeY[index]"
-                    :cash1P="
-                        card.coversBy?.length === 0 ? showPrice(card, `${player1.user.uid}`) : -1
-                    "
-                    :cash2P="
-                        card.coversBy?.length === 0 ? showPrice(card, `${player2.user.uid}`) : -1
-                    "
-                    @click="tierCardClick(card)"
-                />
-            </section>
-
-            <!-- MAIN CONTAINER FOR END GAME -->
-            <DuelGameEndGameComponent class="cards" v-if="tier === 'end'" :user="user" />
-
-            <!-- ACTIONS -->
-            <section v-if="actionForCards && selectedCard?.id && !isLoading" class="playerAction">
-                <button
-                    :disabled="
-                        canBuyTierCard < 0 ||
-                        !isMyTurn ||
-                        (turn === player1.user.uid
-                            ? canBuyTierCard > player1.resources.cash
-                            : canBuyTierCard > player2.resources.cash)
-                    "
-                    class="customButton"
+            <div v-if="isSecondPick" class="pickWonders">
+                <DuelGameWonderComponent
+                    v-if="wonderCards[4] && !wonderCards[4].taken"
+                    :card="wonderCards[4]"
                     @click="
                         () =>
-                            isMyTurn
-                                ? (storeDuelGame.setCardTaken(canBuyTierCard),
-                                  (selectWonderCard = false),
-                                  (actionForCards = false))
-                                : null
+                            wonderCards[4].taken ||
+                            selectWondersForPlayersMove === 3 ||
+                            selectWondersForPlayersMove === 7
+                                ? null
+                                : chooseWonderForPlayer(wonderCards[4].id)
                     "
-                >
-                    {{ `${buttonBuyCard} ${canBuyTierCard >= 0 ? canBuyTierCard : ''}` }}
-                </button>
-                <button
-                    :disabled="!selectedCard?.id"
-                    class="customButton"
+                />
+                <DuelGameWonderComponent
+                    v-if="wonderCards[5] && !wonderCards[5].taken"
+                    :card="wonderCards[5]"
                     @click="
                         () =>
-                            isMyTurn
-                                ? (storeDuelGame.setCardGraveyard(),
-                                  (selectWonderCard = false),
-                                  (actionForCards = false))
-                                : null
+                            wonderCards[5].taken ||
+                            selectWondersForPlayersMove === 3 ||
+                            selectWondersForPlayersMove === 7
+                                ? null
+                                : chooseWonderForPlayer(wonderCards[5].id)
                     "
-                >
-                    {{
-                        buttonSell +
-                        ` ${
-                            turn === player1.user.uid
-                                ? player1.cards.yellow.length + 2
-                                : player2.cards.yellow.length + 2
-                        }`
-                    }}
-                </button>
-                <button
-                    :disabled="!canBuyWonderCard"
-                    class="customButton"
-                    @click="() => (isMyTurn ? prepareSelectWonder() : null)"
-                >
-                    {{ buttonBuildWonder }}
-                </button>
-            </section>
-            <section v-else-if="wonByArt !== ''" class="playerAction">
-                <p :style="'font-weight: bold;'">
-                    {{
-                        labelWonByArt +
-                        `${
-                            wonByArt === player1.user.uid
-                                ? player1.user.displayName || player1.user.email
-                                : player2.user.displayName || player2.user.email
-                        }`
-                    }}<ion-icon class="animateHand" name="thumbs-up-sharp"></ion-icon>
-                </p>
-                <button
-                    class="customButton"
-                    @click="() => (debounceEndGame.cancel(), router.push('/feed'))"
-                >
-                    {{ buttonBackToFeed }}
-                </button>
-            </section>
-            <section v-else-if="wonByAggressive !== ''" class="playerAction">
-                <p :style="'font-weight: bold;'">
-                    {{
-                        labelWonByAggressive +
-                        `${
-                            wonByAggressive === player1.user.uid
-                                ? player1.user.displayName || player1.user.email
-                                : player2.user.displayName || player2.user.email
-                        }`
-                    }}<ion-icon class="animateHand" name="thumbs-up-sharp"></ion-icon>
-                </p>
-                <button
-                    class="customButton"
-                    @click="() => (debounceEndGame.cancel(), router.push('/feed'))"
-                >
-                    {{ buttonBackToFeed }}
-                </button>
-            </section>
-            <section v-else-if="wonBySurr !== ''" class="playerAction">
-                <p :style="'font-weight: bold;'">
-                    {{
-                        labelWonBySurr +
-                        `${
-                            wonBySurr === player1.user.uid
-                                ? player1.user.displayName || player1.user.email
-                                : player2.user.displayName || player2.user.email
-                        }`
-                    }}<ion-icon class="animateHand" name="thumbs-up-sharp"></ion-icon>
-                </p>
-                <button
-                    class="customButton"
-                    @click="() => (debounceEndGame.cancel(), router.push('/feed'))"
-                >
-                    {{ buttonBackToFeed }}
-                </button>
-            </section>
-            <section v-else-if="wonByPoints !== '' && endGameAnimationEnd" class="playerAction">
-                <p :style="'font-weight: bold;'">
-                    {{
-                        labelWonByPoints +
-                        `${
-                            wonByPoints === 'draw'
-                                ? 'DRAW'
-                                : wonByPoints === player1.user.uid
-                                ? player1.user.displayName || player1.user.email
-                                : player2.user.displayName || player2.user.email
-                        }`
-                    }}<ion-icon class="animateHand" name="thumbs-up-sharp"></ion-icon>
-                </p>
-                <button
-                    class="customButton"
-                    @click="() => (debounceEndGame.cancel(), router.push('/feed'))"
-                >
-                    {{ buttonBackToFeed }}
-                </button>
-            </section>
-            <section v-else-if="isMyTurn && chooseWhoWillStart && !isLoading" class="playerAction">
-                <button
-                    class="customButton"
-                    @click="async () => await chooseWhoStarts(`${player1.user.uid}`)"
-                >
-                    {{ player1.user.displayName }}
-                </button>
-                <p>{{ ` ${labelWhoStarts} ` }}</p>
-                <button
-                    class="customButton"
-                    @click="async () => await chooseWhoStarts(`${player2.user.uid}`)"
-                >
-                    {{ player2.user.displayName }}
-                </button>
-            </section>
-            <section v-else-if="isMyTurn && pickCoin !== '' && !isLoading" class="playerAction">
-                <p>{{ labelPickCoin }}</p>
-            </section>
-            <section
-                v-else-if="isMyTurn && pickCoinOfThree !== '' && !isLoading"
-                class="playerAction"
-            >
-                <p>{{ labelPickCoinOfThree }}</p>
-                <DuelGameCoinComponent
-                    v-for="i in 3"
-                    :class="'selectCardOfThreeBorder'"
-                    :key="theRestOfCoins[i]"
-                    :coin="theRestOfCoins[i]"
-                    @click="coinSelectedOfThree(theRestOfCoins[i])"
                 />
-            </section>
-            <section
-                v-else-if="isMyTurn && pickCardFromGraveyard !== '' && !isLoading"
-                class="playerAction"
+                <DuelGameWonderComponent
+                    v-if="wonderCards[6] && !wonderCards[6].taken"
+                    :card="wonderCards[6]"
+                    @click="
+                        () =>
+                            wonderCards[6].taken ||
+                            selectWondersForPlayersMove === 3 ||
+                            selectWondersForPlayersMove === 7
+                                ? null
+                                : chooseWonderForPlayer(wonderCards[6].id)
+                    "
+                />
+                <DuelGameWonderComponent
+                    v-if="wonderCards[7] && !wonderCards[7].taken"
+                    :card="wonderCards[7]"
+                    @click="
+                        () =>
+                            wonderCards[7].taken ||
+                            selectWondersForPlayersMove === 3 ||
+                            selectWondersForPlayersMove === 7
+                                ? null
+                                : chooseWonderForPlayer(wonderCards[7].id)
+                    "
+                />
+            </div>
+        </section>
+        <section class="cards cardsTier" v-if="tier === 'I'">
+            <DuelGameLayOutTiersComponent
+                v-for="(card, index) in tierOneCards"
+                :key="index"
+                :card="card"
+                :currentUserId="fbUser.uid"
+                :x="tierOneX[index]"
+                :y="tierOneY[index]"
+                :cash1P="card.coversBy?.length === 0 ? showPrice(card, `${player1.user.uid}`) : -1"
+                :cash2P="card.coversBy?.length === 0 ? showPrice(card, `${player2.user.uid}`) : -1"
+                @click="tierCardClick(card)"
+            />
+        </section>
+        <section class="cards cardsTier" v-if="tier === 'II'">
+            <DuelGameLayOutTiersComponent
+                v-for="(card, index) in tierTwoCards"
+                :key="index"
+                :card="card"
+                :currentUserId="fbUser.uid"
+                :x="tierTwoX[index]"
+                :y="tierTwoY[index]"
+                :cash1P="card.coversBy?.length === 0 ? showPrice(card, `${player1.user.uid}`) : -1"
+                :cash2P="card.coversBy?.length === 0 ? showPrice(card, `${player2.user.uid}`) : -1"
+                @click="tierCardClick(card)"
+            />
+        </section>
+        <section class="cards cardsTier" v-if="tier === 'III'">
+            <DuelGameLayOutTiersComponent
+                v-for="(card, index) in tierThreeCards"
+                :key="index"
+                :card="card"
+                :currentUserId="fbUser.uid"
+                :x="tierThreeX[index]"
+                :y="tierThreeY[index]"
+                :cash1P="card.coversBy?.length === 0 ? showPrice(card, `${player1.user.uid}`) : -1"
+                :cash2P="card.coversBy?.length === 0 ? showPrice(card, `${player2.user.uid}`) : -1"
+                @click="tierCardClick(card)"
+            />
+        </section>
+
+        <!-- MAIN CONTAINER FOR END GAME -->
+        <DuelGameEndGameComponent class="cards" v-if="tier === 'end'" />
+
+        <!-- ACTIONS -->
+        <section v-if="actionForCards && selectedCard?.id && !isLoading" class="playerAction">
+            <button
+                :disabled="
+                    canBuyTierCard < 0 ||
+                    !isMyTurn ||
+                    (turn === player1.user.uid
+                        ? canBuyTierCard > player1.resources.cash
+                        : canBuyTierCard > player2.resources.cash)
+                "
+                class="customButton"
+                @click="
+                    () =>
+                        isMyTurn
+                            ? (storeDuelGame.setCardTaken(canBuyTierCard),
+                              (selectWonderCard = false),
+                              (actionForCards = false))
+                            : null
+                "
             >
-                <p>{{ labelPickCardFromGraveyard }}</p>
-            </section>
-            <section v-else-if="isMyTurn && destroyBrown !== '' && !isLoading" class="playerAction">
-                <p>{{ labelDestroyCard }}</p>
-            </section>
-            <section v-else-if="isMyTurn && destroyGrey !== '' && !isLoading" class="playerAction">
-                <p>{{ labelDestroyCard }}</p>
-            </section>
-            <section v-else-if="isMyTurn && tier === 'prepare' && !isLoading" class="playerAction">
-                <p>{{ labelPickWonder }}</p>
-            </section>
-            <section v-else-if="!isMyTurn && tier === 'prepare' && !isLoading" class="playerAction">
-                <p>{{ labelOpponentPickWonder }}</p>
-            </section>
-            <section v-else class="playerAction">
-                <p v-if="pickCoinOfThree && !isMyTurn">{{ 'Opponent: ' + labelPickCoinOfThree }}</p>
-                <p v-else-if="!isMyTurn">{{ labelOpponentsMove }}</p>
-            </section>
+                {{ `${buttonBuyCard} ${canBuyTierCard >= 0 ? canBuyTierCard : ''}` }}
+            </button>
+            <button
+                :disabled="!selectedCard?.id"
+                class="customButton"
+                @click="
+                    () =>
+                        isMyTurn
+                            ? (storeDuelGame.setCardGraveyard(),
+                              (selectWonderCard = false),
+                              (actionForCards = false))
+                            : null
+                "
+            >
+                {{
+                    buttonSell +
+                    ` ${
+                        turn === player1.user.uid
+                            ? player1.cards.yellow.length + 2
+                            : player2.cards.yellow.length + 2
+                    }`
+                }}
+            </button>
+            <button
+                :disabled="!canBuyWonderCard"
+                class="customButton"
+                @click="() => (isMyTurn ? prepareSelectWonder() : null)"
+            >
+                {{ buttonBuildWonder }}
+            </button>
+        </section>
+        <section v-else-if="wonByArt !== ''" class="playerAction">
+            <p :style="'font-weight: bold;'">
+                {{
+                    labelWonByArt +
+                    `${
+                        wonByArt === player1.user.uid
+                            ? player1.user.displayName || player1.user.email
+                            : player2.user.displayName || player2.user.email
+                    }`
+                }}<ion-icon class="animateHand" name="thumbs-up-sharp"></ion-icon>
+            </p>
+            <button
+                class="customButton"
+                @click="() => (debounceEndGame.cancel(), router.push('/feed'))"
+            >
+                {{ buttonBackToFeed }}
+            </button>
+        </section>
+        <section v-else-if="wonByAggressive !== ''" class="playerAction">
+            <p :style="'font-weight: bold;'">
+                {{
+                    labelWonByAggressive +
+                    `${
+                        wonByAggressive === player1.user.uid
+                            ? player1.user.displayName || player1.user.email
+                            : player2.user.displayName || player2.user.email
+                    }`
+                }}<ion-icon class="animateHand" name="thumbs-up-sharp"></ion-icon>
+            </p>
+            <button
+                class="customButton"
+                @click="() => (debounceEndGame.cancel(), router.push('/feed'))"
+            >
+                {{ buttonBackToFeed }}
+            </button>
+        </section>
+        <section v-else-if="wonBySurr !== ''" class="playerAction">
+            <p :style="'font-weight: bold;'">
+                {{
+                    labelWonBySurr +
+                    `${
+                        wonBySurr === player1.user.uid
+                            ? player1.user.displayName || player1.user.email
+                            : player2.user.displayName || player2.user.email
+                    }`
+                }}<ion-icon class="animateHand" name="thumbs-up-sharp"></ion-icon>
+            </p>
+            <button
+                class="customButton"
+                @click="() => (debounceEndGame.cancel(), router.push('/feed'))"
+            >
+                {{ buttonBackToFeed }}
+            </button>
+        </section>
+        <section v-else-if="wonByPoints !== '' && endGameAnimationEnd" class="playerAction">
+            <p :style="'font-weight: bold;'">
+                {{
+                    labelWonByPoints +
+                    `${
+                        wonByPoints === 'draw'
+                            ? 'DRAW'
+                            : wonByPoints === player1.user.uid
+                            ? player1.user.displayName || player1.user.email
+                            : player2.user.displayName || player2.user.email
+                    }`
+                }}<ion-icon class="animateHand" name="thumbs-up-sharp"></ion-icon>
+            </p>
+            <button
+                class="customButton"
+                @click="() => (debounceEndGame.cancel(), router.push('/feed'))"
+            >
+                {{ buttonBackToFeed }}
+            </button>
+        </section>
+        <section v-else-if="isMyTurn && chooseWhoWillStart && !isLoading" class="playerAction">
+            <button
+                class="customButton"
+                @click="async () => await chooseWhoStarts(`${player1.user.uid}`)"
+            >
+                {{ player1.user.displayName }}
+            </button>
+            <p>{{ ` ${labelWhoStarts} ` }}</p>
+            <button
+                class="customButton"
+                @click="async () => await chooseWhoStarts(`${player2.user.uid}`)"
+            >
+                {{ player2.user.displayName }}
+            </button>
+        </section>
+        <section v-else-if="isMyTurn && pickCoin !== '' && !isLoading" class="playerAction">
+            <p>{{ labelPickCoin }}</p>
+        </section>
+        <section v-else-if="isMyTurn && pickCoinOfThree !== '' && !isLoading" class="playerAction">
+            <p>{{ labelPickCoinOfThree }}</p>
+            <DuelGameCoinComponent
+                v-for="i in 3"
+                :class="'selectCardOfThreeBorder'"
+                :key="theRestOfCoins[i]"
+                :coin="theRestOfCoins[i]"
+                @click="coinSelectedOfThree(theRestOfCoins[i])"
+            />
+        </section>
+        <section
+            v-else-if="isMyTurn && pickCardFromGraveyard !== '' && !isLoading"
+            class="playerAction"
+        >
+            <p>{{ labelPickCardFromGraveyard }}</p>
+        </section>
+        <section v-else-if="isMyTurn && destroyBrown !== '' && !isLoading" class="playerAction">
+            <p>{{ labelDestroyCard }}</p>
+        </section>
+        <section v-else-if="isMyTurn && destroyGrey !== '' && !isLoading" class="playerAction">
+            <p>{{ labelDestroyCard }}</p>
+        </section>
+        <section v-else-if="isMyTurn && tier === 'prepare' && !isLoading" class="playerAction">
+            <p>{{ labelPickWonder }}</p>
+        </section>
+        <section v-else-if="!isMyTurn && tier === 'prepare' && !isLoading" class="playerAction">
+            <p>{{ labelOpponentPickWonder }}</p>
+        </section>
+        <section v-else class="playerAction">
+            <p v-if="pickCoinOfThree && !isMyTurn">{{ 'Opponent: ' + labelPickCoinOfThree }}</p>
+            <p v-else-if="!isMyTurn">{{ labelOpponentsMove }}</p>
         </section>
     </main>
 </template>
 
 <style scoped>
-main {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
-}
 /* --- Main Wrapper --- */
-section.wrapper {
+main.wrapper {
     position: relative;
     width: calc(
         calc(var(--width-wonder) * 2 + 40px) + calc(var(--width-tier) * 7 + 24px) +
@@ -1209,7 +1192,7 @@ section.wrapper {
 }
 
 @media (max-width: 1200px) {
-    /* section.wrapper {
+    /* main.wrapper {
         --width-tier: 50px;
         --height-tier: 77px;
         --width-wonder: 100px;

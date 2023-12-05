@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onBeforeMount, ref, provide } from 'vue';
+import { onBeforeMount, onBeforeUnmount, ref, provide } from 'vue';
 import { getCurrentUser } from '@/helpers/HelpersFoo';
 import { usersRef } from '@/helpers/HelpersFirebaseConst';
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
@@ -9,6 +9,8 @@ import IndicatorNavi from '@/components/IndicatorNavi.vue';
 import TheGame from '@/components/TheGame.vue';
 import TheSettings from '@/components/TheSettings.vue';
 import TheLogout from '@/components/TheLogout.vue';
+import { storeToRefs } from 'pinia';
+import { userStore } from '@/store/userStore';
 import type IUser from '@/interfaces/User';
 
 const header = ref<string>('Feed Panel');
@@ -23,6 +25,9 @@ const iconLogout = ref<string>(`log-out-outline`);
 const router = useRouter();
 
 const currentUser = ref<IUser>({} as IUser);
+
+const storeUser = userStore();
+const { fbUser } = storeToRefs(storeUser);
 
 // ---
 const activeLink = ref<string>(gamesPage.value);
@@ -46,15 +51,10 @@ provide('indicatorNavi', { activeLink, routes, updateActiveLink, colors });
 // ---
 onBeforeMount(async () => {
     await getCurrentUser().then(async (user: any) => {
-        currentUser.value = {
-            uid: user.uid,
-            email: user.email || '',
-            displayName: user.displayName || ''
-        };
-
         const docSnap = await getDoc(doc(usersRef, user.uid));
         if (docSnap.exists()) {
             currentUser.value = docSnap.data() as IUser;
+            await storeUser.subFirebaseConnect(user.uid);
         } else {
             const newUser = {
                 uid: user.uid,
@@ -71,6 +71,8 @@ onBeforeMount(async () => {
             await setDoc(doc(usersRef, user.uid), {
                 ...newUser
             });
+
+            await storeUser.subFirebaseConnect(user.uid);
         }
     });
 
@@ -82,26 +84,22 @@ onBeforeMount(async () => {
         return false;
     });
 });
+
+onBeforeUnmount(async () => {
+    await storeUser.unSubFirebaseConnect();
+});
 </script>
 
 <template>
-    <main>
+    <main v-show="!!fbUser.uid">
         <header class="header">
             <h1>{{ header }}</h1>
         </header>
 
         <section class="wrapper">
-            <TheGame
-                v-if="activeLink === gamesPage"
-                :header="gamesPage"
-                :currentUser="currentUser"
-            />
-            <TheSettings
-                v-if="activeLink === settings"
-                :header="settings"
-                :currentUser="currentUser"
-            />
-            <TheLogout v-if="activeLink === logOut" :header="logOut" :currentUser="currentUser" />
+            <TheGame v-if="activeLink === gamesPage" :header="gamesPage" />
+            <TheSettings v-if="activeLink === settings" :header="settings" />
+            <TheLogout v-if="activeLink === logOut" :header="logOut" />
         </section>
 
         <IndicatorNavi />

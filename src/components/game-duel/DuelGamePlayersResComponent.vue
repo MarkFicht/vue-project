@@ -15,10 +15,10 @@ const { player1, player2, turn, tier, destroyBrown, destroyGrey, wonByArt } =
 const emit = defineEmits(['destrooy-enemy-card-selected']);
 const props = defineProps<{
     isMyTurn: boolean;
-    user: IUser;
+    currentUserId: IUser['uid'];
     selectWonderCard: boolean;
 }>();
-const { user } = toRefs(props);
+const { currentUserId } = toRefs(props);
 
 const wonderCardSelected = inject<any>('wonderCardSelected');
 
@@ -43,7 +43,7 @@ function getNumberOfArtefacts(uid: string): number {
 
 <template>
     <!-- UP SECTION -->
-    <section :class="['wonders', user.uid === player1.user.uid ? 'wonders1' : 'wonders2']">
+    <section :class="['wonders', currentUserId === player1.user.uid ? 'wonders1' : 'wonders2']">
         <DuelGameWonderComponent
             v-for="wonderCard in player1.wonderCards"
             :card="wonderCard"
@@ -53,7 +53,7 @@ function getNumberOfArtefacts(uid: string): number {
             :class="[
                 selectWonderCard &&
                     isMyTurn &&
-                    user.uid === player1.user.uid &&
+                    currentUserId === player1.user.uid &&
                     showPrice(wonderCard, `${player1.user.uid}`) <= player1.resources.cash &&
                     'selectWonderFromPlayer'
             ]"
@@ -67,7 +67,9 @@ function getNumberOfArtefacts(uid: string): number {
     <section
         :class="[
             'playerCardsTierSection',
-            user.uid === player1.user.uid ? 'playerCardsTierSection1' : 'playerCardsTierSection2'
+            currentUserId === player1.user.uid
+                ? 'playerCardsTierSection1'
+                : 'playerCardsTierSection2'
         ]"
     >
         <div class="playerCardsContainer">
@@ -86,12 +88,12 @@ function getNumberOfArtefacts(uid: string): number {
                     :card="card"
                     small
                     :style="
-                        user.uid === player2.user.uid && isMyTurn && destroyBrown !== ''
+                        currentUserId === player2.user.uid && isMyTurn && destroyBrown !== ''
                             ? 'cursor: pointer;'
                             : ''
                     "
                     @click="
-                        user.uid === player2.user.uid && isMyTurn && destroyBrown !== ''
+                        currentUserId === player2.user.uid && isMyTurn && destroyBrown !== ''
                             ? emit('destrooy-enemy-card-selected', card, 'brown')
                             : null
                     "
@@ -110,12 +112,12 @@ function getNumberOfArtefacts(uid: string): number {
                     :card="card"
                     small
                     :style="
-                        user.uid === player2.user.uid && isMyTurn && destroyGrey !== ''
+                        currentUserId === player2.user.uid && isMyTurn && destroyGrey !== ''
                             ? 'cursor: pointer;'
                             : ''
                     "
                     @click="
-                        user.uid === player2.user.uid && isMyTurn && destroyGrey !== ''
+                        currentUserId === player2.user.uid && isMyTurn && destroyGrey !== ''
                             ? emit('destrooy-enemy-card-selected', card, 'grey')
                             : null
                     "
@@ -152,7 +154,12 @@ function getNumberOfArtefacts(uid: string): number {
                     wonByArt !== '' && wonByArt === player1.user.uid && 'artWin'
                 ]"
             >
-                <div :class="['countArt', user.uid === player1.user.uid ? '' : 'reverseCountArt']">
+                <div
+                    :class="[
+                        'countArt',
+                        currentUserId === player1.user.uid ? '' : 'reverseCountArt'
+                    ]"
+                >
                     {{ getNumberOfArtefacts(`${player1.user.uid}`) + '/6' }}
                 </div>
                 <DuelGameCardComponent
@@ -177,7 +184,7 @@ function getNumberOfArtefacts(uid: string): number {
     <section
         :class="[
             'playerResContainer',
-            user.uid === player1.user.uid ? 'playerResContainer1' : 'playerResContainer2'
+            currentUserId === player1.user.uid ? 'playerResContainer1' : 'playerResContainer2'
         ]"
     >
         <div class="playerCashPointsContainer">
@@ -205,7 +212,7 @@ function getNumberOfArtefacts(uid: string): number {
     </section>
 
     <!-- DOWN SECTION -->
-    <section :class="['wonders', user.uid === player1.user.uid ? 'wonders2' : 'wonders1']">
+    <section :class="['wonders', currentUserId === player1.user.uid ? 'wonders2' : 'wonders1']">
         <DuelGameWonderComponent
             v-for="wonderCard in player2.wonderCards"
             :card="wonderCard"
@@ -215,7 +222,7 @@ function getNumberOfArtefacts(uid: string): number {
             :class="[
                 selectWonderCard &&
                     isMyTurn &&
-                    user.uid === player2.user.uid &&
+                    currentUserId === player2.user.uid &&
                     showPrice(wonderCard, `${player2.user.uid}`) <= player2.resources.cash &&
                     'selectWonderFromPlayer'
             ]"
@@ -229,7 +236,9 @@ function getNumberOfArtefacts(uid: string): number {
     <section
         :class="[
             'playerCardsTierSection',
-            user.uid === player1.user.uid ? 'playerCardsTierSection2' : 'playerCardsTierSection1'
+            currentUserId === player1.user.uid
+                ? 'playerCardsTierSection2'
+                : 'playerCardsTierSection1'
         ]"
     >
         <div class="playerCardsContainer">
@@ -248,12 +257,12 @@ function getNumberOfArtefacts(uid: string): number {
                     :card="card"
                     small
                     :style="
-                        user.uid === player1.user.uid && isMyTurn && destroyBrown !== ''
+                        currentUserId === player1.user.uid && isMyTurn && destroyBrown !== ''
                             ? 'cursor: pointer;'
                             : ''
                     "
                     @click="
-                        user.uid === player1.user.uid && isMyTurn && destroyBrown !== ''
+                        currentUserId === player1.user.uid && isMyTurn && destroyBrown !== ''
                             ? emit('destrooy-enemy-card-selected', card, 'brown')
                             : null
                     "
@@ -272,12 +281,12 @@ function getNumberOfArtefacts(uid: string): number {
                     :card="card"
                     small
                     :style="
-                        user.uid === player1.user.uid && isMyTurn && destroyGrey !== ''
+                        currentUserId === player1.user.uid && isMyTurn && destroyGrey !== ''
                             ? 'cursor: pointer;'
                             : ''
                     "
                     @click="
-                        user.uid === player1.user.uid && isMyTurn && destroyGrey !== ''
+                        currentUserId === player1.user.uid && isMyTurn && destroyGrey !== ''
                             ? emit('destrooy-enemy-card-selected', card, 'grey')
                             : null
                     "
@@ -314,7 +323,12 @@ function getNumberOfArtefacts(uid: string): number {
                     wonByArt !== '' && wonByArt === player2.user.uid && 'artWin'
                 ]"
             >
-                <div :class="['countArt', user.uid === player1.user.uid ? 'reverseCountArt' : '']">
+                <div
+                    :class="[
+                        'countArt',
+                        currentUserId === player1.user.uid ? 'reverseCountArt' : ''
+                    ]"
+                >
                     {{ getNumberOfArtefacts(`${player2.user.uid}`) + '/6' }}
                 </div>
                 <DuelGameCardComponent
@@ -339,7 +353,7 @@ function getNumberOfArtefacts(uid: string): number {
     <section
         :class="[
             'playerResContainer',
-            user.uid === player1.user.uid ? 'playerResContainer2' : 'playerResContainer1'
+            currentUserId === player1.user.uid ? 'playerResContainer2' : 'playerResContainer1'
         ]"
     >
         <div class="playerCashPointsContainer">

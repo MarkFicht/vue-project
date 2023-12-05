@@ -2,9 +2,9 @@
 import TheCardComponent from '@/components/TheCardComponent.vue';
 import TheInLobby from '@/components/TheInLobby.vue';
 import { useRouter } from 'vue-router';
-import type IUser from '@/interfaces/User';
-import { inject, watch, onBeforeMount, onBeforeUnmount, ref } from 'vue';
-import { gameStore } from '@/store/GameStore';
+import { inject, watch, computed, onBeforeMount, onBeforeUnmount, ref } from 'vue';
+import { userStore } from '@/store/userStore';
+import { gameStore } from '@/store/gameStore';
 import { storeToRefs } from 'pinia';
 import {
     usersRef,
@@ -17,13 +17,12 @@ import bellNotify from '@/assets/bell-notification.mp3';
 import bell from '@/assets/bell.mp3';
 import type IGame from '@/interfaces/Game';
 
+const { colors } = inject<any>('indicatorNavi');
+
 const router = useRouter();
 
-const props = defineProps<{
-    header: String;
-    currentUser: IUser;
-}>();
-const { colors } = inject<any>('indicatorNavi');
+const storeUser = userStore();
+const { fbUser } = storeToRefs(storeUser);
 
 const storeGame = gameStore();
 const { duel, gems, reflex } = storeToRefs(storeGame);
@@ -31,13 +30,24 @@ const { duel, gems, reflex } = storeToRefs(storeGame);
 const audioNotify = ref<HTMLAudioElement>(new Audio(bellNotify));
 const audioBell = ref<HTMLAudioElement>(new Audio(bell));
 
+const displayLobby = computed((): boolean => {
+    if (fbUser.value.game === 'Duel') {
+        return (
+            duel.value.players.length === 2 &&
+            !!duel.value.players.find((user) => user.uid === fbUser.value.uid)
+        );
+    } else {
+        return fbUser.value.game !== '';
+    }
+});
+
 watch([() => duel.value.players], async ([newVal], [oldVal]) => {
     if (newVal.length === 2 && oldVal.length !== newVal.length) audioNotify.value.play();
 
     // --- Redirect to game
     if (
         newVal.length === 2 &&
-        newVal.find((user) => user.uid === props.currentUser.uid) &&
+        newVal.find((user) => user.uid === fbUser.value.uid) &&
         !newVal.find((user) => !user.readyToGame)
     ) {
         await updateDoc(gameStatusDuelRef, { isStarted: true });
@@ -48,7 +58,7 @@ watch([() => duel.value.isStarted], async ([newVal]) => {
 
     // --- Redirect to game
     if (
-        duel.value.players.find((user) => user.uid === props.currentUser.uid) &&
+        duel.value.players.find((user) => user.uid === fbUser.value.uid) &&
         !duel.value.players.find((user) => !user.readyToGame)
     ) {
         audioBell.value.play();
@@ -64,7 +74,7 @@ watch([() => gems.value.players], async ([newVal], [oldVal]) => {
     // // --- Redirect to game
     // if (
     //     newVal.length === 2 &&
-    //     newVal.find((user) => user.uid === props.currentUser.uid) &&
+    //     newVal.find((user) => user.uid === fbUser.value.uid) &&
     //     !newVal.find((user) => !user.readyToGame)
     // ) {
     //     await updateDoc(gameStatusGemsRef, { isStarted: true });
@@ -81,7 +91,7 @@ watch([() => reflex.value.players], async ([newVal], [oldVal]) => {
     // // --- Redirect to game
     // if (
     //     newVal.length === 2 &&
-    //     newVal.find((user) => user.uid === props.currentUser.uid) &&
+    //     newVal.find((user) => user.uid === fbUser.value.uid) &&
     //     !newVal.find((user) => !user.readyToGame)
     // ) {
     //     await updateDoc(gameStatusReflexRef, { isStarted: true });
@@ -108,8 +118,8 @@ onBeforeUnmount(async () => {
 // ---
 async function addAndRemoveToLobby(selectedGame: IGame['id']): Promise<any> {
     if (selectedGame === 'Duel') {
-        if (duel.value.players.find((user) => user.uid === props.currentUser.uid)) {
-            await updateDoc(doc(usersRef, props.currentUser.uid), {
+        if (duel.value.players.find((user) => user.uid === fbUser.value.uid)) {
+            await updateDoc(doc(usersRef, fbUser.value.uid), {
                 game: '',
                 readyToGame: false,
                 online: 'online',
@@ -117,39 +127,39 @@ async function addAndRemoveToLobby(selectedGame: IGame['id']): Promise<any> {
             });
 
             const newPlayersDuel = duel.value.players.filter((user) => {
-                return user.uid !== props.currentUser.uid ? user : null;
+                return user.uid !== fbUser.value.uid ? user : null;
             });
             await updateDoc(gameStatusDuelRef, {
                 players: newPlayersDuel
             });
         } else {
-            await updateDoc(doc(usersRef, props.currentUser.uid), {
+            await updateDoc(doc(usersRef, fbUser.value.uid), {
                 game: 'Duel',
                 readyToGame: false,
                 online: 'online',
                 timestamp: serverTimestamp()
             });
             await updateDoc(gameStatusDuelRef, {
-                players: arrayUnion({ ...props.currentUser, game: 'Duel', readyToGame: false })
+                players: arrayUnion({ ...fbUser.value, game: 'Duel', readyToGame: false })
             });
 
             const newPlayersGems = gems.value.players.filter((user) => {
-                return user.uid !== props.currentUser.uid ? user : null;
+                return user.uid !== fbUser.value.uid ? user : null;
             });
             await updateDoc(gameStatusGemsRef, {
                 players: newPlayersGems
             });
 
             const newPlayersReflex = reflex.value.players.filter((user) => {
-                return user.uid !== props.currentUser.uid ? user : null;
+                return user.uid !== fbUser.value.uid ? user : null;
             });
             await updateDoc(gameStatusReflexRef, {
                 players: newPlayersReflex
             });
         }
     } else if (selectedGame === 'Gems') {
-        if (gems.value.players.find((user) => user.uid === props.currentUser.uid)) {
-            await updateDoc(doc(usersRef, props.currentUser.uid), {
+        if (gems.value.players.find((user) => user.uid === fbUser.value.uid)) {
+            await updateDoc(doc(usersRef, fbUser.value.uid), {
                 game: '',
                 readyToGame: false,
                 online: 'online',
@@ -157,39 +167,39 @@ async function addAndRemoveToLobby(selectedGame: IGame['id']): Promise<any> {
             });
 
             const newPlayersGems = gems.value.players.filter((user) => {
-                return user.uid !== props.currentUser.uid ? user : null;
+                return user.uid !== fbUser.value.uid ? user : null;
             });
             await updateDoc(gameStatusGemsRef, {
                 players: newPlayersGems
             });
         } else {
-            await updateDoc(doc(usersRef, props.currentUser.uid), {
+            await updateDoc(doc(usersRef, fbUser.value.uid), {
                 game: 'Gems',
                 readyToGame: false,
                 online: 'online',
                 timestamp: serverTimestamp()
             });
             await updateDoc(gameStatusGemsRef, {
-                players: arrayUnion({ ...props.currentUser, game: 'Gems', readyToGame: false })
+                players: arrayUnion({ ...fbUser.value, game: 'Gems', readyToGame: false })
             });
 
             const newPlayersDuel = duel.value.players.filter((user) => {
-                return user.uid !== props.currentUser.uid ? user : null;
+                return user.uid !== fbUser.value.uid ? user : null;
             });
             await updateDoc(gameStatusDuelRef, {
                 players: newPlayersDuel
             });
 
             const newPlayersReflex = reflex.value.players.filter((user) => {
-                return user.uid !== props.currentUser.uid ? user : null;
+                return user.uid !== fbUser.value.uid ? user : null;
             });
             await updateDoc(gameStatusReflexRef, {
                 players: newPlayersReflex
             });
         }
     } else if (selectedGame === 'Reflex') {
-        if (reflex.value.players.find((user) => user.uid === props.currentUser.uid)) {
-            await updateDoc(doc(usersRef, props.currentUser.uid), {
+        if (reflex.value.players.find((user) => user.uid === fbUser.value.uid)) {
+            await updateDoc(doc(usersRef, fbUser.value.uid), {
                 game: '',
                 readyToGame: false,
                 online: 'online',
@@ -197,31 +207,31 @@ async function addAndRemoveToLobby(selectedGame: IGame['id']): Promise<any> {
             });
 
             const newPlayersReflex = reflex.value.players.filter((user) => {
-                return user.uid !== props.currentUser.uid ? user : null;
+                return user.uid !== fbUser.value.uid ? user : null;
             });
             await updateDoc(gameStatusReflexRef, {
                 players: newPlayersReflex
             });
         } else {
-            await updateDoc(doc(usersRef, props.currentUser.uid), {
+            await updateDoc(doc(usersRef, fbUser.value.uid), {
                 game: 'Reflex',
                 readyToGame: false,
                 online: 'online',
                 timestamp: serverTimestamp()
             });
             await updateDoc(gameStatusReflexRef, {
-                players: arrayUnion({ ...props.currentUser, game: 'Reflex', readyToGame: false })
+                players: arrayUnion({ ...fbUser.value, game: 'Reflex', readyToGame: false })
             });
 
             const newPlayersDuel = duel.value.players.filter((user) => {
-                return user.uid !== props.currentUser.uid ? user : null;
+                return user.uid !== fbUser.value.uid ? user : null;
             });
             await updateDoc(gameStatusDuelRef, {
                 players: newPlayersDuel
             });
 
             const newPlayersGems = gems.value.players.filter((user) => {
-                return user.uid !== props.currentUser.uid ? user : null;
+                return user.uid !== fbUser.value.uid ? user : null;
             });
             await updateDoc(gameStatusGemsRef, {
                 players: newPlayersGems
@@ -234,18 +244,12 @@ async function addAndRemoveToLobby(selectedGame: IGame['id']): Promise<any> {
 <template>
     <section class="gameContainer">
         <!-- LOADING FOR PLAYERS CONTAINTERS -->
-        <TheInLobby
-            v-if="
-                duel.players.length === 2 &&
-                duel.players.find((user) => user.uid === currentUser.uid)
-            "
-            :currentUser="currentUser"
-        />
+        <TheInLobby v-if="displayLobby" />
 
         <!-- GAME CARDS CONTAINTERS -->
         <TheCardComponent
             :header="'Duel'"
-            :currentUser="currentUser"
+            :current-user-id="fbUser.uid"
             :desc="`A board game inspired by a strategy game called '7 Wonders of the World'`"
             :video="'Video soon!'"
             :color="colors[0]"
@@ -255,7 +259,7 @@ async function addAndRemoveToLobby(selectedGame: IGame['id']): Promise<any> {
         />
         <TheCardComponent
             :header="'Gems'"
-            :currentUser="currentUser"
+            :current-user-id="fbUser.uid"
             :desc="`A board game inspired by a strategy game called 'Splendor'`"
             video="Video soon!"
             :color="colors[1]"
@@ -264,7 +268,7 @@ async function addAndRemoveToLobby(selectedGame: IGame['id']): Promise<any> {
         />
         <TheCardComponent
             :header="'Reflex'"
-            :currentUser="currentUser"
+            :current-user-id="fbUser.uid"
             :desc="`Game written from 0 in canvasJS. Cooperation against zombies`"
             video="Video soon!"
             :color="colors[2]"

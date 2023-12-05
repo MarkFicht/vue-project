@@ -2,7 +2,7 @@
 import { ref, toRefs, watch } from 'vue';
 import type IUser from '@/interfaces/User';
 import type IGame from '@/interfaces/Game';
-import { gameStore } from '@/store/GameStore';
+import { gameStore } from '@/store/gameStore';
 import { storeToRefs } from 'pinia';
 
 const goToGame = ref<string>('Lobby');
@@ -15,14 +15,14 @@ const { duel, gems, reflex } = storeToRefs(storeGame);
 
 const props = defineProps<{
     header: IGame['id'];
-    currentUser: IUser;
+    currentUserId: IUser['uid'];
     video: any;
     desc: string;
     color: string;
     routeTo: string;
     maxPlayers: number;
 }>();
-const { currentUser } = toRefs(props);
+const { currentUserId } = toRefs(props);
 
 const game = ref<IGame>({
     id: props.header,
@@ -73,7 +73,7 @@ watch([() => reflex.value.players], ([newVal]) => {
                 :disabled="maxPlayers === 0"
                 :class="[
                     'cardButton',
-                    !!game.players.find((user) => user.uid === currentUser.uid)
+                    !!game.players.find((user) => user.uid === currentUserId)
                         ? 'cardButtonLobby'
                         : ''
                 ]"
@@ -82,7 +82,7 @@ watch([() => reflex.value.players], ([newVal]) => {
                 {{
                     maxPlayers === 0
                         ? 'Soon'
-                        : !!game.players.find((user) => user.uid === currentUser.uid)
+                        : !!game.players.find((user) => user.uid === currentUserId)
                         ? exitLobby
                         : goToGame
                 }}

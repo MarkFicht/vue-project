@@ -2,10 +2,9 @@
 import type { IGameDuelCoin, IGameDuelPlayer } from '@/interfaces/GameDuel';
 import { duelGameStore } from '@/store/duelGameStore';
 import { storeToRefs } from 'pinia';
-import { onBeforeMount, ref, toRefs, watch } from 'vue';
+import { onBeforeMount, ref, watch } from 'vue';
 import soundWin from '@/assets/win.mp3';
 import soundLost from '@/assets/lost.mp3';
-import type IUser from '@/interfaces/User';
 import { collection, doc, updateDoc } from 'firebase/firestore';
 import db from '@/firebase/index';
 
@@ -14,11 +13,6 @@ const { player1, player2, tier, board, endGameAnimationEnd } = storeToRefs(store
 
 const gameDuelRef = collection(db, 'gameDuel');
 const tableGameDuelRef = doc(gameDuelRef, 'table1');
-
-const props = defineProps<{
-    user: IUser;
-}>();
-const { user } = toRefs(props);
 
 // ---
 const allPointsP1 = ref<number>(0);

@@ -1,21 +1,27 @@
 import { defineStore } from 'pinia';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { usersRef } from '@/helpers/HelpersFirebaseConst';
 import type IUser from '@/interfaces/User';
 
+let unSubFirebaseUser: any;
+
 export const userStore = defineStore('userStore', {
-    state: (): IUser => {
+    state: (): { fbUser: IUser } => {
         return {
-            password: '',
-            keepLogIn: false,
-            auth: null,
-            accessToken: '',
-            refreshToken: '',
-            uid: '',
-            displayName: '',
-            email: '',
-            game: '',
-            readyToGame: false,
-            timestamp: '',
-            online: ''
+            fbUser: {
+                // password: '',
+                // keepLogIn: false,
+                // auth: null,
+                // accessToken: '',
+                // refreshToken: '',
+                uid: '',
+                displayName: '',
+                email: '',
+                game: '',
+                readyToGame: false,
+                timestamp: '',
+                online: ''
+            }
         };
     },
     getters: {
@@ -24,13 +30,23 @@ export const userStore = defineStore('userStore', {
         // }
     },
     actions: {
-        async fetchAllUsers() {
-            // try {
-            //     this.userList = (await getAllUsers()).data;
-            // } catch (error) {
-            //     console.log(error);
-            //     return error;
-            // }
+        async subFirebaseConnect(uid: string) {
+            unSubFirebaseUser = await onSnapshot(doc(usersRef, uid), (doc) => {
+                if (doc.exists()) {
+                    const { uid, displayName, email, readyToGame, game, online, timestamp } =
+                        doc.data();
+                    this.fbUser.uid = uid;
+                    this.fbUser.displayName = displayName;
+                    this.fbUser.email = email;
+                    this.fbUser.readyToGame = readyToGame;
+                    this.fbUser.game = game;
+                    this.fbUser.online = online;
+                    this.fbUser.timestamp = timestamp;
+                }
+            });
+        },
+        async unSubFirebaseConnect() {
+            await unSubFirebaseUser();
         }
     }
 });

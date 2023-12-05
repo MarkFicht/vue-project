@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import LoadingSpinner from '@/components/LoadingSpinner.vue';
-import type IUser from '@/interfaces/User';
 import { ref } from 'vue';
-import { gameStore } from '@/store/GameStore';
+import { userStore } from '@/store/userStore';
+import { gameStore } from '@/store/gameStore';
 import { storeToRefs } from 'pinia';
 import {
     usersRef,
@@ -12,14 +12,13 @@ import {
 } from '@/helpers/HelpersFirebaseConst';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 
-const props = defineProps<{
-    currentUser: IUser;
-}>();
-
 const acceptBtn = ref<string>('Accept');
 const cancelBtn = ref<string>('Cancel');
 const labelRedirect = ref<string>('Redirect for a few sec...');
 const labelWaiting = ref<string>('Approval game: ');
+
+const storeUser = userStore();
+const { fbUser } = storeToRefs(storeUser);
 
 const storeGame = gameStore();
 const { duel, gems, reflex } = storeToRefs(storeGame);
@@ -30,14 +29,12 @@ const { duel, gems, reflex } = storeToRefs(storeGame);
 // TODO - foo for other games in lobby
 async function acceptDuelGame(): Promise<any> {
     if (duel.value.players.length === 2) {
-        if (duel.value.players.find((user) => user.uid === props.currentUser.uid)) {
-            await updateDoc(doc(usersRef, props.currentUser.uid), {
+        if (duel.value.players.find((user) => user.uid === fbUser.value.uid)) {
+            await updateDoc(doc(usersRef, fbUser.value.uid), {
                 readyToGame: true
             });
             const newPlayers = duel.value.players.map((user) => {
-                return user.uid === props.currentUser.uid
-                    ? { ...user, readyToGame: true }
-                    : { ...user };
+                return user.uid === fbUser.value.uid ? { ...user, readyToGame: true } : { ...user };
             });
             await updateDoc(gameStatusDuelRef, {
                 players: newPlayers
@@ -48,9 +45,9 @@ async function acceptDuelGame(): Promise<any> {
 
 async function cancelDuelGame(): Promise<any> {
     if (duel.value.players.length === 2) {
-        if (duel.value.players.find((user) => user.uid === props.currentUser.uid)) {
+        if (duel.value.players.find((user) => user.uid === fbUser.value.uid)) {
             duel.value.players.forEach(async ({ uid }) => {
-                if (uid === props.currentUser.uid) {
+                if (uid === fbUser.value.uid) {
                     await updateDoc(doc(usersRef, uid), {
                         game: '',
                         readyToGame: false
@@ -64,7 +61,7 @@ async function cancelDuelGame(): Promise<any> {
 
             const newPlayers = duel.value.players
                 .filter((user) => {
-                    return user.uid !== props.currentUser.uid ? user : null;
+                    return user.uid !== fbUser.value.uid ? user : null;
                 })
                 .map((user) => {
                     return { ...user, readyToGame: false };
@@ -115,7 +112,7 @@ async function cancelDuelGame(): Promise<any> {
         </div>
 
         <div
-            v-if="!duel.players.find((user) => user.uid === currentUser.uid)?.readyToGame"
+            v-if="!duel.players.find((user) => user.uid === fbUser.uid)?.readyToGame"
             class="ApproveButtonsContainer"
         >
             <button @click="acceptDuelGame">

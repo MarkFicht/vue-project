@@ -1,18 +1,16 @@
 <script setup lang="ts">
-import type IUser from '@/interfaces/User';
+import { userStore } from '@/store/userStore';
 import { duelGameStore } from '@/store/duelGameStore';
 import { storeToRefs } from 'pinia';
-import { ref, toRefs } from 'vue';
+import { ref } from 'vue';
+
+const storeUser = userStore();
+const { fbUser } = storeToRefs(storeUser);
 
 const storeDuelGame = duelGameStore();
 const { player1, player2, turn } = storeToRefs(storeDuelGame);
 
 const emit = defineEmits(['prepare-game-to-remove-from-db']);
-
-const props = defineProps<{
-    user: IUser;
-}>();
-const { user } = toRefs(props);
 
 const kickBtn = ref<string>('Kick player');
 const surrenderBtn = ref<string>('Surrender');
@@ -34,7 +32,7 @@ const surrenderPrepare = ref<boolean>(false);
                     :class="['customInput', 'reverseInput']"
                     @click="
                         async () => (
-                            await emit('prepare-game-to-remove-from-db', user),
+                            await emit('prepare-game-to-remove-from-db', fbUser),
                             (surrenderPrepare = false)
                         )
                     "
@@ -62,11 +60,11 @@ const surrenderPrepare = ref<boolean>(false);
                 <ion-icon name="time-sharp"></ion-icon>
             </div>
             <button
-                :disabled="player2.user.uid === user.uid && player2Time > 0"
+                :disabled="player2.user.uid === fbUser.uid && player2Time > 0"
                 :class="['customButton']"
-                @click="() => (player1.user.uid === user.uid ? (surrenderPrepare = true) : null)"
+                @click="() => (player1.user.uid === fbUser.uid ? (surrenderPrepare = true) : null)"
             >
-                {{ player1.user.uid === user.uid ? surrenderBtn : kickBtn }}
+                {{ player1.user.uid === fbUser.uid ? surrenderBtn : kickBtn }}
             </button>
         </div>
         <div :class="['player2info', 'customInput', turn === player2.user.uid && 'boldParagraf']">
@@ -80,11 +78,11 @@ const surrenderPrepare = ref<boolean>(false);
                 <ion-icon name="time-sharp"></ion-icon>
             </div>
             <button
-                :disabled="player1.user.uid === user.uid && player1Time > 0"
+                :disabled="player1.user.uid === fbUser.uid && player1Time > 0"
                 :class="['customButton']"
-                @click="() => (player2.user.uid === user.uid ? (surrenderPrepare = true) : null)"
+                @click="() => (player2.user.uid === fbUser.uid ? (surrenderPrepare = true) : null)"
             >
-                {{ player2.user.uid === user.uid ? surrenderBtn : kickBtn }}
+                {{ player2.user.uid === fbUser.uid ? surrenderBtn : kickBtn }}
             </button>
         </div>
     </section>

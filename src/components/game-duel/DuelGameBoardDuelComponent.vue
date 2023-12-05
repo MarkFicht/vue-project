@@ -11,7 +11,7 @@ const { board, pickCoin, player2, wonByAggressive } = storeToRefs(storeDuelGame)
 const emit = defineEmits(['coin-selected']);
 const props = defineProps<{
     isMyTurn: boolean;
-    user: IUser;
+    currentUserId: IUser['uid'];
 }>();
 const { isMyTurn } = toRefs(props);
 </script>
@@ -20,24 +20,24 @@ const { isMyTurn } = toRefs(props);
     <section class="duel">
         <div :class="['punishment']">
             <div
-                :class="[user.uid !== player2.user.uid ? 'punishment1' : 'punishment4']"
+                :class="[currentUserId !== player2.user.uid ? 'punishment1' : 'punishment4']"
                 :style="!board.punishment1 ? 'opacity: 0;' : ''"
             ></div>
             <div
-                :class="[user.uid !== player2.user.uid ? 'punishment2' : 'punishment3']"
+                :class="[currentUserId !== player2.user.uid ? 'punishment2' : 'punishment3']"
                 :style="!board.punishment2 ? 'opacity: 0;' : ''"
             ></div>
             <div
-                :class="[user.uid !== player2.user.uid ? 'punishment3' : 'punishment2']"
+                :class="[currentUserId !== player2.user.uid ? 'punishment3' : 'punishment2']"
                 :style="!board.punishment3 ? 'opacity: 0;' : ''"
             ></div>
             <div
-                :class="[user.uid !== player2.user.uid ? 'punishment4' : 'punishment1']"
+                :class="[currentUserId !== player2.user.uid ? 'punishment4' : 'punishment1']"
                 :style="!board.punishment4 ? 'opacity: 0;' : ''"
             ></div>
         </div>
 
-        <div :class="['boardPawn', user.uid === player2.user.uid && 'rotatePawnDuel']">
+        <div :class="['boardPawn', currentUserId === player2.user.uid && 'rotatePawnDuel']">
             <div
                 :class="['pawn', wonByAggressive !== '' && 'pawnWin']"
                 :style="`--position:${board.pawn}`"

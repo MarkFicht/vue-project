@@ -14,7 +14,7 @@ defineProps<{
     y: number;
     cash1P?: number;
     cash2P?: number;
-    user: IUser;
+    currentUserId: IUser['uid'];
 }>();
 </script>
 
@@ -35,28 +35,28 @@ defineProps<{
             :card="card"
             :cash1P="
                 card.taken === 'inGame'
-                    ? user.uid === player1.user.uid
+                    ? currentUserId === player1.user.uid
                         ? cash1P
                         : cash2P
                     : undefined
             "
             :cash2P="
                 card.taken === 'inGame'
-                    ? user.uid === player1.user.uid
+                    ? currentUserId === player1.user.uid
                         ? cash2P
                         : cash1P
                     : undefined
             "
             :res1P="
                 card.taken === 'inGame'
-                    ? user.uid === player1.user.uid
+                    ? currentUserId === player1.user.uid
                         ? player1.resources.cash
                         : player2.resources.cash
                     : undefined
             "
             :res2P="
                 card.taken === 'inGame'
-                    ? user.uid === player1.user.uid
+                    ? currentUserId === player1.user.uid
                         ? player2.resources.cash
                         : player1.resources.cash
                     : undefined
