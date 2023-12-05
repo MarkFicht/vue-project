@@ -902,57 +902,7 @@ async function prepareGameToRemoveFromDB(user: IUser): Promise<void> {
         <DuelGameEndGameComponent class="cards" v-if="tier === 'end'" />
 
         <!-- ACTIONS -->
-        <section v-if="actionForCards && selectedCard?.id && !isLoading" class="playerAction">
-            <button
-                :disabled="
-                    canBuyTierCard < 0 ||
-                    !isMyTurn ||
-                    (turn === player1.user.uid
-                        ? canBuyTierCard > player1.resources.cash
-                        : canBuyTierCard > player2.resources.cash)
-                "
-                class="customButton"
-                @click="
-                    () =>
-                        isMyTurn
-                            ? (storeDuelGame.setCardTaken(canBuyTierCard),
-                              (selectWonderCard = false),
-                              (actionForCards = false))
-                            : null
-                "
-            >
-                {{ `${buttonBuyCard} ${canBuyTierCard >= 0 ? canBuyTierCard : ''}` }}
-            </button>
-            <button
-                :disabled="!selectedCard?.id"
-                class="customButton"
-                @click="
-                    () =>
-                        isMyTurn
-                            ? (storeDuelGame.setCardGraveyard(),
-                              (selectWonderCard = false),
-                              (actionForCards = false))
-                            : null
-                "
-            >
-                {{
-                    buttonSell +
-                    ` ${
-                        turn === player1.user.uid
-                            ? player1.cards.yellow.length + 2
-                            : player2.cards.yellow.length + 2
-                    }`
-                }}
-            </button>
-            <button
-                :disabled="!canBuyWonderCard"
-                class="customButton"
-                @click="() => (isMyTurn ? prepareSelectWonder() : null)"
-            >
-                {{ buttonBuildWonder }}
-            </button>
-        </section>
-        <section v-else-if="wonByArt !== ''" class="playerAction">
+        <section v-if="wonByArt !== ''" class="playerAction">
             <p :style="'font-weight: bold;'">
                 {{
                     labelWonByArt +
@@ -1024,6 +974,56 @@ async function prepareGameToRemoveFromDB(user: IUser): Promise<void> {
                 @click="() => (debounceEndGame.cancel(), router.push('/feed'))"
             >
                 {{ buttonBackToFeed }}
+            </button>
+        </section>
+        <section v-else-if="actionForCards && selectedCard?.id && !isLoading" class="playerAction">
+            <button
+                :disabled="
+                    canBuyTierCard < 0 ||
+                    !isMyTurn ||
+                    (turn === player1.user.uid
+                        ? canBuyTierCard > player1.resources.cash
+                        : canBuyTierCard > player2.resources.cash)
+                "
+                class="customButton"
+                @click="
+                    () =>
+                        isMyTurn
+                            ? (storeDuelGame.setCardTaken(canBuyTierCard),
+                              (selectWonderCard = false),
+                              (actionForCards = false))
+                            : null
+                "
+            >
+                {{ `${buttonBuyCard} ${canBuyTierCard >= 0 ? canBuyTierCard : ''}` }}
+            </button>
+            <button
+                :disabled="!selectedCard?.id"
+                class="customButton"
+                @click="
+                    () =>
+                        isMyTurn
+                            ? (storeDuelGame.setCardGraveyard(),
+                              (selectWonderCard = false),
+                              (actionForCards = false))
+                            : null
+                "
+            >
+                {{
+                    buttonSell +
+                    ` ${
+                        turn === player1.user.uid
+                            ? player1.cards.yellow.length + 2
+                            : player2.cards.yellow.length + 2
+                    }`
+                }}
+            </button>
+            <button
+                :disabled="!canBuyWonderCard"
+                class="customButton"
+                @click="() => (isMyTurn ? prepareSelectWonder() : null)"
+            >
+                {{ buttonBuildWonder }}
             </button>
         </section>
         <section v-else-if="isMyTurn && chooseWhoWillStart && !isLoading" class="playerAction">

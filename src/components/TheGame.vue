@@ -31,6 +31,7 @@ const audioNotify = ref<HTMLAudioElement>(new Audio(bellNotify));
 const audioBell = ref<HTMLAudioElement>(new Audio(bell));
 
 const displayLobby = computed((): boolean => {
+    // TODO - add other games
     if (fbUser.value.game === 'Duel') {
         return (
             duel.value.players.length === 2 &&
@@ -42,7 +43,7 @@ const displayLobby = computed((): boolean => {
 });
 
 watch([() => duel.value.players], async ([newVal], [oldVal]) => {
-    if (newVal.length === 2 && oldVal.length !== newVal.length) audioNotify.value.play();
+    if (newVal.length === 2 && oldVal.length !== newVal.length) audioNotify.value?.play();
 
     // --- Redirect to game
     if (
@@ -53,11 +54,12 @@ watch([() => duel.value.players], async ([newVal], [oldVal]) => {
         await updateDoc(gameStatusDuelRef, { isStarted: true });
     }
 });
-watch([() => duel.value.isStarted], async ([newVal]) => {
+watch([() => duel.value.isStarted, () => fbUser.value.uid], async ([newVal]) => {
     if (newVal === false) await storeGame.deleteGameDuel();
 
     // --- Redirect to game
     if (
+        newVal &&
         duel.value.players.find((user) => user.uid === fbUser.value.uid) &&
         !duel.value.players.find((user) => !user.readyToGame)
     ) {
@@ -70,7 +72,7 @@ watch([() => duel.value.isStarted], async ([newVal]) => {
 });
 
 watch([() => gems.value.players], async ([newVal], [oldVal]) => {
-    // if (newVal.length === 2 && oldVal.length !== newVal.length) audioNotify.value.play();
+    // if (newVal.length === 2 && oldVal.length !== newVal.length) audioNotify.value?.play();
     // // --- Redirect to game
     // if (
     //     newVal.length === 2 &&
@@ -80,14 +82,14 @@ watch([() => gems.value.players], async ([newVal], [oldVal]) => {
     //     await updateDoc(gameStatusGemsRef, { isStarted: true });
     // }
 });
-watch([() => gems.value.isStarted], async ([newVal]) => {
+watch([() => gems.value.isStarted, () => fbUser.value.uid], async ([newVal]) => {
     console.log('%c gems val isStarted -> ', 'background: #222; color: #bada55', newVal);
     if (newVal === false) await storeGame.deleteGameGems();
     // TODO --- Redirect to game
 });
 
 watch([() => reflex.value.players], async ([newVal], [oldVal]) => {
-    // if (newVal.length === 2 && oldVal.length !== newVal.length) audioNotify.value.play();
+    // if (newVal.length === 2 && oldVal.length !== newVal.length) audioNotify.value?.play();
     // // --- Redirect to game
     // if (
     //     newVal.length === 2 &&
@@ -97,7 +99,7 @@ watch([() => reflex.value.players], async ([newVal], [oldVal]) => {
     //     await updateDoc(gameStatusReflexRef, { isStarted: true });
     // }
 });
-watch([() => reflex.value.isStarted], async ([newVal]) => {
+watch([() => reflex.value.isStarted, () => fbUser.value.uid], async ([newVal]) => {
     console.log('%c reflex val isStarted -> ', 'background: #222; color: #bada55', newVal);
     if (newVal === false) await storeGame.deleteGameReflex();
     // TODO --- Redirect to game
