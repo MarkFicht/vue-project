@@ -215,7 +215,7 @@ export function DuelGamePage({ uid }: { uid: string }) {
         const timer = window.setTimeout(() => {
             setDisplayPrepareBatch(2);
             setPrepareRevealedIds([]);
-        }, 940);
+        }, 760);
 
         return () => window.clearTimeout(timer);
     }, [displayPrepareBatch, firstBatchComplete, game.tier]);

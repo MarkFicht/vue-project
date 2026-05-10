@@ -60,10 +60,10 @@ export function DuelPlayerColumns({
             .sort((a, b) => (wonderOrder[a.id] ?? 0) - (wonderOrder[b.id] ?? 0));
         if (!pending.length) return;
 
-        const timers = pending.map((wonder, index) =>
+        const timers = pending.map((wonder) =>
             window.setTimeout(() => {
                 setRevealedWonderIds((prev) => (prev.includes(wonder.id) ? prev : [...prev, wonder.id]));
-            }, index * 340)
+            }, 0)
         );
         return () => timers.forEach((timer) => window.clearTimeout(timer));
     }, [player.wonderCards, revealedWonderIds, wonderOrder]);
@@ -105,7 +105,7 @@ export function DuelPlayerColumns({
                         resCash={player.resources.cash}
                         selected={selectedWonderId === wonder.id}
                         disabled={!canSelectWonder || wonder.activated !== 'none' || !canAfford}
-                        flipDelayMs={(wonderOrder[wonder.id] ?? 0) * 340}
+                        flipDelayMs={0}
                         showFront={revealedWonderIds.includes(wonder.id)}
                         onClick={() => onSelectWonder?.(wonder.id)}
                     />
