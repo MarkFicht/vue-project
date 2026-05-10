@@ -19,6 +19,9 @@ export function DuelGamePage({ uid }: { uid: string }) {
     const [wonderBuildMode, setWonderBuildMode] = useState(false);
     const [animatedP1Total, setAnimatedP1Total] = useState(0);
     const [animatedP2Total, setAnimatedP2Total] = useState(0);
+    const [prepareRevealedIds, setPrepareRevealedIds] = useState<number[]>([]);
+    const [displayPrepareBatch, setDisplayPrepareBatch] = useState<1 | 2>(1);
+    const [prepareActionLocked, setPrepareActionLocked] = useState(false);
     const [soundMuted, setSoundMutedState] = useState(() => isSoundMuted());
     useEffect(() => {
         setSoundScope(uid);
@@ -59,20 +62,26 @@ export function DuelGamePage({ uid }: { uid: string }) {
         return { x: tierThreeX, y: tierThreeY };
     }, [game.tier]);
 
-    const isSecondPick = useMemo(() => {
-        return (
-            game.wonderCards[0]?.taken &&
-            game.wonderCards[1]?.taken &&
-            game.wonderCards[2]?.taken &&
-            game.wonderCards[3]?.taken
-        );
-    }, [game.wonderCards]);
-
-    const prepareWonders = useMemo(() => {
-        return game.wonderCards.filter((wonder, index) =>
-            isSecondPick ? index >= 4 && !wonder.taken : index < 4 && !wonder.taken
-        );
-    }, [game.wonderCards, isSecondPick]);
+    const batchOneWonders = useMemo(() => game.wonderCards.slice(0, 4), [game.wonderCards]);
+    const batchTwoWonders = useMemo(() => game.wonderCards.slice(4, 8), [game.wonderCards]);
+    const displayedPrepareWonders = useMemo(
+        () => (displayPrepareBatch === 1 ? batchOneWonders : batchTwoWonders),
+        [batchOneWonders, batchTwoWonders, displayPrepareBatch]
+    );
+    const selectablePrepareWonders = useMemo(
+        () => displayedPrepareWonders.filter((wonder) => !wonder.taken),
+        [displayedPrepareWonders]
+    );
+    const firstBatchComplete = useMemo(
+        () => batchOneWonders.length === 4 && batchOneWonders.every((wonder) => wonder.taken),
+        [batchOneWonders]
+    );
+    const prepareWonderSlots = useMemo(() => {
+        if (displayedPrepareWonders.length === 4) {
+            return displayedPrepareWonders as Array<(typeof displayedPrepareWonders)[number] | null>;
+        }
+        return Array(4).fill(null) as Array<(typeof displayedPrepareWonders)[number] | null>;
+    }, [displayedPrepareWonders]);
 
     const topPlayer = isObserver ? game.player1 : currentPlayer;
     const bottomPlayer = isObserver ? game.player2 : opponent;
@@ -185,6 +194,78 @@ export function DuelGamePage({ uid }: { uid: string }) {
         }
     }, [game.selectedCard]);
 
+    useEffect(() => {
+        if (game.tier !== 'prepare') {
+            setDisplayPrepareBatch(1);
+            setPrepareRevealedIds([]);
+            setPrepareActionLocked(false);
+        }
+    }, [game.tier]);
+
+    useEffect(() => {
+        const currentIds = displayedPrepareWonders.map((wonder) => wonder.id);
+        setPrepareRevealedIds((prev) => prev.filter((id) => currentIds.includes(id)));
+    }, [displayedPrepareWonders]);
+
+    useEffect(() => {
+        if (game.tier !== 'prepare') return;
+        if (displayPrepareBatch !== 1) return;
+        if (!firstBatchComplete) return;
+
+        const timer = window.setTimeout(() => {
+            setDisplayPrepareBatch(2);
+            setPrepareRevealedIds([]);
+        }, 940);
+
+        return () => window.clearTimeout(timer);
+    }, [displayPrepareBatch, firstBatchComplete, game.tier]);
+
+    useEffect(() => {
+        if (game.tier !== 'prepare') return;
+        if (displayPrepareBatch !== 2) return;
+        if (firstBatchComplete) return;
+        setDisplayPrepareBatch(1);
+        setPrepareRevealedIds([]);
+    }, [displayPrepareBatch, firstBatchComplete, game.tier]);
+
+    useEffect(() => {
+        if (game.tier !== 'prepare') return;
+        const pending = displayedPrepareWonders.filter((wonder) => !prepareRevealedIds.includes(wonder.id));
+        if (!pending.length) return;
+        const timers = pending.map((wonder, index) =>
+            window.setTimeout(() => {
+                setPrepareRevealedIds((prev) => (prev.includes(wonder.id) ? prev : [...prev, wonder.id]));
+            }, index * 340)
+        );
+        return () => timers.forEach((timer) => window.clearTimeout(timer));
+    }, [displayedPrepareWonders, game.tier, prepareRevealedIds]);
+
+    useEffect(() => {
+        if (game.tier !== 'prepare') return;
+        if (!isMyTurn) return;
+        if (game.selectWondersForPlayersMove !== 3 && game.selectWondersForPlayersMove !== 7) return;
+        if (selectablePrepareWonders.length !== 1) return;
+        if (prepareActionLocked) return;
+
+        const lastWonder = selectablePrepareWonders[0];
+        if (!prepareRevealedIds.includes(lastWonder.id)) return;
+        const timer = window.setTimeout(async () => {
+            setPrepareActionLocked(true);
+            await chooseWonderForPlayer(lastWonder.id);
+            setPrepareActionLocked(false);
+        }, 120);
+
+        return () => window.clearTimeout(timer);
+    }, [
+        chooseWonderForPlayer,
+        game.selectWondersForPlayersMove,
+        game.tier,
+        isMyTurn,
+        prepareActionLocked,
+        prepareRevealedIds,
+        selectablePrepareWonders
+    ]);
+
     return (
         <main className="mx-auto min-h-screen w-full max-w-[1400px] p-3 pb-6 text-slate-100">
             <header className="mb-3 flex items-center justify-between rounded-2xl border border-white/20 bg-white/10 p-3 backdrop-blur">
@@ -235,6 +316,7 @@ export function DuelGamePage({ uid }: { uid: string }) {
                     isDestroyTarget={false}
                     highlightScience={!!game.wonByArt && winnerUid === topPlayer.user.uid}
                     isCurrentTurn={game.turn === topPlayer.user.uid}
+                    showPreparePlaceholders={game.tier === 'prepare'}
                 />
             </section>
 
@@ -319,12 +401,29 @@ export function DuelGamePage({ uid }: { uid: string }) {
                                     Pick wonders {isMyTurn ? '(your turn)' : '(opponent picks)'}
                                 </h2>
                                 <div className="dg-wondersPick">
-                                    {prepareWonders.map((wonder) => (
+                                    {prepareWonderSlots.map((wonder, index) => (
                                         <DuelWonderSprite
-                                            key={wonder.id}
-                                            card={wonder}
-                                            disabled={!isMyTurn}
-                                            onClick={() => chooseWonderForPlayer(wonder.id)}
+                                            key={wonder ? wonder.id : `prepare-placeholder-${index}`}
+                                            card={wonder ?? undefined}
+                                            showFront={!!wonder && !wonder.taken && prepareRevealedIds.includes(wonder.id)}
+                                            flipDelayMs={0}
+                                            disabled={
+                                                !isMyTurn ||
+                                                !wonder ||
+                                                wonder.taken ||
+                                                !prepareRevealedIds.includes(wonder.id) ||
+                                                prepareActionLocked
+                                            }
+                                            onClick={
+                                                wonder
+                                                    ? async () => {
+                                                          if (prepareActionLocked) return;
+                                                          setPrepareActionLocked(true);
+                                                          await chooseWonderForPlayer(wonder.id);
+                                                          setPrepareActionLocked(false);
+                                                      }
+                                                    : undefined
+                                            }
                                         />
                                     ))}
                                 </div>
@@ -480,6 +579,7 @@ export function DuelGamePage({ uid }: { uid: string }) {
                     onDestroyCard={destroyEnemyCard}
                     highlightScience={!!game.wonByArt && winnerUid === bottomPlayer.user.uid}
                     isCurrentTurn={game.turn === bottomPlayer.user.uid}
+                    showPreparePlaceholders={game.tier === 'prepare'}
                 />
             </section>
         </main>

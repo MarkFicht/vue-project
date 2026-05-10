@@ -159,6 +159,35 @@
     z-index: 10;
 }
 
+.dg-wonderFlip {
+    position: absolute;
+    inset: 0;
+    transform-style: preserve-3d;
+    transition: transform 940ms cubic-bezier(0.22, 0.9, 0.24, 1);
+    transition-delay: var(--wonder-flip-delay, 0ms);
+}
+
+.dg-wonderFlipFront {
+    transform: rotateY(180deg);
+}
+
+.dg-wonderFace,
+.dg-wonderBack {
+    backface-visibility: hidden;
+    border-radius: 5px;
+}
+
+.dg-wonderFace {
+    transform: rotateY(180deg);
+}
+
+.dg-wonderBack {
+    background-image: url('@/assets/duel/wonders.webp');
+    background-size: calc(var(--width-wonder) * 5) calc(var(--height-wonder) * 4);
+    background-position: calc(var(--width-wonder) * -1) calc(var(--height-wonder) * -3);
+    box-shadow: inset 5px 5px 10px rgba(0, 0, 0, 0.2), inset -5px -5px 10px rgba(255, 255, 255, 0.08);
+}
+
 .dg-tierCardForWonder {
     position: absolute;
     top: -7px;
@@ -168,13 +197,17 @@
     height: var(--height-tier);
     border-radius: 5px;
     background-repeat: no-repeat;
-    background-size: calc(var(--width-tier) * 12) calc(var(--height-tier) * 8);
     z-index: 1;
+    transform-origin: center center;
 }
 
 .dg-tierCardImg {
     background-image: url('@/assets/duel/cards.webp');
+    background-repeat: no-repeat;
+    background-size: calc(var(--width-tier) * 12) calc(var(--height-tier) * 8);
+    border-radius: 5px;
 }
+
 
 .dg-wonderCash {
     bottom: 50%;
@@ -237,22 +270,22 @@
 .dg-punishment2 {
     top: 25.5%;
     right: 16%;
-    width: 23px;
+    width: 22.5px;
     height: 51px;
-    background-position: 66px 0;
+    background-position: -26px 0;
 }
 
 .dg-punishment3 {
     top: 64.2%;
     right: 16%;
-    width: 23px;
+    width: 22.5px;
     height: 51px;
-    background-position: 66px 0;
+    background-position: -26px 0;
 }
 
 .dg-punishment2,
 .dg-punishment3 {
-    filter: saturate(1.05) contrast(1.08);
+    filter: none;
 }
 
 .dg-punishment4 {
@@ -654,3 +687,4 @@
     50% { border-color: transparent; }
     100% { border-color: rgba(34, 197, 94, 0.95); }
 }
+

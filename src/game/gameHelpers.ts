@@ -173,13 +173,13 @@ export function showPrice(
     let missingMaterials: string[] = [];
     let buyForFree = false;
 
-    let arrCBW = [
+    const arrCBW = [
         { type: 'clay' as Materials, val: player.resources.clayOne ? 1 : 2 + enemy.resources.clayValue },
         { type: 'brick' as Materials, val: player.resources.brickOne ? 1 : 2 + enemy.resources.brickValue },
         { type: 'wood' as Materials, val: player.resources.woodOne ? 1 : 2 + enemy.resources.woodValue }
     ].sort((a, b) => b.val - a.val);
 
-    let arrPG = [
+    const arrPG = [
         {
             type: 'paper' as Materials,
             val: player.resources.paperGlassOne ? 1 : 2 + enemy.resources.paperValue

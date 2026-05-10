@@ -250,7 +250,10 @@ export function useGameState(currentUserUid: string) {
         if (game.tier !== 'prepare') return;
         if (game.move !== 0) return;
         if (game.player1.wonderCards.length !== 4 || game.player2.wonderCards.length !== 4) return;
-        updateDoc(tableGameDuelRef, { tier: 'I' });
+        const timer = window.setTimeout(() => {
+            updateDoc(tableGameDuelRef, { tier: 'I' });
+        }, 980);
+        return () => window.clearTimeout(timer);
     }, [game.move, game.player1.wonderCards.length, game.player2.wonderCards.length, game.tier]);
 
     useEffect(() => {
@@ -377,21 +380,6 @@ export function useGameState(currentUserUid: string) {
         },
         [game, isMyTurn]
     );
-
-    useEffect(() => {
-        if (game.tier !== 'prepare') return;
-        if (!isMyTurn) return;
-        if (game.selectWondersForPlayersMove !== 3 && game.selectWondersForPlayersMove !== 7) return;
-        const lastCard = game.wonderCards.find((card) => !card.taken);
-        if (!lastCard) return;
-        chooseWonderForPlayer(lastCard.id);
-    }, [
-        chooseWonderForPlayer,
-        game.selectWondersForPlayersMove,
-        game.tier,
-        game.wonderCards,
-        isMyTurn
-    ]);
 
     const chooseWhoStarts = useCallback(
         async (uid: string) => {
