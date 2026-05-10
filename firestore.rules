@@ -11,6 +11,7 @@ service cloud.firestore {
         'uid',
         'email',
         'displayName',
+        'displayNameKey',
         'game',
         'readyToGame',
         'online',
@@ -29,6 +30,9 @@ service cloud.firestore {
         && data.uid is string
         && data.email is string
         && data.displayName is string
+        && data.displayName.size() > 0
+        && data.displayNameKey is string
+        && data.displayNameKey.size() > 0
         && data.game is string
         && data.readyToGame is bool
         && data.online is string
@@ -43,6 +47,20 @@ service cloud.firestore {
         && hasRequiredUserKeys(request.resource.data)
         && userDocShapeIsValid(request.resource.data, userId);
       allow delete: if false;
+    }
+
+    match /displayNames/{displayNameKey} {
+      allow get: if true;
+      allow list: if false;
+      allow create: if isSignedIn()
+        && !exists(/databases/$(database)/documents/displayNames/$(displayNameKey))
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.displayName is string;
+      allow update: if isSignedIn()
+        && resource.data.uid == request.auth.uid
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.displayName is string;
+      allow delete: if isSignedIn() && resource.data.uid == request.auth.uid;
     }
 
     match /gameStatus/{docId} {

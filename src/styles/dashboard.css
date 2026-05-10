@@ -265,15 +265,65 @@
 }
 
 .dashRemoveButton {
+    --dash-remove-progress: 0deg;
+    position: relative;
+    isolation: isolate;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     width: 22px;
     height: 22px;
     border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.4);
-    background: rgba(220, 38, 38, 0.3);
+    border: none;
+    background: transparent;
     color: #fee2e2;
+    transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.dashRemoveButton::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: conic-gradient(
+        from -90deg,
+        rgba(251, 191, 36, 0.98) var(--dash-remove-progress),
+        rgba(255, 255, 255, 0.2) 0deg
+    );
+    z-index: -2;
+}
+
+.dashRemoveButton::after {
+    content: '';
+    position: absolute;
+    inset: 1.5px;
+    border-radius: 6px;
+    background: rgba(127, 29, 29, 0.85);
+    z-index: -1;
+}
+
+.dashRemoveButtonReady::before {
+    background: linear-gradient(135deg, rgba(252, 165, 165, 0.95), rgba(185, 28, 28, 0.95));
+}
+
+.dashRemoveButtonReady::after {
+    background: rgba(153, 27, 27, 0.72);
+}
+
+.dashRemoveButtonReady:hover:not(:disabled) {
+    transform: translateY(-1px) scale(1.05);
+}
+
+.dashRemoveButtonLocked {
+    color: rgba(254, 226, 226, 0.75);
+}
+
+.dashRemoveButtonLocked:disabled {
+    cursor: wait;
+}
+
+.dashRemoveButtonLocked .lucide {
+    opacity: 0.8;
 }
 
 .dashLobbyOverlay {
@@ -396,6 +446,43 @@
     font-size: 12px;
     color: rgba(226, 232, 240, 0.85);
     letter-spacing: 0.03em;
+}
+
+.dashReadonlyInputWrap {
+    position: relative;
+}
+
+.dashReadonlyInput {
+    padding-right: 34px;
+}
+
+.dashUserField .input[readonly] {
+    background: rgba(15, 23, 42, 0.7);
+    color: #cbd5e1;
+    border-color: rgba(148, 163, 184, 0.45);
+    cursor: default;
+}
+
+.dashInputCopyBtn {
+    position: absolute;
+    top: 50%;
+    right: 6px;
+    transform: translateY(-50%);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    border: 1px solid rgba(148, 163, 184, 0.45);
+    background: rgba(30, 41, 59, 0.75);
+    color: #cbd5e1;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.dashInputCopyBtn:hover {
+    background: rgba(51, 65, 85, 0.9);
+    color: #f8fafc;
 }
 
 @media (max-width: 640px) {

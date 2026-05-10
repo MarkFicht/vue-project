@@ -9,6 +9,7 @@ export default interface IUser {
     refreshToken?: string;
     uid: string;
     displayName: string;
+    displayNameKey?: string;
     email: string;
     game?: IGame['id'];
     readyToGame?: boolean;
@@ -18,6 +19,7 @@ export default interface IUser {
     createdAt?: any;
     updatedAt?: any;
     lastSeenAt?: any;
+    joinedAt?: any;
     schemaVersion?: number;
     soundMuted?: boolean;
 }

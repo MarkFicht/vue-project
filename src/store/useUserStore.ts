@@ -13,6 +13,7 @@ type UserState = {
 const emptyUser: IUser = {
     uid: '',
     displayName: '',
+    displayNameKey: '',
     email: '',
     game: '',
     readyToGame: false,
@@ -41,6 +42,7 @@ export const useUserStore = create<UserState>((set, get) => ({
                 fbUser: {
                     uid: data.uid,
                     displayName: data.displayName,
+                    displayNameKey: data.displayNameKey,
                     email: data.email,
                     readyToGame: data.readyToGame,
                     game: data.game,

@@ -2,12 +2,17 @@ import { FormEvent, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     createUserWithEmailAndPassword,
+    deleteUser,
+    signOut,
     signInWithEmailAndPassword,
     signInWithPopup,
     updateProfile
 } from 'firebase/auth';
+import { doc, getDoc, runTransaction, serverTimestamp } from 'firebase/firestore';
 import { Gamepad2, LogIn, UserPlus } from 'lucide-react';
-import { auth, googleProvider } from '@/firebaseConfig';
+import { auth, db, googleProvider } from '@/firebaseConfig';
+import { displayNamesRef, usersRef } from '@/firebase/refs';
+import { normalizeDisplayName, sanitizeDisplayName } from '@/utils/displayName';
 import '@/styles/login.css';
 
 export function LoginPage() {
@@ -18,22 +23,87 @@ export function LoginPage() {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const isRegister = useMemo(() => mode === 'register', [mode]);
+    const ensureDisplayNameAvailable = async (displayNameKey: string) => {
+        const displayNameRef = doc(displayNamesRef, displayNameKey);
+        const displayNameSnap = await getDoc(displayNameRef);
+        if (displayNameSnap.exists()) {
+            throw new Error('Display name is already taken.');
+        }
+    };
 
     const onSubmit = async (event: FormEvent) => {
         event.preventDefault();
         setError('');
         try {
             if (isRegister) {
+                const cleanDisplayName = sanitizeDisplayName(displayName);
+                if (!cleanDisplayName) {
+                    setError('Display name is required.');
+                    return;
+                }
+                const displayNameKey = normalizeDisplayName(cleanDisplayName);
+                await ensureDisplayNameAvailable(displayNameKey);
                 const res = await createUserWithEmailAndPassword(auth, email.trim().toLowerCase(), password);
-                if (displayName.trim()) {
-                    await updateProfile(res.user, { displayName: displayName.trim() });
+                try {
+                    await updateProfile(res.user, { displayName: cleanDisplayName });
+                    await runTransaction(db, async (tx) => {
+                        const displayNameRef = doc(displayNamesRef, displayNameKey);
+                        const displayNameSnap = await tx.get(displayNameRef);
+                        if (displayNameSnap.exists()) {
+                            throw new Error('Display name is already taken.');
+                        }
+
+                        const now = serverTimestamp();
+                        tx.set(doc(usersRef, res.user.uid), {
+                            uid: res.user.uid,
+                            email: res.user.email || email.trim().toLowerCase(),
+                            displayName: cleanDisplayName,
+                            displayNameKey,
+                            game: '',
+                            readyToGame: false,
+                            online: 'online',
+                            status: 'online',
+                            timestamp: now,
+                            createdAt: now,
+                            updatedAt: now,
+                            lastSeenAt: now,
+                            schemaVersion: 1,
+                            soundMuted: false
+                        });
+                        tx.set(displayNameRef, {
+                            uid: res.user.uid,
+                            displayName: cleanDisplayName,
+                            createdAt: now,
+                            updatedAt: now
+                        });
+                    });
+                } catch (txError) {
+                    try {
+                        await deleteUser(res.user);
+                    } finally {
+                        await signOut(auth);
+                    }
+                    throw txError;
                 }
             } else {
                 await signInWithEmailAndPassword(auth, email.trim().toLowerCase(), password);
             }
             navigate('/feed');
         } catch (err) {
-            setError((err as Error).message);
+            const firebaseError = err as { code?: string; message?: string };
+            if (firebaseError.code === 'auth/email-already-in-use') {
+                setError('This email already exists in Firebase Authentication.');
+                return;
+            }
+            if (firebaseError.code === 'auth/weak-password') {
+                setError('Password is too weak (minimum 6 characters).');
+                return;
+            }
+            if (firebaseError.code === 'auth/invalid-credential') {
+                setError('Invalid email or password.');
+                return;
+            }
+            setError(firebaseError.message || 'Operation failed.');
         }
     };
 
@@ -53,6 +123,7 @@ export function LoginPage() {
                             placeholder="Display name"
                             value={displayName}
                             onChange={(e) => setDisplayName(e.target.value)}
+                            required
                         />
                     )}
                     <input
