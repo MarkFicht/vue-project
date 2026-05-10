@@ -103,7 +103,7 @@
 
 .dashBoxTop {
     height: 120px;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
 }
 
 .dashBoxBottom {
@@ -147,7 +147,7 @@
 }
 
 .dashCard .dashBoxBottom::before {
-    top: 78.5px;
+    top: 76.5px;
     left: -0.5px;
     border-radius: 20px;
     box-shadow: -6px -6px var(--dash-surface);
@@ -170,7 +170,7 @@
     background-color: var(--dash-clr);
     border-radius: 50%;
     color: #eee;
-    border: 10px solid var(--dash-surface);
+    border: 12px solid var(--dash-surface);
     display: flex;
     justify-content: center;
     align-items: center;
