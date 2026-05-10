@@ -45,14 +45,17 @@
 }
 
 .dashWrapper {
+    --dash-surface: #1f2937;
     position: relative;
     width: min(96vw, 990px);
     min-height: calc(100vh - 190px);
     padding: 15px 10px;
     margin-bottom: 12px;
-    box-shadow: 0 0 50px rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 0 50px rgba(2, 6, 23, 0.35);
     border-radius: 20px;
-    background: #ececec;
+    background: var(--dash-surface);
+    backdrop-filter: blur(8px);
     animation: showElement 1.2s linear;
 }
 
@@ -100,7 +103,7 @@
 
 .dashBoxTop {
     height: 120px;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
 }
 
 .dashBoxBottom {
@@ -127,34 +130,34 @@
     width: 20px;
     height: 20px;
     background: transparent;
-    box-shadow: -6px 6px #ececec;
+    box-shadow: -6px 6px var(--dash-surface);
 }
 .dashCard .dashBoxTop::before {
-    top: 31px;
+    top: 31.5px;
     left: 1px;
     border-radius: 20px;
-    box-shadow: -6px 6px #ececec;
+    box-shadow: -6px 6px var(--dash-surface);
 }
 
 .dashCard .dashBoxTop::after {
     bottom: -1px;
-    left: 101px;
+    left: 100.5px;
     border-bottom-left-radius: 20px;
-    box-shadow: -6px 6px #ececec;
+    box-shadow: -6px 6px var(--dash-surface);
 }
 
 .dashCard .dashBoxBottom::before {
-    top: 79px;
-    left: 0;
+    top: 76.5px;
+    left: -0.5px;
     border-radius: 20px;
-    box-shadow: -6px -6px #ececec;
+    box-shadow: -6px -6px var(--dash-surface);
 }
 
 .dashCard .dashBoxBottom::after {
     top: -1.5px;
     left: 103px;
     border-top-left-radius: 20px;
-    box-shadow: -6px -6px #ececec;
+    box-shadow: -6px -6px var(--dash-surface);
 }
 
 .dashCircle {
@@ -167,7 +170,7 @@
     background-color: var(--dash-clr);
     border-radius: 50%;
     color: #eee;
-    border: 10px solid #eee;
+    border: 12px solid var(--dash-surface);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -193,11 +196,12 @@
     justify-content: center;
     margin-left: 70px;
     margin-bottom: 12px;
+    margin-top: 8px;
 }
 
 .dashCardButton {
     padding: 8px 22px;
-    border: 10px solid #eee;
+    border: 10px solid var(--dash-surface);
     outline: none;
     border-radius: 30px;
     color: #fff;
@@ -265,15 +269,65 @@
 }
 
 .dashRemoveButton {
+    --dash-remove-progress: 0deg;
+    position: relative;
+    isolation: isolate;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     width: 22px;
     height: 22px;
     border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.4);
-    background: rgba(220, 38, 38, 0.3);
+    border: none;
+    background: transparent;
     color: #fee2e2;
+    transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.dashRemoveButton::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: conic-gradient(
+        from -90deg,
+        rgba(251, 191, 36, 0.98) var(--dash-remove-progress),
+        rgba(255, 255, 255, 0.2) 0deg
+    );
+    z-index: -2;
+}
+
+.dashRemoveButton::after {
+    content: '';
+    position: absolute;
+    inset: 1.5px;
+    border-radius: 6px;
+    background: rgba(127, 29, 29, 0.85);
+    z-index: -1;
+}
+
+.dashRemoveButtonReady::before {
+    background: linear-gradient(135deg, rgba(252, 165, 165, 0.95), rgba(185, 28, 28, 0.95));
+}
+
+.dashRemoveButtonReady::after {
+    background: rgba(153, 27, 27, 0.72);
+}
+
+.dashRemoveButtonReady:hover:not(:disabled) {
+    transform: translateY(-1px) scale(1.05);
+}
+
+.dashRemoveButtonLocked {
+    color: rgba(254, 226, 226, 0.75);
+}
+
+.dashRemoveButtonLocked:disabled {
+    cursor: wait;
+}
+
+.dashRemoveButtonLocked .lucide {
+    opacity: 0.8;
 }
 
 .dashLobbyOverlay {
@@ -331,11 +385,114 @@
     margin-bottom: 0;
 }
 
+.dashPresenceDot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    display: inline-block;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.25);
+}
+
+.dashPresenceOnline {
+    background: #22c55e;
+}
+
+.dashPresenceAway {
+    background: #f59e0b;
+}
+
+.dashPresenceOffline {
+    background: #ef4444;
+}
+
 .dashLobbyActions {
     margin-top: 14px;
     display: flex;
     justify-content: center;
     gap: 10px;
+}
+
+.dashUserModal {
+    width: min(94vw, 560px);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: rgba(15, 23, 42, 0.94);
+    color: #e2e8f0;
+    padding: 16px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+}
+
+.dashUserModal h3 {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.dashUserModal p {
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+.dashUserGrid {
+    margin-top: 12px;
+    display: grid;
+    gap: 10px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.dashUserField {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.dashUserField > span {
+    font-size: 12px;
+    color: rgba(226, 232, 240, 0.85);
+    letter-spacing: 0.03em;
+}
+
+.dashReadonlyInputWrap {
+    position: relative;
+}
+
+.dashReadonlyInput {
+    padding-right: 34px;
+}
+
+.dashUserField .input[readonly] {
+    background: rgba(15, 23, 42, 0.7);
+    color: #cbd5e1;
+    border-color: rgba(148, 163, 184, 0.45);
+    cursor: default;
+}
+
+.dashInputCopyBtn {
+    position: absolute;
+    top: 50%;
+    right: 6px;
+    transform: translateY(-50%);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    border: 1px solid rgba(148, 163, 184, 0.45);
+    background: rgba(30, 41, 59, 0.75);
+    color: #cbd5e1;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.dashInputCopyBtn:hover {
+    background: rgba(51, 65, 85, 0.9);
+    color: #f8fafc;
+}
+
+@media (max-width: 640px) {
+    .dashUserGrid {
+        grid-template-columns: 1fr;
+    }
 }
 
 @media (max-width: 720px) {

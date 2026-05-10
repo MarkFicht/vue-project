@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from 'react';
 import type { IGameDuelPlayer, IGameDuelCard } from '@/interfaces/GameDuel';
 import { DuelSpriteCard } from './DuelSpriteCard';
 import { DuelCoinSprite } from './DuelCoinSprite';
@@ -19,7 +20,8 @@ export function DuelPlayerColumns({
     destroyMode,
     isDestroyTarget,
     onDestroyCard,
-    highlightScience
+    highlightScience,
+    showPreparePlaceholders
 }: {
     player: IGameDuelPlayer;
     enemy: IGameDuelPlayer;
@@ -34,8 +36,44 @@ export function DuelPlayerColumns({
     isDestroyTarget?: boolean;
     onDestroyCard?: (card: IGameDuelCard, color: 'brown' | 'grey') => void;
     highlightScience?: boolean;
+    showPreparePlaceholders?: boolean;
 }) {
     const totalPoints = countTotalPoints(player, enemy, boardPawn, isPlayerOne);
+    const wonderOrder = useMemo(
+        () =>
+            player.wonderCards.reduce<Record<number, number>>((acc, wonder, index) => {
+                acc[wonder.id] = index;
+                return acc;
+            }, {}),
+        [player.wonderCards]
+    );
+    const [revealedWonderIds, setRevealedWonderIds] = useState<number[]>([]);
+
+    useEffect(() => {
+        const currentIds = player.wonderCards.map((wonder) => wonder.id);
+        setRevealedWonderIds((prev) => prev.filter((id) => currentIds.includes(id)));
+    }, [player.wonderCards]);
+
+    useEffect(() => {
+        const pending = player.wonderCards
+            .filter((wonder) => !revealedWonderIds.includes(wonder.id))
+            .sort((a, b) => (wonderOrder[a.id] ?? 0) - (wonderOrder[b.id] ?? 0));
+        if (!pending.length) return;
+
+        const timers = pending.map((wonder) =>
+            window.setTimeout(() => {
+                setRevealedWonderIds((prev) => (prev.includes(wonder.id) ? prev : [...prev, wonder.id]));
+            }, 0)
+        );
+        return () => timers.forEach((timer) => window.clearTimeout(timer));
+    }, [player.wonderCards, revealedWonderIds, wonderOrder]);
+
+    const wonderSlots = useMemo(() => {
+        if (!showPreparePlaceholders) return player.wonderCards;
+        const placeholdersNeeded = Math.max(0, 4 - player.wonderCards.length);
+        return [...player.wonderCards, ...Array(placeholdersNeeded).fill(null)] as Array<typeof player.wonderCards[number] | null>;
+    }, [player.wonderCards, showPreparePlaceholders]);
+
     return (
         <section className="dg-playerArea">
             <header className="dg-playerHeader">
@@ -47,8 +85,18 @@ export function DuelPlayerColumns({
                 </div>
             </header>
             <div className="dg-playerWonders">
-                {player.wonderCards.map((wonder) => {
-                    const canAfford = affordableWonderIds?.includes(wonder.id) ?? false;
+                {wonderSlots.map((wonder, index) => {
+                    const canAfford = wonder ? affordableWonderIds?.includes(wonder.id) ?? false : false;
+                    if (!wonder) {
+                        return (
+                            <DuelWonderSprite
+                                key={`${player.user.uid}-w-placeholder-${index}`}
+                                disabled
+                                showFront={false}
+                                flipDelayMs={0}
+                            />
+                        );
+                    }
                     return (
                     <DuelWonderSprite
                         key={`${player.user.uid}-w-${wonder.id}`}
@@ -57,6 +105,8 @@ export function DuelPlayerColumns({
                         resCash={player.resources.cash}
                         selected={selectedWonderId === wonder.id}
                         disabled={!canSelectWonder || wonder.activated !== 'none' || !canAfford}
+                        flipDelayMs={0}
+                        showFront={revealedWonderIds.includes(wonder.id)}
                         onClick={() => onSelectWonder?.(wonder.id)}
                     />
                     );

@@ -13,11 +13,18 @@ type UserState = {
 const emptyUser: IUser = {
     uid: '',
     displayName: '',
+    displayNameKey: '',
     email: '',
     game: '',
     readyToGame: false,
     timestamp: '',
-    online: ''
+    online: 'offline',
+    status: 'offline',
+    createdAt: '',
+    updatedAt: '',
+    lastSeenAt: '',
+    schemaVersion: 1,
+    soundMuted: false
 };
 
 export const useUserStore = create<UserState>((set, get) => ({
@@ -35,11 +42,18 @@ export const useUserStore = create<UserState>((set, get) => ({
                 fbUser: {
                     uid: data.uid,
                     displayName: data.displayName,
+                    displayNameKey: data.displayNameKey,
                     email: data.email,
                     readyToGame: data.readyToGame,
                     game: data.game,
                     online: data.online,
-                    timestamp: data.timestamp
+                    status: data.status,
+                    timestamp: data.timestamp,
+                    createdAt: data.createdAt,
+                    updatedAt: data.updatedAt,
+                    lastSeenAt: data.lastSeenAt,
+                    schemaVersion: data.schemaVersion,
+                    soundMuted: data.soundMuted
                 }
             });
         });

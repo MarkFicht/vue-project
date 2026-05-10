@@ -1,17 +1,22 @@
 .loginModeSwitch {
+    --switch-surface: #1f2937;
+    --switch-bg: var(--switch-surface);
+    --mode-width: 78px;
+    --switch-accent: #22d3ee;
     margin-top: 48px;
     width: 184px;
     height: 56px;
-    border-radius: 12px;
-    background: #e5e7eb;
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+    border-radius: 16px;
+    border: none;
+    background: var(--switch-bg);
+    box-shadow: 0 14px 36px rgba(2, 6, 23, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.2);
     display: flex;
     justify-content: center;
     align-items: center;
+    overflow: visible;
 }
 
 .loginModeNav {
-    --mode-width: 78px;
     position: relative;
     display: flex;
     width: calc(var(--mode-width) * 2);
@@ -28,7 +33,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    color: #64748b;
+    color: #94a3b8;
     cursor: pointer;
     transition: 0.3s ease;
 }
@@ -55,46 +60,49 @@
 }
 
 .loginModeItem.active .icon {
-    transform: translateY(-20px);
-    color: #0ea5e9;
+    transform: translateY(-16px);
+    color: var(--switch-accent);
+    filter: drop-shadow(0 0 8px rgba(34, 211, 238, 0.45));
 }
 
 .loginModeItem.active .text {
-    transform: translateY(-6px);
+    transform: translateY(-4px);
     opacity: 1;
-    background: #0ea5e9;
+    background: linear-gradient(135deg, #0ea5e9, #22d3ee);
+    color: #082f49;
+    font-weight: 700;
 }
 
 .loginModeIndicator {
+    --indicator-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 94 54'%3E%3Cpath d='M47 17C57.2 17 65.2 22.2 68.3 29.9C69 31.6 70.5 32.6 72.5 32.6H83A7.4 7.4 0 0 1 83 47.4H11A7.4 7.4 0 0 1 11 32.6H21.5C23.5 32.6 25 31.6 25.7 29.9C28.8 22.2 36.8 17 47 17Z' fill='black'/%3E%3C/svg%3E");
+    --indicator-stroke: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 94 54'%3E%3Cpath d='M7.5 32.6H21.5C23.8 31.9 25.2 30.7 25.7 29.9C28.8 22.2 36.8 17 47 17C57.2 17 65.2 22.2 68.3 29.9C68.8 30.7 70.2 31.9 72.5 32.6H86.8' fill='none' stroke='%23ffffff' stroke-opacity='0.2' stroke-width='1.85' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
     position: absolute;
-    top: -26px;
-    left: 0;
-    width: var(--mode-width);
-    height: var(--mode-width);
-    border-radius: 50%;
-    background: #e5e7eb;
+    top: -32.5px;
+    left: -8px;
+    width: 94px;
+    height: 54px;
+    border: none;
+    background: var(--switch-bg);
+    -webkit-mask-image: var(--indicator-mask);
+    mask-image: var(--indicator-mask);
+    -webkit-mask-size: 100% 100%;
+    mask-size: 100% 100%;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
     transition: 0.35s ease;
 }
 
-.loginModeIndicator::before,
 .loginModeIndicator::after {
     content: '';
     position: absolute;
-    width: 22px;
-    height: 22px;
-    top: 4px;
-    border-radius: 50%;
-    background: transparent;
-}
-
-.loginModeIndicator::before {
-    left: -15.5px;
-    box-shadow: 12px 14px #e5e7eb;
-}
-
-.loginModeIndicator::after {
-    right: -15.5px;
-    box-shadow: -12px 14px #e5e7eb;
+    inset: 0;
+    background-image: var(--indicator-stroke);
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    background-position: center;
+    pointer-events: none;
 }
 
 .loginModeIndicator.toRight {
