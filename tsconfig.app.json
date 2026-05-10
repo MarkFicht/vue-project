@@ -1,9 +1,16 @@
 {
-  "extends": "@vue/tsconfig/tsconfig.dom.json",
-  "include": ["env.d.ts", "src/**/*", "src/**/*.vue"],
+  "extends": "@tsconfig/node18/tsconfig.json",
+  "include": ["env.d.ts", "src/**/*"],
   "exclude": ["src/**/__tests__/*"],
   "compilerOptions": {
     "composite": true,
+    "target": "ES2021",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2021", "DOM", "DOM.Iterable"],
+    "allowJs": true,
+    "types": ["vite/client"],
+    "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
