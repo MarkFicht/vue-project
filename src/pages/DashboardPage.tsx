@@ -1,15 +1,17 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-    doc, getDoc, runTransaction, serverTimestamp, setDoc, writeBatch
+    doc, getDoc, runTransaction, serverTimestamp, setDoc, updateDoc, writeBatch
 } from 'firebase/firestore';
-import { Gamepad2, LogOut, UserX, Volume2, VolumeX } from 'lucide-react';
+import { ref as rtdbRef, serverTimestamp as rtdbServerTimestamp, set as setRtdb } from 'firebase/database';
+import { Gamepad2, LogOut, UserCircle2, UserX, Volume2, VolumeX } from 'lucide-react';
 import { signOut } from 'firebase/auth';
-import { auth, db } from '@/firebaseConfig';
+import { auth, db, rtdb } from '@/firebaseConfig';
 import { useUserStore } from '@/store/useUserStore';
 import { useGameStore } from '@/store/useGameStore';
 import { gameStatusDuelRef, gameStatusGemsRef, gameStatusReflexRef, usersRef } from '@/firebase/refs';
 import { isSoundMuted, playUiSound, setSoundMuted, setSoundScope } from '@/utils/sound';
+import { usePresenceMap } from '@/hooks/usePresenceMap';
 import '@/styles/dashboard.css';
 
 export function DashboardPage({ uid }: { uid: string }) {
@@ -17,6 +19,10 @@ export function DashboardPage({ uid }: { uid: string }) {
     const [initError, setInitError] = useState('');
     const [isBootstrapped, setIsBootstrapped] = useState(false);
     const [soundMuted, setSoundMutedState] = useState(() => isSoundMuted());
+    const [showUserModal, setShowUserModal] = useState(false);
+    const [profileDisplayName, setProfileDisplayName] = useState('');
+    const [profileError, setProfileError] = useState('');
+    const [savingProfile, setSavingProfile] = useState(false);
     const user = useUserStore((state) => state.fbUser);
     const subUser = useUserStore((state) => state.subFirebaseConnect);
     const unSubUser = useUserStore((state) => state.unSubFirebaseConnect);
@@ -26,6 +32,7 @@ export function DashboardPage({ uid }: { uid: string }) {
     const unSubGame = useGameStore((state) => state.unSubFirebaseConnect);
     const prevPlayersLenRef = useRef(duel.players.length);
     const prevStartedRef = useRef(duel.isStarted);
+    const presenceMap = usePresenceMap();
 
     useEffect(() => {
         setSoundScope(uid);
@@ -324,9 +331,72 @@ export function DashboardPage({ uid }: { uid: string }) {
     const leaveLobby = async () => {
         await removeUserFromLobby(uid);
     };
+    const logoutUser = async () => {
+        try {
+            if (inDuelLobby) {
+                await removeUserFromLobby(uid);
+            }
+            await setRtdb(rtdbRef(rtdb, `status/${uid}`), {
+                state: 'offline',
+                lastChanged: rtdbServerTimestamp()
+            });
+            await setDoc(
+                doc(usersRef, uid),
+                {
+                    online: 'offline',
+                    status: 'offline',
+                    updatedAt: serverTimestamp(),
+                    lastSeenAt: serverTimestamp(),
+                    timestamp: serverTimestamp()
+                },
+                { merge: true }
+            );
+        } catch {
+            // best effort before sign-out
+        } finally {
+            await signOut(auth);
+        }
+    };
+
+    const formatUserTimestamp = (value: unknown) => {
+        if (!value) return '-';
+        if (typeof value === 'object' && value !== null && 'toDate' in value) {
+            const asTs = value as { toDate: () => Date };
+            return asTs.toDate().toLocaleString();
+        }
+        return '-';
+    };
+    const getPresence = (id: string) => presenceMap[id] || 'offline';
+
+    const saveProfile = async () => {
+        const displayName = profileDisplayName.trim();
+        if (!displayName) {
+            setProfileError('Display name is required.');
+            return;
+        }
+        if (displayName.length < 2) {
+            setProfileError('Display name must have at least 2 characters.');
+            return;
+        }
+
+        setSavingProfile(true);
+        setProfileError('');
+        try {
+            await updateDoc(doc(usersRef, uid), {
+                displayName,
+                updatedAt: serverTimestamp(),
+                timestamp: serverTimestamp()
+            });
+            setShowUserModal(false);
+        } catch (error) {
+            setProfileError((error as Error).message || 'Failed to update user profile.');
+        } finally {
+            setSavingProfile(false);
+        }
+    };
 
     useEffect(() => {
-        if (!showDuelLobbyModal) return;
+        if (!showDuelLobbyModal && !showUserModal) return;
 
         const prevBodyOverflow = document.body.style.overflow;
         const prevHtmlOverflow = document.documentElement.style.overflow;
@@ -337,7 +407,7 @@ export function DashboardPage({ uid }: { uid: string }) {
             document.body.style.overflow = prevBodyOverflow;
             document.documentElement.style.overflow = prevHtmlOverflow;
         };
-    }, [showDuelLobbyModal]);
+    }, [showDuelLobbyModal, showUserModal]);
 
     return (
         <main className="dashboardPage">
@@ -350,6 +420,18 @@ export function DashboardPage({ uid }: { uid: string }) {
                     <button
                         className="btn-secondary hdrIconBtn"
                         onClick={() => {
+                            setProfileDisplayName(user.displayName || '');
+                            setProfileError('');
+                            setShowUserModal(true);
+                        }}
+                        title="User profile settings"
+                    >
+                        <UserCircle2 className="h-4 w-4" />
+                        <span className="hdrBtnText">{user.displayName || user.email || 'User'}</span>
+                    </button>
+                    <button
+                        className="btn-secondary hdrIconBtn"
+                        onClick={() => {
                             const next = !soundMuted;
                             setSoundMuted(next);
                             setSoundMutedState(next);
@@ -359,7 +441,7 @@ export function DashboardPage({ uid }: { uid: string }) {
                         {soundMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
                         <span className="hdrBtnText">{soundMuted ? 'Muted' : 'Sound'}</span>
                     </button>
-                    <button className="btn-secondary hdrIconBtn" onClick={() => signOut(auth)}>
+                    <button className="btn-secondary hdrIconBtn" onClick={logoutUser}>
                         <LogOut className="h-4 w-4" />
                         <span className="hdrBtnText">Logout</span>
                     </button>
@@ -391,7 +473,18 @@ export function DashboardPage({ uid }: { uid: string }) {
                             <div className="dashLobbyList">
                                 {duel.players.map((player) => (
                                     <div key={player.uid} className="dashLobbyRow">
-                                        <span className="truncate">{player.displayName || player.email}</span>
+                                        <span className="truncate flex items-center gap-2">
+                                            <span
+                                                className={`dashPresenceDot ${
+                                                    getPresence(player.uid) === 'online'
+                                                        ? 'dashPresenceOnline'
+                                                        : getPresence(player.uid) === 'away'
+                                                          ? 'dashPresenceAway'
+                                                          : 'dashPresenceOffline'
+                                                }`}
+                                            />
+                                            {player.displayName || player.email}
+                                        </span>
                                         <div className="flex items-center gap-2">
                                             <span className={player.readyToGame ? 'text-emerald-300' : 'text-amber-300'}>
                                                 {player.readyToGame ? 'ready' : 'waiting'}
@@ -469,7 +562,18 @@ export function DashboardPage({ uid }: { uid: string }) {
                             <div className="dashLobbyPlayers">
                                 {duel.players.map((player) => (
                                     <div key={`modal-${player.uid}`} className="dashLobbyPlayer">
-                                        <span>{player.displayName || player.email}</span>
+                                        <span className="flex items-center gap-2">
+                                            <span
+                                                className={`dashPresenceDot ${
+                                                    getPresence(player.uid) === 'online'
+                                                        ? 'dashPresenceOnline'
+                                                        : getPresence(player.uid) === 'away'
+                                                          ? 'dashPresenceAway'
+                                                          : 'dashPresenceOffline'
+                                                }`}
+                                            />
+                                            {player.displayName || player.email}
+                                        </span>
                                         <span className={player.readyToGame ? 'text-emerald-300' : 'text-amber-300'}>
                                             {player.readyToGame ? 'ready' : 'waiting'}
                                         </span>
@@ -482,6 +586,54 @@ export function DashboardPage({ uid }: { uid: string }) {
                                 </button>
                                 <button className="dashCardButton dashCardButtonLobby" onClick={leaveLobby}>
                                     Exit
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+                {showUserModal && (
+                    <div className="dashLobbyOverlay" onClick={() => setShowUserModal(false)}>
+                        <div className="dashUserModal" onClick={(event) => event.stopPropagation()}>
+                            <h3>User profile</h3>
+                            <p>Edit your account details.</p>
+                            <div className="dashUserGrid">
+                                <label className="dashUserField">
+                                    <span>UID</span>
+                                    <input className="input" value={uid} readOnly />
+                                </label>
+                                <label className="dashUserField">
+                                    <span>Email</span>
+                                    <input className="input" value={user.email || ''} readOnly />
+                                </label>
+                                <label className="dashUserField">
+                                    <span>Display name</span>
+                                    <input
+                                        className="input"
+                                        value={profileDisplayName}
+                                        onChange={(event) => setProfileDisplayName(event.target.value)}
+                                        placeholder="Display name"
+                                    />
+                                </label>
+                                <label className="dashUserField">
+                                    <span>Connection status (auto)</span>
+                                    <input className="input" value={getPresence(uid)} readOnly />
+                                </label>
+                                <label className="dashUserField">
+                                    <span>Created at</span>
+                                    <input className="input" value={formatUserTimestamp(user.createdAt)} readOnly />
+                                </label>
+                                <label className="dashUserField">
+                                    <span>Last seen</span>
+                                    <input className="input" value={formatUserTimestamp(user.lastSeenAt)} readOnly />
+                                </label>
+                            </div>
+                            {profileError && <p className="mt-2 text-sm text-red-300">{profileError}</p>}
+                            <div className="dashLobbyActions">
+                                <button className="btn-secondary" onClick={() => setShowUserModal(false)}>
+                                    Cancel
+                                </button>
+                                <button className="btn-primary" disabled={savingProfile} onClick={saveProfile}>
+                                    {savingProfile ? 'Saving...' : 'Save'}
                                 </button>
                             </div>
                         </div>

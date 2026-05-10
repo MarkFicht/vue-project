@@ -331,11 +331,77 @@
     margin-bottom: 0;
 }
 
+.dashPresenceDot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    display: inline-block;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.25);
+}
+
+.dashPresenceOnline {
+    background: #22c55e;
+}
+
+.dashPresenceAway {
+    background: #f59e0b;
+}
+
+.dashPresenceOffline {
+    background: #ef4444;
+}
+
 .dashLobbyActions {
     margin-top: 14px;
     display: flex;
     justify-content: center;
     gap: 10px;
+}
+
+.dashUserModal {
+    width: min(94vw, 560px);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: rgba(15, 23, 42, 0.94);
+    color: #e2e8f0;
+    padding: 16px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+}
+
+.dashUserModal h3 {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.dashUserModal p {
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+.dashUserGrid {
+    margin-top: 12px;
+    display: grid;
+    gap: 10px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.dashUserField {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.dashUserField > span {
+    font-size: 12px;
+    color: rgba(226, 232, 240, 0.85);
+    letter-spacing: 0.03em;
+}
+
+@media (max-width: 640px) {
+    .dashUserGrid {
+        grid-template-columns: 1fr;
+    }
 }
 
 @media (max-width: 720px) {
