@@ -1,0 +1,102 @@
+.loginModeSwitch {
+    margin-top: 48px;
+    width: 184px;
+    height: 56px;
+    border-radius: 12px;
+    background: #e5e7eb;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.loginModeNav {
+    --mode-width: 78px;
+    position: relative;
+    display: flex;
+    width: calc(var(--mode-width) * 2);
+}
+
+.loginModeItem {
+    position: relative;
+    z-index: 2;
+    width: var(--mode-width);
+    height: 56px;
+    border: 0;
+    background: transparent;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    cursor: pointer;
+    transition: 0.3s ease;
+}
+
+.loginModeItem .icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: translateY(0);
+    transition: 0.35s ease;
+}
+
+.loginModeItem .text {
+    position: absolute;
+    bottom: 6px;
+    padding: 1px 8px;
+    border-radius: 10px;
+    font-size: 10px;
+    letter-spacing: 0.04em;
+    transform: translateY(10px);
+    opacity: 0;
+    color: #fff;
+    transition: 0.35s ease;
+}
+
+.loginModeItem.active .icon {
+    transform: translateY(-20px);
+    color: #0ea5e9;
+}
+
+.loginModeItem.active .text {
+    transform: translateY(-6px);
+    opacity: 1;
+    background: #0ea5e9;
+}
+
+.loginModeIndicator {
+    position: absolute;
+    top: -26px;
+    left: 0;
+    width: var(--mode-width);
+    height: var(--mode-width);
+    border-radius: 50%;
+    background: #e5e7eb;
+    transition: 0.35s ease;
+}
+
+.loginModeIndicator::before,
+.loginModeIndicator::after {
+    content: '';
+    position: absolute;
+    width: 22px;
+    height: 22px;
+    top: 4px;
+    border-radius: 50%;
+    background: transparent;
+}
+
+.loginModeIndicator::before {
+    left: -15.5px;
+    box-shadow: 12px 14px #e5e7eb;
+}
+
+.loginModeIndicator::after {
+    right: -15.5px;
+    box-shadow: -12px 14px #e5e7eb;
+}
+
+.loginModeIndicator.toRight {
+    transform: translateX(var(--mode-width));
+}

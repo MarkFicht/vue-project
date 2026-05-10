@@ -1,0 +1,756 @@
+import { useCallback, useEffect, useMemo, useRef } from 'react';
+import {
+    arrayRemove,
+    arrayUnion,
+    doc,
+    getDoc,
+    increment,
+    runTransaction,
+    serverTimestamp,
+    setDoc,
+    updateDoc
+} from 'firebase/firestore';
+import { useNavigate } from 'react-router-dom';
+import type IUser from '@/interfaces/User';
+import type { IGameDuelCard, IGameDuelWonderCard } from '@/interfaces/GameDuel';
+import { BoardDuel, PlayerDuel } from '@/interfaces/GameDuel';
+import {
+    cardsTierGuild,
+    cardsTierOne,
+    cardsTierThree,
+    cardsTierTwo,
+    cardsWonder,
+    coins
+} from '@/helpers/GameDuelInit';
+import {
+    sampleArray,
+    prepareIdForCards,
+    countPlayerResources,
+    showPrice,
+    countTotalPoints
+} from '@/game/gameHelpers';
+import { useGameStore } from '@/store/useGameStore';
+import { useDuelGameStore } from '@/store/useDuelGameStore';
+import { useUserStore } from '@/store/useUserStore';
+import { gameStatusDuelRef, tableGameDuelRef, usersRef } from '@/firebase/refs';
+import { db } from '@/firebaseConfig';
+import { playUiSound, setSoundScope } from '@/utils/sound';
+
+export function useGameState(currentUserUid: string) {
+    const navigate = useNavigate();
+    const game = useDuelGameStore();
+    const user = useUserStore((state) => state.fbUser);
+    const subUser = useUserStore((state) => state.subFirebaseConnect);
+    const unSubUser = useUserStore((state) => state.unSubFirebaseConnect);
+
+    const subLobbyGame = useGameStore((state) => state.subFirebaseConnect);
+    const unSubLobbyGame = useGameStore((state) => state.unSubFirebaseConnect);
+    const deleteGameDuel = useGameStore((state) => state.deleteGameDuel);
+
+    const subDuelGame = useDuelGameStore((state) => state.subFirebaseConnect);
+    const unSubDuelGame = useDuelGameStore((state) => state.unSubFirebaseConnect);
+    const resetDuelState = useDuelGameStore((state) => state.resetState);
+    const duelStateReadyRef = useRef(false);
+    const pendingWonderRepeatRef = useRef(false);
+    const prevTurnRef = useRef(game.turn);
+    const prevWinnerRef = useRef('');
+
+    useEffect(() => {
+        setSoundScope(currentUserUid);
+    }, [currentUserUid]);
+
+    const isMyTurn = useMemo(() => game.turn === currentUserUid, [game.turn, currentUserUid]);
+
+    const currentPlayer = useMemo(
+        () => (game.player1.user?.uid === currentUserUid ? game.player1 : game.player2),
+        [game.player1, game.player2, currentUserUid]
+    );
+
+    const opponent = useMemo(
+        () => (game.player1.user?.uid === currentUserUid ? game.player2 : game.player1),
+        [game.player1, game.player2, currentUserUid]
+    );
+
+    const canBuyTierCard = useMemo(() => {
+        if (!game.selectedCard?.id) return -1;
+        return showPrice(game.selectedCard, currentPlayer, opponent);
+    }, [game.selectedCard, currentPlayer, opponent]);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        const bootstrapGame = async () => {
+            if (!currentUserUid) return;
+            duelStateReadyRef.current = false;
+            resetDuelState();
+
+            subUser(currentUserUid);
+            subLobbyGame();
+
+            const statusSnap = await getDoc(gameStatusDuelRef);
+            const tableSnap = await getDoc(tableGameDuelRef);
+
+            if (!statusSnap.exists()) return;
+            const players = statusSnap.data().players as IUser[];
+            if (!players.find((player) => player.uid === currentUserUid)) {
+                navigate('/feed');
+                return;
+            }
+
+            if (!tableSnap.exists()) {
+                await runTransaction(db, async (tx) => {
+                    const txSnap = await tx.get(tableGameDuelRef);
+                    if (txSnap.exists()) return;
+
+                    const randomCoins = sampleArray(coins, 10);
+                    const randomWonders = sampleArray(cardsWonder, 8);
+                    const tier3 = sampleArray(
+                        [...sampleArray(cardsTierThree, 17), ...sampleArray(cardsTierGuild, 3)],
+                        20
+                    );
+
+                    tx.set(tableGameDuelRef, {
+                        player1: { ...new PlayerDuel(), user: players[0] },
+                        player2: { ...new PlayerDuel(), user: players[1] },
+                        selectWondersForPlayers: [
+                            players[0].uid,
+                            players[1].uid,
+                            players[1].uid,
+                            players[0].uid,
+                            players[1].uid,
+                            players[0].uid,
+                            players[0].uid,
+                            players[1].uid,
+                            players[0].uid
+                        ],
+                        selectWondersForPlayersMove: 0,
+                        chooseWhoWillStart: false,
+                        turn: players[0].uid,
+                        gameBoard: {
+                            ...new BoardDuel(),
+                            coins: randomCoins.slice(0, 5)
+                        },
+                        tierICards: prepareIdForCards(sampleArray(cardsTierOne, 20), 'I'),
+                        tierIICards: prepareIdForCards(sampleArray(cardsTierTwo, 20), 'II'),
+                        tierIIICards: prepareIdForCards(tier3, 'III'),
+                        wonderCards: randomWonders,
+                        graveyard: [],
+                        theRestOfCoins: randomCoins.slice(5),
+                        tier: 'prepare',
+                        move: 0,
+                        pickCoin: '',
+                        pickCoinOfThree: '',
+                        pickCardFromGraveyard: '',
+                        destroyBrown: '',
+                        destroyGrey: '',
+                        wonByArt: '',
+                        wonByAggressive: '',
+                        wonBySurr: '',
+                        wonByPoints: ''
+                    });
+                });
+            }
+
+            if (!cancelled) {
+                subDuelGame();
+            }
+        };
+
+        bootstrapGame();
+
+        return () => {
+            cancelled = true;
+            unSubDuelGame();
+            unSubLobbyGame();
+            unSubUser();
+            resetDuelState();
+            duelStateReadyRef.current = false;
+        };
+    }, [
+        currentUserUid,
+        navigate,
+        subDuelGame,
+        subLobbyGame,
+        subUser,
+        unSubDuelGame,
+        unSubLobbyGame,
+        unSubUser,
+        resetDuelState
+    ]);
+
+    useEffect(() => {
+        if (game.player1.user?.uid && game.player2.user?.uid && game.turn) {
+            duelStateReadyRef.current = true;
+        }
+    }, [game.player1.user?.uid, game.player2.user?.uid, game.turn]);
+
+    useEffect(() => {
+        const prevTurn = prevTurnRef.current;
+        if (prevTurn && prevTurn !== game.turn && game.turn === currentUserUid) {
+            playUiSound('turn');
+        }
+        prevTurnRef.current = game.turn;
+    }, [currentUserUid, game.turn]);
+
+    useEffect(() => {
+        if (game.move >= 20 && game.move < 40 && game.tier !== 'II' && !game.wonBySurr) {
+            updateDoc(tableGameDuelRef, { tier: 'II' });
+        }
+        if (game.move >= 40 && game.move < 60 && game.tier !== 'III' && !game.wonByAggressive && !game.wonByArt && !game.wonBySurr) {
+            updateDoc(tableGameDuelRef, { tier: 'III' });
+        }
+        if (game.move >= 60 && !game.wonByAggressive && !game.wonByArt && !game.wonBySurr) {
+            updateDoc(tableGameDuelRef, { tier: 'end' });
+        }
+    }, [game.move, game.tier, game.wonByAggressive, game.wonByArt, game.wonBySurr]);
+
+    useEffect(() => {
+        if (game.wonByArt || game.wonByAggressive || game.wonBySurr || game.wonByPoints) return;
+        if (game.tier !== 'end' && game.move < 60) return;
+
+        const p1 = countTotalPoints(game.player1, game.player2, game.board.pawn, true);
+        const p2 = countTotalPoints(game.player2, game.player1, game.board.pawn, false);
+
+        let winner = 'draw';
+        if (p1 > p2) winner = game.player1.user.uid;
+        else if (p2 > p1) winner = game.player2.user.uid;
+        else {
+            if (game.player1.cards.blue.length > game.player2.cards.blue.length) winner = game.player1.user.uid;
+            else if (game.player2.cards.blue.length > game.player1.cards.blue.length) winner = game.player2.user.uid;
+        }
+
+        updateDoc(tableGameDuelRef, { wonByPoints: winner });
+    }, [
+        game.board.pawn,
+        game.move,
+        game.player1,
+        game.player2,
+        game.tier,
+        game.wonByAggressive,
+        game.wonByArt,
+        game.wonByPoints,
+        game.wonBySurr
+    ]);
+
+    useEffect(() => {
+        if (game.tier !== 'prepare') return;
+        if (game.move !== 0) return;
+        if (game.player1.wonderCards.length !== 4 || game.player2.wonderCards.length !== 4) return;
+        updateDoc(tableGameDuelRef, { tier: 'I' });
+    }, [game.move, game.player1.wonderCards.length, game.player2.wonderCards.length, game.tier]);
+
+    useEffect(() => {
+        if (!game.wonByArt && !game.wonByAggressive && !game.wonBySurr) return;
+        if (!duelStateReadyRef.current) return;
+        deleteGameDuel().finally(() => {
+            setTimeout(() => navigate('/feed'), 2000);
+        });
+    }, [deleteGameDuel, game.wonByAggressive, game.wonByArt, game.wonBySurr, navigate]);
+
+    useEffect(() => {
+        const winner = game.wonByArt || game.wonByAggressive || game.wonBySurr || game.wonByPoints;
+        if (!winner || prevWinnerRef.current === winner) return;
+
+        if (winner === 'draw' || winner === currentUserUid) {
+            playUiSound('win');
+        } else {
+            playUiSound('loss');
+        }
+        prevWinnerRef.current = winner;
+    }, [currentUserUid, game.wonByAggressive, game.wonByArt, game.wonByPoints, game.wonBySurr]);
+
+    const getOtherPlayerId = useCallback(() => {
+        return game.turn === game.player1.user.uid ? game.player2.user.uid : game.player1.user.uid;
+    }, [game.turn, game.player1.user.uid, game.player2.user.uid]);
+
+    const applyMilitaryTrackEffects = useCallback(
+        async (attackerUid: string, steps: number) => {
+            if (steps <= 0) return;
+
+            const isPlayerOneAttacker = attackerUid === game.player1.user.uid;
+            const direction = isPlayerOneAttacker ? -1 : 1;
+            let pawn = game.board.pawn;
+
+            let punishment1 = game.board.punishment1;
+            let punishment2 = game.board.punishment2;
+            let punishment3 = game.board.punishment3;
+            let punishment4 = game.board.punishment4;
+
+            const opponentKey = isPlayerOneAttacker ? 'player2' : 'player1';
+            let opponentCash = isPlayerOneAttacker
+                ? game.player2.resources.cash
+                : game.player1.resources.cash;
+
+            for (let i = 0; i < steps; i++) {
+                pawn += direction;
+
+                if (isPlayerOneAttacker) {
+                    if (punishment1 && pawn <= -5) {
+                        punishment1 = false;
+                        opponentCash = Math.max(0, opponentCash - 5);
+                    } else if (punishment2 && pawn <= -2) {
+                        punishment2 = false;
+                        opponentCash = Math.max(0, opponentCash - 2);
+                    }
+                } else {
+                    if (punishment3 && pawn >= 2) {
+                        punishment3 = false;
+                        opponentCash = Math.max(0, opponentCash - 2);
+                    } else if (punishment4 && pawn >= 5) {
+                        punishment4 = false;
+                        opponentCash = Math.max(0, opponentCash - 5);
+                    }
+                }
+            }
+
+            await updateDoc(tableGameDuelRef, {
+                'gameBoard.pawn': pawn,
+                'gameBoard.punishment1': punishment1,
+                'gameBoard.punishment2': punishment2,
+                'gameBoard.punishment3': punishment3,
+                'gameBoard.punishment4': punishment4,
+                [`${opponentKey}.resources.cash`]: opponentCash,
+                ...(Math.abs(pawn) > 8 ? { wonByAggressive: attackerUid } : {})
+            });
+        },
+        [game.board, game.player1.user.uid, game.player2.resources.cash, game.player1.resources.cash]
+    );
+
+    const upgradeTurnAndMove = useCallback(
+        async (uid: string, withoutMove = false) => {
+            if (withoutMove) {
+                await updateDoc(tableGameDuelRef, { turn: uid });
+                return;
+            }
+            await updateDoc(tableGameDuelRef, {
+                turn: uid,
+                move: increment(1)
+            });
+        },
+        []
+    );
+
+    const finishTurnAfterSpecialAction = useCallback(async () => {
+        const hasRepeat = pendingWonderRepeatRef.current || currentPlayer.resources.coins.includes('repeatWonder');
+        pendingWonderRepeatRef.current = false;
+        if (hasRepeat && game.move !== 19 && game.move !== 39) {
+            await upgradeTurnAndMove(game.turn);
+        } else {
+            await upgradeTurnAndMove(getOtherPlayerId());
+        }
+    }, [currentPlayer.resources.coins, game.move, game.turn, getOtherPlayerId, upgradeTurnAndMove]);
+
+    const chooseWonderForPlayer = useCallback(
+        async (id: number) => {
+            if (!isMyTurn || game.wonBySurr) return;
+            const selected = game.wonderCards.find((card) => card.id === id);
+            if (!selected || selected.taken) return;
+
+            const newWonderCards = game.wonderCards.map((card) =>
+                card.id === id ? { ...card, taken: true } : card
+            );
+            const nextTurn = game.selectWondersForPlayers[game.selectWondersForPlayersMove + 1];
+            const isP1Turn = game.turn === game.player1.user.uid;
+
+            await updateDoc(tableGameDuelRef, {
+                wonderCards: newWonderCards,
+                selectWondersForPlayersMove: increment(1),
+                turn: nextTurn,
+                ...(isP1Turn
+                    ? { player1: { ...game.player1, wonderCards: [...game.player1.wonderCards, { ...selected, taken: true }] } }
+                    : { player2: { ...game.player2, wonderCards: [...game.player2.wonderCards, { ...selected, taken: true }] } })
+            });
+        },
+        [game, isMyTurn]
+    );
+
+    useEffect(() => {
+        if (game.tier !== 'prepare') return;
+        if (!isMyTurn) return;
+        if (game.selectWondersForPlayersMove !== 3 && game.selectWondersForPlayersMove !== 7) return;
+        const lastCard = game.wonderCards.find((card) => !card.taken);
+        if (!lastCard) return;
+        chooseWonderForPlayer(lastCard.id);
+    }, [
+        chooseWonderForPlayer,
+        game.selectWondersForPlayersMove,
+        game.tier,
+        game.wonderCards,
+        isMyTurn
+    ]);
+
+    const chooseWhoStarts = useCallback(
+        async (uid: string) => {
+            await upgradeTurnAndMove(uid, true);
+            await updateDoc(tableGameDuelRef, { chooseWhoWillStart: false });
+        },
+        [upgradeTurnAndMove]
+    );
+
+    const selectTierCard = useCallback(
+        (card: IGameDuelCard) => {
+            if (!isMyTurn || game.chooseWhoWillStart || game.wonByArt || game.wonByAggressive) return;
+            if ((card.coversBy?.length ?? 0) > 0 || card.taken !== 'inGame') return;
+            game.setSelectedWonder(null);
+            game.setSelectedCard(card);
+        },
+        [game, isMyTurn]
+    );
+
+    const setCardStateInTier = useCallback(
+        async (state: 'inPlayerBoard' | 'graveyard' | 'inWonder', tier = game.selectedCard?.tier) => {
+            if (!game.selectedCard?.id || !tier) return null;
+            const source =
+                tier === 'I'
+                    ? game.tierOneCards
+                    : tier === 'II'
+                      ? game.tierTwoCards
+                      : game.tierThreeCards;
+            const key = tier === 'I' ? 'tierICards' : tier === 'II' ? 'tierIICards' : 'tierIIICards';
+            let picked: IGameDuelCard | null = null;
+            const updated = source.map((card) => {
+                if (card.id === game.selectedCard?.id) picked = card;
+                return {
+                    ...card,
+                    taken: card.id === game.selectedCard?.id ? state : card.taken,
+                    coversBy: card.coversBy?.filter((id) => id !== game.selectedCard?.id) ?? []
+                };
+            });
+            await updateDoc(tableGameDuelRef, { [key]: updated });
+            return picked;
+        },
+        [game.selectedCard, game.tierOneCards, game.tierTwoCards, game.tierThreeCards]
+    );
+
+    const checkArtefactsWin = useCallback(
+        async (uid: string) => {
+            const player = uid === game.player1.user.uid ? game.player1 : game.player2;
+            const arts = [...new Set(player.cards.green.map((card) => card.valuePower[0]))].length;
+            const withCoin = player.resources.coins.includes('artefact7') ? 1 : 0;
+            if (arts + withCoin >= 6) {
+                await updateDoc(tableGameDuelRef, { wonByArt: uid });
+                return true;
+            }
+            return false;
+        },
+        [game.player1, game.player2]
+    );
+
+    const buySelectedCard = useCallback(async () => {
+        if (!game.selectedCard || canBuyTierCard < 0 || canBuyTierCard > currentPlayer.resources.cash) return;
+        const card = await setCardStateInTier('inPlayerBoard');
+        if (!card) return;
+
+        const playerKey = game.turn === game.player1.user.uid ? 'player1' : 'player2';
+        const playerState = game.turn === game.player1.user.uid ? game.player1 : game.player2;
+        const resources = countPlayerResources(card, structuredClone(playerState));
+        const cards = structuredClone(playerState.cards);
+        cards[card.color].push({ ...card, taken: 'inPlayerBoard' });
+        let shouldPickCoin = false;
+
+        await updateDoc(tableGameDuelRef, {
+            [`${playerKey}.cards`]: cards,
+            [`${playerKey}.points`]: playerState.points,
+            [`${playerKey}.resources`]: { ...resources, cash: resources.cash - canBuyTierCard }
+        });
+
+        if (card.color === 'red' && card.power.includes('attack')) {
+            const attackVal = card.valuePower[card.power.indexOf('attack')] ?? 0;
+            const attackCoin = playerState.resources.coins.includes('attack1') ? 1 : 0;
+            await applyMilitaryTrackEffects(game.turn, attackVal + attackCoin);
+        }
+
+        if (card.color === 'green') {
+            const artefactIdx = card.power.indexOf('artefact');
+            if (artefactIdx >= 0) {
+                const artefactValue = card.valuePower[artefactIdx];
+                const howManyPairs = resources.artefacts.filter((value) => value === artefactValue).length;
+                shouldPickCoin = howManyPairs >= 2;
+            }
+        }
+
+        await checkArtefactsWin(game.turn);
+        if (shouldPickCoin) {
+            await updateDoc(tableGameDuelRef, { pickCoin: game.turn });
+        } else {
+            await upgradeTurnAndMove(getOtherPlayerId());
+        }
+        game.setSelectedCard(null);
+    }, [
+        canBuyTierCard,
+        checkArtefactsWin,
+        currentPlayer.resources.cash,
+        game,
+        getOtherPlayerId,
+        applyMilitaryTrackEffects,
+        setCardStateInTier,
+        upgradeTurnAndMove
+    ]);
+
+    const sellSelectedCard = useCallback(async () => {
+        if (!game.selectedCard) return;
+        const card = await setCardStateInTier('graveyard');
+        if (!card) return;
+        const playerKey = game.turn === game.player1.user.uid ? 'player1' : 'player2';
+        const seller = game.turn === game.player1.user.uid ? game.player1 : game.player2;
+        const addCash = 2 + seller.cards.yellow.length;
+
+        await updateDoc(tableGameDuelRef, {
+            graveyard: arrayUnion({ ...card, taken: 'graveyard' }),
+            [`${playerKey}.resources.cash`]: increment(addCash)
+        });
+
+        await upgradeTurnAndMove(getOtherPlayerId());
+        game.setSelectedCard(null);
+    }, [game, getOtherPlayerId, setCardStateInTier, upgradeTurnAndMove]);
+
+    const buildWonder = useCallback(async (wonderToBuild?: IGameDuelWonderCard) => {
+        if (!game.selectedCard) return;
+
+        const selectedWonder = wonderToBuild ?? game.selectedWonder;
+        if (!selectedWonder) return;
+
+        const cost = showPrice(selectedWonder, currentPlayer, opponent);
+        if (cost > currentPlayer.resources.cash) return;
+        await setCardStateInTier('inWonder');
+        let shouldPickCoinOfThree = false;
+        let shouldPickFromGraveyard = false;
+        let shouldDestroyBrown = false;
+        let shouldDestroyGrey = false;
+        let shouldMovePawn = 0;
+        let shouldRepeat = false;
+
+        selectedWonder.power.forEach((effect, index) => {
+            if (effect === 'effect' && selectedWonder.valuePower[index] === 3) {
+                shouldPickCoinOfThree = true;
+            }
+            if (effect === 'effect' && selectedWonder.valuePower[index] === 2) {
+                shouldPickFromGraveyard = true;
+            }
+            if (effect === 'effect' && selectedWonder.valuePower[index] === 1) {
+                shouldRepeat = true;
+            }
+            if (effect === 'attack') {
+                shouldMovePawn += selectedWonder.valuePower[index] ?? 0;
+            }
+            if (effect === 'break' && selectedWonder.valuePower[index] === 1) {
+                shouldDestroyBrown = true;
+            }
+            if (effect === 'break' && selectedWonder.valuePower[index] === 2) {
+                shouldDestroyGrey = true;
+            }
+            if (effect === 'break' && selectedWonder.valuePower[index] === 3) {
+                const enemyKey = game.turn === game.player1.user.uid ? 'player2' : 'player1';
+                const enemyCash = game.turn === game.player1.user.uid ? game.player2.resources.cash : game.player1.resources.cash;
+                updateDoc(tableGameDuelRef, {
+                    [`${enemyKey}.resources.cash`]: Math.max(0, enemyCash - 3)
+                });
+            }
+        });
+
+        const playerKey = game.turn === game.player1.user.uid ? 'player1' : 'player2';
+        const newWonderCards = currentPlayer.wonderCards.map((wonder) =>
+            wonder.id === selectedWonder.id ? { ...wonder, activated: game.selectedCard?.tier ?? 'I' } : wonder
+        );
+        await updateDoc(tableGameDuelRef, {
+            [`${playerKey}.wonderCards`]: newWonderCards,
+            [`${playerKey}.resources.cash`]: increment(-cost),
+            ...(shouldPickCoinOfThree ? { pickCoinOfThree: game.turn } : {}),
+            ...(shouldPickFromGraveyard ? { pickCardFromGraveyard: game.turn } : {}),
+            ...(shouldDestroyBrown ? { destroyBrown: game.turn } : {}),
+            ...(shouldDestroyGrey ? { destroyGrey: game.turn } : {})
+        });
+
+        if (shouldMovePawn > 0) {
+            await applyMilitaryTrackEffects(game.turn, shouldMovePawn);
+        }
+
+        const hasPendingSpecialAction =
+            shouldPickCoinOfThree || shouldPickFromGraveyard || shouldDestroyBrown || shouldDestroyGrey;
+        pendingWonderRepeatRef.current = shouldRepeat;
+        if (!hasPendingSpecialAction) {
+            if (shouldRepeat && game.move !== 19 && game.move !== 39) {
+                await upgradeTurnAndMove(game.turn);
+            } else {
+                await upgradeTurnAndMove(getOtherPlayerId());
+            }
+        }
+        game.setSelectedCard(null);
+        game.setSelectedWonder(null);
+    }, [
+        currentPlayer,
+        game,
+        getOtherPlayerId,
+        opponent,
+        setCardStateInTier,
+        upgradeTurnAndMove,
+        applyMilitaryTrackEffects
+    ]);
+
+    const selectWonder = useCallback((wonder: IGameDuelWonderCard) => {
+        const cost = showPrice(wonder, currentPlayer, opponent);
+        if (cost > currentPlayer.resources.cash) return;
+        game.setSelectedWonder(wonder);
+    }, [currentPlayer, game, opponent]);
+
+    const pickCoin = useCallback(
+        async (coin: string) => {
+            if (!coin) return;
+            if (game.pickCoin !== game.turn || game.pickCoin !== currentUserUid) return;
+            const playerKey = game.turn === game.player1.user.uid ? 'player1' : 'player2';
+            await updateDoc(tableGameDuelRef, {
+                'gameBoard.coins': arrayRemove(coin),
+                [`${playerKey}.resources.coins`]: arrayUnion(coin),
+                pickCoin: ''
+            });
+            await upgradeTurnAndMove(getOtherPlayerId());
+        },
+        [currentUserUid, game.pickCoin, game.player1.user.uid, game.turn, getOtherPlayerId, upgradeTurnAndMove]
+    );
+
+    const pickCoinOfThree = useCallback(
+        async (coin: string) => {
+            if (!coin) return;
+            if (game.pickCoinOfThree !== game.turn || game.pickCoinOfThree !== currentUserUid) return;
+            const playerKey = game.turn === game.player1.user.uid ? 'player1' : 'player2';
+            await updateDoc(tableGameDuelRef, {
+                'gameBoard.coins': arrayRemove(coin),
+                [`${playerKey}.resources.coins`]: arrayUnion(coin),
+                pickCoinOfThree: ''
+            });
+            await finishTurnAfterSpecialAction();
+        },
+        [
+            currentUserUid,
+            finishTurnAfterSpecialAction,
+            game.pickCoinOfThree,
+            game.player1.user.uid,
+            game.turn,
+            getOtherPlayerId,
+            upgradeTurnAndMove
+        ]
+    );
+
+    const pickCardFromGraveyard = useCallback(
+        async (graveCard: IGameDuelCard) => {
+            if (!graveCard?.id) return;
+            if (game.pickCardFromGraveyard !== game.turn || game.pickCardFromGraveyard !== currentUserUid) return;
+
+            const playerKey = game.turn === game.player1.user.uid ? 'player1' : 'player2';
+            const playerState = game.turn === game.player1.user.uid ? game.player1 : game.player2;
+            const resources = countPlayerResources(graveCard, structuredClone(playerState));
+            const cards = structuredClone(playerState.cards);
+            cards[graveCard.color].push({ ...graveCard, taken: 'inPlayerBoard' });
+
+            const tierKey =
+                graveCard.tier === 'I' ? 'tierICards' : graveCard.tier === 'II' ? 'tierIICards' : 'tierIIICards';
+            const tierCards =
+                graveCard.tier === 'I'
+                    ? game.tierOneCards
+                    : graveCard.tier === 'II'
+                      ? game.tierTwoCards
+                      : game.tierThreeCards;
+            const tierUpdated = tierCards.map((card) =>
+                card.id === graveCard.id ? { ...card, taken: 'inPlayerBoard' } : card
+            );
+
+            await updateDoc(tableGameDuelRef, {
+                [tierKey]: tierUpdated,
+                graveyard: arrayRemove(graveCard),
+                pickCardFromGraveyard: '',
+                [`${playerKey}.cards`]: cards,
+                [`${playerKey}.points`]: playerState.points,
+                [`${playerKey}.resources`]: resources
+            });
+
+            await finishTurnAfterSpecialAction();
+        },
+        [
+            currentUserUid,
+            finishTurnAfterSpecialAction,
+            game.pickCardFromGraveyard,
+            game.player1,
+            game.player2,
+            game.tierOneCards,
+            game.tierThreeCards,
+            game.tierTwoCards,
+            game.turn
+        ]
+    );
+
+    const destroyEnemyCard = useCallback(
+        async (targetCard: IGameDuelCard, color: 'brown' | 'grey') => {
+            const currentDestroy = color === 'brown' ? game.destroyBrown : game.destroyGrey;
+            if (currentDestroy !== currentUserUid || currentDestroy !== game.turn) return;
+
+            const enemyKey = game.turn === game.player1.user.uid ? 'player2' : 'player1';
+            const enemy = game.turn === game.player1.user.uid ? game.player2 : game.player1;
+            const updatedEnemyCards = structuredClone(enemy.cards);
+            updatedEnemyCards[color] = updatedEnemyCards[color].filter((card: IGameDuelCard) => card.id !== targetCard.id);
+
+            const enemyRes = { ...enemy.resources };
+            if (color === 'brown') {
+                if (targetCard.power[0] === 'clay') enemyRes.clayValue -= targetCard.valuePower[0];
+                if (targetCard.power[0] === 'brick') enemyRes.brickValue -= targetCard.valuePower[0];
+                if (targetCard.power[0] === 'wood') enemyRes.woodValue -= targetCard.valuePower[0];
+            } else {
+                if (targetCard.power[0] === 'paper') enemyRes.paperValue -= targetCard.valuePower[0];
+                if (targetCard.power[0] === 'glass') enemyRes.glassValue -= targetCard.valuePower[0];
+            }
+
+            await updateDoc(tableGameDuelRef, {
+                [`${enemyKey}.cards`]: updatedEnemyCards,
+                [`${enemyKey}.resources`]: enemyRes,
+                graveyard: arrayUnion({ ...targetCard, taken: 'graveyard' }),
+                ...(color === 'brown' ? { destroyBrown: '' } : { destroyGrey: '' })
+            });
+
+            await finishTurnAfterSpecialAction();
+        },
+        [
+            currentUserUid,
+            finishTurnAfterSpecialAction,
+            game.destroyBrown,
+            game.destroyGrey,
+            game.player1,
+            game.player2,
+            game.turn
+        ]
+    );
+
+    const surrender = useCallback(async () => {
+        await updateDoc(tableGameDuelRef, { wonBySurr: opponent.user.uid });
+    }, [opponent.user.uid]);
+
+    const goBackToFeed = useCallback(async () => {
+        await updateDoc(doc(usersRef, currentUserUid), {
+            game: '',
+            readyToGame: false,
+            online: 'online',
+            timestamp: serverTimestamp()
+        });
+        navigate('/feed');
+    }, [currentUserUid, navigate]);
+
+    return {
+        user,
+        game,
+        isMyTurn,
+        currentPlayer,
+        opponent,
+        canBuyTierCard,
+        chooseWonderForPlayer,
+        chooseWhoStarts,
+        selectTierCard,
+        selectWonder,
+        buySelectedCard,
+        sellSelectedCard,
+        buildWonder,
+        pickCoin,
+        pickCoinOfThree,
+        pickCardFromGraveyard,
+        destroyEnemyCard,
+        surrender,
+        goBackToFeed
+    };
+}
