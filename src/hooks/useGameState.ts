@@ -59,7 +59,14 @@ export function useGameState(currentUserUid: string) {
         setSoundScope(currentUserUid);
     }, [currentUserUid]);
 
-    const isMyTurn = useMemo(() => game.turn === currentUserUid, [game.turn, currentUserUid]);
+    const isObserver = useMemo(() => {
+        const p1Uid = game.player1.user?.uid;
+        const p2Uid = game.player2.user?.uid;
+        if (!p1Uid || !p2Uid) return false;
+        return currentUserUid !== p1Uid && currentUserUid !== p2Uid;
+    }, [currentUserUid, game.player1.user?.uid, game.player2.user?.uid]);
+
+    const isMyTurn = useMemo(() => game.turn === currentUserUid && !isObserver, [game.turn, currentUserUid, isObserver]);
 
     const currentPlayer = useMemo(
         () => (game.player1.user?.uid === currentUserUid ? game.player1 : game.player2),
@@ -92,7 +99,14 @@ export function useGameState(currentUserUid: string) {
 
             if (!statusSnap.exists()) return;
             const players = statusSnap.data().players as IUser[];
-            if (!players.find((player) => player.uid === currentUserUid)) {
+            const isLobbyPlayer = players.some((player) => player.uid === currentUserUid);
+            if (!isLobbyPlayer) {
+                if (tableSnap.exists()) {
+                    if (!cancelled) {
+                        subDuelGame();
+                    }
+                    return;
+                }
                 navigate('/feed');
                 return;
             }
@@ -739,6 +753,7 @@ export function useGameState(currentUserUid: string) {
     return {
         user,
         game,
+        isObserver,
         isMyTurn,
         currentPlayer,
         opponent,

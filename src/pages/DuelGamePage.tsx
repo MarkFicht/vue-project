@@ -26,6 +26,7 @@ export function DuelGamePage({ uid }: { uid: string }) {
     }, [uid]);
     const {
         game,
+        isObserver,
         isMyTurn,
         currentPlayer,
         opponent,
@@ -73,8 +74,8 @@ export function DuelGamePage({ uid }: { uid: string }) {
         );
     }, [game.wonderCards, isSecondPick]);
 
-    const topPlayer = currentPlayer;
-    const bottomPlayer = opponent;
+    const topPlayer = isObserver ? game.player1 : currentPlayer;
+    const bottomPlayer = isObserver ? game.player2 : opponent;
     const topIsPlayerOne = topPlayer.user.uid === game.player1.user.uid;
     const bottomIsPlayerOne = bottomPlayer.user.uid === game.player1.user.uid;
     const hasBuildableWonder = useMemo(() => {
@@ -190,7 +191,7 @@ export function DuelGamePage({ uid }: { uid: string }) {
                 <div>
                     <h1 className="text-lg font-semibold">7 Wonders Duel</h1>
                     <p className="text-xs opacity-80">
-                        Tier: {game.tier} · Move: {game.move} · Turn: {isMyTurn ? 'You' : 'Opponent'}
+                        Tier: {game.tier} · Move: {game.move} · Turn: {isObserver ? 'Observer mode' : isMyTurn ? 'You' : 'Opponent'}
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -386,6 +387,11 @@ export function DuelGamePage({ uid }: { uid: string }) {
                     </div>
                 ) : (
                     <div className="flex flex-wrap items-center gap-2">
+                        {isObserver ? (
+                            <span className="rounded-md border border-cyan-300/40 bg-cyan-500/15 px-2 py-1 text-xs">
+                                Observer mode: read-only game view
+                            </span>
+                        ) : null}
                         <button className="btn-primary" disabled={!canBuySelectedCard} onClick={buySelectedCard}>
                             {canBuySelectedCard ? <Hand className="h-4 w-4" /> : <Ban className="h-4 w-4" />}
                             Buy {canBuyTierCard > -1 ? `(${canBuyTierCard})` : ''}
@@ -423,11 +429,11 @@ export function DuelGamePage({ uid }: { uid: string }) {
                                 Destroy enemy {game.destroyBrown === uid ? 'brown' : 'grey'} card
                             </span>
                         )}
-                        <button className="btn-secondary" onClick={surrender}>
+                        <button className="btn-secondary" disabled={isObserver} onClick={surrender}>
                             <ShieldAlert className="h-4 w-4" /> Surrender
                         </button>
                         <span className="text-xs opacity-80">
-                            {isMyTurn ? 'Your move' : "Opponent's move"}
+                            {isObserver ? 'Watching live game' : isMyTurn ? 'Your move' : "Opponent's move"}
                         </span>
                     </div>
                 )}

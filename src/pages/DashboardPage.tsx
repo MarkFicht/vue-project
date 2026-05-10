@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-    doc, getDoc, runTransaction, serverTimestamp, setDoc, writeBatch
+    doc, getDoc, onSnapshot, runTransaction, serverTimestamp, setDoc, writeBatch
 } from 'firebase/firestore';
 import { ref as rtdbRef, serverTimestamp as rtdbServerTimestamp, set as setRtdb } from 'firebase/database';
 import { Check, Copy, Gamepad2, LogOut, UserCircle2, UserX, Volume2, VolumeX } from 'lucide-react';
@@ -9,7 +9,7 @@ import { signOut, updateProfile } from 'firebase/auth';
 import { auth, db, rtdb } from '@/firebaseConfig';
 import { useUserStore } from '@/store/useUserStore';
 import { useGameStore } from '@/store/useGameStore';
-import { displayNamesRef, gameStatusDuelRef, gameStatusGemsRef, gameStatusReflexRef, usersRef } from '@/firebase/refs';
+import { displayNamesRef, gameStatusDuelRef, gameStatusGemsRef, gameStatusReflexRef, tableGameDuelRef, usersRef } from '@/firebase/refs';
 import { isSoundMuted, playUiSound, setSoundMuted, setSoundScope } from '@/utils/sound';
 import { usePresenceMap } from '@/hooks/usePresenceMap';
 import { normalizeDisplayName, sanitizeDisplayName } from '@/utils/displayName';
@@ -27,6 +27,7 @@ export function DashboardPage({ uid }: { uid: string }) {
     const [savingProfile, setSavingProfile] = useState(false);
     const [copiedField, setCopiedField] = useState('');
     const [nowMs, setNowMs] = useState(() => Date.now());
+    const [liveMove, setLiveMove] = useState<number | null>(null);
     const user = useUserStore((state) => state.fbUser);
     const subUser = useUserStore((state) => state.subFirebaseConnect);
     const unSubUser = useUserStore((state) => state.unSubFirebaseConnect);
@@ -210,6 +211,10 @@ export function DashboardPage({ uid }: { uid: string }) {
         [duel.players]
     );
     const duelLobbyFull = useMemo(() => duel.players.length >= 2 && !inDuelLobby, [duel.players.length, inDuelLobby]);
+    const canObserveDuel = useMemo(
+        () => duel.players.length === 2 && duel.isStarted && !inDuelLobby,
+        [duel.isStarted, duel.players.length, inDuelLobby]
+    );
     const showDuelLobbyModal = useMemo(
         () => inDuelLobby && duel.players.length === 2 && !allReady && !duel.isStarted,
         [allReady, duel.isStarted, duel.players.length, inDuelLobby]
@@ -219,6 +224,18 @@ export function DashboardPage({ uid }: { uid: string }) {
         if (duel.players.length === 2) return 'Busy';
         return 'Lobby';
     }, [duel.players.length]);
+
+    useEffect(() => {
+        const unsubscribe = onSnapshot(tableGameDuelRef, (snapshot) => {
+            if (!snapshot.exists()) {
+                setLiveMove(null);
+                return;
+            }
+            const data = snapshot.data() as { move?: number };
+            setLiveMove(typeof data.move === 'number' ? data.move : null);
+        });
+        return () => unsubscribe();
+    }, []);
 
     const toggleDuelLobby = async () => {
         if (!uid) return;
@@ -285,6 +302,7 @@ export function DashboardPage({ uid }: { uid: string }) {
 
     const removeUserFromLobby = async (targetUid: string) => {
         if (!targetUid) return;
+        if (duel.isStarted) return;
 
         const nextPlayers = duel.players
             .filter((player) => player.uid !== targetUid)
@@ -657,11 +675,23 @@ export function DashboardPage({ uid }: { uid: string }) {
                             <div className="dashButtonRow">
                                 <button
                                     className={`dashCardButton ${inDuelLobby ? 'dashCardButtonLobby' : ''}`}
-                                    onClick={toggleDuelLobby}
-                                    disabled={!isBootstrapped || duelLobbyFull}
-                                    title={duelLobbyFull ? 'Lobby is full (2/2)' : undefined}
+                                    onClick={() => {
+                                        if (duelLobbyFull && !inDuelLobby) {
+                                            if (canObserveDuel) navigate('/duel-game');
+                                            return;
+                                        }
+                                        void toggleDuelLobby();
+                                    }}
+                                    disabled={!isBootstrapped || (duelLobbyFull && !inDuelLobby && !canObserveDuel)}
+                                    title={
+                                        duelLobbyFull && !inDuelLobby
+                                            ? canObserveDuel
+                                                ? 'Watch live game'
+                                                : 'Game not started yet'
+                                            : undefined
+                                    }
                                 >
-                                    {inDuelLobby ? 'Exit' : duelLobbyFull ? 'Busy' : 'Lobby'}
+                                    {inDuelLobby ? 'Exit' : duelLobbyFull ? 'Observe' : 'Lobby'}
                                 </button>
                             </div>
                             <p>A board game inspired by a strategy game called '7 Wonders of the World'</p>
@@ -699,8 +729,11 @@ export function DashboardPage({ uid }: { uid: string }) {
                                                             } as CSSProperties
                                                         }
                                                         onClick={() => removeUserFromLobby(player.uid)}
-                                                        disabled={removeDisabled}
+                                                        disabled={removeDisabled || duel.isStarted}
                                                         title={
+                                                            duel.isStarted
+                                                                ? 'Cannot remove players while game is running'
+                                                                :
                                                             !isBootstrapped
                                                                 ? 'Loading lobby data...'
                                                                 : removeCooldown.canRemove
@@ -716,7 +749,13 @@ export function DashboardPage({ uid }: { uid: string }) {
                                     );
                                 })}
                                 {!duel.players.length && <p className="opacity-70">No players in lobby.</p>}
-                                {allReady && <p className="text-cyan-300">Game starts shortly...</p>}
+                                {duel.players.length === 2 && (
+                                    <p className="text-cyan-300">
+                                        {duel.isStarted
+                                            ? `Game in progress · Turn: ${typeof liveMove === 'number' ? liveMove + 1 : 1}`
+                                            : 'Creating game...'}
+                                    </p>
+                                )}
                             </div>
                         </div>
                         <div className="dashCircle">
@@ -805,8 +844,11 @@ export function DashboardPage({ uid }: { uid: string }) {
                                                             } as CSSProperties
                                                         }
                                                         onClick={() => removeUserFromLobby(player.uid)}
-                                                        disabled={removeDisabled}
+                                                        disabled={removeDisabled || duel.isStarted}
                                                         title={
+                                                            duel.isStarted
+                                                                ? 'Cannot remove players while game is running'
+                                                                :
                                                             !isBootstrapped
                                                                 ? 'Loading lobby data...'
                                                                 : removeCooldown.canRemove
