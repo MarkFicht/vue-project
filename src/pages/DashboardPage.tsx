@@ -40,6 +40,7 @@ export function DashboardPage({ uid }: { uid: string }) {
                 const currentAuthUser = auth.currentUser;
                 const userDocRef = doc(usersRef, uid);
                 const userSnap = await getDoc(userDocRef);
+                const now = serverTimestamp();
 
                 if (!userSnap.exists()) {
                     await setDoc(
@@ -51,7 +52,35 @@ export function DashboardPage({ uid }: { uid: string }) {
                             game: '',
                             readyToGame: false,
                             online: 'online',
-                            timestamp: serverTimestamp()
+                            status: 'online',
+                            timestamp: now,
+                            createdAt: now,
+                            updatedAt: now,
+                            lastSeenAt: now,
+                            schemaVersion: 1,
+                            soundMuted: isSoundMuted()
+                        },
+                        { merge: true }
+                    );
+                } else {
+                    const data = userSnap.data() as Record<string, unknown>;
+                    await setDoc(
+                        userDocRef,
+                        {
+                            uid,
+                            email: currentAuthUser?.email || (data.email as string) || '',
+                            displayName: currentAuthUser?.displayName || (data.displayName as string) || '',
+                            game: (data.game as string) || '',
+                            readyToGame: (data.readyToGame as boolean) || false,
+                            online: (data.online as string) || 'online',
+                            status: (data.status as string) || ((data.online as string) || 'online'),
+                            timestamp: now,
+                            createdAt: data.createdAt ?? now,
+                            updatedAt: now,
+                            lastSeenAt: now,
+                            schemaVersion: typeof data.schemaVersion === 'number' ? data.schemaVersion : 1,
+                            soundMuted:
+                                typeof data.soundMuted === 'boolean' ? data.soundMuted : isSoundMuted()
                         },
                         { merge: true }
                     );
@@ -151,7 +180,9 @@ export function DashboardPage({ uid }: { uid: string }) {
             email: user.email || currentAuthUser?.email || '',
             game: 'Duel' as const,
             readyToGame: false,
-            online: 'online'
+            online: 'online',
+            status: 'online',
+            schemaVersion: 1
         };
 
         if (inDuelLobby) {
@@ -165,7 +196,11 @@ export function DashboardPage({ uid }: { uid: string }) {
                 game: 'Duel',
                 readyToGame: false,
                 online: 'online',
-                timestamp: serverTimestamp()
+                status: 'online',
+                timestamp: serverTimestamp(),
+                updatedAt: serverTimestamp(),
+                lastSeenAt: serverTimestamp(),
+                schemaVersion: 1
             },
             { merge: true }
         );
@@ -209,7 +244,11 @@ export function DashboardPage({ uid }: { uid: string }) {
                 game: '',
                 readyToGame: false,
                 online: 'online',
-                timestamp: serverTimestamp()
+                status: 'online',
+                timestamp: serverTimestamp(),
+                updatedAt: serverTimestamp(),
+                lastSeenAt: serverTimestamp(),
+                schemaVersion: 1
             },
             { merge: true }
         );
@@ -220,7 +259,11 @@ export function DashboardPage({ uid }: { uid: string }) {
                     game: 'Duel',
                     readyToGame: false,
                     online: 'online',
-                    timestamp: serverTimestamp()
+                    status: 'online',
+                    timestamp: serverTimestamp(),
+                    updatedAt: serverTimestamp(),
+                    lastSeenAt: serverTimestamp(),
+                    schemaVersion: 1
                 },
                 { merge: true }
             );
@@ -242,7 +285,11 @@ export function DashboardPage({ uid }: { uid: string }) {
             {
                 readyToGame: true,
                 online: 'online',
-                timestamp: serverTimestamp()
+                status: 'online',
+                timestamp: serverTimestamp(),
+                updatedAt: serverTimestamp(),
+                lastSeenAt: serverTimestamp(),
+                schemaVersion: 1
             },
             { merge: true }
         );
@@ -363,8 +410,8 @@ export function DashboardPage({ uid }: { uid: string }) {
                                         </div>
                                     </div>
                                 ))}
-                                {!duel.players.length && <p className="opacity-70">Brak graczy w lobby.</p>}
-                                {allReady && <p className="text-cyan-300">Start gry za chwilę...</p>}
+                                {!duel.players.length && <p className="opacity-70">No players in lobby.</p>}
+                                {allReady && <p className="text-cyan-300">Game starts shortly...</p>}
                             </div>
                         </div>
                         <div className="dashCircle">
@@ -384,7 +431,7 @@ export function DashboardPage({ uid }: { uid: string }) {
                             </div>
                             <p>A board game inspired by a strategy game called 'Splendor'</p>
                             <div className="dashLobbyList">
-                                <p className="opacity-70">Brak graczy w lobby.</p>
+                                <p className="opacity-70">No players in lobby.</p>
                             </div>
                         </div>
                         <div className="dashCircle">
@@ -404,7 +451,7 @@ export function DashboardPage({ uid }: { uid: string }) {
                             </div>
                             <p>Game written from 0 in canvasJS. Cooperation against zombies</p>
                             <div className="dashLobbyList">
-                                <p className="opacity-70">Brak graczy w lobby.</p>
+                                <p className="opacity-70">No players in lobby.</p>
                             </div>
                         </div>
                         <div className="dashCircle">

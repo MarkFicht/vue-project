@@ -12,6 +12,12 @@ export default interface IUser {
     email: string;
     game?: IGame['id'];
     readyToGame?: boolean;
+    status?: 'online' | 'away' | 'offline';
     timestamp?: any;
     online?: string;
+    createdAt?: any;
+    updatedAt?: any;
+    lastSeenAt?: any;
+    schemaVersion?: number;
+    soundMuted?: boolean;
 }

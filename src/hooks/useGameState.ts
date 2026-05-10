@@ -727,7 +727,11 @@ export function useGameState(currentUserUid: string) {
             game: '',
             readyToGame: false,
             online: 'online',
-            timestamp: serverTimestamp()
+            status: 'online',
+            timestamp: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+            lastSeenAt: serverTimestamp(),
+            schemaVersion: 1
         });
         navigate('/feed');
     }, [currentUserUid, navigate]);

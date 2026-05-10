@@ -1,0 +1,56 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function hasRequiredUserKeys(data) {
+      return data.keys().hasAll([
+        'uid',
+        'email',
+        'displayName',
+        'game',
+        'readyToGame',
+        'online',
+        'status',
+        'timestamp',
+        'createdAt',
+        'updatedAt',
+        'lastSeenAt',
+        'schemaVersion',
+        'soundMuted'
+      ]);
+    }
+
+    function userDocShapeIsValid(data, userId) {
+      return data.uid == userId
+        && data.uid is string
+        && data.email is string
+        && data.displayName is string
+        && data.game is string
+        && data.readyToGame is bool
+        && data.online is string
+        && (data.status in ['online', 'away', 'offline'])
+        && data.schemaVersion is int
+        && data.soundMuted is bool;
+    }
+
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create, update: if isSignedIn()
+        && hasRequiredUserKeys(request.resource.data)
+        && userDocShapeIsValid(request.resource.data, userId);
+      allow delete: if false;
+    }
+
+    match /gameStatus/{docId} {
+      allow read, write: if isSignedIn();
+    }
+
+    match /gameDuel/{docId} {
+      allow read, write: if isSignedIn();
+    }
+  }
+}
