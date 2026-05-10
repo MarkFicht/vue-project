@@ -45,14 +45,17 @@
 }
 
 .dashWrapper {
+    --dash-surface: #1f2937;
     position: relative;
     width: min(96vw, 990px);
     min-height: calc(100vh - 190px);
     padding: 15px 10px;
     margin-bottom: 12px;
-    box-shadow: 0 0 50px rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 0 50px rgba(2, 6, 23, 0.35);
     border-radius: 20px;
-    background: #ececec;
+    background: var(--dash-surface);
+    backdrop-filter: blur(8px);
     animation: showElement 1.2s linear;
 }
 
@@ -127,34 +130,34 @@
     width: 20px;
     height: 20px;
     background: transparent;
-    box-shadow: -6px 6px #ececec;
+    box-shadow: -6px 6px var(--dash-surface);
 }
 .dashCard .dashBoxTop::before {
-    top: 31px;
+    top: 31.5px;
     left: 1px;
     border-radius: 20px;
-    box-shadow: -6px 6px #ececec;
+    box-shadow: -6px 6px var(--dash-surface);
 }
 
 .dashCard .dashBoxTop::after {
     bottom: -1px;
-    left: 101px;
+    left: 100.5px;
     border-bottom-left-radius: 20px;
-    box-shadow: -6px 6px #ececec;
+    box-shadow: -6px 6px var(--dash-surface);
 }
 
 .dashCard .dashBoxBottom::before {
-    top: 79px;
-    left: 0;
+    top: 78.5px;
+    left: -0.5px;
     border-radius: 20px;
-    box-shadow: -6px -6px #ececec;
+    box-shadow: -6px -6px var(--dash-surface);
 }
 
 .dashCard .dashBoxBottom::after {
     top: -1.5px;
     left: 103px;
     border-top-left-radius: 20px;
-    box-shadow: -6px -6px #ececec;
+    box-shadow: -6px -6px var(--dash-surface);
 }
 
 .dashCircle {
@@ -167,7 +170,7 @@
     background-color: var(--dash-clr);
     border-radius: 50%;
     color: #eee;
-    border: 10px solid #eee;
+    border: 10px solid var(--dash-surface);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -193,11 +196,12 @@
     justify-content: center;
     margin-left: 70px;
     margin-bottom: 12px;
+    margin-top: 8px;
 }
 
 .dashCardButton {
     padding: 8px 22px;
-    border: 10px solid #eee;
+    border: 10px solid var(--dash-surface);
     outline: none;
     border-radius: 30px;
     color: #fff;
