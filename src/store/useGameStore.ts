@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { deleteDoc, doc, onSnapshot, serverTimestamp, updateDoc } from 'firebase/firestore';
+import { deleteDoc, deleteField, doc, onSnapshot, serverTimestamp, updateDoc } from 'firebase/firestore';
 import type IUser from '@/interfaces/User';
 import {
     gameStatusDuelRef,
@@ -74,7 +74,8 @@ export const useGameStore = create<GameStoreState>((set, get) => ({
                 await updateDoc(doc(usersRef, uid), {
                     game: '',
                     readyToGame: false,
-                    online: 'online',
+                    status: 'online',
+                    online: deleteField(),
                     timestamp: serverTimestamp()
                 });
             })

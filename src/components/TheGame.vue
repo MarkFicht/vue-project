@@ -124,7 +124,7 @@ async function addAndRemoveToLobby(selectedGame: IGame['id']): Promise<any> {
             await updateDoc(doc(usersRef, fbUser.value.uid), {
                 game: '',
                 readyToGame: false,
-                online: 'online',
+                status: 'online',
                 timestamp: serverTimestamp()
             });
 
@@ -138,7 +138,7 @@ async function addAndRemoveToLobby(selectedGame: IGame['id']): Promise<any> {
             await updateDoc(doc(usersRef, fbUser.value.uid), {
                 game: 'Duel',
                 readyToGame: false,
-                online: 'online',
+                status: 'online',
                 timestamp: serverTimestamp()
             });
             await updateDoc(gameStatusDuelRef, {
@@ -164,7 +164,7 @@ async function addAndRemoveToLobby(selectedGame: IGame['id']): Promise<any> {
             await updateDoc(doc(usersRef, fbUser.value.uid), {
                 game: '',
                 readyToGame: false,
-                online: 'online',
+                status: 'online',
                 timestamp: serverTimestamp()
             });
 
@@ -178,7 +178,7 @@ async function addAndRemoveToLobby(selectedGame: IGame['id']): Promise<any> {
             await updateDoc(doc(usersRef, fbUser.value.uid), {
                 game: 'Gems',
                 readyToGame: false,
-                online: 'online',
+                status: 'online',
                 timestamp: serverTimestamp()
             });
             await updateDoc(gameStatusGemsRef, {
@@ -204,7 +204,7 @@ async function addAndRemoveToLobby(selectedGame: IGame['id']): Promise<any> {
             await updateDoc(doc(usersRef, fbUser.value.uid), {
                 game: '',
                 readyToGame: false,
-                online: 'online',
+                status: 'online',
                 timestamp: serverTimestamp()
             });
 
@@ -218,7 +218,7 @@ async function addAndRemoveToLobby(selectedGame: IGame['id']): Promise<any> {
             await updateDoc(doc(usersRef, fbUser.value.uid), {
                 game: 'Reflex',
                 readyToGame: false,
-                online: 'online',
+                status: 'online',
                 timestamp: serverTimestamp()
             });
             await updateDoc(gameStatusReflexRef, {

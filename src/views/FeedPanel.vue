@@ -62,7 +62,7 @@ onBeforeMount(async () => {
                 displayName: user.displayName || '',
                 game: '',
                 readyToGame: false,
-                online: 'online',
+                status: 'online',
                 timestamp: serverTimestamp()
             };
 

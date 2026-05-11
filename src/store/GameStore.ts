@@ -85,7 +85,7 @@ export const gameStore = defineStore('gameStore', {
                     await updateDoc(doc(usersRef, uid), {
                         game: '',
                         readyToGame: false,
-                        online: 'online',
+                        status: 'online',
                         timestamp: serverTimestamp()
                     });
                 }
@@ -106,7 +106,7 @@ export const gameStore = defineStore('gameStore', {
                     await updateDoc(doc(usersRef, uid), {
                         game: '',
                         readyToGame: false,
-                        online: 'online',
+                        status: 'online',
                         timestamp: serverTimestamp()
                     });
                 }
@@ -127,7 +127,7 @@ export const gameStore = defineStore('gameStore', {
                     await updateDoc(doc(usersRef, uid), {
                         game: '',
                         readyToGame: false,
-                        online: 'online',
+                        status: 'online',
                         timestamp: serverTimestamp()
                     });
                 }

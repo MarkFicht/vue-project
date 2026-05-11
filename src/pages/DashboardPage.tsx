@@ -1,7 +1,18 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-    deleteDoc, doc, getDoc, getDocs, onSnapshot, query, runTransaction, serverTimestamp, setDoc, where, writeBatch
+    deleteDoc,
+    deleteField,
+    doc,
+    getDoc,
+    getDocs,
+    onSnapshot,
+    query,
+    runTransaction,
+    serverTimestamp,
+    setDoc,
+    where,
+    writeBatch
 } from 'firebase/firestore';
 import { ref as rtdbRef, get as getRtdb, serverTimestamp as rtdbServerTimestamp, set as setRtdb } from 'firebase/database';
 import { Check, Copy, Gamepad2, LogOut, UserCircle2, UserX, Volume2, VolumeX } from 'lucide-react';
@@ -18,6 +29,7 @@ import { useUserStore } from '@/store/useUserStore';
 import { useGameStore } from '@/store/useGameStore';
 import { displayNamesRef, gameStatusDuelRef, gameStatusGemsRef, gameStatusReflexRef, tableGameDuelRef, usersRef } from '@/firebase/refs';
 import { isSoundMuted, playUiSound, setSoundMuted, setSoundScope } from '@/utils/sound';
+import { persistUserSoundMuted } from '@/utils/persistUserSoundMuted';
 import { usePresenceMap } from '@/hooks/usePresenceMap';
 import { normalizeDisplayName, sanitizeDisplayName } from '@/utils/displayName';
 import '@/styles/dashboard.css';
@@ -56,6 +68,14 @@ export function DashboardPage({ uid }: { uid: string }) {
         setSoundScope(uid);
         setSoundMutedState(isSoundMuted());
     }, [uid]);
+
+    useEffect(() => {
+        if (!user.uid || user.uid !== uid) return;
+        if (typeof user.soundMuted !== 'boolean') return;
+        if (user.soundMuted === isSoundMuted()) return;
+        setSoundMuted(user.soundMuted);
+        setSoundMutedState(user.soundMuted);
+    }, [user.soundMuted, user.uid, uid]);
 
     useEffect(() => {
         let cancelled = false;
@@ -97,8 +117,8 @@ export function DashboardPage({ uid }: { uid: string }) {
                             displayNameKey: initialDisplayNameKey,
                             game: '',
                             readyToGame: false,
-                            online: 'online',
                             status: 'online',
+                            online: deleteField(),
                             timestamp: now,
                             createdAt: now,
                             updatedAt: now,
@@ -119,8 +139,8 @@ export function DashboardPage({ uid }: { uid: string }) {
                             displayNameKey: (data.displayNameKey as string) || resolvedDisplayNameKey,
                             game: (data.game as string) || '',
                             readyToGame: (data.readyToGame as boolean) || false,
-                            online: (data.online as string) || 'online',
-                            status: (data.status as string) || ((data.online as string) || 'online'),
+                            status: (data.status as string) || 'online',
+                            online: deleteField(),
                             timestamp: now,
                             createdAt: data.createdAt ?? now,
                             updatedAt: now,
@@ -248,7 +268,6 @@ export function DashboardPage({ uid }: { uid: string }) {
             email: user.email || currentAuthUser?.email || '',
             game: 'Duel' as const,
             readyToGame: false,
-            online: 'online',
             status: 'online',
             joinedAt: Date.now(),
             schemaVersion: 1
@@ -264,8 +283,8 @@ export function DashboardPage({ uid }: { uid: string }) {
             {
                 game: 'Duel',
                 readyToGame: false,
-                online: 'online',
                 status: 'online',
+                online: deleteField(),
                 timestamp: serverTimestamp(),
                 updatedAt: serverTimestamp(),
                 lastSeenAt: serverTimestamp(),
@@ -282,7 +301,6 @@ export function DashboardPage({ uid }: { uid: string }) {
                 email: string;
                 game: string;
                 readyToGame: boolean;
-                online?: string;
                 joinedAt?: number;
             }>;
 
@@ -314,8 +332,8 @@ export function DashboardPage({ uid }: { uid: string }) {
             {
                 game: '',
                 readyToGame: false,
-                online: 'online',
                 status: 'online',
+                online: deleteField(),
                 timestamp: serverTimestamp(),
                 updatedAt: serverTimestamp(),
                 lastSeenAt: serverTimestamp(),
@@ -329,8 +347,8 @@ export function DashboardPage({ uid }: { uid: string }) {
                 {
                     game: 'Duel',
                     readyToGame: false,
-                    online: 'online',
                     status: 'online',
+                    online: deleteField(),
                     timestamp: serverTimestamp(),
                     updatedAt: serverTimestamp(),
                     lastSeenAt: serverTimestamp(),
@@ -355,8 +373,8 @@ export function DashboardPage({ uid }: { uid: string }) {
             doc(usersRef, uid),
             {
                 readyToGame: true,
-                online: 'online',
                 status: 'online',
+                online: deleteField(),
                 timestamp: serverTimestamp(),
                 updatedAt: serverTimestamp(),
                 lastSeenAt: serverTimestamp(),
@@ -373,7 +391,6 @@ export function DashboardPage({ uid }: { uid: string }) {
                 email: string;
                 game: string;
                 readyToGame: boolean;
-                online?: string;
                 joinedAt?: number;
             }>;
 
@@ -408,8 +425,8 @@ export function DashboardPage({ uid }: { uid: string }) {
             await setDoc(
                 doc(usersRef, uid),
                 {
-                    online: 'offline',
                     status: 'offline',
+                    online: deleteField(),
                     updatedAt: serverTimestamp(),
                     lastSeenAt: serverTimestamp(),
                     timestamp: serverTimestamp()
@@ -525,8 +542,8 @@ export function DashboardPage({ uid }: { uid: string }) {
                             displayNameKey: normalizeDisplayName(deletedDisplayName),
                             game: '',
                             readyToGame: false,
-                            online: 'offline',
                             status: 'offline',
+                            online: deleteField(),
                             timestamp: serverTimestamp(),
                             createdAt: userDocData?.createdAt ?? serverTimestamp(),
                             updatedAt: serverTimestamp(),
@@ -883,6 +900,7 @@ export function DashboardPage({ uid }: { uid: string }) {
                             const next = !soundMuted;
                             setSoundMuted(next);
                             setSoundMutedState(next);
+                            void persistUserSoundMuted(uid, next);
                         }}
                         title={soundMuted ? 'Unmute sounds' : 'Mute sounds'}
                     >

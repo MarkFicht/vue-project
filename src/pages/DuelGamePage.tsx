@@ -14,6 +14,8 @@ import {
 } from '@/game/gameHelpers';
 import { tierOneX, tierOneY, tierTwoX, tierTwoY, tierThreeX, tierThreeY } from '@/helpers/GameDuelInit';
 import { isSoundMuted, setSoundMuted, setSoundScope } from '@/utils/sound';
+import { persistUserSoundMuted } from '@/utils/persistUserSoundMuted';
+import { useUserStore } from '@/store/useUserStore';
 
 export function DuelGamePage({ uid }: { uid: string }) {
     const [wonderBuildMode, setWonderBuildMode] = useState(false);
@@ -23,10 +25,18 @@ export function DuelGamePage({ uid }: { uid: string }) {
     const [displayPrepareBatch, setDisplayPrepareBatch] = useState<1 | 2>(1);
     const [prepareActionLocked, setPrepareActionLocked] = useState(false);
     const [soundMuted, setSoundMutedState] = useState(() => isSoundMuted());
+    const profileSoundMuted = useUserStore((state) => state.fbUser.soundMuted);
     useEffect(() => {
         setSoundScope(uid);
         setSoundMutedState(isSoundMuted());
     }, [uid]);
+
+    useEffect(() => {
+        if (typeof profileSoundMuted !== 'boolean') return;
+        if (profileSoundMuted === isSoundMuted()) return;
+        setSoundMuted(profileSoundMuted);
+        setSoundMutedState(profileSoundMuted);
+    }, [profileSoundMuted]);
     const {
         game,
         isObserver,
@@ -315,6 +325,7 @@ export function DuelGamePage({ uid }: { uid: string }) {
                             const next = !soundMuted;
                             setSoundMuted(next);
                             setSoundMutedState(next);
+                            void persistUserSoundMuted(uid, next);
                         }}
                         title={soundMuted ? 'Unmute sounds' : 'Mute sounds'}
                     >

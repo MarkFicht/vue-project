@@ -20,7 +20,7 @@ export const userStore = defineStore('userStore', {
                 game: '',
                 readyToGame: false,
                 timestamp: '',
-                online: ''
+                status: 'offline'
             }
         };
     },
@@ -33,14 +33,14 @@ export const userStore = defineStore('userStore', {
         async subFirebaseConnect(uid: string) {
             unSubFirebaseUser = await onSnapshot(doc(usersRef, uid), (doc) => {
                 if (doc.exists()) {
-                    const { uid, displayName, email, readyToGame, game, online, timestamp } =
+                    const { uid, displayName, email, readyToGame, game, status, timestamp } =
                         doc.data();
                     this.fbUser.uid = uid;
                     this.fbUser.displayName = displayName;
                     this.fbUser.email = email;
                     this.fbUser.readyToGame = readyToGame;
                     this.fbUser.game = game;
-                    this.fbUser.online = online;
+                    this.fbUser.status = status;
                     this.fbUser.timestamp = timestamp;
                 }
             });

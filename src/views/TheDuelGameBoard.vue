@@ -305,7 +305,7 @@ onBeforeMount(async () => {
                         game: userFb.game,
                         readyToGame: userFb.readyToGame,
                         timestamp: userFb.timestamp,
-                        online: userFb.online
+                        status: userFb.status
                     };
 
                     if (userFb.game !== 'Duel' || !userFb.readyToGame) {

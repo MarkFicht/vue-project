@@ -61,7 +61,6 @@ export function LoginPage() {
                             displayNameKey,
                             game: '',
                             readyToGame: false,
-                            online: 'online',
                             status: 'online',
                             timestamp: now,
                             createdAt: now,

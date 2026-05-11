@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 import {
     arrayRemove,
     arrayUnion,
+    deleteField,
     doc,
     getDoc,
     increment,
@@ -728,8 +729,8 @@ export function useGameState(currentUserUid: string) {
         await updateDoc(doc(usersRef, currentUserUid), {
             game: '',
             readyToGame: false,
-            online: 'online',
             status: 'online',
+            online: deleteField(),
             timestamp: serverTimestamp(),
             updatedAt: serverTimestamp(),
             lastSeenAt: serverTimestamp(),
