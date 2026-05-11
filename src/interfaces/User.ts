@@ -1,5 +1,4 @@
-import type IGame from './Game';
-// import {} from 'firebase/auth';
+export type GameId = '' | 'Duel' | 'Gems' | 'Reflex';
 
 export default interface IUser {
     password?: string;
@@ -11,7 +10,7 @@ export default interface IUser {
     displayName: string;
     displayNameKey?: string;
     email: string;
-    game?: IGame['id'];
+    game?: GameId;
     readyToGame?: boolean;
     status?: 'online' | 'away' | 'offline';
     timestamp?: any;

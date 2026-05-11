@@ -1,5 +1,4 @@
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
-import { db } from '@/firebaseConfig';
 import { usersRef } from '@/firebase/refs';
 
 /** Writes sound preference to the signed-in user's Firestore profile (merge). */

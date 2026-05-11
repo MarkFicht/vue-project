@@ -8,7 +8,6 @@ import {
     increment,
     runTransaction,
     serverTimestamp,
-    setDoc,
     updateDoc
 } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
