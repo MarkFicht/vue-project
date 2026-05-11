@@ -11,6 +11,8 @@
 .dashHeader {
     display: flex;
     width: min(96vw, 990px);
+    max-width: 100%;
+    min-width: 0;
     justify-content: space-between;
     align-items: center;
     margin: 8px 0 20px;
@@ -110,6 +112,8 @@
     min-height: 220px;
     background: #cdcdcd;
     color: #2e2e2e;
+    position: relative;
+    z-index: 3;
 }
 
 .dashBoxBottom p {
@@ -162,7 +166,7 @@
 
 .dashCircle {
     position: absolute;
-    z-index: 2;
+    z-index: 4;
     width: 160px;
     height: 160px;
     top: 50px;
@@ -210,12 +214,27 @@
     letter-spacing: 1px;
     text-transform: uppercase;
     cursor: pointer;
-    transition: 0.5s all;
+    transition:
+        filter 0.2s ease,
+        box-shadow 0.2s ease;
     box-shadow: 12px 12px 16px 0 rgba(255, 255, 255, 0.3) inset, -8px -8px 12px 0 rgba(0, 0, 0, 0.25) inset;
 }
 
 .dashCardButton:hover:not(:disabled) {
-    letter-spacing: 3px;
+    filter: brightness(0.9) saturate(0.88);
+}
+
+.dashCardButton:focus {
+    outline: none;
+}
+
+.dashCardButton:focus-visible {
+    filter: brightness(0.92) saturate(0.92);
+    box-shadow:
+        12px 12px 16px 0 rgba(255, 255, 255, 0.3) inset,
+        -8px -8px 12px 0 rgba(0, 0, 0, 0.25) inset,
+        0 0 0 3px rgba(15, 23, 42, 0.95),
+        0 0 0 5px rgba(34, 211, 238, 0.85);
 }
 
 .dashCardButton:disabled {
@@ -318,6 +337,14 @@
     transform: translateY(-1px) scale(1.05);
 }
 
+.dashRemoveButton:focus {
+    outline: none;
+}
+
+.dashRemoveButton:focus-visible {
+    box-shadow: 0 0 0 2px rgba(34, 211, 238, 0.95), 0 0 0 4px rgba(15, 23, 42, 0.9);
+}
+
 .dashRemoveButtonLocked {
     color: rgba(254, 226, 226, 0.75);
 }
@@ -411,6 +438,7 @@
 .dashLobbyActions {
     margin-top: 14px;
     display: flex;
+    flex-wrap: wrap;
     justify-content: center;
     gap: 10px;
 }
@@ -443,6 +471,7 @@
     min-height: 0;
     overflow-y: auto;
     overscroll-behavior: contain;
+    overflow-anchor: none;
     padding: 12px 16px 14px;
 }
 

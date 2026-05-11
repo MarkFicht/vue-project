@@ -28,6 +28,7 @@ export function CountrySelect({
     const rootRef = useRef<HTMLDivElement>(null);
     const triggerRef = useRef<HTMLButtonElement>(null);
     const panelRef = useRef<HTMLDivElement>(null);
+    const searchInputRef = useRef<HTMLInputElement>(null);
 
     const filtered = useMemo(() => {
         const q = query.trim().toLowerCase();
@@ -106,13 +107,13 @@ export function CountrySelect({
             <div className="flex shrink-0 items-center gap-2 border-b border-white/10 px-2.5 py-2">
                 <Search className="h-4 w-4 shrink-0 text-slate-500" aria-hidden />
                 <input
+                    ref={searchInputRef}
                     type="search"
                     autoComplete="off"
                     className="w-full border-0 bg-transparent py-1 text-sm text-slate-100 outline-none placeholder:text-slate-500"
                     placeholder={placeholder}
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
-                    autoFocus
                 />
             </div>
             <ul className="modalLikeScrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain py-1">

@@ -315,15 +315,15 @@ export function DuelGamePage({ uid }: { uid: string }) {
 
     return (
         <main className="mx-auto min-h-screen w-full max-w-[1400px] p-3 pb-6 text-slate-100">
-            <header className="mb-3 flex items-center justify-between rounded-2xl border border-white/20 bg-white/10 p-3 backdrop-blur">
-                <div>
+            <header className="mb-3 flex min-w-0 max-w-full items-center justify-between gap-2 rounded-2xl border border-white/20 bg-white/10 p-3 backdrop-blur">
+                <div className="min-w-0">
                     <h1 className="text-lg font-semibold">7 Wonders Duel</h1>
                     <p className="text-xs opacity-80">
                         Tier: {game.tier} · Move: {game.move} · Turn: {isObserver ? 'Observer mode' : isMyTurn ? 'You' : 'Opponent'}
                     </p>
                 </div>
-                <div className="flex items-center gap-2">
-                    <button className="btn-secondary hdrIconBtn" disabled={isObserver} onClick={surrender}>
+                <div className="flex min-w-0 shrink items-center gap-2">
+                    <button className="btn-secondary hdrIconBtn" disabled={isObserver} onClick={surrender} title="Surrender">
                         <ShieldAlert className="h-4 w-4" />
                         <span className="hdrBtnText">Surrender</span>
                     </button>
@@ -340,7 +340,7 @@ export function DuelGamePage({ uid }: { uid: string }) {
                         {soundMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
                         <span className="hdrBtnText">{soundMuted ? 'Muted' : 'Sound'}</span>
                     </button>
-                    <button className="btn-secondary hdrIconBtn" onClick={goBackToFeed}>
+                    <button className="btn-secondary hdrIconBtn" onClick={goBackToFeed} title="Back to feed">
                         <ArrowLeft className="h-4 w-4" />
                         <span className="hdrBtnText">Feed</span>
                     </button>

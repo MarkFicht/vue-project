@@ -892,7 +892,7 @@ export function DashboardPage({ uid }: { uid: string }) {
                     <Gamepad2 className="text-cyan-300" />
                     Feed Panel
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex min-w-0 shrink items-center gap-2">
                     <button
                         className="btn-secondary hdrIconBtn"
                         onClick={() => {
@@ -905,11 +905,16 @@ export function DashboardPage({ uid }: { uid: string }) {
                             setExportError('');
                             setShowUserModal(true);
                         }}
-                        title="User profile settings"
+                        title={
+                            (user.displayName || user.email || 'User') +
+                            ' — profile'
+                        }
                     >
-                        <UserCircle2 className="h-4 w-4" />
-                        <UserFlag code={user.countryCode} className="text-base" />
-                        <span className="hdrBtnText">{user.displayName || user.email || 'User'}</span>
+                        <UserCircle2 className="h-4 w-4 shrink-0" />
+                        <span className="hdrBtnLabelGroup inline-flex min-w-0 items-center gap-1.5">
+                            <UserFlag code={user.countryCode} className="text-base shrink-0" />
+                            <span className="hdrBtnText">{user.displayName || user.email || 'User'}</span>
+                        </span>
                     </button>
                     <button
                         className="btn-secondary hdrIconBtn"
@@ -924,7 +929,7 @@ export function DashboardPage({ uid }: { uid: string }) {
                         {soundMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
                         <span className="hdrBtnText">{soundMuted ? 'Muted' : 'Sound'}</span>
                     </button>
-                    <button className="btn-secondary hdrIconBtn" onClick={logoutUser}>
+                    <button className="btn-secondary hdrIconBtn" title="Log out" onClick={logoutUser}>
                         <LogOut className="h-4 w-4" />
                         <span className="hdrBtnText">Logout</span>
                     </button>
@@ -944,6 +949,7 @@ export function DashboardPage({ uid }: { uid: string }) {
                         <div className="dashBox dashBoxBottom">
                             <div className="dashButtonRow">
                                 <button
+                                    type="button"
                                     className={`dashCardButton ${inDuelLobby ? 'dashCardButtonLobby' : ''}`}
                                     onClick={() => {
                                         if (duelLobbyFull && !inDuelLobby) {
@@ -1040,7 +1046,7 @@ export function DashboardPage({ uid }: { uid: string }) {
                         <div className="dashBox dashBoxTop">Video soon!</div>
                         <div className="dashBox dashBoxBottom">
                             <div className="dashButtonRow">
-                                <button className="dashCardButton" disabled>
+                                <button type="button" className="dashCardButton" disabled>
                                     Soon
                                 </button>
                             </div>
@@ -1060,7 +1066,7 @@ export function DashboardPage({ uid }: { uid: string }) {
                         <div className="dashBox dashBoxTop">Video soon!</div>
                         <div className="dashBox dashBoxBottom">
                             <div className="dashButtonRow">
-                                <button className="dashCardButton" disabled>
+                                <button type="button" className="dashCardButton" disabled>
                                     Soon
                                 </button>
                             </div>
@@ -1138,10 +1144,10 @@ export function DashboardPage({ uid }: { uid: string }) {
                             })}
                         </div>
                         <div className="dashLobbyActions">
-                            <button className="dashCardButton" onClick={readyUp} disabled={currentLobbyPlayer?.readyToGame}>
+                            <button className="btn-primary" onClick={readyUp} disabled={currentLobbyPlayer?.readyToGame}>
                                 {currentLobbyPlayer?.readyToGame ? 'Waiting...' : 'Ready'}
                             </button>
-                            <button className="dashCardButton dashCardButtonLobby" onClick={leaveLobby}>
+                            <button className="btn-secondary" type="button" onClick={leaveLobby}>
                                 Exit
                             </button>
                         </div>
