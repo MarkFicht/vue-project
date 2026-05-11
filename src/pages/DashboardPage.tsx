@@ -32,6 +32,9 @@ import { isSoundMuted, playUiSound, setSoundMuted, setSoundScope } from '@/utils
 import { persistUserSoundMuted } from '@/utils/persistUserSoundMuted';
 import { usePresenceMap } from '@/hooks/usePresenceMap';
 import { normalizeDisplayName, sanitizeDisplayName } from '@/utils/displayName';
+import { getCountrySelectOptions, guessCountryFromLocale, normalizeCountryCode } from '@/utils/country';
+import { CountrySelect } from '@/components/CountrySelect';
+import { UserFlag } from '@/components/UserFlag';
 import '@/styles/dashboard.css';
 
 export function DashboardPage({ uid }: { uid: string }) {
@@ -42,6 +45,7 @@ export function DashboardPage({ uid }: { uid: string }) {
     const [soundMuted, setSoundMutedState] = useState(() => isSoundMuted());
     const [showUserModal, setShowUserModal] = useState(false);
     const [profileDisplayName, setProfileDisplayName] = useState('');
+    const [profileCountryCode, setProfileCountryCode] = useState('');
     const [profileError, setProfileError] = useState('');
     const [savingProfile, setSavingProfile] = useState(false);
     const [deletePassword, setDeletePassword] = useState('');
@@ -124,7 +128,8 @@ export function DashboardPage({ uid }: { uid: string }) {
                             updatedAt: now,
                             lastSeenAt: now,
                             schemaVersion: 1,
-                            soundMuted: isSoundMuted()
+                            soundMuted: isSoundMuted(),
+                            countryCode: guessCountryFromLocale()
                         },
                         { merge: true }
                     );
@@ -147,7 +152,8 @@ export function DashboardPage({ uid }: { uid: string }) {
                             lastSeenAt: now,
                             schemaVersion: typeof data.schemaVersion === 'number' ? data.schemaVersion : 1,
                             soundMuted:
-                                typeof data.soundMuted === 'boolean' ? data.soundMuted : isSoundMuted()
+                                typeof data.soundMuted === 'boolean' ? data.soundMuted : isSoundMuted(),
+                            countryCode: normalizeCountryCode(data.countryCode) ?? guessCountryFromLocale()
                         },
                         { merge: true }
                     );
@@ -244,6 +250,7 @@ export function DashboardPage({ uid }: { uid: string }) {
         if (duel.players.length === 2) return 'Busy';
         return 'Lobby';
     }, [duel.players.length]);
+    const countryOptions = useMemo(() => getCountrySelectOptions(), []);
 
     useEffect(() => {
         const unsubscribe = onSnapshot(tableGameDuelRef, (snapshot) => {
@@ -270,7 +277,8 @@ export function DashboardPage({ uid }: { uid: string }) {
             readyToGame: false,
             status: 'online',
             joinedAt: Date.now(),
-            schemaVersion: 1
+            schemaVersion: 1,
+            countryCode: normalizeCountryCode(user.countryCode) ?? guessCountryFromLocale()
         };
 
         if (inDuelLobby) {
@@ -752,6 +760,11 @@ export function DashboardPage({ uid }: { uid: string }) {
             setProfileError('Display name must have at least 2 characters.');
             return;
         }
+        const countryNorm = normalizeCountryCode(profileCountryCode);
+        if (!countryNorm) {
+            setProfileError('Choose a valid country.');
+            return;
+        }
 
         setSavingProfile(true);
         setProfileError('');
@@ -784,6 +797,7 @@ export function DashboardPage({ uid }: { uid: string }) {
                     {
                         displayName,
                         displayNameKey,
+                        countryCode: countryNorm,
                         updatedAt: serverTimestamp(),
                         timestamp: serverTimestamp()
                     },
@@ -804,7 +818,8 @@ export function DashboardPage({ uid }: { uid: string }) {
                             changed = true;
                             return {
                                 ...player,
-                                displayName
+                                displayName,
+                                countryCode: countryNorm
                             };
                         }
                         return player;
@@ -882,6 +897,7 @@ export function DashboardPage({ uid }: { uid: string }) {
                         className="btn-secondary hdrIconBtn"
                         onClick={() => {
                             setProfileDisplayName(user.displayName || '');
+                            setProfileCountryCode(normalizeCountryCode(user.countryCode) ?? guessCountryFromLocale());
                             setProfileError('');
                             setDeletePassword('');
                             setDeleteConfirmText('');
@@ -892,6 +908,7 @@ export function DashboardPage({ uid }: { uid: string }) {
                         title="User profile settings"
                     >
                         <UserCircle2 className="h-4 w-4" />
+                        <UserFlag code={user.countryCode} className="text-base" />
                         <span className="hdrBtnText">{user.displayName || user.email || 'User'}</span>
                     </button>
                     <button
@@ -964,6 +981,7 @@ export function DashboardPage({ uid }: { uid: string }) {
                                                               : 'dashPresenceOffline'
                                                     }`}
                                                 />
+                                                <UserFlag code={player.countryCode} className="text-base" />
                                                 {player.displayName || player.email}
                                             </span>
                                             <div className="flex items-center gap-2">
@@ -1080,6 +1098,7 @@ export function DashboardPage({ uid }: { uid: string }) {
                                                           : 'dashPresenceOffline'
                                                 }`}
                                             />
+                                            <UserFlag code={player.countryCode} className="text-base" />
                                             {player.displayName || player.email}
                                         </span>
                                         <div className="flex items-center gap-2">
@@ -1136,7 +1155,7 @@ export function DashboardPage({ uid }: { uid: string }) {
                             <h3>User profile</h3>
                             <p>Edit your account details.</p>
                         </div>
-                        <div className="dashUserModalBody">
+                        <div className="dashUserModalBody modalLikeScrollbar">
                             <div className="dashUserGrid">
                                 {renderReadonlyField('UID', uid, 'uid')}
                                 {renderReadonlyField('Email', user.email || '', 'email')}
@@ -1147,6 +1166,14 @@ export function DashboardPage({ uid }: { uid: string }) {
                                         value={profileDisplayName}
                                         onChange={(event) => setProfileDisplayName(event.target.value)}
                                         placeholder="Display name"
+                                    />
+                                </label>
+                                <label className="dashUserField">
+                                    <span>Country / region</span>
+                                    <CountrySelect
+                                        value={profileCountryCode}
+                                        onChange={setProfileCountryCode}
+                                        options={countryOptions}
                                     />
                                 </label>
                                 {renderReadonlyField('Connection status (auto)', getPresence(uid), 'connectionStatus')}

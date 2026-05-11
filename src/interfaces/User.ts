@@ -21,4 +21,6 @@ export default interface IUser {
     joinedAt?: any;
     schemaVersion?: number;
     soundMuted?: boolean;
+    /** ISO 3166-1 alpha-2, e.g. PL */
+    countryCode?: string;
 }

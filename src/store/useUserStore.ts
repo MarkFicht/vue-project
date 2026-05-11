@@ -51,7 +51,8 @@ export const useUserStore = create<UserState>((set, get) => ({
                     updatedAt: data.updatedAt,
                     lastSeenAt: data.lastSeenAt,
                     schemaVersion: data.schemaVersion,
-                    soundMuted: data.soundMuted
+                    soundMuted: data.soundMuted,
+                    countryCode: data.countryCode
                 }
             });
         });

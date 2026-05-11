@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { IGameDuelPlayer, IGameDuelCard } from '@/interfaces/GameDuel';
+import { UserFlag } from '@/components/UserFlag';
 import { DuelSpriteCard } from './DuelSpriteCard';
 import { DuelCoinSprite } from './DuelCoinSprite';
 import { DuelWonderSprite } from './DuelWonderSprite';
@@ -77,7 +78,10 @@ export function DuelPlayerColumns({
     return (
         <section className="dg-playerArea">
             <header className="dg-playerHeader">
-                <div className="font-semibold">{player.user.displayName || player.user.email}</div>
+                <div className="inline-flex items-center gap-1.5 font-semibold">
+                    <UserFlag code={player.user.countryCode} className="text-base" />
+                    <span>{player.user.displayName || player.user.email}</span>
+                </div>
                 <div className="text-xs opacity-80">{isCurrentTurn ? 'Your turn' : 'Waiting'}</div>
                 <div className="dg-playerTotals">
                     <span className="cashSum dg-totalCash">{player.resources.cash}</span>

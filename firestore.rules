@@ -36,7 +36,10 @@ service cloud.firestore {
         && data.readyToGame is bool
         && (data.status in ['online', 'away', 'offline'])
         && data.schemaVersion is int
-        && data.soundMuted is bool;
+        && data.soundMuted is bool
+        && (!('countryCode' in data)
+          || (data.countryCode is string
+            && data.countryCode.size() == 2));
     }
 
     match /users/{userId} {

@@ -16,6 +16,7 @@ import { tierOneX, tierOneY, tierTwoX, tierTwoY, tierThreeX, tierThreeY } from '
 import { isSoundMuted, setSoundMuted, setSoundScope } from '@/utils/sound';
 import { persistUserSoundMuted } from '@/utils/persistUserSoundMuted';
 import { useUserStore } from '@/store/useUserStore';
+import { UserFlag } from '@/components/UserFlag';
 
 export function DuelGamePage({ uid }: { uid: string }) {
     const [wonderBuildMode, setWonderBuildMode] = useState(false);
@@ -172,6 +173,13 @@ export function DuelGamePage({ uid }: { uid: string }) {
         if (winnerUid === game.player2.user.uid) return game.player2.user.displayName || game.player2.user.email;
         return winnerUid;
     }, [game.player1.user.displayName, game.player1.user.email, game.player1.user.uid, game.player2.user.displayName, game.player2.user.email, game.player2.user.uid, winnerUid]);
+
+    const winnerCountryCode = useMemo(() => {
+        if (!winnerUid || winnerUid === 'draw') return undefined;
+        if (winnerUid === game.player1.user.uid) return game.player1.user.countryCode;
+        if (winnerUid === game.player2.user.uid) return game.player2.user.countryCode;
+        return undefined;
+    }, [winnerUid, game.player1.user.countryCode, game.player1.user.uid, game.player2.user.countryCode, game.player2.user.uid]);
 
     const victoryReason = game.wonByArt
         ? 'Scientific victory'
@@ -342,7 +350,11 @@ export function DuelGamePage({ uid }: { uid: string }) {
             {winnerUid ? (
                 <section className="mb-3 rounded-2xl border border-cyan-200/30 bg-cyan-500/10 p-4 backdrop-blur">
                     <h2 className="text-xl font-semibold">Game over</h2>
-                    <p className="text-sm">Winner: {winnerName}</p>
+                    <p className="flex flex-wrap items-center gap-2 text-sm">
+                        <span>Winner:</span>
+                        <UserFlag code={winnerCountryCode} className="text-lg" />
+                        <span>{winnerName}</span>
+                    </p>
                     <p className="mt-1 text-xs opacity-90">{victoryReason}</p>
                     {game.wonByAggressive ? (
                         <div className="mt-2 inline-flex items-center gap-2 rounded-md bg-black/20 px-2 py-1 text-xs">
@@ -359,8 +371,9 @@ export function DuelGamePage({ uid }: { uid: string }) {
                     {game.wonByPoints ? (
                         <div className="mt-3 grid gap-2 md:grid-cols-2">
                             <div className="rounded-lg bg-black/20 p-3 text-sm">
-                                <p className="mb-1 font-semibold">
-                                    {game.player1.user.displayName || game.player1.user.email || 'Player 1'}
+                                <p className="mb-1 inline-flex items-center gap-1.5 font-semibold">
+                                    <UserFlag code={game.player1.user.countryCode} className="text-base" />
+                                    <span>{game.player1.user.displayName || game.player1.user.email || 'Player 1'}</span>
                                 </p>
                                 <p>Cards/Wonders: {pointBreakdown.p1.cards}</p>
                                 <p>Guilds: {pointBreakdown.p1.guild}</p>
@@ -383,8 +396,9 @@ export function DuelGamePage({ uid }: { uid: string }) {
                                 </p>
                             </div>
                             <div className="rounded-lg bg-black/20 p-3 text-sm">
-                                <p className="mb-1 font-semibold">
-                                    {game.player2.user.displayName || game.player2.user.email || 'Player 2'}
+                                <p className="mb-1 inline-flex items-center gap-1.5 font-semibold">
+                                    <UserFlag code={game.player2.user.countryCode} className="text-base" />
+                                    <span>{game.player2.user.displayName || game.player2.user.email || 'Player 2'}</span>
                                 </p>
                                 <p>Cards/Wonders: {pointBreakdown.p2.cards}</p>
                                 <p>Guilds: {pointBreakdown.p2.guild}</p>
@@ -543,11 +557,17 @@ export function DuelGamePage({ uid }: { uid: string }) {
                     {game.chooseWhoWillStart && isMyTurn ? (
                         <div className="mt-3 flex flex-wrap items-center gap-2">
                             <button className="btn-primary" onClick={() => chooseWhoStarts(game.player1.user.uid)}>
-                                {game.player1.user.displayName || 'Player 1'}
+                                <span className="inline-flex items-center gap-1.5">
+                                    <UserFlag code={game.player1.user.countryCode} />
+                                    {game.player1.user.displayName || 'Player 1'}
+                                </span>
                             </button>
                             <span className="text-xs opacity-80">Who starts the next age?</span>
                             <button className="btn-primary" onClick={() => chooseWhoStarts(game.player2.user.uid)}>
-                                {game.player2.user.displayName || 'Player 2'}
+                                <span className="inline-flex items-center gap-1.5">
+                                    <UserFlag code={game.player2.user.countryCode} />
+                                    {game.player2.user.displayName || 'Player 2'}
+                                </span>
                             </button>
                         </div>
                     ) : (
