@@ -46,12 +46,12 @@ service cloud.firestore {
       allow create, update: if isSignedIn()
         && hasRequiredUserKeys(request.resource.data)
         && userDocShapeIsValid(request.resource.data, userId);
-      allow delete: if false;
+      allow delete: if isSignedIn() && request.auth.uid == userId;
     }
 
     match /displayNames/{displayNameKey} {
       allow get: if true;
-      allow list: if false;
+      allow list: if isSignedIn();
       allow create: if isSignedIn()
         && !exists(/databases/$(database)/documents/displayNames/$(displayNameKey))
         && request.resource.data.uid == request.auth.uid
