@@ -11,6 +11,8 @@
 .dashHeader {
     display: flex;
     width: min(96vw, 990px);
+    max-width: 100%;
+    min-width: 0;
     justify-content: space-between;
     align-items: center;
     margin: 8px 0 20px;
@@ -110,6 +112,8 @@
     min-height: 220px;
     background: #cdcdcd;
     color: #2e2e2e;
+    position: relative;
+    z-index: 3;
 }
 
 .dashBoxBottom p {
@@ -162,7 +166,7 @@
 
 .dashCircle {
     position: absolute;
-    z-index: 2;
+    z-index: 4;
     width: 160px;
     height: 160px;
     top: 50px;
@@ -210,12 +214,27 @@
     letter-spacing: 1px;
     text-transform: uppercase;
     cursor: pointer;
-    transition: 0.5s all;
+    transition:
+        filter 0.2s ease,
+        box-shadow 0.2s ease;
     box-shadow: 12px 12px 16px 0 rgba(255, 255, 255, 0.3) inset, -8px -8px 12px 0 rgba(0, 0, 0, 0.25) inset;
 }
 
 .dashCardButton:hover:not(:disabled) {
-    letter-spacing: 3px;
+    filter: brightness(0.9) saturate(0.88);
+}
+
+.dashCardButton:focus {
+    outline: none;
+}
+
+.dashCardButton:focus-visible {
+    filter: brightness(0.92) saturate(0.92);
+    box-shadow:
+        12px 12px 16px 0 rgba(255, 255, 255, 0.3) inset,
+        -8px -8px 12px 0 rgba(0, 0, 0, 0.25) inset,
+        0 0 0 3px rgba(15, 23, 42, 0.95),
+        0 0 0 5px rgba(34, 211, 238, 0.85);
 }
 
 .dashCardButton:disabled {
@@ -318,6 +337,14 @@
     transform: translateY(-1px) scale(1.05);
 }
 
+.dashRemoveButton:focus {
+    outline: none;
+}
+
+.dashRemoveButton:focus-visible {
+    box-shadow: 0 0 0 2px rgba(34, 211, 238, 0.95), 0 0 0 4px rgba(15, 23, 42, 0.9);
+}
+
 .dashRemoveButtonLocked {
     color: rgba(254, 226, 226, 0.75);
 }
@@ -332,7 +359,10 @@
 
 .dashLobbyOverlay {
     position: fixed;
-    inset: 0;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100dvh;
     z-index: 30;
     background: rgba(2, 6, 23, 0.62);
     display: flex;
@@ -341,7 +371,7 @@
     border-radius: 0;
     backdrop-filter: blur(2px);
     overflow: hidden;
-    padding: 16px;
+    padding: clamp(10px, 2.6vh, 22px);
 }
 
 .dashLobbyModal {
@@ -408,18 +438,41 @@
 .dashLobbyActions {
     margin-top: 14px;
     display: flex;
+    flex-wrap: wrap;
     justify-content: center;
     gap: 10px;
 }
 
 .dashUserModal {
     width: min(94vw, 560px);
+    max-height: calc(100dvh - clamp(20px, 5.2vh, 44px));
+    overflow: hidden;
+    overscroll-behavior: contain;
+    display: flex;
+    flex-direction: column;
     border-radius: 16px;
     border: 1px solid rgba(255, 255, 255, 0.25);
     background: rgba(15, 23, 42, 0.94);
     color: #e2e8f0;
-    padding: 16px;
+    padding: 0;
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+    margin: 0 auto;
+}
+
+.dashUserModalHeader {
+    flex: 0 0 auto;
+    padding: 14px 16px 10px;
+    background: rgba(15, 23, 42, 0.96);
+    border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.dashUserModalBody {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    overflow-anchor: none;
+    padding: 12px 16px 14px;
 }
 
 .dashUserModal h3 {
@@ -431,6 +484,14 @@
 .dashUserModal p {
     font-size: 14px;
     opacity: 0.9;
+}
+
+.dashUserModalFooter {
+    flex: 0 0 auto;
+    margin: 0;
+    padding: 10px 16px 14px;
+    background: rgba(15, 23, 42, 0.96);
+    border-top: 1px solid rgba(148, 163, 184, 0.2);
 }
 
 .dashUserGrid {
@@ -487,6 +548,82 @@
 .dashInputCopyBtn:hover {
     background: rgba(51, 65, 85, 0.9);
     color: #f8fafc;
+}
+
+.dashDataZone {
+    margin-top: 14px;
+    border: 1px solid rgba(125, 211, 252, 0.35);
+    border-radius: 10px;
+    background: rgba(2, 132, 199, 0.15);
+    padding: 10px;
+}
+
+.dashDataZone h4 {
+    font-size: 14px;
+    font-weight: 700;
+    color: #bae6fd;
+    margin-bottom: 4px;
+}
+
+.dashDataZone > p {
+    font-size: 12px;
+    color: #e0f2fe;
+    margin-bottom: 8px;
+    opacity: 0.95;
+}
+
+.dashDataActions {
+    margin-top: 8px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.dashDangerZone {
+    margin-top: 14px;
+    border: 1px solid rgba(248, 113, 113, 0.4);
+    border-radius: 10px;
+    background: rgba(127, 29, 29, 0.2);
+    padding: 10px;
+}
+
+.dashDangerZone h4 {
+    font-size: 14px;
+    font-weight: 700;
+    color: #fecaca;
+    margin-bottom: 4px;
+}
+
+.dashDangerZone > p {
+    font-size: 12px;
+    color: #fecaca;
+    margin-bottom: 8px;
+    opacity: 0.95;
+}
+
+.dashDangerHint {
+    font-size: 12px;
+    color: #fca5a5;
+    margin-bottom: 8px;
+}
+
+.dashDangerZone .dashUserField + .dashUserField {
+    margin-top: 8px;
+}
+
+.dashDangerActions {
+    margin-top: 10px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.dashDangerButton {
+    border-color: rgba(248, 113, 113, 0.5);
+    background: rgba(153, 27, 27, 0.75);
+    color: #fee2e2;
+}
+
+.dashDangerButton:hover:not(:disabled) {
+    background: rgba(185, 28, 28, 0.82);
 }
 
 @media (max-width: 640px) {

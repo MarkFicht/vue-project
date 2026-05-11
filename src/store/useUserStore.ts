@@ -18,7 +18,6 @@ const emptyUser: IUser = {
     game: '',
     readyToGame: false,
     timestamp: '',
-    online: 'offline',
     status: 'offline',
     createdAt: '',
     updatedAt: '',
@@ -46,14 +45,14 @@ export const useUserStore = create<UserState>((set, get) => ({
                     email: data.email,
                     readyToGame: data.readyToGame,
                     game: data.game,
-                    online: data.online,
                     status: data.status,
                     timestamp: data.timestamp,
                     createdAt: data.createdAt,
                     updatedAt: data.updatedAt,
                     lastSeenAt: data.lastSeenAt,
                     schemaVersion: data.schemaVersion,
-                    soundMuted: data.soundMuted
+                    soundMuted: data.soundMuted,
+                    countryCode: data.countryCode
                 }
             });
         });

@@ -1,5 +1,4 @@
-import type IGame from './Game';
-// import {} from 'firebase/auth';
+export type GameId = '' | 'Duel' | 'Gems' | 'Reflex';
 
 export default interface IUser {
     password?: string;
@@ -11,15 +10,16 @@ export default interface IUser {
     displayName: string;
     displayNameKey?: string;
     email: string;
-    game?: IGame['id'];
+    game?: GameId;
     readyToGame?: boolean;
     status?: 'online' | 'away' | 'offline';
     timestamp?: any;
-    online?: string;
     createdAt?: any;
     updatedAt?: any;
     lastSeenAt?: any;
     joinedAt?: any;
     schemaVersion?: number;
     soundMuted?: boolean;
+    /** ISO 3166-1 alpha-2, e.g. PL */
+    countryCode?: string;
 }

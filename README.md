@@ -1,6 +1,6 @@
-# Vue dashboard with board games
+# Game board (React)
 
-Developing with Vue 3 in Vite + Firebase, project online with database in real life.
+React 19 + Vite + Firebase (Auth, Firestore, RTDB).
 
 After user authorization, we will be able to play one of 3 online games.
 

@@ -13,16 +13,21 @@ import { Gamepad2, LogIn, UserPlus } from 'lucide-react';
 import { auth, db, googleProvider } from '@/firebaseConfig';
 import { displayNamesRef, usersRef } from '@/firebase/refs';
 import { normalizeDisplayName, sanitizeDisplayName } from '@/utils/displayName';
+import { getCountrySelectOptions, guessCountryFromLocale, normalizeCountryCode } from '@/utils/country';
+import { CountrySelect } from '@/components/CountrySelect';
 import '@/styles/login.css';
 
 export function LoginPage() {
     const navigate = useNavigate();
     const [mode, setMode] = useState<'signin' | 'register'>('signin');
     const [displayName, setDisplayName] = useState('');
+    const [registerCountry, setRegisterCountry] = useState(() => guessCountryFromLocale());
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const isRegister = useMemo(() => mode === 'register', [mode]);
+    const countryOptions = useMemo(() => getCountrySelectOptions(), []);
+
     const ensureDisplayNameAvailable = async (displayNameKey: string) => {
         const displayNameRef = doc(displayNamesRef, displayNameKey);
         const displayNameSnap = await getDoc(displayNameRef);
@@ -42,6 +47,11 @@ export function LoginPage() {
                     return;
                 }
                 const displayNameKey = normalizeDisplayName(cleanDisplayName);
+                const countryNorm = normalizeCountryCode(registerCountry);
+                if (!countryNorm) {
+                    setError('Choose a valid country.');
+                    return;
+                }
                 await ensureDisplayNameAvailable(displayNameKey);
                 const res = await createUserWithEmailAndPassword(auth, email.trim().toLowerCase(), password);
                 try {
@@ -61,14 +71,14 @@ export function LoginPage() {
                             displayNameKey,
                             game: '',
                             readyToGame: false,
-                            online: 'online',
                             status: 'online',
                             timestamp: now,
                             createdAt: now,
                             updatedAt: now,
                             lastSeenAt: now,
                             schemaVersion: 1,
-                            soundMuted: false
+                            soundMuted: false,
+                            countryCode: countryNorm
                         });
                         tx.set(displayNameRef, {
                             uid: res.user.uid,
@@ -118,13 +128,23 @@ export function LoginPage() {
 
                 <form className="space-y-3" onSubmit={onSubmit}>
                     {isRegister && (
-                        <input
-                            className="input"
-                            placeholder="Display name"
-                            value={displayName}
-                            onChange={(e) => setDisplayName(e.target.value)}
-                            required
-                        />
+                        <>
+                            <input
+                                className="input"
+                                placeholder="Display name"
+                                value={displayName}
+                                onChange={(e) => setDisplayName(e.target.value)}
+                                required
+                            />
+                            <label className="block text-xs text-slate-300/90">
+                                <span className="mb-1.5 block font-medium tracking-wide">Country / region</span>
+                                <CountrySelect
+                                    value={registerCountry}
+                                    onChange={setRegisterCountry}
+                                    options={countryOptions}
+                                />
+                            </label>
+                        </>
                     )}
                     <input
                         className="input"
