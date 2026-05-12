@@ -162,6 +162,13 @@ export function DuelGamePage({ uid }: { uid: string }) {
         !!game.selectedCard &&
         !game.chooseWhoWillStart &&
         !isObserver;
+    const showArenaFoot =
+        (game.chooseWhoWillStart && isMyTurn) ||
+        (isMyTurn &&
+            (game.pickCoinOfThree === uid ||
+                game.pickCardFromGraveyard === uid ||
+                game.destroyBrown === uid ||
+                game.destroyGrey === uid));
     const closeSelectedCardActions = () => {
         game.setSelectedCard(null);
         setWonderBuildMode(false);
@@ -314,12 +321,17 @@ export function DuelGamePage({ uid }: { uid: string }) {
     }, [showActionModal]);
 
     return (
-        <main className="mx-auto flex h-dvh max-h-dvh w-full max-w-[1400px] flex-col overflow-hidden p-3 text-slate-100">
-            <header className="mb-3 flex min-w-0 max-w-full shrink-0 items-center justify-between gap-2 rounded-2xl border border-white/20 bg-white/10 p-3 backdrop-blur">
+        <main className="mx-auto flex h-dvh max-h-dvh w-full max-w-[1400px] flex-col overflow-hidden p-2 text-slate-100 sm:p-3">
+            <header className="mb-2 flex min-w-0 max-w-full shrink-0 items-center justify-between gap-2 rounded-xl border border-white/20 bg-white/10 p-2 backdrop-blur sm:mb-3 sm:rounded-2xl sm:p-3">
                 <div className="min-w-0">
-                    <h1 className="text-lg font-semibold">7 Wonders Duel</h1>
+                    <h1 className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1 text-lg font-semibold leading-tight">
+                        <span className="shrink-0">Duel</span>
+                        <span className="text-xs font-normal opacity-80">
+                            Turn: {isObserver ? 'Observer mode' : isMyTurn ? 'You' : 'Opponent'}
+                        </span>
+                    </h1>
                     <p className="text-xs opacity-80">
-                        Tier: {game.tier} · Move: {game.move} · Turn: {isObserver ? 'Observer mode' : isMyTurn ? 'You' : 'Opponent'}
+                        Tier: {game.tier} · Move: {game.move}
                     </p>
                 </div>
                 <div className="flex min-w-0 shrink items-center gap-2">
@@ -348,7 +360,7 @@ export function DuelGamePage({ uid }: { uid: string }) {
             </header>
 
             {winnerUid ? (
-                <section className="mb-3 shrink-0 rounded-2xl border border-cyan-200/30 bg-cyan-500/10 p-4 backdrop-blur">
+                <section className="mb-2 shrink-0 rounded-xl border border-cyan-200/30 bg-cyan-500/10 p-3 backdrop-blur sm:mb-3 sm:rounded-2xl sm:p-4">
                     <h2 className="text-xl font-semibold">Game over</h2>
                     <p className="flex flex-wrap items-center gap-2 text-sm">
                         <span>Winner:</span>
@@ -427,233 +439,277 @@ export function DuelGamePage({ uid }: { uid: string }) {
 
             <div className="dg-tableArena flex min-h-0 flex-1 flex-col overflow-hidden">
                 <div className="dg-tableSurface duelPageScrollbar min-h-0 flex-1 overflow-y-auto">
-            <section className="dg-playersGrid">
-                <div className="dg-playerShell">
-                    <DuelPlayerColumns
-                        player={topPlayer}
-                        enemy={bottomPlayer}
-                        boardPawn={game.board.pawn}
-                        isPlayerOne={topIsPlayerOne}
-                        canSelectWonder={wonderBuildMode && isMyTurn && !!game.selectedCard}
-                        affordableWonderIds={wonderBuildMode ? affordableWonderIds : []}
-                        selectedWonderId={game.selectedWonder?.id}
-                        onSelectWonder={async (wonderId) => {
-                            if (!wonderBuildMode) return;
-                            const wonder = topPlayer.wonderCards.find((w) => w.id === wonderId);
-                            if (!wonder) return;
-                            selectWonder(wonder);
-                            await buildWonder(wonder);
-                            setWonderBuildMode(false);
-                        }}
-                        destroyMode={null}
-                        isDestroyTarget={false}
-                        highlightScience={!!game.wonByArt && winnerUid === topPlayer.user.uid}
-                        isCurrentTurn={game.turn === topPlayer.user.uid}
-                        showPreparePlaceholders={game.tier === 'prepare'}
-                    />
-                </div>
-                <div className="dg-playerShell">
-                    <DuelPlayerColumns
-                        player={bottomPlayer}
-                        enemy={topPlayer}
-                        boardPawn={game.board.pawn}
-                        isPlayerOne={bottomIsPlayerOne}
-                        canSelectWonder={false}
-                        affordableWonderIds={[]}
-                        destroyMode={
-                            isMyTurn && game.destroyBrown === uid
-                                ? 'brown'
-                                : isMyTurn && game.destroyGrey === uid
-                                  ? 'grey'
-                                  : null
-                        }
-                        isDestroyTarget={isMyTurn && (game.destroyBrown === uid || game.destroyGrey === uid)}
-                        onDestroyCard={destroyEnemyCard}
-                        highlightScience={!!game.wonByArt && winnerUid === bottomPlayer.user.uid}
-                        isCurrentTurn={game.turn === bottomPlayer.user.uid}
-                        showPreparePlaceholders={game.tier === 'prepare'}
-                    />
-                </div>
-            </section>
-
-            <section className="dg-tableGrid">
-                <div className="rounded-2xl border border-white/15 bg-black/20 p-4 backdrop-blur-sm dg-boardPanel">
-                    <div className="dg-boardStage">
-                        <div className="shrink-0 dg-stageCards">
-                            {game.tier === 'prepare' ? (
-                                <>
-                                    <h2 className="mb-2 text-sm font-semibold">
-                                        Pick wonders {isMyTurn ? '(your turn)' : '(opponent picks)'}
-                                    </h2>
-                                    <div className="dg-wondersPick">
-                                        {prepareWonderSlots.map((wonder, index) => (
-                                            <DuelWonderSprite
-                                                key={wonder ? wonder.id : `prepare-placeholder-${index}`}
-                                                card={wonder ?? undefined}
-                                                showFront={!!wonder && !wonder.taken && prepareRevealedIds.includes(wonder.id)}
-                                                flipDelayMs={0}
-                                                disabled={
-                                                    !isMyTurn ||
-                                                    !wonder ||
-                                                    wonder.taken ||
-                                                    !prepareRevealedIds.includes(wonder.id) ||
-                                                    prepareActionLocked
-                                                }
-                                                onClick={
-                                                    wonder
-                                                        ? async () => {
-                                                              if (prepareActionLocked) return;
-                                                              setPrepareActionLocked(true);
-                                                              await chooseWonderForPlayer(wonder.id);
-                                                              setPrepareActionLocked(false);
-                                                          }
-                                                        : undefined
-                                                }
-                                            />
-                                        ))}
-                                    </div>
-                                </>
-                            ) : (
-                                <div className="dg-cardBoard">
-                                    {tierCards.map((card, index) => (
-                                        <DuelSpriteCard
-                                            key={`${card.tier}-${card.id}`}
-                                            card={card}
-                                            x={tierLayout.x[index]}
-                                            y={tierLayout.y[index]}
-                                            selected={game.selectedCard?.id === card.id}
-                                            cash1P={
-                                                (card.coversBy?.length ?? 0) === 0
-                                                    ? showPrice(card, topPlayer, bottomPlayer)
-                                                    : -1
-                                            }
-                                            cash2P={
-                                                (card.coversBy?.length ?? 0) === 0
-                                                    ? showPrice(card, bottomPlayer, topPlayer)
-                                                    : -1
-                                            }
-                                            res1P={topPlayer.resources.cash}
-                                            res2P={bottomPlayer.resources.cash}
-                                            onClick={() => selectTierCard(card)}
+                    <div className="dg-duelLayout">
+                        <section className="dg-duelArena" aria-label="Draft area and conflict board">
+                            <div className="relative overflow-visible rounded-xl border border-white/15 bg-black/20 p-2 dg-arenaTableCard">
+                                <div className="dg-militaryViewport">
+                                    <div className="dg-militaryTransform">
+                                        <DuelBoard
+                                            pawn={game.board.pawn}
+                                            coins={game.board.coins}
+                                            punishment1={game.board.punishment1}
+                                            punishment2={game.board.punishment2}
+                                            punishment3={game.board.punishment3}
+                                            punishment4={game.board.punishment4}
+                                            currentIsPlayer2={uid === game.player2.user.uid}
+                                            pickCoinUid={game.pickCoin}
+                                            isMyTurn={isMyTurn}
+                                            currentUid={uid}
+                                            onPickCoin={pickCoin}
                                         />
-                                    ))}
+                                    </div>
                                 </div>
-                            )}
-                        </div>
-                        <div className="shrink-0 dg-stageBoard">
-                            <DuelBoard
-                                pawn={game.board.pawn}
-                                coins={game.board.coins}
-                                punishment1={game.board.punishment1}
-                                punishment2={game.board.punishment2}
-                                punishment3={game.board.punishment3}
-                                punishment4={game.board.punishment4}
-                                currentIsPlayer2={uid === game.player2.user.uid}
-                                pickCoinUid={game.pickCoin}
-                                isMyTurn={isMyTurn}
-                                currentUid={uid}
-                                onPickCoin={pickCoin}
-                            />
-                        </div>
-                    </div>
-                    {game.chooseWhoWillStart && isMyTurn ? (
-                        <div className="mt-3 flex flex-wrap items-center gap-2">
-                            <button className="btn-primary" onClick={() => chooseWhoStarts(game.player1.user.uid)}>
-                                <span className="inline-flex items-center gap-1.5">
-                                    <UserFlag code={game.player1.user.countryCode} />
-                                    {game.player1.user.displayName || 'Player 1'}
-                                </span>
-                            </button>
-                            <span className="text-xs opacity-80">Who starts the next age?</span>
-                            <button className="btn-primary" onClick={() => chooseWhoStarts(game.player2.user.uid)}>
-                                <span className="inline-flex items-center gap-1.5">
-                                    <UserFlag code={game.player2.user.countryCode} />
-                                    {game.player2.user.displayName || 'Player 2'}
-                                </span>
-                            </button>
-                        </div>
-                    ) : (
-                        <div className="mt-3 flex flex-wrap items-center gap-2">
-                            {isObserver ? (
-                                <span className="rounded-md border border-cyan-300/40 bg-cyan-500/15 px-2 py-1 text-xs">
-                                    Observer mode: read-only game view
-                                </span>
-                            ) : null}
-                            {isMyTurn && game.pickCoinOfThree === uid && (
-                                <>
-                                    {game.theRestOfCoins.slice(0, 3).map((coin) => (
-                                        <button
-                                            key={`pick3-${coin}`}
-                                            className="btn-secondary"
-                                            onClick={() => pickCoinOfThree(coin)}
-                                        >
-                                            Pick 1/3: {coin}
-                                        </button>
-                                    ))}
-                                </>
-                            )}
-                            {isMyTurn && game.pickCardFromGraveyard === uid && (
-                                <span className="rounded-md border border-emerald-300/50 bg-emerald-500/20 px-2 py-1 text-xs">
-                                    Select card from graveyard
-                                </span>
-                            )}
-                            {isMyTurn && (game.destroyBrown === uid || game.destroyGrey === uid) && (
-                                <span className="rounded-md border border-amber-300/50 bg-amber-500/20 px-2 py-1 text-xs">
-                                    Destroy enemy {game.destroyBrown === uid ? 'brown' : 'grey'} card
-                                </span>
-                            )}
-                        </div>
-                    )}
-                    {showActionModal ? (
-                        <div className="dg-actionsBackdropInBoard" role="dialog" aria-modal="true">
-                            <div className="dg-actionsModal dg-actionsModalInBoard">
-                                <div className="dg-actionsButtons">
-                                    <button className="btn-secondary" onClick={closeSelectedCardActions}>
-                                        Close
-                                    </button>
-                                    <button className="btn-primary" disabled={!canBuySelectedCard} onClick={buySelectedCard}>
-                                        {canBuySelectedCard ? <Hand className="h-4 w-4" /> : <Ban className="h-4 w-4" />}
-                                        Buy {canBuyTierCard > -1 ? `(${canBuyTierCard})` : ''}
-                                    </button>
-                                    <button className="btn-secondary" disabled={!isMyTurn || !game.selectedCard} onClick={sellSelectedCard}>
-                                        Sell
-                                    </button>
-                                    <button
-                                        className={`btn-secondary ${!hasBuildableWonder ? '!bg-red-600/40 !text-red-100' : ''}`}
-                                        disabled={!hasBuildableWonder}
-                                        onClick={() => setWonderBuildMode((prev) => !prev)}
+                                    <div
+                                        className={`dg-stageCards${game.tier === 'prepare' ? ' dg-stageCards--prepare' : ''}`}
                                     >
-                                        {wonderBuildMode ? 'Select wonder...' : 'Build wonder'}
-                                    </button>
-                                </div>
+                                        {game.tier === 'prepare' ? (
+                                            <>
+                                                <h2 className="mb-2 text-sm font-semibold">
+                                                    Pick wonders {isMyTurn ? '(your turn)' : '(opponent picks)'}
+                                                </h2>
+                                                <div className="dg-wondersPickTransform">
+                                                    <div className="dg-wondersPick">
+                                                        {prepareWonderSlots.map((wonder, index) => (
+                                                            <DuelWonderSprite
+                                                                key={wonder ? wonder.id : `prepare-placeholder-${index}`}
+                                                                card={wonder ?? undefined}
+                                                                showFront={
+                                                                    !!wonder &&
+                                                                    !wonder.taken &&
+                                                                    prepareRevealedIds.includes(wonder.id)
+                                                                }
+                                                                flipDelayMs={0}
+                                                                disabled={
+                                                                    !isMyTurn ||
+                                                                    !wonder ||
+                                                                    wonder.taken ||
+                                                                    !prepareRevealedIds.includes(wonder.id) ||
+                                                                    prepareActionLocked
+                                                                }
+                                                                onClick={
+                                                                    wonder
+                                                                        ? async () => {
+                                                                              if (prepareActionLocked) return;
+                                                                              setPrepareActionLocked(true);
+                                                                              await chooseWonderForPlayer(wonder.id);
+                                                                              setPrepareActionLocked(false);
+                                                                          }
+                                                                        : undefined
+                                                                }
+                                                            />
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <div className="dg-cardBoardShell">
+                                                <div className="dg-epochCardsTransform">
+                                                    <div className="dg-cardBoard">
+                                                        {tierCards.map((card, index) => (
+                                                            <DuelSpriteCard
+                                                                key={`${card.tier}-${card.id}`}
+                                                                card={card}
+                                                                x={tierLayout.x[index]}
+                                                                y={tierLayout.y[index]}
+                                                                selected={game.selectedCard?.id === card.id}
+                                                                cash1P={
+                                                                    (card.coversBy?.length ?? 0) === 0
+                                                                        ? showPrice(card, topPlayer, bottomPlayer)
+                                                                        : -1
+                                                                }
+                                                                cash2P={
+                                                                    (card.coversBy?.length ?? 0) === 0
+                                                                        ? showPrice(card, bottomPlayer, topPlayer)
+                                                                        : -1
+                                                                }
+                                                                res1P={topPlayer.resources.cash}
+                                                                res2P={bottomPlayer.resources.cash}
+                                                                onClick={() => selectTierCard(card)}
+                                                            />
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <aside className="dg-graveyardPanel rounded-xl border border-white/15 bg-black/15 p-2 backdrop-blur-sm">
+                                        <h3 className="mb-1 text-sm font-semibold">Graveyard</h3>
+                                        <div
+                                            className={`dg-graveyardCards duelPageScrollbar overflow-y-auto rounded-lg bg-black/20 p-1 ${
+                                                isMyTurn && game.pickCardFromGraveyard === uid
+                                                    ? 'ring-2 ring-emerald-300/60'
+                                                    : ''
+                                            }`}
+                                        >
+                                            <div className="dg-graveyardCardsTransform">
+                                                {game.graveyard.map((card, idx) => (
+                                                    <DuelSpriteCard
+                                                        key={`grave-${card.id}-${idx}`}
+                                                        card={card}
+                                                        x={0}
+                                                        y={0}
+                                                        compact
+                                                        disabled={
+                                                            !(
+                                                                isMyTurn &&
+                                                                game.pickCardFromGraveyard === uid
+                                                            )
+                                                        }
+                                                        onClick={() => pickCardFromGraveyard(card)}
+                                                    />
+                                                ))}
+                                                {!game.graveyard.length && (
+                                                    <span className="text-xs opacity-70">empty</span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </aside>
+                                {showArenaFoot ? (
+                                    <div className="relative dg-arenaFoot">
+                                        {game.chooseWhoWillStart && isMyTurn ? (
+                                            <div className="flex flex-wrap items-center gap-2">
+                                                <button
+                                                    className="btn-primary"
+                                                    onClick={() => chooseWhoStarts(game.player1.user.uid)}
+                                                >
+                                                    <span className="inline-flex items-center gap-1.5">
+                                                        <UserFlag code={game.player1.user.countryCode} />
+                                                        {game.player1.user.displayName || 'Player 1'}
+                                                    </span>
+                                                </button>
+                                                <span className="text-xs opacity-80">Who starts the next age?</span>
+                                                <button
+                                                    className="btn-primary"
+                                                    onClick={() => chooseWhoStarts(game.player2.user.uid)}
+                                                >
+                                                    <span className="inline-flex items-center gap-1.5">
+                                                        <UserFlag code={game.player2.user.countryCode} />
+                                                        {game.player2.user.displayName || 'Player 2'}
+                                                    </span>
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <div className="flex flex-wrap items-center gap-2">
+                                                {isMyTurn && game.pickCoinOfThree === uid && (
+                                                    <>
+                                                        {game.theRestOfCoins.slice(0, 3).map((coin) => (
+                                                            <button
+                                                                key={`pick3-${coin}`}
+                                                                className="btn-secondary"
+                                                                onClick={() => pickCoinOfThree(coin)}
+                                                            >
+                                                                Pick 1/3: {coin}
+                                                            </button>
+                                                        ))}
+                                                    </>
+                                                )}
+                                                {isMyTurn && game.pickCardFromGraveyard === uid && (
+                                                    <span className="rounded-md border border-emerald-300/50 bg-emerald-500/20 px-2 py-1 text-xs">
+                                                        Select card from graveyard
+                                                    </span>
+                                                )}
+                                                {isMyTurn && (game.destroyBrown === uid || game.destroyGrey === uid) && (
+                                                    <span className="rounded-md border border-amber-300/50 bg-amber-500/20 px-2 py-1 text-xs">
+                                                        Destroy enemy {game.destroyBrown === uid ? 'brown' : 'grey'} card
+                                                    </span>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                ) : null}
+                                {showActionModal ? (
+                                    <div className="dg-actionsBackdropInBoard" role="dialog" aria-modal="true">
+                                        <div className="dg-actionsModal">
+                                            <div className="dg-actionsButtons">
+                                                <button
+                                                    className="btn-primary"
+                                                    disabled={!canBuySelectedCard}
+                                                    onClick={buySelectedCard}
+                                                >
+                                                    {canBuySelectedCard ? (
+                                                        <Hand className="h-3.5 w-3.5" />
+                                                    ) : (
+                                                        <Ban className="h-3.5 w-3.5" />
+                                                    )}
+                                                    Buy {canBuyTierCard > -1 ? `(${canBuyTierCard})` : ''}
+                                                </button>
+                                                <button
+                                                    className="btn-secondary"
+                                                    disabled={!isMyTurn || !game.selectedCard}
+                                                    onClick={sellSelectedCard}
+                                                >
+                                                    Sell
+                                                </button>
+                                                <button
+                                                    className={`btn-secondary ${!hasBuildableWonder ? '!bg-red-600/40 !text-red-100' : ''}`}
+                                                    disabled={!hasBuildableWonder}
+                                                    onClick={() => setWonderBuildMode((prev) => !prev)}
+                                                >
+                                                    {wonderBuildMode ? 'Select wonder...' : 'Build wonder'}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ) : null}
                             </div>
-                        </div>
-                    ) : null}
-                </div>
-                <aside className="rounded-2xl border border-white/15 bg-black/20 p-4 backdrop-blur-sm">
-                    <h3 className="mb-2 text-sm font-semibold">Graveyard</h3>
-                    <div
-                        className={`duelPageScrollbar flex max-h-44 flex-wrap gap-2 overflow-y-auto rounded-lg bg-black/20 p-2 ${
-                            isMyTurn && game.pickCardFromGraveyard === uid ? 'ring-2 ring-emerald-300/60' : ''
-                        }`}
-                    >
-                        {game.graveyard.map((card, idx) => (
-                            <DuelSpriteCard
-                                key={`grave-${card.id}-${idx}`}
-                                card={card}
-                                x={0}
-                                y={0}
-                                compact
-                                disabled={!(isMyTurn && game.pickCardFromGraveyard === uid)}
-                                onClick={() => pickCardFromGraveyard(card)}
-                            />
-                        ))}
-                        {!game.graveyard.length && <span className="text-xs opacity-70">empty</span>}
+                        </section>
+
+                        <div className="dg-duelPlayersRow">
+                            <section className="dg-duelBand dg-duelBand--opp dg-playerBand" aria-label="Opponent city">
+                                <div className="dg-playerShell">
+                                    <DuelPlayerColumns
+                                        player={topPlayer}
+                                        enemy={bottomPlayer}
+                                        boardPawn={game.board.pawn}
+                                        isPlayerOne={topIsPlayerOne}
+                                        canSelectWonder={wonderBuildMode && isMyTurn && !!game.selectedCard}
+                                        affordableWonderIds={wonderBuildMode ? affordableWonderIds : []}
+                                        selectedWonderId={game.selectedWonder?.id}
+                                        onSelectWonder={async (wonderId) => {
+                                            if (!wonderBuildMode) return;
+                                            const wonder = topPlayer.wonderCards.find((w) => w.id === wonderId);
+                                            if (!wonder) return;
+                                            selectWonder(wonder);
+                                            await buildWonder(wonder);
+                                            setWonderBuildMode(false);
+                                        }}
+                                        destroyMode={null}
+                                        isDestroyTarget={false}
+                                        highlightScience={!!game.wonByArt && winnerUid === topPlayer.user.uid}
+                                        isCurrentTurn={game.turn === topPlayer.user.uid}
+                                        showPreparePlaceholders={game.tier === 'prepare'}
+                                    />
+                                </div>
+                            </section>
+
+                            <section className="dg-duelBand dg-duelBand--you dg-playerBand" aria-label="Your city">
+                                <div className="dg-playerShell">
+                                <DuelPlayerColumns
+                                    player={bottomPlayer}
+                                    enemy={topPlayer}
+                                    boardPawn={game.board.pawn}
+                                    isPlayerOne={bottomIsPlayerOne}
+                                    canSelectWonder={false}
+                                    affordableWonderIds={[]}
+                                    destroyMode={
+                                        isMyTurn && game.destroyBrown === uid
+                                            ? 'brown'
+                                            : isMyTurn && game.destroyGrey === uid
+                                              ? 'grey'
+                                              : null
+                                    }
+                                    isDestroyTarget={isMyTurn && (game.destroyBrown === uid || game.destroyGrey === uid)}
+                                    onDestroyCard={destroyEnemyCard}
+                                    highlightScience={!!game.wonByArt && winnerUid === bottomPlayer.user.uid}
+                                    isCurrentTurn={game.turn === bottomPlayer.user.uid}
+                                    showPreparePlaceholders={game.tier === 'prepare'}
+                                />
+                                </div>
+                            </section>
                     </div>
-                </aside>
-            </section>
                 </div>
             </div>
+        </div>
         </main>
     );
 }

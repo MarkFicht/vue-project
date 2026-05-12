@@ -116,7 +116,8 @@ export function DuelPlayerColumns({
                     );
                 })}
             </div>
-            <div className="dg-columns">
+            <div className="dg-playerColumnsScroller">
+                <div className="dg-columns">
                 {COLORS.map((colorKey) => {
                     const cards = [...(player.cards[colorKey] as IGameDuelCard[])];
                     if (colorKey === 'green') cards.sort((a, b) => a.valuePower[0] - b.valuePower[0]);
@@ -131,24 +132,24 @@ export function DuelPlayerColumns({
                         >
                             {colorKey === 'green' && <div className="dg-artCount">{countArtefactsForPlayer(player)}/6</div>}
                             {cards.map((card, idx) => (
-                                <div key={`${card.id ?? card.idImg}-${idx}`} className="dg-smallCardSlot">
-                                    <DuelSpriteCard
-                                        card={card}
-                                        x={0}
-                                        y={0}
-                                        compact
-                                        disabled={!isDestroyColumn}
-                                        onClick={() =>
-                                            isDestroyColumn
-                                                ? onDestroyCard?.(card, colorKey as 'brown' | 'grey')
-                                                : undefined
-                                        }
-                                    />
-                                </div>
+                                <DuelSpriteCard
+                                    key={`${card.id ?? card.idImg}-${idx}`}
+                                    card={card}
+                                    x={0}
+                                    y={0}
+                                    compact
+                                    disabled={!isDestroyColumn}
+                                    onClick={() =>
+                                        isDestroyColumn
+                                            ? onDestroyCard?.(card, colorKey as 'brown' | 'grey')
+                                            : undefined
+                                    }
+                                />
                             ))}
                         </div>
                     );
                 })}
+                </div>
             </div>
             <div className="dg-playerCoinsBox">
                 <div className="dg-playerCoinsLabel">Progress coins</div>

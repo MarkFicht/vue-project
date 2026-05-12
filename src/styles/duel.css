@@ -3,6 +3,22 @@
     --duel-scrollbar-track: rgb(32 22 16 / 55%);
     --duel-scrollbar-thumb: rgba(100 62 38 / 0.88);
     --duel-scrollbar-thumb-hover: rgba(124 80 48 / 0.95);
+    /* Pełnowymiarowy military board (.dg-board); wizualnie rotate(90deg) × scale(...) */
+    --dg-military-board-scale: 0.56;
+
+    --dg-card-board-height: 420px;
+    --dg-card-board-width: calc(var(--width-tier) * 7);
+    /* Piramida epok (.dg-cardBoard) — logicznie pełny rozmiar, wizualnie tylko scale(...) */
+    --dg-epoch-cards-scale: 0.62;
+
+    /* Wybór cudów na starcie: grid 2×2 (full-size w DOM), wizualnie scale(...) */
+    --dg-wonder-prepare-scale: 0.56;
+    --dg-wonders-pick-row-gap: 10px;
+    /* Wysokość bloku przy 4 slotach × 2 kolumnach (bez skalowania) → do marginesu ujemnego */
+    --dg-wonders-pick-logical-height: calc(2 * var(--height-wonder) + var(--dg-wonders-pick-row-gap));
+
+    /* Cuda zbudowane u gracza (kompakt w paskach) — osobny scale od stołu epok */
+    --dg-player-wonders-scale: 0.86;
 
     --width-wonder: 130px;
     --height-wonder: 85px;
@@ -11,6 +27,47 @@
     --width-board: 200px;
     --height-board: 500px;
     --coin-size: 42px;
+}
+
+@media (min-width: 425px) {
+    :root {
+        --dg-military-board-scale: 0.71;
+        --dg-epoch-cards-scale: 0.8;
+        --dg-wonder-prepare-scale: 0.8;
+        --dg-player-wonders-scale: 0.9;
+    }
+    .dg-militaryViewport {
+        margin-top: -20px !important;
+    }
+    .dg-stageCards {
+        margin-bottom: 26px !important;
+        margin-top: -34px !important;
+    }
+}
+
+@media (min-width: 768px) {
+    :root {
+        --dg-military-board-scale: 0.9;
+        --dg-epoch-cards-scale: 0.95;
+        --dg-wonder-prepare-scale: 0.95;
+        --dg-player-wonders-scale: 1;
+    }
+    .dg-militaryViewport {
+        margin-top: -26px !important;
+    }
+    .dg-stageCards {
+        margin-bottom: 22px !important;
+        margin-top: -44px !important;
+    }
+}
+
+@media (min-width: 1024px) {
+    :root {
+        --dg-military-board-scale: 1;
+        --dg-epoch-cards-scale: 1;
+        --dg-wonder-prepare-scale: 1;
+        --dg-player-wonders-scale: 1;
+    }
 }
 
 .cashSum {
@@ -33,8 +90,8 @@
 
 .dg-cardBoard {
     position: relative;
-    width: calc(var(--width-tier) * 7 + 24px);
-    height: 420px;
+    width: var(--dg-card-board-width);
+    height: var(--dg-card-board-height);
     margin: 0 auto;
     overflow: hidden;
     border-radius: 10px;
@@ -71,7 +128,7 @@
     pointer-events: none;
 }
 
-.dg-selected::before {
+.dg-cardWrapper.dg-selected::before {
     content: '';
     position: absolute;
     z-index: 2;
@@ -131,13 +188,22 @@
 }
 
 .dg-wondersPick {
+    display: grid;
+    grid-template-columns: var(--width-wonder) var(--width-wonder);
+    gap: var(--dg-wonders-pick-row-gap);
+    justify-content: center;
+    align-content: center;
+}
+
+.dg-wondersPickTransform {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 12px;
-    width: calc(var(--width-wonder) * 2 + 60px);
-    margin: 0 auto;
+    justify-content: center;
+    width: 100%;
+    overflow: visible;
+    transform: scale(var(--dg-wonder-prepare-scale));
+    transform-origin: top center;
+    /* transform nie zmienia wysokości w flow — zbij zbędna „dziura” jak po skalowaniu */
+    margin-bottom: calc(-1 * var(--dg-wonders-pick-logical-height) * (1 - var(--dg-wonder-prepare-scale)));
 }
 
 .dg-wonderWrapper {
@@ -317,8 +383,9 @@
 
 .dg-boardCoinSlot {
     position: absolute;
-    left: 2px;
+    left: 3px;
     z-index: 5;
+    transform: rotate(-90deg);
 }
 
 .dg-boardCoinSlot:nth-child(1) { top: 8px; }
@@ -352,7 +419,7 @@
     background-repeat: no-repeat;
     background-position: -81px -142px;
     left: -9px;
-    top: 50%;
+    top: 49.9%;
     transition: 0.5s;
     z-index: 10;
 }
@@ -412,14 +479,129 @@
     border-radius: 12px;
     border: 1px solid rgba(255, 255, 255, 0.15);
     background: rgba(2, 6, 23, 0.45);
-    padding: 8px;
+    padding: 6px 7px;
+    min-width: 0;
 }
 
-.dg-playersGrid {
-    display: grid;
+/** Duel layout — jeden pionowy układ (breakpointy później) */
+.dg-duelLayout {
+    display: flex;
+    flex-direction: column;
     gap: 10px;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-items: start;
+    min-height: 0;
+}
+
+.dg-arenaTableCard {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+}
+
+.dg-duelArena {
+    min-width: 0;
+}
+
+.dg-duelPlayersRow {
+    display: contents;
+}
+
+.dg-stageCards {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 28px;
+    margin-top: -24px;
+}
+
+.dg-stageCards--prepare {
+    margin-bottom: 8px;
+    margin-top: -8px;
+}
+
+.dg-militaryViewport {
+    position: relative;
+    width: 100%;
+    overflow: visible;
+    /* Po obrocie ±90° wysokość na ekranie = pierwotna szerokość planszy × scale */
+    height: calc(var(--width-board) * var(--dg-military-board-scale));
+    /* Mniejsza przerwa od góry karty stołu (padding areny zostaje, plansza idzie wyżej) */
+    margin-top: -14px;
+}
+
+.dg-militaryTransform {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%) rotate(90deg) scale(var(--dg-military-board-scale));
+    transform-origin: center center;
+}
+
+.dg-duelBand {
+    min-width: 0;
+    flex-shrink: 0;
+    scroll-margin-block-start: calc(4px + env(safe-area-inset-top));
+    scroll-margin-block-end: calc(48px + env(safe-area-inset-bottom));
+}
+
+.dg-playerColumnsScroller {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-gutter: stable;
+    padding-bottom: 4px;
+}
+
+.dg-cardBoardShell {
+    margin-inline: auto;
+    width: 100%;
+    padding-inline: 6px;
+    position: relative;
+    overflow: visible;
+    /* Wysokość w layoucie = zeskalowany pion piramidy (nie pełne 420px) */
+    height: calc(var(--dg-card-board-height) * var(--dg-epoch-cards-scale));
+}
+
+.dg-epochCardsTransform {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    transform: translateX(-50%) scale(var(--dg-epoch-cards-scale));
+    transform-origin: top center;
+}
+
+.dg-graveyardPanel {
+    min-width: 0;
+    width: 100%;
+}
+
+.dg-graveyardCards {
+    /* Stała „okienkowa” strefa kart: min = max = 2 rzędy compact (+ gap + p-2); pusty stan nie zapada się */
+    min-height: calc(2 * (var(--height-tier) / 24) + 6px + 1rem);
+    /* max-height: calc(2 * (var(--height-tier) / 4.5) + 6px + 1rem); */
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-gutter: stable;
+}
+
+.dg-graveyardCardsTransform {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: flex-start;
+    align-content: flex-start;
+    box-sizing: border-box;
+    width: calc(100% / var(--dg-epoch-cards-scale));
+    transform: scale(var(--dg-epoch-cards-scale));
+    transform-origin: top left;
+    /* scale nie zmienia wysokości w flow → scroll się długo pętelkuje z pustką pod kartami (~N rzędów compact “zbite”) */
+    margin-bottom: calc(
+        -11 * (1 - var(--dg-epoch-cards-scale)) * ((var(--height-tier) / 4.5) + 6px)
+    );
 }
 
 .dg-tableArena {
@@ -445,25 +627,6 @@
     min-width: 0;
 }
 
-.dg-tableGrid {
-    display: grid;
-    gap: 10px;
-    grid-template-columns: minmax(0, 1fr) 280px;
-    align-items: start;
-}
-
-.dg-boardStage {
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    gap: 10px;
-}
-
-.dg-boardPanel {
-    position: relative;
-    overflow: visible;
-}
-
 .dg-actionsBackdropInBoard {
     position: absolute;
     inset: 0;
@@ -474,9 +637,10 @@
 .dg-actionsModal {
     position: absolute;
     left: 50%;
-    bottom: 12px;
+    bottom: 88px;
     transform: translateX(-50%);
     width: min(88%, 390px);
+    max-width: 430px;
     border-radius: 12px;
     border: 1px solid rgba(255, 255, 255, 0.22);
     background: rgba(2, 6, 23, 0.9);
@@ -484,18 +648,6 @@
     padding: 7px 8px;
     box-shadow: 0 10px 26px rgba(0, 0, 0, 0.4);
     pointer-events: auto;
-}
-
-.dg-actionsModalInBoard {
-    max-width: 430px;
-}
-
-.dg-actionsHeader {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 8px;
 }
 
 .dg-actionsButtons {
@@ -508,17 +660,12 @@
 
 .dg-actionsButtons .btn-primary,
 .dg-actionsButtons .btn-secondary {
-    font-size: 1rem;
-    line-height: 1.05;
-    padding: 4px 8px;
-    min-height: 28px;
-    border-radius: 7px;
-    gap: 4px;
-}
-
-.dg-stageBoard .dg-board {
-    transform: scale(0.94);
-    transform-origin: center center;
+    font-size: 0.875rem;
+    line-height: 1.1;
+    padding: 4px 7px;
+    min-height: 26px;
+    border-radius: 6px;
+    gap: 3px;
 }
 
 .dg-playerHeader {
@@ -551,23 +698,29 @@
 }
 
 .dg-columns {
-    width: calc(var(--width-tier) * 7 + 24px);
+    --dg-col-gap: 6px;
     display: flex;
-    justify-content: space-between;
+    flex-wrap: nowrap;
     align-items: flex-start;
+    gap: var(--dg-col-gap);
+    /* Never shrink below seven slot widths — narrow panes scroll horizontally */
+    width: max-content;
+    max-width: none;
+    margin-inline: auto;
 }
 
 .dg-playerWonders {
     display: flex;
     flex-wrap: wrap;
+    justify-content: center;
     gap: 8px;
     margin-bottom: 8px;
 }
 
 .dg-playerWonders .dg-wonderWrapper {
     margin: 0;
-    transform: scale(0.86);
-    transform-origin: top left;
+    transform: scale(var(--dg-player-wonders-scale));
+    transform-origin: top center;
 }
 
 .dg-wonderWrapper.dg-selected::after,
@@ -592,7 +745,13 @@
 
 .dg-column {
     position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    flex: 0 0 var(--width-tier);
     width: var(--width-tier);
+    min-width: var(--width-tier);
     min-height: calc(1 / 4 * var(--height-tier) * 7 + 6px);
     border-radius: 6px;
     padding-top: 1px;
@@ -622,10 +781,6 @@
     left: 50%;
     transform: translateX(-50%);
     font-size: 10px;
-}
-
-.dg-smallCardSlot {
-    margin-bottom: 2px;
 }
 
 .dg-playerCoins {
@@ -824,132 +979,3 @@
     50% { border-color: transparent; }
     100% { border-color: rgba(34, 197, 94, 0.95); }
 }
-
-@media (max-width: 1279px) {
-    :root {
-        --width-wonder: 118px;
-        --height-wonder: 77px;
-        --width-tier: 62px;
-        --height-tier: 94px;
-        --width-board: 188px;
-        --height-board: 470px;
-        --coin-size: 39px;
-    }
-
-    .dg-tableGrid {
-        grid-template-columns: 1fr;
-    }
-
-    .dg-boardStage {
-        flex-wrap: wrap;
-    }
-
-    .dg-stageBoard .dg-board {
-        transform: scale(0.88);
-    }
-}
-
-@media (max-width: 1023px) {
-    :root {
-        --width-wonder: 108px;
-        --height-wonder: 71px;
-        --width-tier: 56px;
-        --height-tier: 86px;
-        --width-board: 172px;
-        --height-board: 430px;
-        --coin-size: 35px;
-    }
-
-    .dg-playersGrid {
-        grid-template-columns: 1fr;
-    }
-
-    .dg-boardStage {
-        flex-direction: column;
-        align-items: center;
-        gap: 4px;
-    }
-
-    .dg-stageBoard {
-        order: -1;
-        width: 100%;
-        display: flex;
-        justify-content: center;
-        margin-bottom: 0;
-        position: relative;
-        --dg-rot-board-width: clamp(132px, 32vw, 188px);
-        height: calc(var(--dg-rot-board-width) + 8px);
-        min-height: 0;
-        flex: 0 0 auto;
-    }
-
-    .dg-stageBoard .dg-board {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        width: var(--dg-rot-board-width);
-        height: calc(var(--dg-rot-board-width) * 2.5);
-        transform: translate(-50%, -50%) rotate(-90deg);
-        transform-origin: center center;
-        --coin-size: clamp(24px, calc(var(--dg-rot-board-width) * 0.2), 34px);
-    }
-
-    .dg-stageCards {
-        width: 100%;
-        display: flex;
-        justify-content: center;
-    }
-
-    .dg-actionsButtons { flex-wrap: nowrap; }
-}
-
-@media (max-width: 767px) {
-    :root {
-        --width-wonder: 98px;
-        --height-wonder: 64px;
-        --width-tier: 50px;
-        --height-tier: 77px;
-        --width-board: 152px;
-        --height-board: 382px;
-        --coin-size: 31px;
-    }
-
-    .dg-cardBoard {
-        width: calc(var(--width-tier) * 7 + 14px);
-        height: 350px;
-    }
-
-    .dg-columns {
-        width: max-content;
-        margin: 0 auto;
-        justify-content: flex-start;
-        gap: 3px;
-    }
-
-    .dg-actionsModal {
-        width: min(94%, 350px);
-        bottom: 6px;
-        padding: 6px 7px;
-    }
-
-    .dg-stageBoard {
-        --dg-rot-board-width: clamp(118px, 36vw, 152px);
-        height: calc(var(--dg-rot-board-width) + 4px);
-        min-height: 0;
-    }
-
-    .dg-stageBoard .dg-board {
-        width: var(--dg-rot-board-width);
-        height: calc(var(--dg-rot-board-width) * 2.5);
-        transform: translate(-50%, -50%) rotate(-90deg);
-        --coin-size: clamp(22px, calc(var(--dg-rot-board-width) * 0.2), 30px);
-    }
-
-    .dg-actionsButtons .btn-primary,
-    .dg-actionsButtons .btn-secondary {
-        font-size: 0.95rem;
-        padding: 4px 7px;
-        min-height: 27px;
-    }
-}
-
