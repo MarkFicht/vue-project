@@ -426,7 +426,7 @@ export function DuelGamePage({ uid }: { uid: string }) {
             ) : null}
 
             <div className="dg-tableArena flex min-h-0 flex-1 flex-col overflow-hidden">
-                <div className="dg-tableSurface modalLikeScrollbar min-h-0 flex-1 overflow-y-auto">
+                <div className="dg-tableSurface duelPageScrollbar min-h-0 flex-1 overflow-y-auto">
             <section className="dg-playersGrid">
                 <div className="dg-playerShell">
                     <DuelPlayerColumns
@@ -633,7 +633,7 @@ export function DuelGamePage({ uid }: { uid: string }) {
                 <aside className="rounded-2xl border border-white/15 bg-black/20 p-4 backdrop-blur-sm">
                     <h3 className="mb-2 text-sm font-semibold">Graveyard</h3>
                     <div
-                        className={`flex max-h-44 flex-wrap gap-2 overflow-y-auto rounded-lg bg-black/20 p-2 ${
+                        className={`duelPageScrollbar flex max-h-44 flex-wrap gap-2 overflow-y-auto rounded-lg bg-black/20 p-2 ${
                             isMyTurn && game.pickCardFromGraveyard === uid ? 'ring-2 ring-emerald-300/60' : ''
                         }`}
                     >

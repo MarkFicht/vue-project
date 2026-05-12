@@ -1,4 +1,9 @@
 :root {
+    --duel-bg-fallback: rgb(26 18 13);
+    --duel-scrollbar-track: rgb(32 22 16 / 55%);
+    --duel-scrollbar-thumb: rgba(100 62 38 / 0.88);
+    --duel-scrollbar-thumb-hover: rgba(124 80 48 / 0.95);
+
     --width-wonder: 130px;
     --height-wonder: 85px;
     --width-tier: 66px;
@@ -377,6 +382,32 @@
 .dg-coin-repeatWonder { background-position: 0 calc(var(--coin-size) * -2); }
 .dg-coin-cash6n4special { background-position: calc(var(--coin-size) * -1) calc(var(--coin-size) * -2); }
 
+/** Scrollbars on duel-game only — warm browns aligned with primary_bg */
+.duelPageScrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: var(--duel-scrollbar-thumb) var(--duel-scrollbar-track);
+}
+
+.duelPageScrollbar::-webkit-scrollbar {
+    width: 10px;
+}
+
+.duelPageScrollbar::-webkit-scrollbar-track {
+    background: var(--duel-scrollbar-track);
+    border-radius: 999px;
+    margin-block: 8px;
+}
+
+.duelPageScrollbar::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, var(--duel-scrollbar-thumb), rgba(72 44 28 / 0.9));
+    border-radius: 999px;
+    border: 2px solid rgba(18 12 9 / 0.75);
+}
+
+.duelPageScrollbar::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, var(--duel-scrollbar-thumb-hover), rgba(88 54 34 / 0.95));
+}
+
 .dg-playerArea {
     border-radius: 12px;
     border: 1px solid rgba(255, 255, 255, 0.15);
@@ -396,7 +427,7 @@
     padding: 8px;
     overflow: hidden;
     position: relative;
-    background: rgb(15 18 24) url('@/assets/duel/primary_bg.png') center / cover no-repeat;
+    background: var(--duel-bg-fallback) url('@/assets/duel/primary_bg.png') center / cover no-repeat;
     box-shadow:
         inset 0 0 0 1px rgba(255, 255, 255, 0.07),
         0 12px 32px rgba(0, 0, 0, 0.35);
