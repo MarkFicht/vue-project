@@ -590,6 +590,29 @@
         align-items: start;
     }
 }
+
+/* Wąska kolumna graczy (obie karty jedna pod drugą) po lewej, arena elastycznie po prawej */
+@media (min-width: 1440px) {
+    .dg-duelLayout {
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .dg-duelArena {
+        order: 1;
+        width: 740px;
+    }
+
+    .dg-duelPlayersRow {
+        order: 2;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        align-items: stretch;
+    }
+}
+
 .dg-duelBand {
     min-width: 0;
     flex-shrink: 0;
