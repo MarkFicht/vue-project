@@ -314,8 +314,8 @@ export function DuelGamePage({ uid }: { uid: string }) {
     }, [showActionModal]);
 
     return (
-        <main className="mx-auto min-h-screen w-full max-w-[1400px] p-3 pb-6 text-slate-100">
-            <header className="mb-3 flex min-w-0 max-w-full items-center justify-between gap-2 rounded-2xl border border-white/20 bg-white/10 p-3 backdrop-blur">
+        <main className="mx-auto flex h-dvh max-h-dvh w-full max-w-[1400px] flex-col overflow-hidden p-3 text-slate-100">
+            <header className="mb-3 flex min-w-0 max-w-full shrink-0 items-center justify-between gap-2 rounded-2xl border border-white/20 bg-white/10 p-3 backdrop-blur">
                 <div className="min-w-0">
                     <h1 className="text-lg font-semibold">7 Wonders Duel</h1>
                     <p className="text-xs opacity-80">
@@ -348,7 +348,7 @@ export function DuelGamePage({ uid }: { uid: string }) {
             </header>
 
             {winnerUid ? (
-                <section className="mb-3 rounded-2xl border border-cyan-200/30 bg-cyan-500/10 p-4 backdrop-blur">
+                <section className="mb-3 shrink-0 rounded-2xl border border-cyan-200/30 bg-cyan-500/10 p-4 backdrop-blur">
                     <h2 className="text-xl font-semibold">Game over</h2>
                     <p className="flex flex-wrap items-center gap-2 text-sm">
                         <span>Winner:</span>
@@ -425,7 +425,9 @@ export function DuelGamePage({ uid }: { uid: string }) {
                 </section>
             ) : null}
 
-            <section className="mb-3 dg-playersGrid">
+            <div className="dg-tableArena flex min-h-0 flex-1 flex-col overflow-hidden">
+                <div className="dg-tableSurface modalLikeScrollbar min-h-0 flex-1 overflow-y-auto">
+            <section className="dg-playersGrid">
                 <div className="dg-playerShell">
                     <DuelPlayerColumns
                         player={topPlayer}
@@ -475,7 +477,7 @@ export function DuelGamePage({ uid }: { uid: string }) {
             </section>
 
             <section className="dg-tableGrid">
-                <div className="rounded-2xl border border-white/20 bg-white/10 p-4 backdrop-blur dg-boardPanel">
+                <div className="rounded-2xl border border-white/15 bg-black/20 p-4 backdrop-blur-sm dg-boardPanel">
                     <div className="dg-boardStage">
                         <div className="shrink-0 dg-stageCards">
                             {game.tier === 'prepare' ? (
@@ -628,7 +630,7 @@ export function DuelGamePage({ uid }: { uid: string }) {
                         </div>
                     ) : null}
                 </div>
-                <aside className="rounded-2xl border border-white/20 bg-white/10 p-4 backdrop-blur">
+                <aside className="rounded-2xl border border-white/15 bg-black/20 p-4 backdrop-blur-sm">
                     <h3 className="mb-2 text-sm font-semibold">Graveyard</h3>
                     <div
                         className={`flex max-h-44 flex-wrap gap-2 overflow-y-auto rounded-lg bg-black/20 p-2 ${
@@ -650,6 +652,8 @@ export function DuelGamePage({ uid }: { uid: string }) {
                     </div>
                 </aside>
             </section>
+                </div>
+            </div>
         </main>
     );
 }
