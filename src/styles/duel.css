@@ -563,7 +563,7 @@
     .dg-militaryViewport {
        position: absolute;
        transform: rotate(-90deg) scale(var(--dg-military-board-scale));
-       top: 186px;
+       top: 183px;
        left: 260px;
     }
     /* Wonder-pick phase: conflict board like narrow layout — top, not shifted right beside pyramid */
@@ -602,13 +602,17 @@
 @media (min-width: 1440px) {
     .dg-duelLayout {
         flex-direction: row;
-        align-items: center;
         justify-content: center;
     }
 
     .dg-duelArena {
         order: 1;
-        width: 740px;
+        width: 730px;
+    }
+
+    .dg-militaryViewport {
+        left: 442px;
+        width: 50%;
     }
 
     .dg-duelPlayersRow {
