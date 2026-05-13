@@ -6,6 +6,8 @@ type Props = {
     x: number;
     y: number;
     compact?: boolean;
+    /** Merged onto the outer button wrapper (compact or full layout). */
+    wrapperClassName?: string;
     disabled?: boolean;
     selected?: boolean;
     cash1P?: number;
@@ -20,6 +22,7 @@ export function DuelSpriteCard({
     x,
     y,
     compact,
+    wrapperClassName,
     disabled,
     selected,
     cash1P,
@@ -49,6 +52,7 @@ export function DuelSpriteCard({
             type="button"
             className={[
                 compact ? 'dg-cardWrapperCompact' : 'dg-cardWrapper',
+                wrapperClassName,
                 !compact && card.taken === 'inGame' ? '' : '',
                 !compact && card.taken !== 'inGame' ? 'dg-invisible' : '',
                 !compact && card.coversBy?.length === 0 ? 'dg-canSelect' : '',

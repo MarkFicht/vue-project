@@ -51,7 +51,7 @@ export function DuelWonderSprite({
                 <div className={['dg-wonderCard', 'dg-wonderFace', card ? `dg-wonder${card.id}` : ''].join(' ')} />
                 <div className="dg-wonderCard dg-wonderBack" />
             </div>
-            {card?.taken && (
+            {card?.taken && card.activated !== 'none' && (
                 <div
                     className="dg-tierCardForWonder"
                     style={

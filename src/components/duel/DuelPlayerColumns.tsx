@@ -21,7 +21,7 @@ export function DuelPlayerColumns({
     destroyMode,
     isDestroyTarget,
     onDestroyCard,
-    highlightScience,
+    pulseScienceVictory,
     showPreparePlaceholders
 }: {
     player: IGameDuelPlayer;
@@ -36,7 +36,8 @@ export function DuelPlayerColumns({
     destroyMode?: 'brown' | 'grey' | null;
     isDestroyTarget?: boolean;
     onDestroyCard?: (card: IGameDuelCard, color: 'brown' | 'grey') => void;
-    highlightScience?: boolean;
+    /** Blink border on each green card + artefact7 coin after scientific victory. */
+    pulseScienceVictory?: boolean;
     showPreparePlaceholders?: boolean;
 }) {
     const totalPoints = countTotalPoints(player, enemy, boardPawn, isPlayerOne);
@@ -116,45 +117,71 @@ export function DuelPlayerColumns({
                     );
                 })}
             </div>
-            <div className="dg-columns">
+            <div className="dg-playerColumnsScroller">
+                <div className="dg-columns">
                 {COLORS.map((colorKey) => {
                     const cards = [...(player.cards[colorKey] as IGameDuelCard[])];
                     if (colorKey === 'green') cards.sort((a, b) => a.valuePower[0] - b.valuePower[0]);
+                    const scienceProgress =
+                        colorKey === 'green' ? countArtefactsForPlayer(player) : null;
                     const isDestroyColumn =
                         isDestroyTarget && (colorKey === 'brown' || colorKey === 'grey') && destroyMode === colorKey;
                     return (
-                        <div
-                            key={`${player.user.uid}-${colorKey}`}
-                            className={`dg-column dg-column-${colorKey} ${isDestroyColumn ? 'dg-destroySelectable' : ''} ${
-                                highlightScience && colorKey === 'green' ? 'dg-victoryScience' : ''
-                            }`}
-                        >
-                            {colorKey === 'green' && <div className="dg-artCount">{countArtefactsForPlayer(player)}/6</div>}
-                            {cards.map((card, idx) => (
-                                <div key={`${card.id ?? card.idImg}-${idx}`} className="dg-smallCardSlot">
-                                    <DuelSpriteCard
-                                        card={card}
-                                        x={0}
-                                        y={0}
-                                        compact
-                                        disabled={!isDestroyColumn}
-                                        onClick={() =>
-                                            isDestroyColumn
-                                                ? onDestroyCard?.(card, colorKey as 'brown' | 'grey')
-                                                : undefined
-                                        }
-                                    />
+                        <div key={`${player.user.uid}-${colorKey}`} className={`dg-column dg-column-${colorKey}`}>
+                            {scienceProgress !== null && (
+                                <div
+                                    className={[
+                                        'dg-artCount',
+                                        scienceProgress >= 6 ? 'dg-artCount--complete' : ''
+                                    ]
+                                        .filter(Boolean)
+                                        .join(' ')}
+                                    title="Count: distinct symbols on green cards in your city, plus one if you earned the artefact/science-wheel progress coin. Six total wins scientifically."
+                                    aria-label={`Distinct science symbols toward victory ${scienceProgress} of six, counting the artefact wheel progress coin if you have it`}
+                                >
+                                    {scienceProgress}/6
                                 </div>
+                            )}
+                            {cards.map((card, idx) => (
+                                <DuelSpriteCard
+                                    key={`${card.id ?? card.idImg}-${idx}`}
+                                    card={card}
+                                    x={0}
+                                    y={0}
+                                    compact
+                                    wrapperClassName={
+                                        [
+                                            isDestroyColumn ? 'dg-destroyCardTarget' : '',
+                                            pulseScienceVictory && colorKey === 'green'
+                                                ? 'dg-scienceVictoryPulse'
+                                                : ''
+                                        ]
+                                            .filter(Boolean)
+                                            .join(' ') || undefined
+                                    }
+                                    disabled={!isDestroyColumn}
+                                    onClick={() =>
+                                        isDestroyColumn
+                                            ? onDestroyCard?.(card, colorKey as 'brown' | 'grey')
+                                            : undefined
+                                    }
+                                />
                             ))}
                         </div>
                     );
                 })}
+                </div>
             </div>
             <div className="dg-playerCoinsBox">
                 <div className="dg-playerCoinsLabel">Progress coins</div>
                 <div className="dg-playerCoins">
                     {player.resources.coins.map((coin, idx) => (
-                        <DuelCoinSprite key={`${coin}-${idx}`} coin={coin} disabled />
+                        <DuelCoinSprite
+                            key={`${coin}-${idx}`}
+                            coin={coin}
+                            disabled
+                            scienceVictoryPulse={pulseScienceVictory && coin === 'artefact7'}
+                        />
                     ))}
                     {!player.resources.coins.length && <span className="text-xs opacity-60">none</span>}
                 </div>

@@ -12,7 +12,7 @@ import {
 } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 import type IUser from '@/interfaces/User';
-import type { IGameDuelCard, IGameDuelWonderCard } from '@/interfaces/GameDuel';
+import type { IGameDuelCard, IGameDuelCoin, IGameDuelPlayer, IGameDuelWonderCard } from '@/interfaces/GameDuel';
 import { BoardDuel, PlayerDuel } from '@/interfaces/GameDuel';
 import {
     cardsTierGuild,
@@ -26,8 +26,10 @@ import {
     sampleArray,
     prepareIdForCards,
     countPlayerResources,
+    countArtefactsForPlayer,
     showPrice,
-    countTotalPoints
+    countTotalPoints,
+    getNextTurnUidAfterPlay
 } from '@/game/gameHelpers';
 import { useGameStore } from '@/store/useGameStore';
 import { useDuelGameStore } from '@/store/useDuelGameStore';
@@ -35,6 +37,13 @@ import { useUserStore } from '@/store/useUserStore';
 import { gameStatusDuelRef, tableGameDuelRef, usersRef } from '@/firebase/refs';
 import { db } from '@/firebaseConfig';
 import { playUiSound, setSoundScope } from '@/utils/sound';
+
+const EPOCH_STARTER_CHOICE_AFTER_MOVE = [19, 39] as const;
+
+/** Starter choice only between Ages I→II and II→III. After the last Age III pick (59→60) there is no next age — no modal. */
+function shouldOfferEpochStarterChoice(moveBeforeIncrement: number): boolean {
+    return (EPOCH_STARTER_CHOICE_AFTER_MOVE as readonly number[]).includes(moveBeforeIncrement);
+}
 
 export function useGameState(currentUserUid: string) {
     const navigate = useNavigate();
@@ -52,8 +61,14 @@ export function useGameState(currentUserUid: string) {
     const resetDuelState = useDuelGameStore((state) => state.resetState);
     const duelStateReadyRef = useRef(false);
     const pendingWonderRepeatRef = useRef(false);
-    const prevTurnRef = useRef(game.turn);
+    const prevTurnRef = useRef<string | null>(null);
+    const prevMoveRef = useRef<number | null>(null);
     const prevWinnerRef = useRef('');
+    const sfxPawnPrimedRef = useRef(false);
+    const prevPawnRef = useRef(game.board.pawn);
+    const deckDestroySfxPrimedRef = useRef(false);
+    const prevMyBrownLenRef = useRef(0);
+    const prevMyGreyLenRef = useRef(0);
 
     useEffect(() => {
         setSoundScope(currentUserUid);
@@ -199,12 +214,107 @@ export function useGameState(currentUserUid: string) {
     }, [game.player1.user?.uid, game.player2.user?.uid, game.turn]);
 
     useEffect(() => {
-        const prevTurn = prevTurnRef.current;
-        if (prevTurn && prevTurn !== game.turn && game.turn === currentUserUid) {
+        if (isObserver) {
+            prevTurnRef.current = game.turn;
+            prevMoveRef.current = game.move;
+            return;
+        }
+        const ready = !!(game.player1.user?.uid && game.player2.user?.uid && game.turn);
+        if (!ready || !currentUserUid) {
+            return;
+        }
+        if (prevTurnRef.current === null || prevMoveRef.current === null) {
+            prevTurnRef.current = game.turn;
+            prevMoveRef.current = game.move;
+            return;
+        }
+        const sameSeat = prevTurnRef.current === game.turn;
+        if (prevTurnRef.current !== game.turn && game.turn === currentUserUid) {
+            playUiSound('turn');
+        } else if (sameSeat && game.turn === currentUserUid && game.move !== prevMoveRef.current) {
             playUiSound('turn');
         }
         prevTurnRef.current = game.turn;
-    }, [currentUserUid, game.turn]);
+        prevMoveRef.current = game.move;
+    }, [currentUserUid, game.move, game.player1.user?.uid, game.player2.user?.uid, game.turn, isObserver]);
+
+    useEffect(() => {
+        if (isObserver) {
+            sfxPawnPrimedRef.current = false;
+            prevPawnRef.current = game.board.pawn;
+            return;
+        }
+        const p1 = game.player1.user?.uid;
+        const p2 = game.player2.user?.uid;
+        const readyBoard = !!(p1 && p2 && game.turn);
+        const skip = !readyBoard || game.tier === 'prepare';
+
+        if (skip) {
+            sfxPawnPrimedRef.current = false;
+            prevPawnRef.current = game.board.pawn;
+            return;
+        }
+
+        const cur = game.board.pawn;
+        if (!sfxPawnPrimedRef.current) {
+            sfxPawnPrimedRef.current = true;
+            prevPawnRef.current = cur;
+            return;
+        }
+
+        const prev = prevPawnRef.current;
+        prevPawnRef.current = cur;
+        if (prev === cur) return;
+
+        const delta = cur - prev;
+        const attackerUid = delta < 0 ? p1! : p2!;
+        const defenderUid = delta < 0 ? p2! : p1!;
+        if (currentUserUid === attackerUid) playUiSound('militaryAttack');
+        if (currentUserUid === defenderUid) playUiSound('militaryHit');
+    }, [
+        currentUserUid,
+        game.board.pawn,
+        game.player1.user?.uid,
+        game.player2.user?.uid,
+        game.tier,
+        game.turn,
+        isObserver
+    ]);
+
+    useEffect(() => {
+        if (isObserver) {
+            deckDestroySfxPrimedRef.current = false;
+            return;
+        }
+        const ready = !!(game.player1.user?.uid && game.player2.user?.uid && game.turn);
+        if (!ready) return;
+
+        const myBrown = currentPlayer.cards.brown.length;
+        const myGrey = currentPlayer.cards.grey.length;
+
+        if (!deckDestroySfxPrimedRef.current) {
+            deckDestroySfxPrimedRef.current = true;
+            prevMyBrownLenRef.current = myBrown;
+            prevMyGreyLenRef.current = myGrey;
+            return;
+        }
+
+        if (myBrown < prevMyBrownLenRef.current) {
+            playUiSound('destroyBrown');
+        }
+        if (myGrey < prevMyGreyLenRef.current) {
+            playUiSound('destroyGrey');
+        }
+        prevMyBrownLenRef.current = myBrown;
+        prevMyGreyLenRef.current = myGrey;
+    }, [
+        currentPlayer.cards.brown.length,
+        currentPlayer.cards.grey.length,
+        game.player1.user?.uid,
+        game.player2.user?.uid,
+        game.turn,
+        isObserver
+    ]);
 
     useEffect(() => {
         if (game.move >= 20 && game.move < 40 && game.tier !== 'II' && !game.wonBySurr) {
@@ -217,6 +327,30 @@ export function useGameState(currentUserUid: string) {
             updateDoc(tableGameDuelRef, { tier: 'end' });
         }
     }, [game.move, game.tier, game.wonByAggressive, game.wonByArt, game.wonBySurr]);
+
+    useEffect(() => {
+        if (isObserver) return;
+        if (!game.player1.user?.uid || !game.player2.user?.uid) return;
+        if (game.wonByArt || game.wonByAggressive || game.wonBySurr || game.wonByPoints) return;
+        if (game.tier === 'prepare') return;
+
+        if (countArtefactsForPlayer(game.player1) >= 6) {
+            void updateDoc(tableGameDuelRef, { wonByArt: game.player1.user.uid });
+            return;
+        }
+        if (countArtefactsForPlayer(game.player2) >= 6) {
+            void updateDoc(tableGameDuelRef, { wonByArt: game.player2.user.uid });
+        }
+    }, [
+        game.player1,
+        game.player2,
+        game.wonByArt,
+        game.wonByAggressive,
+        game.wonByPoints,
+        game.wonBySurr,
+        game.tier,
+        isObserver
+    ]);
 
     useEffect(() => {
         if (game.wonByArt || game.wonByAggressive || game.wonBySurr || game.wonByPoints) return;
@@ -276,13 +410,9 @@ export function useGameState(currentUserUid: string) {
         prevWinnerRef.current = winner;
     }, [currentUserUid, game.wonByAggressive, game.wonByArt, game.wonByPoints, game.wonBySurr]);
 
-    const getOtherPlayerId = useCallback(() => {
-        return game.turn === game.player1.user.uid ? game.player2.user.uid : game.player1.user.uid;
-    }, [game.turn, game.player1.user.uid, game.player2.user.uid]);
-
     const applyMilitaryTrackEffects = useCallback(
-        async (attackerUid: string, steps: number) => {
-            if (steps <= 0) return;
+        async (attackerUid: string, steps: number): Promise<number> => {
+            if (steps <= 0) return game.board.pawn;
 
             const isPlayerOneAttacker = attackerUid === game.player1.user.uid;
             const direction = isPlayerOneAttacker ? -1 : 1;
@@ -302,18 +432,19 @@ export function useGameState(currentUserUid: string) {
                 pawn += direction;
 
                 if (isPlayerOneAttacker) {
-                    if (punishment1 && pawn <= -5) {
+                    // Conflict tokens levy one step past the drawn -2/-5 lines (mirror on +track).
+                    if (punishment1 && pawn <= -6) {
                         punishment1 = false;
                         opponentCash = Math.max(0, opponentCash - 5);
-                    } else if (punishment2 && pawn <= -2) {
+                    } else if (punishment2 && pawn <= -3) {
                         punishment2 = false;
                         opponentCash = Math.max(0, opponentCash - 2);
                     }
                 } else {
-                    if (punishment3 && pawn >= 2) {
+                    if (punishment3 && pawn >= 3) {
                         punishment3 = false;
                         opponentCash = Math.max(0, opponentCash - 2);
-                    } else if (punishment4 && pawn >= 5) {
+                    } else if (punishment4 && pawn >= 6) {
                         punishment4 = false;
                         opponentCash = Math.max(0, opponentCash - 5);
                     }
@@ -329,19 +460,21 @@ export function useGameState(currentUserUid: string) {
                 [`${opponentKey}.resources.cash`]: opponentCash,
                 ...(Math.abs(pawn) > 8 ? { wonByAggressive: attackerUid } : {})
             });
+            return pawn;
         },
         [game.board, game.player1.user.uid, game.player2.resources.cash, game.player1.resources.cash]
     );
 
     const upgradeTurnAndMove = useCallback(
-        async (uid: string, withoutMove = false) => {
+        async (uid: string, withoutMove = false, opts?: { openEpochStarterChoice?: boolean }) => {
             if (withoutMove) {
                 await updateDoc(tableGameDuelRef, { turn: uid });
                 return;
             }
             await updateDoc(tableGameDuelRef, {
                 turn: uid,
-                move: increment(1)
+                move: increment(1),
+                ...(opts?.openEpochStarterChoice ? { chooseWhoWillStart: true } : {})
             });
         },
         []
@@ -350,12 +483,24 @@ export function useGameState(currentUserUid: string) {
     const finishTurnAfterSpecialAction = useCallback(async () => {
         const hasRepeat = pendingWonderRepeatRef.current || currentPlayer.resources.coins.includes('repeatWonder');
         pendingWonderRepeatRef.current = false;
-        if (hasRepeat && game.move !== 19 && game.move !== 39) {
-            await upgradeTurnAndMove(game.turn);
+        const p1Uid = game.player1.user.uid;
+        const p2Uid = game.player2.user.uid;
+        const openStarter = shouldOfferEpochStarterChoice(game.move);
+        if (hasRepeat && ![19, 39, 59].includes(game.move)) {
+            await upgradeTurnAndMove(game.turn, false, { openEpochStarterChoice: openStarter });
         } else {
-            await upgradeTurnAndMove(getOtherPlayerId());
+            const next = getNextTurnUidAfterPlay(game.turn, game.move, game.board.pawn, p1Uid, p2Uid);
+            await upgradeTurnAndMove(next, false, { openEpochStarterChoice: openStarter });
         }
-    }, [currentPlayer.resources.coins, game.move, game.turn, getOtherPlayerId, upgradeTurnAndMove]);
+    }, [
+        currentPlayer.resources.coins,
+        game.board.pawn,
+        game.move,
+        game.player1.user.uid,
+        game.player2.user.uid,
+        game.turn,
+        upgradeTurnAndMove
+    ]);
 
     const chooseWonderForPlayer = useCallback(
         async (id: number) => {
@@ -383,10 +528,13 @@ export function useGameState(currentUserUid: string) {
 
     const chooseWhoStarts = useCallback(
         async (uid: string) => {
-            await upgradeTurnAndMove(uid, true);
-            await updateDoc(tableGameDuelRef, { chooseWhoWillStart: false });
+            if (!isMyTurn || !game.chooseWhoWillStart) return;
+            await updateDoc(tableGameDuelRef, {
+                turn: uid,
+                chooseWhoWillStart: false
+            });
         },
-        [upgradeTurnAndMove]
+        [game.chooseWhoWillStart, isMyTurn]
     );
 
     const selectTierCard = useCallback(
@@ -400,7 +548,7 @@ export function useGameState(currentUserUid: string) {
     );
 
     const setCardStateInTier = useCallback(
-        async (state: 'inPlayerBoard' | 'graveyard' | 'inWonder', tier = game.selectedCard?.tier) => {
+        async (state: 'inPlayerBoard' | 'graveyard' | 'inWonder', tier = game.selectedCard?.tier): Promise<IGameDuelCard | null> => {
             if (!game.selectedCard?.id || !tier) return null;
             const source =
                 tier === 'I'
@@ -410,12 +558,12 @@ export function useGameState(currentUserUid: string) {
                       : game.tierThreeCards;
             const key = tier === 'I' ? 'tierICards' : tier === 'II' ? 'tierIICards' : 'tierIIICards';
             let picked: IGameDuelCard | null = null;
-            const updated = source.map((card) => {
-                if (card.id === game.selectedCard?.id) picked = card;
+            const updated = source.map((c) => {
+                if (c.id === game.selectedCard?.id) picked = c;
                 return {
-                    ...card,
-                    taken: card.id === game.selectedCard?.id ? state : card.taken,
-                    coversBy: card.coversBy?.filter((id) => id !== game.selectedCard?.id) ?? []
+                    ...c,
+                    taken: c.id === game.selectedCard?.id ? state : c.taken,
+                    coversBy: c.coversBy?.filter((id) => id !== game.selectedCard?.id) ?? []
                 };
             });
             await updateDoc(tableGameDuelRef, { [key]: updated });
@@ -424,43 +572,53 @@ export function useGameState(currentUserUid: string) {
         [game.selectedCard, game.tierOneCards, game.tierTwoCards, game.tierThreeCards]
     );
 
-    const checkArtefactsWin = useCallback(
-        async (uid: string) => {
-            const player = uid === game.player1.user.uid ? game.player1 : game.player2;
-            const arts = [...new Set(player.cards.green.map((card) => card.valuePower[0]))].length;
-            const withCoin = player.resources.coins.includes('artefact7') ? 1 : 0;
-            if (arts + withCoin >= 6) {
-                await updateDoc(tableGameDuelRef, { wonByArt: uid });
-                return true;
-            }
-            return false;
-        },
-        [game.player1, game.player2]
-    );
+    const applyScientificVictoryIfNeeded = useCallback(async (winnerUid: string, playerSnapshot: IGameDuelPlayer) => {
+        if (countArtefactsForPlayer(playerSnapshot) >= 6) {
+            await updateDoc(tableGameDuelRef, { wonByArt: winnerUid });
+            return true;
+        }
+        return false;
+    }, []);
 
     const buySelectedCard = useCallback(async () => {
         if (!game.selectedCard || canBuyTierCard < 0 || canBuyTierCard > currentPlayer.resources.cash) return;
+        const moveSnap = game.move;
         const card = await setCardStateInTier('inPlayerBoard');
         if (!card) return;
 
         const playerKey = game.turn === game.player1.user.uid ? 'player1' : 'player2';
         const playerState = game.turn === game.player1.user.uid ? game.player1 : game.player2;
-        const resources = countPlayerResources(card, structuredClone(playerState));
-        const cards = structuredClone(playerState.cards);
+        const playerSnap = structuredClone(playerState);
+        const resources = countPlayerResources(card, playerSnap);
+        const cards = structuredClone(playerSnap.cards);
         cards[card.color].push({ ...card, taken: 'inPlayerBoard' });
-        let shouldPickCoin = false;
 
         await updateDoc(tableGameDuelRef, {
             [`${playerKey}.cards`]: cards,
-            [`${playerKey}.points`]: playerState.points,
+            [`${playerKey}.points`]: playerSnap.points,
             [`${playerKey}.resources`]: { ...resources, cash: resources.cash - canBuyTierCard }
         });
 
+        const postBuyPlayer: IGameDuelPlayer = {
+            ...playerSnap,
+            cards,
+            resources: { ...resources, cash: resources.cash - canBuyTierCard }
+        };
+
+        let pawnForNextTurn = game.board.pawn;
+
+        if (await applyScientificVictoryIfNeeded(game.turn, postBuyPlayer)) {
+            game.setSelectedCard(null);
+            return;
+        }
+
         if (card.color === 'red' && card.power.includes('attack')) {
             const attackVal = card.valuePower[card.power.indexOf('attack')] ?? 0;
-            const attackCoin = playerState.resources.coins.includes('attack1') ? 1 : 0;
-            await applyMilitaryTrackEffects(game.turn, attackVal + attackCoin);
+            const attackCoin = playerSnap.resources.coins.includes('attack1') ? 1 : 0;
+            pawnForNextTurn = await applyMilitaryTrackEffects(game.turn, attackVal + attackCoin);
         }
+
+        let shouldPickCoin = false;
 
         if (card.color === 'green') {
             const artefactIdx = card.power.indexOf('artefact');
@@ -471,19 +629,21 @@ export function useGameState(currentUserUid: string) {
             }
         }
 
-        await checkArtefactsWin(game.turn);
+        const p1Uid = game.player1.user.uid;
+        const p2Uid = game.player2.user.uid;
         if (shouldPickCoin) {
             await updateDoc(tableGameDuelRef, { pickCoin: game.turn });
         } else {
-            await upgradeTurnAndMove(getOtherPlayerId());
+            await upgradeTurnAndMove(getNextTurnUidAfterPlay(game.turn, game.move, pawnForNextTurn, p1Uid, p2Uid), false, {
+                openEpochStarterChoice: shouldOfferEpochStarterChoice(moveSnap)
+            });
         }
         game.setSelectedCard(null);
     }, [
+        applyScientificVictoryIfNeeded,
         canBuyTierCard,
-        checkArtefactsWin,
         currentPlayer.resources.cash,
         game,
-        getOtherPlayerId,
         applyMilitaryTrackEffects,
         setCardStateInTier,
         upgradeTurnAndMove
@@ -491,6 +651,7 @@ export function useGameState(currentUserUid: string) {
 
     const sellSelectedCard = useCallback(async () => {
         if (!game.selectedCard) return;
+        const moveSnap = game.move;
         const card = await setCardStateInTier('graveyard');
         if (!card) return;
         const playerKey = game.turn === game.player1.user.uid ? 'player1' : 'player2';
@@ -502,9 +663,13 @@ export function useGameState(currentUserUid: string) {
             [`${playerKey}.resources.cash`]: increment(addCash)
         });
 
-        await upgradeTurnAndMove(getOtherPlayerId());
+        await upgradeTurnAndMove(
+            getNextTurnUidAfterPlay(game.turn, game.move, game.board.pawn, game.player1.user.uid, game.player2.user.uid),
+            false,
+            { openEpochStarterChoice: shouldOfferEpochStarterChoice(moveSnap) }
+        );
         game.setSelectedCard(null);
-    }, [game, getOtherPlayerId, setCardStateInTier, upgradeTurnAndMove]);
+    }, [game, setCardStateInTier, upgradeTurnAndMove]);
 
     const buildWonder = useCallback(async (wonderToBuild?: IGameDuelWonderCard) => {
         if (!game.selectedCard) return;
@@ -514,6 +679,7 @@ export function useGameState(currentUserUid: string) {
 
         const cost = showPrice(selectedWonder, currentPlayer, opponent);
         if (cost > currentPlayer.resources.cash) return;
+        const moveSnap = game.move;
         await setCardStateInTier('inWonder');
         let shouldPickCoinOfThree = false;
         let shouldPickFromGraveyard = false;
@@ -563,18 +729,29 @@ export function useGameState(currentUserUid: string) {
             ...(shouldDestroyGrey ? { destroyGrey: game.turn } : {})
         });
 
+        let pawnForNext = game.board.pawn;
         if (shouldMovePawn > 0) {
-            await applyMilitaryTrackEffects(game.turn, shouldMovePawn);
+            pawnForNext = await applyMilitaryTrackEffects(game.turn, shouldMovePawn);
         }
 
         const hasPendingSpecialAction =
             shouldPickCoinOfThree || shouldPickFromGraveyard || shouldDestroyBrown || shouldDestroyGrey;
-        pendingWonderRepeatRef.current = shouldRepeat;
+        const builderCoins =
+            game.turn === game.player1.user.uid ? game.player1.resources.coins : game.player2.resources.coins;
+        const repeatFromProgressToken = builderCoins.includes('repeatWonder');
+        pendingWonderRepeatRef.current = shouldRepeat || repeatFromProgressToken;
         if (!hasPendingSpecialAction) {
-            if (shouldRepeat && game.move !== 19 && game.move !== 39) {
-                await upgradeTurnAndMove(game.turn);
+            const p1Uid = game.player1.user.uid;
+            const p2Uid = game.player2.user.uid;
+            const openStarter = shouldOfferEpochStarterChoice(moveSnap);
+            const keepTurnForAnotherWonder =
+                (shouldRepeat || repeatFromProgressToken) && ![19, 39, 59].includes(moveSnap);
+            if (keepTurnForAnotherWonder) {
+                await upgradeTurnAndMove(game.turn, false, { openEpochStarterChoice: openStarter });
             } else {
-                await upgradeTurnAndMove(getOtherPlayerId());
+                await upgradeTurnAndMove(getNextTurnUidAfterPlay(game.turn, game.move, pawnForNext, p1Uid, p2Uid), false, {
+                    openEpochStarterChoice: openStarter
+                });
             }
         }
         game.setSelectedCard(null);
@@ -582,7 +759,6 @@ export function useGameState(currentUserUid: string) {
     }, [
         currentPlayer,
         game,
-        getOtherPlayerId,
         opponent,
         setCardStateInTier,
         upgradeTurnAndMove,
@@ -596,40 +772,83 @@ export function useGameState(currentUserUid: string) {
     }, [currentPlayer, game, opponent]);
 
     const pickCoin = useCallback(
-        async (coin: string) => {
+        async (coin: IGameDuelCoin['effect']) => {
             if (!coin) return;
             if (game.pickCoin !== game.turn || game.pickCoin !== currentUserUid) return;
+            const moveSnap = game.move;
             const playerKey = game.turn === game.player1.user.uid ? 'player1' : 'player2';
+            const playerState = game.turn === game.player1.user.uid ? game.player1 : game.player2;
+            const withCoin: IGameDuelPlayer = {
+                ...playerState,
+                resources: {
+                    ...playerState.resources,
+                    coins: [...playerState.resources.coins, coin]
+                }
+            };
+
             await updateDoc(tableGameDuelRef, {
                 'gameBoard.coins': arrayRemove(coin),
                 [`${playerKey}.resources.coins`]: arrayUnion(coin),
                 pickCoin: ''
             });
-            await upgradeTurnAndMove(getOtherPlayerId());
+
+            if (await applyScientificVictoryIfNeeded(game.turn, withCoin)) {
+                return;
+            }
+
+            await upgradeTurnAndMove(
+                getNextTurnUidAfterPlay(game.turn, game.move, game.board.pawn, game.player1.user.uid, game.player2.user.uid),
+                false,
+                { openEpochStarterChoice: shouldOfferEpochStarterChoice(moveSnap) }
+            );
         },
-        [currentUserUid, game.pickCoin, game.player1.user.uid, game.turn, getOtherPlayerId, upgradeTurnAndMove]
+        [
+            applyScientificVictoryIfNeeded,
+            currentUserUid,
+            game.board.pawn,
+            game.move,
+            game.pickCoin,
+            game.player1.user.uid,
+            game.player2.user.uid,
+            game.turn,
+            upgradeTurnAndMove
+        ]
     );
 
     const pickCoinOfThree = useCallback(
-        async (coin: string) => {
+        async (coin: IGameDuelCoin['effect']) => {
             if (!coin) return;
             if (game.pickCoinOfThree !== game.turn || game.pickCoinOfThree !== currentUserUid) return;
             const playerKey = game.turn === game.player1.user.uid ? 'player1' : 'player2';
+            const playerState = game.turn === game.player1.user.uid ? game.player1 : game.player2;
+            const withCoin: IGameDuelPlayer = {
+                ...playerState,
+                resources: {
+                    ...playerState.resources,
+                    coins: [...playerState.resources.coins, coin]
+                }
+            };
+
             await updateDoc(tableGameDuelRef, {
                 'gameBoard.coins': arrayRemove(coin),
                 [`${playerKey}.resources.coins`]: arrayUnion(coin),
                 pickCoinOfThree: ''
             });
+
+            if (await applyScientificVictoryIfNeeded(game.turn, withCoin)) {
+                return;
+            }
+
             await finishTurnAfterSpecialAction();
         },
         [
+            applyScientificVictoryIfNeeded,
             currentUserUid,
             finishTurnAfterSpecialAction,
             game.pickCoinOfThree,
             game.player1.user.uid,
-            game.turn,
-            getOtherPlayerId,
-            upgradeTurnAndMove
+            game.player2.user.uid,
+            game.turn
         ]
     );
 
@@ -640,8 +859,9 @@ export function useGameState(currentUserUid: string) {
 
             const playerKey = game.turn === game.player1.user.uid ? 'player1' : 'player2';
             const playerState = game.turn === game.player1.user.uid ? game.player1 : game.player2;
-            const resources = countPlayerResources(graveCard, structuredClone(playerState));
-            const cards = structuredClone(playerState.cards);
+            const ps = structuredClone(playerState);
+            const resources = countPlayerResources(graveCard, ps);
+            const cards = structuredClone(ps.cards);
             cards[graveCard.color].push({ ...graveCard, taken: 'inPlayerBoard' });
 
             const tierKey =
@@ -661,13 +881,17 @@ export function useGameState(currentUserUid: string) {
                 graveyard: arrayRemove(graveCard),
                 pickCardFromGraveyard: '',
                 [`${playerKey}.cards`]: cards,
-                [`${playerKey}.points`]: playerState.points,
+                [`${playerKey}.points`]: ps.points,
                 [`${playerKey}.resources`]: resources
             });
 
-            await finishTurnAfterSpecialAction();
+            const merged: IGameDuelPlayer = { ...ps, cards, resources };
+            if (!(await applyScientificVictoryIfNeeded(game.turn, merged))) {
+                await finishTurnAfterSpecialAction();
+            }
         },
         [
+            applyScientificVictoryIfNeeded,
             currentUserUid,
             finishTurnAfterSpecialAction,
             game.pickCardFromGraveyard,
@@ -706,6 +930,8 @@ export function useGameState(currentUserUid: string) {
                 graveyard: arrayUnion({ ...targetCard, taken: 'graveyard' }),
                 ...(color === 'brown' ? { destroyBrown: '' } : { destroyGrey: '' })
             });
+
+            playUiSound(color === 'brown' ? 'destroyBrown' : 'destroyGrey');
 
             await finishTurnAfterSpecialAction();
         },
