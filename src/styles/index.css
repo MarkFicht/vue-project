@@ -1,4 +1,6 @@
 @import './duel.css';
+@import './main-bg-body.css';
+@import './app-theme.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -21,40 +23,6 @@ body {
         Arial,
         sans-serif;
     background: radial-gradient(circle at 20% 20%, #244b6b 0%, #0f172a 35%, #020617 100%);
-}
-
-.btn-primary {
-    @apply inline-flex items-center gap-2 rounded-xl bg-cyan-500 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-cyan-400 disabled:cursor-not-allowed disabled:opacity-60;
-}
-
-.btn-secondary {
-    @apply inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-slate-100 transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-60;
-}
-
-.input {
-    @apply w-full rounded-xl border border-white/20 bg-black/20 px-3 py-2 text-sm text-slate-100 outline-none placeholder:text-slate-400 focus:border-cyan-400;
-}
-
-/** Scrollbar styling shared by user settings modal body and CountrySelect list */
-.modalLikeScrollbar {
-    scrollbar-width: thin;
-    scrollbar-color: rgba(56, 189, 248, 0.78) rgba(15, 23, 42, 0.55);
-}
-
-.modalLikeScrollbar::-webkit-scrollbar {
-    width: 10px;
-}
-
-.modalLikeScrollbar::-webkit-scrollbar-track {
-    background: rgba(15, 23, 42, 0.55);
-    border-radius: 999px;
-    margin-block: 8px;
-}
-
-.modalLikeScrollbar::-webkit-scrollbar-thumb {
-    background: linear-gradient(180deg, rgba(56, 189, 248, 0.75), rgba(14, 165, 233, 0.55));
-    border-radius: 999px;
-    border: 2px solid rgba(15, 23, 42, 0.88);
 }
 
 @media (max-width: 767px) {

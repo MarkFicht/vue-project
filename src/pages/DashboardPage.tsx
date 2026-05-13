@@ -887,9 +887,9 @@ export function DashboardPage({ uid }: { uid: string }) {
 
     return (
         <main className="dashboardPage">
-            <header className="dashHeader">
+            <header className="dashHeader app-surface-header">
                 <div className="dashTitleMain">
-                    <Gamepad2 className="text-cyan-300" />
+                    <Gamepad2 className="app-brand-icon" aria-hidden />
                     Feed Panel
                 </div>
                 <div className="flex min-w-0 shrink items-center gap-2">
@@ -1027,7 +1027,7 @@ export function DashboardPage({ uid }: { uid: string }) {
                                 })}
                                 {!duel.players.length && <p className="opacity-70">No players in lobby.</p>}
                                 {duel.players.length === 2 && (
-                                    <p className="text-cyan-300">
+                                    <p className="text-[color:var(--app-accent-bright)]">
                                         {duel.isStarted
                                             ? `Game in progress · Turn: ${typeof liveMove === 'number' ? liveMove + 1 : 1}`
                                             : 'Creating game...'}

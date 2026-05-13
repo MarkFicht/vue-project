@@ -358,8 +358,8 @@ export function DuelGamePage({ uid }: { uid: string }) {
     }, [showActionModal, showCoinChoiceModal, showDestroyOpponentModal, showEpochStarterModal]);
 
     return (
-        <main className="mx-auto flex h-dvh max-h-dvh w-full max-w-[1400px] flex-col overflow-hidden p-2 text-slate-100 sm:p-3">
-            <header className="mb-2 flex min-w-0 max-w-full shrink-0 items-center justify-between gap-2 rounded-xl border border-white/20 bg-white/10 p-2 backdrop-blur sm:mb-3 sm:rounded-2xl sm:p-3">
+        <main className="mx-auto flex h-dvh max-h-dvh w-full max-w-[1400px] flex-col overflow-hidden p-2 text-[color:var(--app-text)] sm:p-3">
+            <header className="app-surface-header mb-2 flex min-w-0 max-w-full shrink-0 items-center justify-between gap-2 rounded-xl p-2 sm:mb-3 sm:rounded-2xl sm:p-3">
                 <div className="min-w-0">
                     <h1 className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1 text-lg font-semibold leading-tight">
                         <span className="shrink-0">Duel</span>
@@ -397,7 +397,7 @@ export function DuelGamePage({ uid }: { uid: string }) {
             </header>
 
             {winnerUid ? (
-                <section className="mb-2 shrink-0 rounded-xl border border-cyan-200/30 bg-cyan-500/10 p-3 backdrop-blur sm:mb-3 sm:rounded-2xl sm:p-4">
+                <section className="app-surface-callout mb-2 shrink-0 rounded-xl p-3 sm:mb-3 sm:rounded-2xl sm:p-4">
                     <h2 className="text-xl font-semibold">Game over</h2>
                     <p className="flex flex-wrap items-center gap-2 text-sm">
                         <span>Winner:</span>
@@ -569,7 +569,7 @@ export function DuelGamePage({ uid }: { uid: string }) {
                                             </div>
                                         )}
                                     </div>
-                                    <aside className="dg-graveyardPanel rounded-xl border border-white/15 bg-black/15 p-2 backdrop-blur-sm">
+                                    <aside className="dg-graveyardPanel rounded-xl border border-[rgb(195_150_95/30%)] bg-[rgb(14_10_7/72%)] p-2 shadow-[inset_0_1px_0_rgb(255_255_255/5%)]">
                                         <h3 className="mb-1 text-sm font-semibold">Graveyard</h3>
                                         <div
                                             className={`dg-graveyardCards duelPageScrollbar overflow-y-auto rounded-lg bg-black/20 p-1 ${

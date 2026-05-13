@@ -458,7 +458,7 @@
 .dg-coin-repeatWonder { background-position: 0 calc(var(--coin-size) * -2); }
 .dg-coin-cash6n4special { background-position: calc(var(--coin-size) * -1) calc(var(--coin-size) * -2); }
 
-/** Scrollbars on duel-game only — warm browns aligned with primary_bg */
+/** Scrollbars on duel-game only — warm browns aligned with primary_bg arena */
 .duelPageScrollbar {
     scrollbar-width: thin;
     scrollbar-color: var(--duel-scrollbar-thumb) var(--duel-scrollbar-track);

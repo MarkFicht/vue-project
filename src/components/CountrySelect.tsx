@@ -101,16 +101,16 @@ export function CountrySelect({
         <div
             ref={panelRef}
             style={panelStyle}
-            className="flex flex-col overflow-hidden rounded-xl border border-cyan-500/25 bg-slate-950 shadow-2xl shadow-black/60 ring-1 ring-white/10 backdrop-blur-md"
+            className="flex flex-col overflow-hidden rounded-xl border border-[color:var(--app-border)] bg-[rgb(22_16_11/96%)] shadow-2xl shadow-black/55 ring-1 ring-[color:var(--app-border-soft)]"
             role="listbox"
         >
-            <div className="flex shrink-0 items-center gap-2 border-b border-white/10 px-2.5 py-2">
-                <Search className="h-4 w-4 shrink-0 text-slate-500" aria-hidden />
+            <div className="flex shrink-0 items-center gap-2 border-b border-[color:var(--app-border-soft)] px-2.5 py-2">
+                <Search className="h-4 w-4 shrink-0 text-[color:var(--app-text-muted)]" aria-hidden />
                 <input
                     ref={searchInputRef}
                     type="search"
                     autoComplete="off"
-                    className="w-full border-0 bg-transparent py-1 text-sm text-slate-100 outline-none placeholder:text-slate-500"
+                    className="w-full border-0 bg-transparent py-1 text-sm text-[color:var(--app-text)] outline-none placeholder:text-[color:rgb(150_135_120/72%)]"
                     placeholder={placeholder}
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
@@ -118,7 +118,7 @@ export function CountrySelect({
             </div>
             <ul className="modalLikeScrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain py-1">
                 {filtered.length === 0 ? (
-                    <li className="px-3 py-4 text-center text-sm text-slate-500">No matches</li>
+                    <li className="px-3 py-4 text-center text-sm text-[color:var(--app-text-muted)]">No matches</li>
                 ) : (
                     filtered.map((opt) => {
                         const active = opt.code === value;
@@ -130,8 +130,8 @@ export function CountrySelect({
                                     aria-selected={active}
                                     className={`flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm transition ${
                                         active
-                                            ? 'bg-cyan-500/20 text-cyan-100'
-                                            : 'text-slate-200 hover:bg-white/10'
+                                            ? 'bg-[rgb(218_170_85/18%)] text-[color:var(--app-text)]'
+                                            : 'text-[color:var(--app-text)] hover:bg-[rgb(255_255_255/08%)]'
                                     }`}
                                     onClick={() => {
                                         onChange(opt.code);
@@ -141,7 +141,9 @@ export function CountrySelect({
                                 >
                                     <UserFlag code={opt.code} size={20} className="shrink-0" />
                                     <span className="min-w-0 flex-1 truncate font-medium">{opt.name}</span>
-                                    <span className="shrink-0 font-mono text-xs text-slate-500">{opt.code}</span>
+                                    <span className="shrink-0 font-mono text-xs text-[color:var(--app-text-muted)]">
+                                        {opt.code}
+                                    </span>
                                 </button>
                             </li>
                         );
@@ -167,12 +169,12 @@ export function CountrySelect({
                     {hasValidCode ? (
                         <UserFlag code={value} size={20} className="shrink-0" />
                     ) : (
-                        <Globe className="h-5 w-5 shrink-0 text-slate-500" aria-hidden />
+                        <Globe className="h-5 w-5 shrink-0 text-[color:var(--app-text-muted)]" aria-hidden />
                     )}
                     <span className="truncate font-medium">{label}</span>
                 </span>
                 <ChevronDown
-                    className={`h-4 w-4 shrink-0 text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`}
+                    className={`h-4 w-4 shrink-0 text-[color:var(--app-text-muted)] transition-transform ${open ? 'rotate-180' : ''}`}
                     aria-hidden
                 />
             </button>
