@@ -14,7 +14,8 @@ import {
     showPrice
 } from '@/helpers/GameDuelHelpers';
 import { tierOneX, tierOneY, tierTwoX, tierTwoY, tierThreeX, tierThreeY } from '@/helpers/GameDuelInit';
-import { isSoundMuted, setSoundMuted, setSoundScope } from '@/utils/sound';
+import { setSoundMuted } from '@/utils/sound';
+import { useSoundMuteSync } from '@/hooks/useSoundMuteSync';
 import { persistUserSoundMuted } from '@/utils/persistUserSoundMuted';
 import { useUserStore } from '@/store/useUserStore';
 import { UserFlag } from '@/components/UserFlag';
@@ -26,19 +27,9 @@ export function DuelGamePage({ uid }: { uid: string }) {
     const [prepareRevealedIds, setPrepareRevealedIds] = useState<number[]>([]);
     const [displayPrepareBatch, setDisplayPrepareBatch] = useState<1 | 2>(1);
     const [prepareActionLocked, setPrepareActionLocked] = useState(false);
-    const [soundMuted, setSoundMutedState] = useState(() => isSoundMuted());
     const profileSoundMuted = useUserStore((state) => state.fbUser.soundMuted);
-    useEffect(() => {
-        setSoundScope(uid);
-        setSoundMutedState(isSoundMuted());
-    }, [uid]);
+    const [soundMuted, setSoundMutedState] = useSoundMuteSync(uid, profileSoundMuted, true);
 
-    useEffect(() => {
-        if (typeof profileSoundMuted !== 'boolean') return;
-        if (profileSoundMuted === isSoundMuted()) return;
-        setSoundMuted(profileSoundMuted);
-        setSoundMutedState(profileSoundMuted);
-    }, [profileSoundMuted]);
     const {
         game,
         isObserver,
@@ -372,11 +363,12 @@ export function DuelGamePage({ uid }: { uid: string }) {
                     </p>
                 </div>
                 <div className="flex min-w-0 shrink items-center gap-2">
-                    <button className="btn-secondary hdrIconBtn" disabled={isObserver} onClick={surrender} title="Surrender">
+                    <button type="button" className="btn-secondary hdrIconBtn" disabled={isObserver} onClick={surrender} title="Surrender">
                         <ShieldAlert className="h-4 w-4" />
                         <span className="hdrBtnText">Surrender</span>
                     </button>
                     <button
+                        type="button"
                         className="btn-secondary hdrIconBtn"
                         onClick={() => {
                             const next = !soundMuted;
@@ -389,7 +381,7 @@ export function DuelGamePage({ uid }: { uid: string }) {
                         {soundMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
                         <span className="hdrBtnText">{soundMuted ? 'Muted' : 'Sound'}</span>
                     </button>
-                    <button className="btn-secondary hdrIconBtn" onClick={goBackToFeed} title="Back to feed">
+                    <button type="button" className="btn-secondary hdrIconBtn" onClick={goBackToFeed} title="Back to feed">
                         <ArrowLeft className="h-4 w-4" />
                         <span className="hdrBtnText">Feed</span>
                     </button>

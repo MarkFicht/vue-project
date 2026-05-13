@@ -25,6 +25,8 @@ body {
         padding: 0.5rem !important;
         min-width: 2.5rem;
         justify-content: center;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
     }
 
     .hdrIconBtn .hdrBtnText,

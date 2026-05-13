@@ -51,7 +51,7 @@ export const useUserStore = create<UserState>((set, get) => ({
                     updatedAt: data.updatedAt,
                     lastSeenAt: data.lastSeenAt,
                     schemaVersion: data.schemaVersion,
-                    soundMuted: data.soundMuted,
+                    soundMuted: typeof data.soundMuted === 'boolean' ? data.soundMuted : false,
                     countryCode: data.countryCode
                 }
             });

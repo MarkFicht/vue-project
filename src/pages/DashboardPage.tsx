@@ -28,7 +28,8 @@ import { auth, db, googleProvider, rtdb } from '@/firebaseConfig';
 import { useUserStore } from '@/store/useUserStore';
 import { useGameStore } from '@/store/useGameStore';
 import { displayNamesRef, gameStatusDuelRef, gameStatusGemsRef, gameStatusReflexRef, tableGameDuelRef, usersRef } from '@/firebase/refs';
-import { isSoundMuted, playUiSound, setSoundMuted, setSoundScope } from '@/utils/sound';
+import { isSoundMuted, playUiSound, setSoundMuted, soundMutedForProfileMerge } from '@/utils/sound';
+import { useSoundMuteSync } from '@/hooks/useSoundMuteSync';
 import { persistUserSoundMuted } from '@/utils/persistUserSoundMuted';
 import { usePresenceMap } from '@/hooks/usePresenceMap';
 import { normalizeDisplayName, sanitizeDisplayName } from '@/utils/displayName';
@@ -42,7 +43,6 @@ export function DashboardPage({ uid }: { uid: string }) {
     const navigate = useNavigate();
     const [initError, setInitError] = useState('');
     const [isBootstrapped, setIsBootstrapped] = useState(false);
-    const [soundMuted, setSoundMutedState] = useState(() => isSoundMuted());
     const [showUserModal, setShowUserModal] = useState(false);
     const [profileDisplayName, setProfileDisplayName] = useState('');
     const [profileCountryCode, setProfileCountryCode] = useState('');
@@ -61,25 +61,14 @@ export function DashboardPage({ uid }: { uid: string }) {
     const subUser = useUserStore((state) => state.subFirebaseConnect);
     const unSubUser = useUserStore((state) => state.unSubFirebaseConnect);
 
+    const [soundMuted, setSoundMutedState] = useSoundMuteSync(uid, user.soundMuted, !!user.uid && user.uid === uid);
+
     const duel = useGameStore((state) => state.duel);
     const subGame = useGameStore((state) => state.subFirebaseConnect);
     const unSubGame = useGameStore((state) => state.unSubFirebaseConnect);
     const prevPlayersLenRef = useRef(duel.players.length);
     const prevStartedRef = useRef(duel.isStarted);
     const presenceMap = usePresenceMap();
-
-    useEffect(() => {
-        setSoundScope(uid);
-        setSoundMutedState(isSoundMuted());
-    }, [uid]);
-
-    useEffect(() => {
-        if (!user.uid || user.uid !== uid) return;
-        if (typeof user.soundMuted !== 'boolean') return;
-        if (user.soundMuted === isSoundMuted()) return;
-        setSoundMuted(user.soundMuted);
-        setSoundMutedState(user.soundMuted);
-    }, [user.soundMuted, user.uid, uid]);
 
     useEffect(() => {
         let cancelled = false;
@@ -151,8 +140,7 @@ export function DashboardPage({ uid }: { uid: string }) {
                             updatedAt: now,
                             lastSeenAt: now,
                             schemaVersion: typeof data.schemaVersion === 'number' ? data.schemaVersion : 1,
-                            soundMuted:
-                                typeof data.soundMuted === 'boolean' ? data.soundMuted : isSoundMuted(),
+                            soundMuted: soundMutedForProfileMerge(data.soundMuted),
                             countryCode: normalizeCountryCode(data.countryCode) ?? guessCountryFromLocale()
                         },
                         { merge: true }
@@ -560,10 +548,7 @@ export function DashboardPage({ uid }: { uid: string }) {
                                 typeof userDocData?.schemaVersion === 'number'
                                     ? (userDocData.schemaVersion as number)
                                     : 1,
-                            soundMuted:
-                                typeof userDocData?.soundMuted === 'boolean'
-                                    ? (userDocData.soundMuted as boolean)
-                                    : isSoundMuted()
+                            soundMuted: soundMutedForProfileMerge(userDocData?.soundMuted),
                         },
                         { merge: true }
                     );
@@ -894,6 +879,7 @@ export function DashboardPage({ uid }: { uid: string }) {
                 </div>
                 <div className="flex min-w-0 shrink items-center gap-2">
                     <button
+                        type="button"
                         className="btn-secondary hdrIconBtn"
                         onClick={() => {
                             setProfileDisplayName(user.displayName || '');
@@ -917,6 +903,7 @@ export function DashboardPage({ uid }: { uid: string }) {
                         </span>
                     </button>
                     <button
+                        type="button"
                         className="btn-secondary hdrIconBtn"
                         onClick={() => {
                             const next = !soundMuted;
@@ -929,7 +916,7 @@ export function DashboardPage({ uid }: { uid: string }) {
                         {soundMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
                         <span className="hdrBtnText">{soundMuted ? 'Muted' : 'Sound'}</span>
                     </button>
-                    <button className="btn-secondary hdrIconBtn" title="Log out" onClick={logoutUser}>
+                    <button type="button" className="btn-secondary hdrIconBtn" title="Log out" onClick={logoutUser}>
                         <LogOut className="h-4 w-4" />
                         <span className="hdrBtnText">Logout</span>
                     </button>

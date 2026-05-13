@@ -10,23 +10,90 @@ type SoundKind =
     | 'destroyGrey';
 
 let audioCtx: AudioContext | null = null;
-const MUTE_KEY_BASE = 'duel-sound-muted';
+
+/** One device-local preference (Firestore mirrors separately); avoids uid/global key mismatches on first paint. */
+const MUTE_STORAGE_KEY = 'duel-sound-muted';
+
+/** Legacy keys — migrated once into {@link MUTE_STORAGE_KEY}. */
 let soundScope = 'global';
 
-function getMuteKey() {
-    return `${MUTE_KEY_BASE}:${soundScope}`;
+let previousSoundScope = '';
+
+/** When localStorage rejects writes, keep the user's explicit choice for this tab until storage succeeds or the signed-in uid changes. */
+let sessionMuteOverride: boolean | null = null;
+
+function parseMuted(raw: string | null): boolean | null {
+    if (raw === '1') return true;
+    if (raw === '0') return false;
+    return null;
 }
 
-function readMutedFromStorage() {
+function migrateLegacyMuteIntoCanonical(storagesGetItem: (key: string) => string | null): boolean | null {
+    const scopedLegacy =
+        soundScope && soundScope !== 'global'
+            ? parseMuted(storagesGetItem(`${MUTE_STORAGE_KEY}:${soundScope}`))
+            : null;
+    const globalLegacy = parseMuted(storagesGetItem(`${MUTE_STORAGE_KEY}:global`));
+    const resolved = scopedLegacy ?? globalLegacy;
+    if (resolved === null) return null;
+    try {
+        window.localStorage.setItem(MUTE_STORAGE_KEY, resolved ? '1' : '0');
+    } catch {
+        /* Safari private mode etc. */
+    }
+    return resolved;
+}
+
+/** Reload mute from localStorage / legacy keys / session-only override; does not invent a default when nothing is stored. */
+export function refreshMutedFromStorage(): void {
+    if (typeof window === 'undefined') return;
+    if (sessionMuteOverride !== null) {
+        muted = sessionMuteOverride;
+        return;
+    }
+    try {
+        const getItem = (k: string) => window.localStorage.getItem(k);
+        const canonical = parseMuted(getItem(MUTE_STORAGE_KEY));
+        if (canonical !== null) {
+            muted = canonical;
+            return;
+        }
+        const migrated = migrateLegacyMuteIntoCanonical(getItem);
+        if (migrated !== null) {
+            muted = migrated;
+            return;
+        }
+    } catch {
+        /* keep muted */
+    }
+}
+
+/** Prefer device mute toggles over Firestore if user already stored something locally (migration counts). */
+export function hasExplicitDeviceMutePreference(): boolean {
+    if (sessionMuteOverride !== null) return true;
     if (typeof window === 'undefined') return false;
-    return window.localStorage.getItem(getMuteKey()) === '1';
+    try {
+        if (window.localStorage.getItem(MUTE_STORAGE_KEY) !== null) return true;
+        if (soundScope && soundScope !== 'global') {
+            if (window.localStorage.getItem(`${MUTE_STORAGE_KEY}:${soundScope}`) !== null) return true;
+        }
+        return window.localStorage.getItem(`${MUTE_STORAGE_KEY}:global`) !== null;
+    } catch {
+        return false;
+    }
 }
 
-let muted = readMutedFromStorage();
+let muted = false;
+refreshMutedFromStorage();
 
 export function setSoundScope(scopeId: string) {
-    soundScope = scopeId || 'global';
-    muted = readMutedFromStorage();
+    const next = scopeId || 'global';
+    if (previousSoundScope !== '' && previousSoundScope !== next) {
+        sessionMuteOverride = null;
+    }
+    previousSoundScope = next;
+    soundScope = next;
+    refreshMutedFromStorage();
 }
 
 function getContext() {
@@ -64,7 +131,7 @@ function playTones(tones: Array<{ freq: number; ms: number; type?: OscillatorTyp
 
 export function playUiSound(kind: SoundKind) {
     if (typeof window !== 'undefined') {
-        muted = window.localStorage.getItem(getMuteKey()) === '1';
+        refreshMutedFromStorage();
     }
     if (muted) return;
     switch (kind) {
@@ -85,11 +152,14 @@ export function playUiSound(kind: SoundKind) {
             playTones([{ freq: 880, ms: 110, type: 'triangle' }]);
             break;
         case 'win':
-            playTones([
-                { freq: 659, ms: 100, type: 'sine' },
-                { freq: 784, ms: 110, type: 'sine' },
-                { freq: 1047, ms: 150, type: 'sine' }
-            ], 0.06);
+            playTones(
+                [
+                    { freq: 659, ms: 100, type: 'sine' },
+                    { freq: 784, ms: 110, type: 'sine' },
+                    { freq: 1047, ms: 150, type: 'sine' }
+                ],
+                0.06
+            );
             break;
         case 'loss':
             playTones(
@@ -148,10 +218,25 @@ export function isSoundMuted() {
     return muted;
 }
 
+/** Firestore merge: device preference wins; otherwise keep server boolean if present. */
+export function soundMutedForProfileMerge(serverValue: unknown): boolean {
+    if (hasExplicitDeviceMutePreference()) return isSoundMuted();
+    return typeof serverValue === 'boolean' ? serverValue : isSoundMuted();
+}
+
 export function setSoundMuted(value: boolean) {
     muted = value;
     if (typeof window !== 'undefined') {
-        window.localStorage.setItem(getMuteKey(), value ? '1' : '0');
+        try {
+            window.localStorage.setItem(MUTE_STORAGE_KEY, value ? '1' : '0');
+            sessionMuteOverride = null;
+        } catch {
+            sessionMuteOverride = value;
+        }
+        if (!value) {
+            const ctx = getContext();
+            if (ctx?.state === 'suspended') void ctx.resume();
+        }
     }
     if (audioCtx) {
         if (value && audioCtx.state === 'running') {
