@@ -18,7 +18,7 @@ export function useChatViewport({
 }) {
     const lastTailMessageIdRef = useRef('');
     const initialScrollChatIdRef = useRef('');
-    const messageRefs = useRef<Record<string, HTMLDivElement | null>>({});
+    const messageRefs = useRef<Record<string, HTMLElement | null>>({});
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
     const messagesContainerRef = useRef<HTMLDivElement | null>(null);
 

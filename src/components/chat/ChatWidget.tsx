@@ -445,7 +445,7 @@ export function ChatWidget({ uid }: { uid: string }) {
                         </div>
                         <div className="chatPanelHeaderControls">
                             <span className={`chatNotifyState ${chatNotifyMuted ? 'isMuted' : 'isEnabled'}`}>
-                                <span className="chatNotifyStateLabel">Chat alerts:</span>
+                                <span className="chatNotifyStateLabel">Alerts:</span>
                                 <span className="chatNotifyStateValue">{chatNotifyMuted ? 'OFF' : 'ON'}</span>
                             </span>
                             <button
@@ -562,9 +562,6 @@ export function ChatWidget({ uid }: { uid: string }) {
                                     <article
                                         key={row.key}
                                         className={`chatBubbleWrap ${row.isMine ? 'chatBubbleWrapMine' : ''}`}
-                                        ref={(node) => {
-                                            messageRefs.current[row.message.id] = node;
-                                        }}
                                     >
                                         <div
                                             className={`chatBubble ${row.isMine ? 'chatBubbleMine' : ''} ${
@@ -572,6 +569,9 @@ export function ChatWidget({ uid }: { uid: string }) {
                                             } ${row.groupBottom ? 'chatBubbleGroupBottom' : 'chatBubbleGroupMid'} ${
                                                 row.isFresh ? 'chatBubbleEnter' : ''
                                             }`}
+                                            ref={(node) => {
+                                                messageRefs.current[row.message.id] = node;
+                                            }}
                                         >
                                             <p>{row.message.text}</p>
                                             <time>{row.timeLabel}</time>

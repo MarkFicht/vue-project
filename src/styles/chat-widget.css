@@ -165,7 +165,7 @@
     display: inline-flex;
     align-items: center;
     gap: 0.22rem;
-    min-width: 7rem;
+    min-width: 5rem;
     min-height: 1.7rem;
     justify-content: center;
 }
