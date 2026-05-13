@@ -4,6 +4,7 @@ import { useGameState } from '@/hooks/useGameState';
 import { DuelSpriteCard } from '@/components/duel/DuelSpriteCard';
 import { DuelWonderSprite } from '@/components/duel/DuelWonderSprite';
 import { DuelBoard } from '@/components/duel/DuelBoard';
+import { DuelCoinSprite } from '@/components/duel/DuelCoinSprite';
 import { DuelPlayerColumns } from '@/components/duel/DuelPlayerColumns';
 import {
     countMilitaryPoints,
@@ -156,19 +157,48 @@ export function DuelGamePage({ uid }: { uid: string }) {
     }, [game.board.pawn, game.player1, game.player2]);
 
     const winnerUid = game.wonByArt || game.wonByAggressive || game.wonBySurr || game.wonByPoints;
+    const showEpochStarterModal =
+        !winnerUid &&
+        game.tier !== 'prepare' &&
+        game.chooseWhoWillStart &&
+        isMyTurn &&
+        !isObserver;
+
     const showActionModal =
         !winnerUid &&
         game.tier !== 'prepare' &&
         !!game.selectedCard &&
         !game.chooseWhoWillStart &&
         !isObserver;
-    const showArenaFoot =
-        (game.chooseWhoWillStart && isMyTurn) ||
-        (isMyTurn &&
-            (game.pickCoinOfThree === uid ||
-                game.pickCardFromGraveyard === uid ||
-                game.destroyBrown === uid ||
-                game.destroyGrey === uid));
+
+    const awaitingBoardCoinPick =
+        !winnerUid &&
+        game.tier !== 'prepare' &&
+        !isObserver &&
+        isMyTurn &&
+        game.pickCoin === uid &&
+        game.pickCoin === game.turn;
+
+    const awaitingWonderThreeCoins =
+        !winnerUid &&
+        game.tier !== 'prepare' &&
+        !isObserver &&
+        isMyTurn &&
+        game.pickCoinOfThree === uid &&
+        game.pickCoinOfThree === game.turn;
+
+    const showCoinChoiceModal = awaitingBoardCoinPick || awaitingWonderThreeCoins;
+
+    const showDestroyOpponentModal =
+        !winnerUid &&
+        game.tier !== 'prepare' &&
+        !game.chooseWhoWillStart &&
+        !isObserver &&
+        isMyTurn &&
+        (game.destroyBrown === uid || game.destroyGrey === uid) &&
+        game.turn === uid;
+
+    const showArenaFoot = isMyTurn && game.pickCardFromGraveyard === uid;
     const closeSelectedCardActions = () => {
         game.setSelectedCard(null);
         setWonderBuildMode(false);
@@ -302,14 +332,21 @@ export function DuelGamePage({ uid }: { uid: string }) {
     ]);
 
     useEffect(() => {
-        if (!showActionModal) return;
+        if (!showActionModal && !showEpochStarterModal && !showCoinChoiceModal && !showDestroyOpponentModal) return;
         const handlePointerDown = (event: PointerEvent) => {
+            if (showEpochStarterModal || showCoinChoiceModal || showDestroyOpponentModal) return;
             const target = event.target as Element | null;
             if (!target) return;
             if (target.closest('.dg-cardWrapper') || target.closest('.dg-wonderWrapper') || target.closest('.dg-actionsModal')) return;
             closeSelectedCardActions();
         };
         const handleKeyDown = (event: KeyboardEvent) => {
+            if (
+                (showEpochStarterModal || showCoinChoiceModal || showDestroyOpponentModal) &&
+                event.key === 'Escape'
+            ) {
+                return;
+            }
             if (event.key === 'Escape') closeSelectedCardActions();
         };
         window.addEventListener('pointerdown', handlePointerDown);
@@ -318,7 +355,7 @@ export function DuelGamePage({ uid }: { uid: string }) {
             window.removeEventListener('pointerdown', handlePointerDown);
             window.removeEventListener('keydown', handleKeyDown);
         };
-    }, [showActionModal]);
+    }, [showActionModal, showCoinChoiceModal, showDestroyOpponentModal, showEpochStarterModal]);
 
     return (
         <main className="mx-auto flex h-dvh max-h-dvh w-full max-w-[1400px] flex-col overflow-hidden p-2 text-slate-100 sm:p-3">
@@ -566,58 +603,101 @@ export function DuelGamePage({ uid }: { uid: string }) {
                                     </aside>
                                 {showArenaFoot ? (
                                     <div className="relative dg-arenaFoot">
-                                        {game.chooseWhoWillStart && isMyTurn ? (
-                                            <div className="flex flex-wrap items-center gap-2">
-                                                <button
-                                                    className="btn-primary"
-                                                    onClick={() => chooseWhoStarts(game.player1.user.uid)}
-                                                >
-                                                    <span className="inline-flex items-center gap-1.5">
-                                                        <UserFlag code={game.player1.user.countryCode} />
-                                                        {game.player1.user.displayName || 'Player 1'}
-                                                    </span>
-                                                </button>
-                                                <span className="text-xs opacity-80">Who starts the next age?</span>
-                                                <button
-                                                    className="btn-primary"
-                                                    onClick={() => chooseWhoStarts(game.player2.user.uid)}
-                                                >
-                                                    <span className="inline-flex items-center gap-1.5">
-                                                        <UserFlag code={game.player2.user.countryCode} />
-                                                        {game.player2.user.displayName || 'Player 2'}
-                                                    </span>
-                                                </button>
-                                            </div>
-                                        ) : (
-                                            <div className="flex flex-wrap items-center gap-2">
-                                                {isMyTurn && game.pickCoinOfThree === uid && (
-                                                    <>
-                                                        {game.theRestOfCoins.slice(0, 3).map((coin) => (
-                                                            <button
-                                                                key={`pick3-${coin}`}
-                                                                className="btn-secondary"
-                                                                onClick={() => pickCoinOfThree(coin)}
-                                                            >
-                                                                Pick 1/3: {coin}
-                                                            </button>
-                                                        ))}
-                                                    </>
-                                                )}
-                                                {isMyTurn && game.pickCardFromGraveyard === uid && (
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            {isMyTurn && game.pickCardFromGraveyard === uid && (
                                                     <span className="rounded-md border border-emerald-300/50 bg-emerald-500/20 px-2 py-1 text-xs">
                                                         Select card from graveyard
                                                     </span>
                                                 )}
-                                                {isMyTurn && (game.destroyBrown === uid || game.destroyGrey === uid) && (
-                                                    <span className="rounded-md border border-amber-300/50 bg-amber-500/20 px-2 py-1 text-xs">
-                                                        Destroy enemy {game.destroyBrown === uid ? 'brown' : 'grey'} card
-                                                    </span>
-                                                )}
                                             </div>
-                                        )}
                                     </div>
                                 ) : null}
-                                {showActionModal ? (
+                                {showCoinChoiceModal ? (
+                                    <div
+                                        className="dg-actionsBackdropInBoard dg-actionsBackdropInBoard--blocking"
+                                        role="dialog"
+                                        aria-modal="true"
+                                        aria-label={
+                                            awaitingBoardCoinPick
+                                                ? 'Choose progress coin after matching pair'
+                                                : 'Choose progress coin from wonder'
+                                        }
+                                    >
+                                        <div className="dg-actionsModal">
+                                            <p className="mb-3 px-1 text-center text-sm text-slate-200">
+                                                {awaitingBoardCoinPick
+                                                    ? 'You matched green science icons — choose one progress coin from the shared board pool.'
+                                                    : 'Pick one of the three progress coins offered by the wonder:'}
+                                            </p>
+                                            <div className="dg-actionsModalCoins">
+                                                {(awaitingBoardCoinPick ? game.board.coins : game.theRestOfCoins.slice(0, 3)).map(
+                                                    (coin, idx) => (
+                                                        <span
+                                                            key={`${awaitingBoardCoinPick ? 'b' : 'w'}-${coin}-${idx}`}
+                                                            className="dg-actionsModalCoinWrap"
+                                                            title={coin}
+                                                        >
+                                                            <DuelCoinSprite
+                                                                coin={coin}
+                                                                onClick={() =>
+                                                                    awaitingBoardCoinPick
+                                                                        ? pickCoin(coin)
+                                                                        : pickCoinOfThree(coin)
+                                                                }
+                                                            />
+                                                        </span>
+                                                    )
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ) : showDestroyOpponentModal ? (
+                                    <div
+                                        className="dg-actionsBackdropInBoard dg-actionsBackdropInBoard--blocking"
+                                        role="dialog"
+                                        aria-modal="true"
+                                        aria-label="Destroy opponent card"
+                                    >
+                                        <div className="dg-actionsModal dg-actionsModal--instruction">
+                                            <p className="px-1 text-center text-sm leading-snug text-slate-200">
+                                                {game.destroyBrown === uid
+                                                    ? 'Wonder effect: choose one of your opponent\'s brown (raw material) cards to discard. Tap a highlighted card in their city below.'
+                                                    : 'Wonder effect: choose one of your opponent\'s grey (manufactured goods) cards to discard. Tap a highlighted card in their city below.'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                ) : showEpochStarterModal ? (
+                                    <div
+                                        className="dg-actionsBackdropInBoard dg-actionsBackdropInBoard--blocking"
+                                        role="dialog"
+                                        aria-modal="true"
+                                        aria-label="Choose who starts this age"
+                                    >
+                                        <div className="dg-actionsModal">
+                                            <p className="mb-3 px-1 text-center text-sm text-slate-200">
+                                                Who takes the first turn this age? By the rules that should be{' '}
+                                                <span className="font-medium text-white">you</span> — you may keep first
+                                                move or pass it to your opponent.
+                                            </p>
+                                            <div className="dg-actionsButtons dg-actionsButtons--starter">
+                                                <button
+                                                    type="button"
+                                                    className="btn-primary"
+                                                    onClick={() => chooseWhoStarts(uid)}
+                                                >
+                                                    I stay first
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className="btn-secondary"
+                                                    onClick={() => chooseWhoStarts(opponent.user.uid)}
+                                                >
+                                                    Opponent goes first
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ) : showActionModal ? (
                                     <div className="dg-actionsBackdropInBoard" role="dialog" aria-modal="true">
                                         <div className="dg-actionsModal">
                                             <div className="dg-actionsButtons">
@@ -675,7 +755,7 @@ export function DuelGamePage({ uid }: { uid: string }) {
                                         }}
                                         destroyMode={null}
                                         isDestroyTarget={false}
-                                        highlightScience={!!game.wonByArt && winnerUid === topPlayer.user.uid}
+                                        pulseScienceVictory={!!game.wonByArt && game.wonByArt === topPlayer.user.uid}
                                         isCurrentTurn={game.turn === topPlayer.user.uid}
                                         showPreparePlaceholders={game.tier === 'prepare'}
                                     />
@@ -700,7 +780,7 @@ export function DuelGamePage({ uid }: { uid: string }) {
                                     }
                                     isDestroyTarget={isMyTurn && (game.destroyBrown === uid || game.destroyGrey === uid)}
                                     onDestroyCard={destroyEnemyCard}
-                                    highlightScience={!!game.wonByArt && winnerUid === bottomPlayer.user.uid}
+                                    pulseScienceVictory={!!game.wonByArt && game.wonByArt === bottomPlayer.user.uid}
                                     isCurrentTurn={game.turn === bottomPlayer.user.uid}
                                     showPreparePlaceholders={game.tier === 'prepare'}
                                 />

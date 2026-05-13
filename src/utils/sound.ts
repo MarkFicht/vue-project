@@ -1,4 +1,13 @@
-type SoundKind = 'notify' | 'start' | 'turn' | 'win' | 'loss';
+type SoundKind =
+    | 'notify'
+    | 'start'
+    | 'turn'
+    | 'win'
+    | 'loss'
+    | 'militaryAttack'
+    | 'militaryHit'
+    | 'destroyBrown'
+    | 'destroyGrey';
 
 let audioCtx: AudioContext | null = null;
 const MUTE_KEY_BASE = 'duel-sound-muted';
@@ -83,10 +92,52 @@ export function playUiSound(kind: SoundKind) {
             ], 0.06);
             break;
         case 'loss':
-            playTones([
-                { freq: 440, ms: 120, type: 'sawtooth' },
-                { freq: 370, ms: 140, type: 'sawtooth' }
-            ], 0.045);
+            playTones(
+                [
+                    { freq: 440, ms: 120, type: 'sawtooth' },
+                    { freq: 370, ms: 140, type: 'sawtooth' }
+                ],
+                0.045
+            );
+            break;
+        case 'militaryAttack':
+            playTones(
+                [
+                    { freq: 520, ms: 45, type: 'square' },
+                    { freq: 780, ms: 55, type: 'square' },
+                    { freq: 320, ms: 70, type: 'sawtooth' }
+                ],
+                0.055
+            );
+            break;
+        case 'militaryHit':
+            playTones(
+                [
+                    { freq: 165, ms: 90, type: 'triangle' },
+                    { freq: 118, ms: 110, type: 'sawtooth' }
+                ],
+                0.07
+            );
+            break;
+        case 'destroyBrown':
+            playTones(
+                [
+                    { freq: 240, ms: 55, type: 'triangle' },
+                    { freq: 180, ms: 75, type: 'square' },
+                    { freq: 95, ms: 100, type: 'sawtooth' }
+                ],
+                0.05
+            );
+            break;
+        case 'destroyGrey':
+            playTones(
+                [
+                    { freq: 980, ms: 35, type: 'triangle' },
+                    { freq: 740, ms: 50, type: 'triangle' },
+                    { freq: 440, ms: 90, type: 'sine' }
+                ],
+                0.042
+            );
             break;
         default:
             break;

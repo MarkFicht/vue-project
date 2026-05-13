@@ -217,10 +217,16 @@ export function showPrice(
     return buyForFree ? 0 : buyForCash;
 }
 
+/** Unique artefact/science icons from green tableau cards (`power` entries `artefact` → `valuePower[i]`), plus 1 toward six if progress coin `artefact7` is owned. */
 export function countArtefactsForPlayer(player: IGameDuelPlayer) {
     const coinBonus = player.resources.coins.includes('artefact7') ? 1 : 0;
-    const uniqueArtefacts = [...new Set(player.cards.green.map((green) => green.valuePower[0]))].length;
-    return coinBonus + uniqueArtefacts;
+    const symbolsFromGreen = new Set<number>();
+    for (const green of player.cards.green) {
+        green.power.forEach((p, i) => {
+            if (p === 'artefact') symbolsFromGreen.add(green.valuePower[i]);
+        });
+    }
+    return coinBonus + symbolsFromGreen.size;
 }
 
 export function countPointsFromCards(player: IGameDuelPlayer) {
@@ -280,6 +286,22 @@ export function countMilitaryPoints(boardPawn: number, isPlayerOne: boolean) {
     if (pawn >= 3) return 5;
     if (pawn >= 1) return 2;
     return 0;
+}
+
+/** Next turn after a pick: alternating, except last pick of an age (moves 19/39/59) keeps the taker unless they lead militarily (`pawn`). UI “who starts” only at 19/39 — after 59 Age III ends with no further age transition. */
+export function getNextTurnUidAfterPlay(
+    lastTakerUid: string,
+    moveBeforeIncrement: number,
+    boardPawn: number,
+    player1Uid: string,
+    player2Uid: string
+): string {
+    const opp = lastTakerUid === player1Uid ? player2Uid : player1Uid;
+    if (![19, 39, 59].includes(moveBeforeIncrement)) return opp;
+
+    const takerIsP1 = lastTakerUid === player1Uid;
+    const takerLeadsMilitarily = takerIsP1 ? boardPawn < 0 : boardPawn > 0;
+    return takerLeadsMilitarily ? opp : lastTakerUid;
 }
 
 export function countTotalPoints(player: IGameDuelPlayer, enemy: IGameDuelPlayer, boardPawn: number, isPlayerOne: boolean) {

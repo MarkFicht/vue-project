@@ -3,21 +3,21 @@
     --duel-scrollbar-track: rgb(32 22 16 / 55%);
     --duel-scrollbar-thumb: rgba(100 62 38 / 0.88);
     --duel-scrollbar-thumb-hover: rgba(124 80 48 / 0.95);
-    /* Pełnowymiarowy military board (.dg-board); wizualnie rotate(90deg) × scale(...) */
+    /* Full-size military board (.dg-board); visually rotate(90deg) × scale(...) */
     --dg-military-board-scale: 0.56;
 
     --dg-card-board-height: 420px;
     --dg-card-board-width: calc(var(--width-tier) * 7);
-    /* Piramida epok (.dg-cardBoard) — logicznie pełny rozmiar, wizualnie tylko scale(...) */
+    /* Age pyramid (.dg-cardBoard): full logical size, visual scale only */
     --dg-epoch-cards-scale: 0.62;
 
-    /* Wybór cudów na starcie: grid 2×2 (full-size w DOM), wizualnie scale(...) */
+    /* Opening wonder pick: 2×2 grid (full size in DOM), visual scale */
     --dg-wonder-prepare-scale: 0.56;
     --dg-wonders-pick-row-gap: 10px;
-    /* Wysokość bloku przy 4 slotach × 2 kolumnach (bez skalowania) → do marginesu ujemnego */
+    /* Block height at 4 slots × 2 columns (unscaled) → used for negative margin */
     --dg-wonders-pick-logical-height: calc(2 * var(--height-wonder) + var(--dg-wonders-pick-row-gap));
 
-    /* Cuda zbudowane u gracza (kompakt w paskach) — osobny scale od stołu epok */
+    /* Wonders built by the player (compact strips) — scale separate from epoch table */
     --dg-player-wonders-scale: 0.86;
 
     --width-wonder: 130px;
@@ -204,7 +204,7 @@
     overflow: visible;
     transform: scale(var(--dg-wonder-prepare-scale));
     transform-origin: top center;
-    /* transform nie zmienia wysokości w flow — zbij zbędna „dziura” jak po skalowaniu */
+    /* transform does not affect flow height — remove the extra gap scaling would leave */
     margin-bottom: calc(-1 * var(--dg-wonders-pick-logical-height) * (1 - var(--dg-wonder-prepare-scale)));
 }
 
@@ -262,7 +262,7 @@
     box-shadow: inset 5px 5px 10px rgba(0, 0, 0, 0.2), inset -5px -5px 10px rgba(255, 255, 255, 0.08);
 }
 
-/* Rewers epoki przy prawej krawędzi cuda — pozycja sprite z inline (getTierBackground), obraz na dziecku + inherit */
+/* Age-card back along the wonder’s right edge — sprite from inline getTierBackground(); image on child + inherit */
 .dg-tierCardForWonder {
     position: absolute;
     top: -7px;
@@ -492,7 +492,7 @@
     min-width: 0;
 }
 
-/** Duel layout — jeden pionowy układ (breakpointy później) */
+/** Duel layout — single column first (wider breakpoints add row layout below) */
 .dg-duelLayout {
     display: flex;
     flex-direction: column;
@@ -529,7 +529,7 @@
     margin-top: -8px;
 }
 
-/* Przy wyborze cudów cemeterium puste — nie zajmuje layoutu */
+/* While picking wonders hide graveyard slot — keeps layout tighter */
 .dg-stageCards--prepare ~ .dg-graveyardPanel {
     display: none;
 }
@@ -538,9 +538,9 @@
     position: relative;
     width: 100%;
     overflow: visible;
-    /* Po obrocie ±90° wysokość na ekranie = pierwotna szerokość planszy × scale */
+    /* After ±90° rotation, on-screen height = original board width × scale */
     height: calc(var(--width-board) * var(--dg-military-board-scale));
-    /* Mniejsza przerwa od góry karty stołu (padding areny zostaje, plansza idzie wyżej) */
+    /* Tighter gap above table card (arena padding unchanged, board sits higher) */
     margin-top: -14px;
 }
 
@@ -566,7 +566,7 @@
        top: 186px;
        left: 260px;
     }
-    /* Faza pick cudów: conflict board jak na wąsko — na górze, bez przesunięcia „w prawo” obok piramidy */
+    /* Wonder-pick phase: conflict board like narrow layout — top, not shifted right beside pyramid */
     .dg-arenaTableCard:has(.dg-stageCards--prepare) .dg-militaryViewport {
         position: relative;
         top: auto;
@@ -598,7 +598,7 @@
     }
 }
 
-/* Wąska kolumna graczy (obie karty jedna pod drugą) po lewej, arena elastycznie po prawej */
+/* Wide screens: player column stack on the right, fixed-width arena on the left */
 @media (min-width: 1440px) {
     .dg-duelLayout {
         flex-direction: row;
@@ -644,7 +644,7 @@
     padding-inline: 6px;
     position: relative;
     overflow: visible;
-    /* Wysokość w layoucie = zeskalowany pion piramidy (nie pełne 420px) */
+    /* Layout height = scaled pyramid height (not full 420px) */
     height: calc(var(--dg-card-board-height) * var(--dg-epoch-cards-scale));
 }
 
@@ -662,7 +662,7 @@
 }
 
 .dg-graveyardCards {
-    /* Stała „okienkowa” strefa kart: min = max = 2 rzędy compact (+ gap + p-2); pusty stan nie zapada się */
+    /* Fixed card window: min height ≈ 2 compact rows (+ gap + padding); empty state doesn’t collapse */
     min-height: calc(2 * (var(--height-tier) / 24) + 6px + 1rem);
     /* max-height: calc(2 * (var(--height-tier) / 4.5) + 6px + 1rem); */
     overflow-y: auto;
@@ -680,7 +680,7 @@
     width: calc(100% / var(--dg-epoch-cards-scale));
     transform: scale(var(--dg-epoch-cards-scale));
     transform-origin: top left;
-    /* scale nie zmienia wysokości w flow → scroll się długo pętelkuje z pustką pod kartami (~N rzędów compact “zbite”) */
+    /* scale doesn’t change flow height → long scroll + empty tail under cards without this negative margin */
     margin-bottom: calc(
         -11 * (1 - var(--dg-epoch-cards-scale)) * ((var(--height-tier) / 4.5) + 6px)
     );
@@ -716,6 +716,11 @@
     pointer-events: none;
 }
 
+/* Captures clicks so cards underneath don’t receive them (epoch starter, coins) */
+.dg-actionsBackdropInBoard--blocking {
+    pointer-events: auto;
+}
+
 .dg-actionsModal {
     position: absolute;
     left: 50%;
@@ -732,12 +737,58 @@
     pointer-events: auto;
 }
 
+.dg-actionsModal--instruction {
+    padding: 11px 12px 13px;
+}
+
+.dg-actionsModal--instruction p {
+    margin: 0;
+}
+
 .dg-actionsButtons {
     display: flex;
     flex-wrap: nowrap;
     gap: 6px;
     align-items: center;
     justify-content: center;
+}
+
+.dg-actionsButtons--starter {
+    flex-direction: column;
+    flex-wrap: wrap;
+}
+
+@media (min-width: 480px) {
+    .dg-actionsButtons--starter {
+        flex-direction: row;
+    }
+}
+
+.dg-actionsModalCoins {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: center;
+    align-items: center;
+    padding: 6px 4px 4px;
+}
+
+.dg-actionsModalCoinWrap {
+    display: inline-flex;
+    border-radius: 50%;
+    box-shadow: 0 0 0 2px rgba(250, 250, 250, 0.35);
+}
+
+.dg-actionsModalCoinWrap:focus-within {
+    box-shadow: 0 0 0 2px rgba(94, 234, 212, 0.85);
+}
+
+.dg-actionsModalCoinWrap .dg-coin {
+    cursor: pointer;
+}
+
+.dg-actionsModalCoinWrap .dg-coin:hover {
+    filter: brightness(1.1);
 }
 
 .dg-actionsButtons .btn-primary,
@@ -796,7 +847,7 @@
     flex-wrap: wrap;
     justify-content: center;
     gap: var(--dg-player-wonders-gap);
-    /* Gap rośnie gdy cuda są mniejsze (scale) — wizualnie nachodzą mniej na sąsiadów */
+    /* Extra gap when wonders are scaled down — they overlap neighbors less */
     margin-bottom: 8px;
 }
 
@@ -848,9 +899,45 @@
 .dg-column-green { background-image: linear-gradient(to bottom, rgba(18, 219, 0, 0.33), 60%, transparent); }
 .dg-column-purple { background-image: linear-gradient(to bottom, rgba(124, 11, 189, 0.33), 60%, transparent); }
 
-.dg-destroySelectable {
-    box-shadow: 0 0 0 2px rgba(255, 99, 71, 0.75) inset;
+.dg-cardWrapperCompact.dg-destroyCardTarget {
+    position: relative;
+}
+
+.dg-cardWrapperCompact.dg-destroyCardTarget::before {
+    content: '';
+    position: absolute;
+    z-index: 2;
+    top: 0;
+    left: 0;
+    width: var(--width-tier);
+    height: calc(var(--height-tier) / 4.5);
+    border-radius: 5px;
+    border: 3px dotted tomato;
     animation: dg-pulseBorder 1.5s ease-in-out infinite;
+    pointer-events: none;
+}
+
+.dg-cardWrapperCompact.dg-scienceVictoryPulse {
+    position: relative;
+}
+
+.dg-cardWrapperCompact.dg-scienceVictoryPulse::before {
+    content: '';
+    position: absolute;
+    z-index: 2;
+    top: -1px;
+    right: -1px;
+    bottom: -1px;
+    left: -1px;
+    border-radius: 6px;
+    border: 3px dashed rgba(34, 197, 94, 0.92);
+    animation: dg-pulseScience 1.25s ease-in-out infinite;
+    pointer-events: none;
+}
+
+.dg-coin.dg-coinScienceVictoryPulse {
+    animation: dg-pulseScienceCoin 1.2s ease-in-out infinite;
+    box-sizing: border-box;
 }
 
 .dg-victoryScience {
@@ -859,11 +946,33 @@
 }
 
 .dg-artCount {
-    position: absolute;
-    top: -16px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 10px;
+    position: relative;
+    left: auto;
+    top: auto;
+    transform: none;
+    flex-shrink: 0;
+    width: 100%;
+    text-align: center;
+    margin: 0 0 3px;
+    padding: 0 1px;
+    font-size: 9px;
+    line-height: 1.2;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.04em;
+    color: rgb(219 239 229 / 0.95);
+    text-shadow:
+        0 0 1px rgba(0 0 0 / 85%),
+        0 1px 2px rgba(0 0 0 / 55%);
+    pointer-events: none;
+    user-select: none;
+}
+
+.dg-artCount--complete {
+    color: rgb(254 249 195 / 0.98);
+    text-shadow:
+        0 0 6px rgba(250 204 21 / 45%),
+        0 1px 2px rgba(0 0 0 / 60%);
 }
 
 .dg-playerCoins {
@@ -1061,4 +1170,20 @@
     0% { border-color: rgba(34, 197, 94, 0.95); }
     50% { border-color: transparent; }
     100% { border-color: rgba(34, 197, 94, 0.95); }
+}
+
+@keyframes dg-pulseScienceCoin {
+    0%, 100% {
+        box-shadow:
+            0 0 0 2px rgba(34, 197, 94, 0.95),
+            0 0 12px rgba(34, 197, 94, 0.4);
+        filter: brightness(1);
+    }
+
+    50% {
+        box-shadow:
+            0 0 0 4px rgba(110, 231, 183, 0.45),
+            0 0 20px rgba(34, 197, 94, 0.2);
+        filter: brightness(1.12);
+    }
 }
