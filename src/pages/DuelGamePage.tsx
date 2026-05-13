@@ -362,7 +362,7 @@ export function DuelGamePage({ uid }: { uid: string }) {
             <header className="app-surface-header mb-2 flex min-w-0 max-w-full shrink-0 items-center justify-between gap-2 rounded-xl p-2 sm:mb-3 sm:rounded-2xl sm:p-3">
                 <div className="min-w-0">
                     <h1 className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1 text-lg font-semibold leading-tight">
-                        <span className="shrink-0">Duel</span>
+                        <span className="font-display shrink-0 tracking-wide">Duel</span>
                         <span className="text-xs font-normal opacity-80">
                             Turn: {isObserver ? 'Observer mode' : isMyTurn ? 'You' : 'Opponent'}
                         </span>
@@ -398,7 +398,7 @@ export function DuelGamePage({ uid }: { uid: string }) {
 
             {winnerUid ? (
                 <section className="app-surface-callout mb-2 shrink-0 rounded-xl p-3 sm:mb-3 sm:rounded-2xl sm:p-4">
-                    <h2 className="text-xl font-semibold">Game over</h2>
+                    <h2 className="font-display text-xl font-semibold tracking-wide">Game over</h2>
                     <p className="flex flex-wrap items-center gap-2 text-sm">
                         <span>Winner:</span>
                         <UserFlag code={winnerCountryCode} className="text-lg" />

@@ -944,7 +944,7 @@ export function DashboardPage({ uid }: { uid: string }) {
 
             <section className={`dashWrapper ${showDuelLobbyModal ? 'modalOpen' : ''}`}>
                 <div className="dashGameContainer">
-                    <article className="dashCard" style={{ '--dash-clr': '#2196f3' } as CSSProperties}>
+                    <article className="dashCard" style={{ '--dash-clr': '#4589cc' } as CSSProperties}>
                         <div className="dashBox dashBoxTop">Video soon!</div>
                         <div className="dashBox dashBoxBottom">
                             <div className="dashButtonRow">
@@ -1042,7 +1042,7 @@ export function DashboardPage({ uid }: { uid: string }) {
                         </div>
                     </article>
 
-                    <article className="dashCard" style={{ '--dash-clr': '#008a1b' } as CSSProperties}>
+                    <article className="dashCard" style={{ '--dash-clr': '#26985a' } as CSSProperties}>
                         <div className="dashBox dashBoxTop">Video soon!</div>
                         <div className="dashBox dashBoxBottom">
                             <div className="dashButtonRow">
@@ -1062,7 +1062,7 @@ export function DashboardPage({ uid }: { uid: string }) {
                         </div>
                     </article>
 
-                    <article className="dashCard" style={{ '--dash-clr': '#dc1dff' } as CSSProperties}>
+                    <article className="dashCard" style={{ '--dash-clr': '#8b44a8' } as CSSProperties}>
                         <div className="dashBox dashBoxTop">Video soon!</div>
                         <div className="dashBox dashBoxBottom">
                             <div className="dashButtonRow">

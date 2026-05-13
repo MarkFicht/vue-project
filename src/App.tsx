@@ -17,7 +17,7 @@ export default function App() {
     }, [location.pathname]);
 
     if (loading) {
-        return <main className="grid min-h-screen place-content-center text-slate-100">Loading...</main>;
+        return <main className="font-sans grid min-h-screen place-content-center text-slate-100">Loading...</main>;
     }
 
     return (

@@ -120,11 +120,11 @@ export function LoginPage() {
     return (
         <main className="loginPage mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center p-4 text-[var(--app-text)]">
             <div className="app-surface-login w-full rounded-2xl p-6">
-                <header className="flex items-center justify-center gap-2 text-2xl font-bold">
+                <header className="font-display flex items-center justify-center gap-2 text-2xl font-bold tracking-wide">
                     <Gamepad2 className="app-brand-icon h-7 w-7" aria-hidden />
                     Game Board
                 </header>
-                <h2 className="mb-4 text-center text-xl font-semibold text-[var(--app-text)]">
+                <h2 className="font-display mb-4 tracking-wide text-center text-xl font-semibold text-[var(--app-text)]">
                     {isRegister ? 'Register' : 'Sign in'}
                 </h2>
 
