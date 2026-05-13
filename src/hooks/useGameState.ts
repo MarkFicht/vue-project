@@ -27,8 +27,10 @@ import {
     prepareIdForCards,
     countPlayerResources,
     countArtefactsForPlayer,
-    cashBonusWhenAcquiringEconomyCoin,
+    bankGoldFromYellowCashBackWatchingOpponentSpend,
     extraCashWhenChainPurchaseWithEconomyCoin,
+    goldFromTreasuryGrantedByWonder,
+    immediateGoldWhenTakingProgressCoin,
     showPrice,
     countTotalPoints,
     getNextTurnUidAfterPlay
@@ -597,13 +599,23 @@ export function useGameState(currentUserUid: string) {
 
         const chainCoinPayout = extraCashWhenChainPurchaseWithEconomyCoin(card, playerSnap);
 
+        const opponentKey = playerKey === 'player1' ? 'player2' : 'player1';
+        const opponentWatching = opponentKey === 'player1' ? game.player1 : game.player2;
+        const opponentBankCashback = bankGoldFromYellowCashBackWatchingOpponentSpend(
+            opponentWatching,
+            Math.max(0, canBuyTierCard)
+        );
+
         await updateDoc(tableGameDuelRef, {
             [`${playerKey}.cards`]: cards,
             [`${playerKey}.points`]: playerSnap.points,
             [`${playerKey}.resources`]: {
                 ...resources,
                 cash: resources.cash - canBuyTierCard + chainCoinPayout
-            }
+            },
+            ...(opponentBankCashback
+                ? { [`${opponentKey}.resources.cash`]: increment(opponentBankCashback) }
+                : {})
         });
 
         const postBuyPlayer: IGameDuelPlayer = {
@@ -697,6 +709,7 @@ export function useGameState(currentUserUid: string) {
         let shouldDestroyGrey = false;
         let shouldMovePawn = 0;
         let shouldRepeat = false;
+        let shouldStealThreeGold = false;
 
         selectedWonder.power.forEach((effect, index) => {
             if (effect === 'effect' && selectedWonder.valuePower[index] === 3) {
@@ -718,21 +731,32 @@ export function useGameState(currentUserUid: string) {
                 shouldDestroyGrey = true;
             }
             if (effect === 'break' && selectedWonder.valuePower[index] === 3) {
-                const enemyKey = game.turn === game.player1.user.uid ? 'player2' : 'player1';
-                const enemyCash = game.turn === game.player1.user.uid ? game.player2.resources.cash : game.player1.resources.cash;
-                updateDoc(tableGameDuelRef, {
-                    [`${enemyKey}.resources.cash`]: Math.max(0, enemyCash - 3)
-                });
+                shouldStealThreeGold = true;
             }
         });
 
+        const treasuryGoldFromWonder = goldFromTreasuryGrantedByWonder(selectedWonder);
+
         const playerKey = game.turn === game.player1.user.uid ? 'player1' : 'player2';
+        const opponentKey = playerKey === 'player1' ? 'player2' : 'player1';
+        const opponentSnap = opponentKey === 'player1' ? game.player1 : game.player2;
+
+        let opponentNextCash = opponentSnap.resources.cash;
+        if (shouldStealThreeGold) {
+            opponentNextCash = Math.max(0, opponentNextCash - 3);
+        }
+        const opponentWatchingBuilderPay = bankGoldFromYellowCashBackWatchingOpponentSpend(opponentSnap, cost);
+        opponentNextCash += opponentWatchingBuilderPay;
+
+        const builderNetCashDelta = treasuryGoldFromWonder - cost;
+
         const newWonderCards = currentPlayer.wonderCards.map((wonder) =>
             wonder.id === selectedWonder.id ? { ...wonder, activated: game.selectedCard?.tier ?? 'I' } : wonder
         );
         await updateDoc(tableGameDuelRef, {
             [`${playerKey}.wonderCards`]: newWonderCards,
-            [`${playerKey}.resources.cash`]: increment(-cost),
+            [`${playerKey}.resources.cash`]: increment(builderNetCashDelta),
+            [`${opponentKey}.resources.cash`]: opponentNextCash,
             ...(shouldPickCoinOfThree ? { pickCoinOfThree: game.turn } : {}),
             ...(shouldPickFromGraveyard ? { pickCardFromGraveyard: game.turn } : {}),
             ...(shouldDestroyBrown ? { destroyBrown: game.turn } : {}),
@@ -788,7 +812,7 @@ export function useGameState(currentUserUid: string) {
             const moveSnap = game.move;
             const playerKey = game.turn === game.player1.user.uid ? 'player1' : 'player2';
             const playerState = game.turn === game.player1.user.uid ? game.player1 : game.player2;
-            const acquireCash = cashBonusWhenAcquiringEconomyCoin(coin);
+            const acquireCash = immediateGoldWhenTakingProgressCoin(coin);
             const withCoin: IGameDuelPlayer = {
                 ...playerState,
                 resources: {
@@ -834,7 +858,7 @@ export function useGameState(currentUserUid: string) {
             if (game.pickCoinOfThree !== game.turn || game.pickCoinOfThree !== currentUserUid) return;
             const playerKey = game.turn === game.player1.user.uid ? 'player1' : 'player2';
             const playerState = game.turn === game.player1.user.uid ? game.player1 : game.player2;
-            const acquireCash = cashBonusWhenAcquiringEconomyCoin(coin);
+            const acquireCash = immediateGoldWhenTakingProgressCoin(coin);
             const withCoin: IGameDuelPlayer = {
                 ...playerState,
                 resources: {

@@ -24,6 +24,7 @@ export interface IGameDuelCard {
         | 'points'
         | 'discount'
         | 'materials'
+        | 'cash'
         | 'cashBack'
         | 'guild'
     >;

@@ -124,6 +124,7 @@ export function countPlayerResources(card: IGameDuelCard, player: IGameDuelPlaye
             if (power === 'specialChar') res.specialChars.push(card.valuePower[i]);
             if (power === 'artefact') res.artefacts.push(card.valuePower[i]);
             if (power === 'points') player.points += card.valuePower[i];
+            if (power === 'cash') res.cash += card.valuePower[i];
         });
     }
 
@@ -131,12 +132,14 @@ export function countPlayerResources(card: IGameDuelCard, player: IGameDuelPlaye
         card.power.forEach((power, i) => {
             if (power === 'points') player.points += card.valuePower[i];
             if (power === 'specialChar') res.specialChars.push(card.valuePower[i]);
+            if (power === 'cash') res.cash += card.valuePower[i];
         });
     }
 
     if (card.color === 'red') {
         card.power.forEach((power, i) => {
             if (power === 'specialChar') res.specialChars.push(card.valuePower[i]);
+            if (power === 'cash') res.cash += card.valuePower[i];
         });
     }
 
@@ -170,8 +173,49 @@ export const ECONOMY_COIN_ACQUIRE_ONE_TIME_CASH = 6;
 /** Extra cash whenever you take a building using chain matching (`specialChar`) while owning that coin — pyramid buy or graveyard pick. */
 export const ECONOMY_COIN_CHAIN_PURCHASE_BONUS = 4;
 
-export function cashBonusWhenAcquiringEconomyCoin(coin: IGameDuelCoin['effect']): number {
-    return coin === 'cash6n4special' ? ECONOMY_COIN_ACQUIRE_ONE_TIME_CASH : 0;
+export function subtractCashFloorZero(balance: number, loss: number): number {
+    return Math.max(0, balance - loss);
+}
+
+/** Coins taken from Bank when a wonder with `power`: `cash` is completed. */
+export function goldFromTreasuryGrantedByWonder(wonder: IGameDuelWonderCard): number {
+    let sum = 0;
+    wonder.power.forEach((p, i) => {
+        if (p === 'cash') sum += wonder.valuePower[i] ?? 0;
+    });
+    return sum;
+}
+
+/**
+ * Coins from Bank when the opponent paid gold to the Bank for a construction (purchase > 0 excludes full chain-free takes).
+ * Stacks every yellow tableau card with `cashBack` (value from parallel `valuePower` entry).
+ */
+export function bankGoldFromYellowCashBackWatchingOpponentSpend(
+    watchingPlayer: IGameDuelPlayer,
+    opponentPaidCoinsToBank: number
+): number {
+    if (opponentPaidCoinsToBank <= 0) return 0;
+    let gain = 0;
+    for (const y of watchingPlayer.cards.yellow) {
+        if (y.taken !== 'inPlayerBoard') continue;
+        y.power.forEach((pow, idx) => {
+            if (pow === 'cashBack') gain += y.valuePower[idx] ?? 0;
+        });
+    }
+    return gain;
+}
+
+/** One-time payout from Bank when a progress token tile is added to your collection. */
+export function immediateGoldWhenTakingProgressCoin(effect: IGameDuelCoin['effect']): number {
+    switch (effect) {
+        case 'cash6n4special':
+            return ECONOMY_COIN_ACQUIRE_ONE_TIME_CASH;
+        /** Data name: 6 coins at take (VP side handled in end scoring). */
+        case 'point4n6cash':
+            return 6;
+        default:
+            return 0;
+    }
 }
 
 export function extraCashWhenChainPurchaseWithEconomyCoin(card: IGameDuelCard, player: IGameDuelPlayer): number {
