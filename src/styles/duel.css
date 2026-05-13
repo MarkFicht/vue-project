@@ -1,5 +1,13 @@
 :root {
     --duel-bg-fallback: rgb(26 18 13);
+    /** Table arena: translucent warm gradient so `main_bg` on body shows through slightly */
+    --duel-arena-gradient: linear-gradient(
+        168deg,
+        rgb(40 28 20 / 88%) 0%,
+        rgb(28 20 14 / 84%) 38%,
+        rgb(20 14 10 / 80%) 72%,
+        rgb(14 10 7 / 76%) 100%
+    );
     --duel-scrollbar-track: rgb(32 22 16 / 55%);
     --duel-scrollbar-thumb: rgba(100 62 38 / 0.88);
     --duel-scrollbar-thumb-hover: rgba(124 80 48 / 0.95);
@@ -458,7 +466,7 @@
 .dg-coin-repeatWonder { background-position: 0 calc(var(--coin-size) * -2); }
 .dg-coin-cash6n4special { background-position: calc(var(--coin-size) * -1) calc(var(--coin-size) * -2); }
 
-/** Scrollbars on duel-game only — warm browns aligned with primary_bg arena */
+/** Scrollbars on duel-game only — warm browns aligned with arena surface */
 .duelPageScrollbar {
     scrollbar-width: thin;
     scrollbar-color: var(--duel-scrollbar-thumb) var(--duel-scrollbar-track);
@@ -568,6 +576,9 @@
     }
     .dg-boardCoinSlot {
         transform: rotate(0);
+    }
+    .dg-arenaTableCard:has(.dg-stageCards--prepare) .dg-boardCoinSlot {
+        transform: rotate(-90deg);
     }
     /* Wonder-pick phase: conflict board like narrow layout — top, not shifted right beside pyramid */
     .dg-arenaTableCard:has(.dg-stageCards--prepare) .dg-militaryViewport {
@@ -698,7 +709,7 @@
     padding: 8px;
     overflow: hidden;
     position: relative;
-    background: var(--duel-bg-fallback) url('@/assets/duel/primary_bg.png') center / cover no-repeat;
+    background: var(--duel-arena-gradient);
     box-shadow:
         inset 0 0 0 1px rgba(255, 255, 255, 0.07),
         0 12px 32px rgba(0, 0, 0, 0.35);

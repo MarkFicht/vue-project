@@ -44,9 +44,9 @@
 }
 
 .dashWrapper {
-    --dash-surface: linear-gradient(175deg, rgb(34 24 17 / 96%) 0%, rgb(22 16 11 / 98%) 55%, rgb(16 11 8 / 99%) 100%);
-    /** Solid tone matching the panel — gradients are invalid in box-shadow / border-color (card notches, avatar ring). */
+    /** Jednolite tło panelu kart — ten sam kolor co „wcięcia” (pseudo-elementy), bez gradientu */
     --dash-surface-solid: rgb(22 16 11);
+    --dash-surface: var(--dash-surface-solid);
     position: relative;
     width: min(96vw, 990px);
     min-height: calc(100vh - 190px);
@@ -57,7 +57,7 @@
         inset 0 1px 0 rgb(255 255 255 / 6%),
         0 12px 40px rgb(0 0 0 / 42%);
     border-radius: 20px;
-    background: var(--dash-surface);
+    background: var(--dash-surface-solid);
     animation: showElement 1.2s linear;
 }
 
@@ -174,6 +174,7 @@
     background-color: var(--dash-clr);
     border-radius: 50%;
     color: rgb(245 235 224);
+    /** Identyczny kolor co tło `.dashWrapper` i kółka cieni przy wcięciach kart (`--dash-surface-solid`) */
     border: 12px solid var(--dash-surface-solid);
     display: flex;
     justify-content: center;
