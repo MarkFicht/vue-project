@@ -27,6 +27,8 @@ import {
     prepareIdForCards,
     countPlayerResources,
     countArtefactsForPlayer,
+    cashBonusWhenAcquiringEconomyCoin,
+    extraCashWhenChainPurchaseWithEconomyCoin,
     showPrice,
     countTotalPoints,
     getNextTurnUidAfterPlay
@@ -593,16 +595,24 @@ export function useGameState(currentUserUid: string) {
         const cards = structuredClone(playerSnap.cards);
         cards[card.color].push({ ...card, taken: 'inPlayerBoard' });
 
+        const chainCoinPayout = extraCashWhenChainPurchaseWithEconomyCoin(card, playerSnap);
+
         await updateDoc(tableGameDuelRef, {
             [`${playerKey}.cards`]: cards,
             [`${playerKey}.points`]: playerSnap.points,
-            [`${playerKey}.resources`]: { ...resources, cash: resources.cash - canBuyTierCard }
+            [`${playerKey}.resources`]: {
+                ...resources,
+                cash: resources.cash - canBuyTierCard + chainCoinPayout
+            }
         });
 
         const postBuyPlayer: IGameDuelPlayer = {
             ...playerSnap,
             cards,
-            resources: { ...resources, cash: resources.cash - canBuyTierCard }
+            resources: {
+                ...resources,
+                cash: resources.cash - canBuyTierCard + chainCoinPayout
+            }
         };
 
         let pawnForNextTurn = game.board.pawn;
@@ -778,17 +788,20 @@ export function useGameState(currentUserUid: string) {
             const moveSnap = game.move;
             const playerKey = game.turn === game.player1.user.uid ? 'player1' : 'player2';
             const playerState = game.turn === game.player1.user.uid ? game.player1 : game.player2;
+            const acquireCash = cashBonusWhenAcquiringEconomyCoin(coin);
             const withCoin: IGameDuelPlayer = {
                 ...playerState,
                 resources: {
                     ...playerState.resources,
-                    coins: [...playerState.resources.coins, coin]
+                    coins: [...playerState.resources.coins, coin],
+                    cash: playerState.resources.cash + acquireCash
                 }
             };
 
             await updateDoc(tableGameDuelRef, {
                 'gameBoard.coins': arrayRemove(coin),
                 [`${playerKey}.resources.coins`]: arrayUnion(coin),
+                ...(acquireCash ? { [`${playerKey}.resources.cash`]: increment(acquireCash) } : {}),
                 pickCoin: ''
             });
 
@@ -821,17 +834,20 @@ export function useGameState(currentUserUid: string) {
             if (game.pickCoinOfThree !== game.turn || game.pickCoinOfThree !== currentUserUid) return;
             const playerKey = game.turn === game.player1.user.uid ? 'player1' : 'player2';
             const playerState = game.turn === game.player1.user.uid ? game.player1 : game.player2;
+            const acquireCash = cashBonusWhenAcquiringEconomyCoin(coin);
             const withCoin: IGameDuelPlayer = {
                 ...playerState,
                 resources: {
                     ...playerState.resources,
-                    coins: [...playerState.resources.coins, coin]
+                    coins: [...playerState.resources.coins, coin],
+                    cash: playerState.resources.cash + acquireCash
                 }
             };
 
             await updateDoc(tableGameDuelRef, {
                 'gameBoard.coins': arrayRemove(coin),
                 [`${playerKey}.resources.coins`]: arrayUnion(coin),
+                ...(acquireCash ? { [`${playerKey}.resources.cash`]: increment(acquireCash) } : {}),
                 pickCoinOfThree: ''
             });
 
@@ -876,16 +892,22 @@ export function useGameState(currentUserUid: string) {
                 card.id === graveCard.id ? { ...card, taken: 'inPlayerBoard' } : card
             );
 
+            const chainCoinPayout = extraCashWhenChainPurchaseWithEconomyCoin(graveCard, ps);
+            const resourcesFinal = {
+                ...resources,
+                cash: resources.cash + chainCoinPayout
+            };
+
             await updateDoc(tableGameDuelRef, {
                 [tierKey]: tierUpdated,
                 graveyard: arrayRemove(graveCard),
                 pickCardFromGraveyard: '',
                 [`${playerKey}.cards`]: cards,
                 [`${playerKey}.points`]: ps.points,
-                [`${playerKey}.resources`]: resources
+                [`${playerKey}.resources`]: resourcesFinal
             });
 
-            const merged: IGameDuelPlayer = { ...ps, cards, resources };
+            const merged: IGameDuelPlayer = { ...ps, cards, resources: resourcesFinal };
             if (!(await applyScientificVictoryIfNeeded(game.turn, merged))) {
                 await finishTurnAfterSpecialAction();
             }

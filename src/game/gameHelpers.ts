@@ -1,5 +1,6 @@
 import type {
     IGameDuelCard,
+    IGameDuelCoin,
     IGameDuelPlayer,
     IGameDuelWonderCard,
     Materials,
@@ -142,6 +143,43 @@ export function countPlayerResources(card: IGameDuelCard, player: IGameDuelPlaye
     return res;
 }
 
+/** Chain-symbol IDs visible on your built yellow / blue / green / red buildings (`specialChar` on the card powers). Matches cost-line chaining in the board game — do not rely on `resources.specialChars` alone (can drift vs Firestore). */
+export function chainSymbolIdsOwnedInCity(player: IGameDuelPlayer): Set<number> {
+    const ids = new Set<number>();
+    const built = [player.cards.blue, player.cards.green, player.cards.yellow, player.cards.red];
+    for (const row of built) {
+        for (const card of row) {
+            if (card.taken !== 'inPlayerBoard') continue;
+            card.power.forEach((pow, idx) => {
+                if (pow === 'specialChar') ids.add(card.valuePower[idx]);
+            });
+        }
+    }
+    return ids;
+}
+
+/** True if purchasing this tier card ignores all costs (free construction via chain). */
+export function constructsBuildingFreeViaChain(card: IGameDuelCard, player: IGameDuelPlayer): boolean {
+    const ids = chainSymbolIdsOwnedInCity(player);
+    return card.cost.some((c, idx) => c === 'specialChar' && ids.has(card.valueCost[idx]));
+}
+
+/** One-time payout when acquiring progress coin `cash6n4special` (added to your coins). */
+export const ECONOMY_COIN_ACQUIRE_ONE_TIME_CASH = 6;
+
+/** Extra cash whenever you take a building using chain matching (`specialChar`) while owning that coin — pyramid buy or graveyard pick. */
+export const ECONOMY_COIN_CHAIN_PURCHASE_BONUS = 4;
+
+export function cashBonusWhenAcquiringEconomyCoin(coin: IGameDuelCoin['effect']): number {
+    return coin === 'cash6n4special' ? ECONOMY_COIN_ACQUIRE_ONE_TIME_CASH : 0;
+}
+
+export function extraCashWhenChainPurchaseWithEconomyCoin(card: IGameDuelCard, player: IGameDuelPlayer): number {
+    if (!player.resources.coins.includes('cash6n4special')) return 0;
+    if (!constructsBuildingFreeViaChain(card, player)) return 0;
+    return ECONOMY_COIN_CHAIN_PURCHASE_BONUS;
+}
+
 function removeOptionalMaterials(
     missingMaterials: string[],
     arrCBW: { type: Materials; val: number }[],
@@ -190,10 +228,14 @@ export function showPrice(
         }
     ].sort((a, b) => b.val - a.val);
 
+    const chainOwned = chainSymbolIdsOwnedInCity(player);
+
     selectedCard.cost.forEach((cost, i) => {
         const value = selectedCard.valueCost[i];
         if (cost === 'specialChar') {
-            if (player.resources.specialChars.includes(value)) buyForFree = true;
+            const hasChainViaCity = chainOwned.has(value);
+            const hasChainViaResource = player.resources.specialChars.includes(value);
+            if (hasChainViaCity || hasChainViaResource) buyForFree = true;
         } else if (cost === 'cash') {
             buyForCash += value;
         } else if (cost === 'clay') {
