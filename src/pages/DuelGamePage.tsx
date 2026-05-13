@@ -12,7 +12,7 @@ import {
     countPointsFromCoins,
     countPointsFromGuild,
     showPrice
-} from '@/game/gameHelpers';
+} from '@/helpers/GameDuelHelpers';
 import { tierOneX, tierOneY, tierTwoX, tierTwoY, tierThreeX, tierThreeY } from '@/helpers/GameDuelInit';
 import { isSoundMuted, setSoundMuted, setSoundScope } from '@/utils/sound';
 import { persistUserSoundMuted } from '@/utils/persistUserSoundMuted';

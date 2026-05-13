@@ -34,7 +34,7 @@ import {
     showPrice,
     countTotalPoints,
     getNextTurnUidAfterPlay
-} from '@/game/gameHelpers';
+} from '@/helpers/GameDuelHelpers';
 import { useGameStore } from '@/store/useGameStore';
 import { useDuelGameStore } from '@/store/useDuelGameStore';
 import { useUserStore } from '@/store/useUserStore';
@@ -592,8 +592,9 @@ export function useGameState(currentUserUid: string) {
 
         const playerKey = game.turn === game.player1.user.uid ? 'player1' : 'player2';
         const playerState = game.turn === game.player1.user.uid ? game.player1 : game.player2;
+        const opponentState = playerKey === 'player1' ? game.player2 : game.player1;
         const playerSnap = structuredClone(playerState);
-        const resources = countPlayerResources(card, playerSnap);
+        const resources = countPlayerResources(card, playerSnap, opponentState);
         const cards = structuredClone(playerSnap.cards);
         cards[card.color].push({ ...card, taken: 'inPlayerBoard' });
 
@@ -899,8 +900,9 @@ export function useGameState(currentUserUid: string) {
 
             const playerKey = game.turn === game.player1.user.uid ? 'player1' : 'player2';
             const playerState = game.turn === game.player1.user.uid ? game.player1 : game.player2;
+            const opponentState = playerKey === 'player1' ? game.player2 : game.player1;
             const ps = structuredClone(playerState);
-            const resources = countPlayerResources(graveCard, ps);
+            const resources = countPlayerResources(graveCard, ps, opponentState);
             const cards = structuredClone(ps.cards);
             cards[graveCard.color].push({ ...graveCard, taken: 'inPlayerBoard' });
 
