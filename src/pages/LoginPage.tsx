@@ -118,13 +118,15 @@ export function LoginPage() {
     };
 
     return (
-        <main className="mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center p-4">
-            <div className="w-full rounded-2xl border border-white/20 bg-white/10 p-6 text-slate-100 shadow-2xl backdrop-blur">
-                <header className="flex items-center justify-center gap-2 text-2xl font-bold">
-                    <Gamepad2 className="h-7 w-7 text-cyan-300" />
+        <main className="loginPage mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center p-4 text-[var(--app-text)]">
+            <div className="app-surface-login w-full rounded-2xl p-6">
+                <header className="font-display flex items-center justify-center gap-2 text-2xl font-bold tracking-wide">
+                    <Gamepad2 className="app-brand-icon h-7 w-7" aria-hidden />
                     Game Board
                 </header>
-                <h2 className="mb-4 text-center text-xl font-semibold">{isRegister ? 'Register' : 'Sign in'}</h2>
+                <h2 className="font-display mb-4 tracking-wide text-center text-xl font-semibold text-[var(--app-text)]">
+                    {isRegister ? 'Register' : 'Sign in'}
+                </h2>
 
                 <form className="space-y-3" onSubmit={onSubmit}>
                     {isRegister && (
@@ -136,7 +138,7 @@ export function LoginPage() {
                                 onChange={(e) => setDisplayName(e.target.value)}
                                 required
                             />
-                            <label className="block text-xs text-slate-300/90">
+                            <label className="block text-xs text-[var(--app-text-muted)]">
                                 <span className="mb-1.5 block font-medium tracking-wide">Country / region</span>
                                 <CountrySelect
                                     value={registerCountry}
@@ -180,7 +182,7 @@ export function LoginPage() {
                     Continue with Google
                 </button>
 
-                {error && <p className="mt-3 text-sm text-red-300">{error}</p>}
+                {error && <p className="loginPageError mt-3 text-sm">{error}</p>}
             </div>
             <section className="loginModeSwitch">
                 <nav className="loginModeNav">

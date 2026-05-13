@@ -1,13 +1,17 @@
+.loginPageError {
+    color: rgb(248 175 155);
+}
+
 .loginModeSwitch {
-    --switch-surface: #1f2937;
-    --switch-bg: var(--switch-surface);
+    --switch-surface: rgb(28 20 14);
+    --switch-bg: linear-gradient(180deg, rgb(38 26 18) 0%, rgb(22 16 11) 100%);
     --mode-width: 78px;
-    --switch-accent: #22d3ee;
+    --switch-accent: var(--app-accent, rgb(218 170 85));
     margin-top: 48px;
     width: 184px;
     height: 56px;
     border-radius: 16px;
-    border: none;
+    border: 1px solid rgb(200 155 100 / 38%);
     background: var(--switch-bg);
     box-shadow: 0 14px 36px rgba(2, 6, 23, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.2);
     display: flex;
@@ -33,7 +37,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    color: #94a3b8;
+    color: rgb(160 145 130);
     cursor: pointer;
     transition: 0.3s ease;
 }
@@ -62,14 +66,14 @@
 .loginModeItem.active .icon {
     transform: translateY(-16px);
     color: var(--switch-accent);
-    filter: drop-shadow(0 0 8px rgba(34, 211, 238, 0.45));
+    filter: drop-shadow(0 0 8px rgb(218 170 85 / 45%));
 }
 
 .loginModeItem.active .text {
     transform: translateY(-4px);
     opacity: 1;
-    background: linear-gradient(135deg, #0ea5e9, #22d3ee);
-    color: #082f49;
+    background: linear-gradient(135deg, rgb(236 198 120), rgb(200 150 75));
+    color: rgb(26 17 10);
     font-weight: 700;
 }
 
@@ -82,7 +86,7 @@
     width: 94px;
     height: 54px;
     border: none;
-    background: var(--switch-bg);
+    background: var(--switch-surface);
     -webkit-mask-image: var(--indicator-mask);
     mask-image: var(--indicator-mask);
     -webkit-mask-size: 100% 100%;

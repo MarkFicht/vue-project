@@ -10,3 +10,4 @@ export const gameStatusReflexRef = doc(gameStatusRef, 'Reflex');
 
 export const gameDuelRef = collection(db, 'gameDuel');
 export const tableGameDuelRef = doc(gameDuelRef, 'table1');
+export const privateChatsRef = collection(db, 'privateChats');

@@ -5,7 +5,7 @@
     flex-direction: column;
     min-height: 100vh;
     padding: 16px;
-    color: #eee;
+    color: rgb(245 235 224);
 }
 
 .dashHeader {
@@ -18,9 +18,6 @@
     margin: 8px 0 20px;
     padding: 12px 14px;
     border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(8px);
     gap: 10px;
 }
 
@@ -28,17 +25,19 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    font-family: var(--font-display);
     font-weight: 700;
-    font-size: clamp(1.2rem, 2.9vw, 1.9rem);
+    font-size: clamp(1.08rem, 2.65vw, 1.72rem);
     line-height: 1.1;
-    color: #e2e8f0;
+    letter-spacing: 0.06em;
+    color: rgb(245 235 224);
     min-width: 0;
     white-space: nowrap;
 }
 
 .dashTitleMain svg {
-    width: clamp(20px, 3.1vw, 30px);
-    height: clamp(20px, 3.1vw, 30px);
+    width: clamp(18px, 2.85vw, 28px);
+    height: clamp(18px, 2.85vw, 28px);
     flex-shrink: 0;
 }
 
@@ -47,17 +46,20 @@
 }
 
 .dashWrapper {
-    --dash-surface: #1f2937;
+    /** Jednolite tło panelu kart — ten sam kolor co „wcięcia” (pseudo-elementy), bez gradientu */
+    --dash-surface-solid: rgb(22 16 11);
+    --dash-surface: var(--dash-surface-solid);
     position: relative;
     width: min(96vw, 990px);
     min-height: calc(100vh - 190px);
     padding: 15px 10px;
     margin-bottom: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: 0 0 50px rgba(2, 6, 23, 0.35);
+    border: 1px solid rgb(195 150 95 / 38%);
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 6%),
+        0 12px 40px rgb(0 0 0 / 42%);
     border-radius: 20px;
-    background: var(--dash-surface);
-    backdrop-filter: blur(8px);
+    background: var(--dash-surface-solid);
     animation: showElement 1.2s linear;
 }
 
@@ -81,6 +83,12 @@
 
 .dashCard {
     --dash-clr: #2196f3;
+    /** Upper / lower card panels — warm leather–parchment vs dashboard brown */
+    --dash-card-top-from: rgb(118 90 68);
+    --dash-card-top-to: rgb(92 70 52);
+    --dash-card-bottom-from: rgb(74 54 40);
+    --dash-card-bottom-via: rgb(56 40 30);
+    --dash-card-bottom-to: rgb(44 32 24);
     position: relative;
     width: 300px;
     margin: 15px 60px 40px;
@@ -93,7 +101,6 @@
 .dashBox {
     position: relative;
     width: 100%;
-    background-color: #aaa;
     border-radius: 50px;
     display: flex;
     justify-content: start;
@@ -101,6 +108,11 @@
     flex-direction: column;
     text-align: center;
     padding: 16px;
+    color: rgb(252 246 236);
+    background: linear-gradient(180deg, var(--dash-card-top-from) 0%, var(--dash-card-top-to) 100%);
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 14%),
+        inset 0 -1px 0 rgb(0 0 0 / 12%);
 }
 
 .dashBoxTop {
@@ -108,21 +120,39 @@
     margin-bottom: 12px;
 }
 
+/** Orbitron — tylko na kartach gier (pas „Video soon!” itd.) */
+.dashCard .dashBoxTop {
+    font-family: var(--font-arcade);
+    font-weight: 600;
+    font-size: 0.8125rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
 .dashBoxBottom {
     min-height: 220px;
-    background: #cdcdcd;
-    color: #2e2e2e;
+    background: linear-gradient(
+        168deg,
+        var(--dash-card-bottom-from) 0%,
+        var(--dash-card-bottom-via) 52%,
+        var(--dash-card-bottom-to) 100%
+    );
+    color: rgb(236 226 212);
     position: relative;
     z-index: 3;
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 8%),
+        inset 0 -1px 0 rgb(0 0 0 / 18%);
 }
 
 .dashBoxBottom p {
     font-size: 14px;
     margin-bottom: 4px;
-    text-indent: 40px; 
+    text-indent: 40px;
     margin-left: 16px;
     margin-right: 16px;
     text-align: justify;
+    color: rgb(222 210 194 / 96%);
 }
 
 .dashCard .dashBoxTop::before,
@@ -134,34 +164,34 @@
     width: 20px;
     height: 20px;
     background: transparent;
-    box-shadow: -6px 6px var(--dash-surface);
+    box-shadow: -6px 6px var(--dash-surface-solid);
 }
 .dashCard .dashBoxTop::before {
     top: 31.5px;
     left: 1px;
     border-radius: 20px;
-    box-shadow: -6px 6px var(--dash-surface);
+    box-shadow: -6px 6px var(--dash-surface-solid);
 }
 
 .dashCard .dashBoxTop::after {
     bottom: -1px;
     left: 100.5px;
     border-bottom-left-radius: 20px;
-    box-shadow: -6px 6px var(--dash-surface);
+    box-shadow: -6px 6px var(--dash-surface-solid);
 }
 
 .dashCard .dashBoxBottom::before {
     top: 76.5px;
     left: -0.5px;
     border-radius: 20px;
-    box-shadow: -6px -6px var(--dash-surface);
+    box-shadow: -6px -6px var(--dash-surface-solid);
 }
 
 .dashCard .dashBoxBottom::after {
     top: -1.5px;
     left: 103px;
     border-top-left-radius: 20px;
-    box-shadow: -6px -6px var(--dash-surface);
+    box-shadow: -6px -6px var(--dash-surface-solid);
 }
 
 .dashCircle {
@@ -172,9 +202,16 @@
     top: 50px;
     left: -55px;
     background-color: var(--dash-clr);
+    background-image: radial-gradient(
+        ellipse 92% 88% at 30% 18%,
+        rgb(255 255 255 / 32%) 0%,
+        rgb(255 255 255 / 12%) 28%,
+        transparent 52%
+    );
     border-radius: 50%;
-    color: #eee;
-    border: 12px solid var(--dash-surface);
+    color: rgb(245 235 224);
+    /** Identyczny kolor co tło `.dashWrapper` i kółka cieni przy wcięciach kart (`--dash-surface-solid`) */
+    border: 12px solid var(--dash-surface-solid);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -183,15 +220,19 @@
 }
 
 .dashCircle > h2 {
-    font-size: 24px;
+    font-family: var(--font-arcade);
+    font-size: 21px;
     font-weight: 700;
-    letter-spacing: 1px;
+    letter-spacing: 0.12em;
     margin-bottom: 5px;
+    text-transform: uppercase;
 }
 
 .dashCircle > p {
-    font-size: 18px;
-    letter-spacing: 1px;
+    font-family: var(--font-arcade);
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
 }
 
 .dashButtonRow {
@@ -205,13 +246,15 @@
 
 .dashCardButton {
     padding: 8px 22px;
-    border: 10px solid var(--dash-surface);
+    border: 10px solid var(--dash-surface-solid);
     outline: none;
     border-radius: 30px;
     color: #fff;
     background-color: var(--dash-clr);
-    font-size: 13px;
-    letter-spacing: 1px;
+    font-family: var(--font-arcade);
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    font-weight: 600;
     text-transform: uppercase;
     cursor: pointer;
     transition:
@@ -233,8 +276,8 @@
     box-shadow:
         12px 12px 16px 0 rgba(255, 255, 255, 0.3) inset,
         -8px -8px 12px 0 rgba(0, 0, 0, 0.25) inset,
-        0 0 0 3px rgba(15, 23, 42, 0.95),
-        0 0 0 5px rgba(34, 211, 238, 0.85);
+        0 0 0 3px rgb(26 17 10),
+        0 0 0 5px rgb(218 170 85 / 72%);
 }
 
 .dashCardButton:disabled {
@@ -247,20 +290,22 @@
 }
 
 .dashMiniButton {
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    background: rgba(15, 23, 42, 0.7);
-    color: #e2e8f0;
+    border: 1px solid rgb(195 150 95 / 38%);
+    background: rgb(38 26 18 / 82%);
+    color: rgb(245 235 224);
     border-radius: 10px;
     padding: 4px 8px;
     font-size: 12px;
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 6%);
 }
 
 .dashLobbyList {
     margin-top: 6px;
     width: 90%;
     border-radius: 10px;
-    background: rgba(2, 6, 23, 0.78);
-    color: #f1f5f9;
+    background: rgb(12 9 6 / 82%);
+    border: 1px solid rgb(180 135 80 / 28%);
+    color: rgb(236 228 216);
     padding: 4px;
     font-size: 12px;
     max-height: 96px;
@@ -364,12 +409,11 @@
     width: 100vw;
     height: 100dvh;
     z-index: 30;
-    background: rgba(2, 6, 23, 0.62);
+    background: rgb(12 8 5 / 76%);
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 0;
-    backdrop-filter: blur(2px);
     overflow: hidden;
     padding: clamp(10px, 2.6vh, 22px);
 }
@@ -377,11 +421,13 @@
 .dashLobbyModal {
     width: min(92vw, 480px);
     border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    background: rgba(15, 23, 42, 0.92);
-    color: #e2e8f0;
+    border: 1px solid rgb(195 150 95 / 42%);
+    background: linear-gradient(175deg, rgb(34 24 17 / 96%) 0%, rgb(18 13 9 / 98%) 100%);
+    color: rgb(245 235 224);
     padding: 16px;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 7%),
+        0 16px 44px rgb(0 0 0 / 48%);
 }
 
 .dashLobbyModal h3 {
@@ -398,8 +444,8 @@
 
 .dashLobbyPlayers {
     border-radius: 10px;
-    background: rgba(2, 6, 23, 0.65);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgb(12 9 6 / 72%);
+    border: 1px solid rgb(180 135 80 / 26%);
     padding: 10px;
 }
 
@@ -451,19 +497,21 @@
     display: flex;
     flex-direction: column;
     border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    background: rgba(15, 23, 42, 0.94);
-    color: #e2e8f0;
+    border: 1px solid rgb(195 150 95 / 42%);
+    background: linear-gradient(175deg, rgb(34 24 17 / 96%) 0%, rgb(18 13 9 / 98%) 100%);
+    color: rgb(245 235 224);
     padding: 0;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 7%),
+        0 16px 44px rgb(0 0 0 / 48%);
     margin: 0 auto;
 }
 
 .dashUserModalHeader {
     flex: 0 0 auto;
     padding: 14px 16px 10px;
-    background: rgba(15, 23, 42, 0.96);
-    border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+    background: rgb(28 20 14 / 94%);
+    border-bottom: 1px solid rgb(195 150 95 / 28%);
 }
 
 .dashUserModalBody {
@@ -490,8 +538,9 @@
     flex: 0 0 auto;
     margin: 0;
     padding: 10px 16px 14px;
-    background: rgba(15, 23, 42, 0.96);
-    border-top: 1px solid rgba(148, 163, 184, 0.2);
+    background: rgb(22 16 11 / 94%);
+    border-top: 1px solid rgb(195 150 95 / 28%);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 5%);
 }
 
 .dashUserGrid {
@@ -509,7 +558,7 @@
 
 .dashUserField > span {
     font-size: 12px;
-    color: rgba(226, 232, 240, 0.85);
+    color: var(--app-text-muted);
     letter-spacing: 0.03em;
 }
 
@@ -522,9 +571,9 @@
 }
 
 .dashUserField .input[readonly] {
-    background: rgba(15, 23, 42, 0.7);
-    color: #cbd5e1;
-    border-color: rgba(148, 163, 184, 0.45);
+    background: rgb(12 9 6 / 58%);
+    color: var(--app-text-muted);
+    border-color: rgb(160 120 75 / 45%);
     cursor: default;
 }
 
@@ -539,35 +588,40 @@
     width: 22px;
     height: 22px;
     border-radius: 6px;
-    border: 1px solid rgba(148, 163, 184, 0.45);
-    background: rgba(30, 41, 59, 0.75);
-    color: #cbd5e1;
-    transition: background-color 0.2s ease, color 0.2s ease;
+    border: 1px solid rgb(160 120 75 / 45%);
+    background: rgb(38 26 18 / 72%);
+    color: var(--app-text-muted);
+    transition:
+        background-color 0.2s ease,
+        color 0.2s ease,
+        border-color 0.2s ease;
 }
 
 .dashInputCopyBtn:hover {
-    background: rgba(51, 65, 85, 0.9);
-    color: #f8fafc;
+    background: rgb(50 34 22 / 82%);
+    color: var(--app-text);
+    border-color: rgb(220 180 120 / 52%);
 }
 
 .dashDataZone {
     margin-top: 14px;
-    border: 1px solid rgba(125, 211, 252, 0.35);
+    border: 1px solid rgb(195 150 95 / 38%);
     border-radius: 10px;
-    background: rgba(2, 132, 199, 0.15);
+    background: rgb(38 26 18 / 35%);
     padding: 10px;
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 5%);
 }
 
 .dashDataZone h4 {
     font-size: 14px;
     font-weight: 700;
-    color: #bae6fd;
+    color: var(--app-accent-bright);
     margin-bottom: 4px;
 }
 
 .dashDataZone > p {
     font-size: 12px;
-    color: #e0f2fe;
+    color: var(--app-text-muted);
     margin-bottom: 8px;
     opacity: 0.95;
 }
@@ -640,7 +694,7 @@
     }
 
     .dashTitleMain {
-        font-size: clamp(1rem, 5.5vw, 1.4rem);
+        font-size: clamp(0.94rem, 5vw, 1.32rem);
         gap: 6px;
     }
 

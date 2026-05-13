@@ -4,7 +4,7 @@ import { UserFlag } from '@/components/UserFlag';
 import { DuelSpriteCard } from './DuelSpriteCard';
 import { DuelCoinSprite } from './DuelCoinSprite';
 import { DuelWonderSprite } from './DuelWonderSprite';
-import { countArtefactsForPlayer, countTotalPoints, showPrice } from '@/game/gameHelpers';
+import { countArtefactsForPlayer, countTotalPoints, showPrice } from '@/helpers/GameDuelHelpers';
 
 const COLORS: Array<keyof IGameDuelPlayer['cards']> = ['brown', 'grey', 'yellow', 'blue', 'red', 'green', 'purple'];
 
@@ -40,7 +40,9 @@ export function DuelPlayerColumns({
     pulseScienceVictory?: boolean;
     showPreparePlaceholders?: boolean;
 }) {
-    const totalPoints = countTotalPoints(player, enemy, boardPawn, isPlayerOne);
+    const totalPoints = countTotalPoints(player, enemy, boardPawn, isPlayerOne, {
+        includeCashReserveVp: false
+    });
     const wonderOrder = useMemo(
         () =>
             player.wonderCards.reduce<Record<number, number>>((acc, wonder, index) => {

@@ -12,7 +12,7 @@ type Props = {
     pickCoinUid: string;
     isMyTurn: boolean;
     currentUid: string;
-    onPickCoin: (coin: string) => void;
+    onPickCoin: (coin: IGameDuelCoin['effect']) => void;
 };
 
 export function DuelBoard({

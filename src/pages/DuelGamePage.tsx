@@ -12,9 +12,10 @@ import {
     countPointsFromCoins,
     countPointsFromGuild,
     showPrice
-} from '@/game/gameHelpers';
+} from '@/helpers/GameDuelHelpers';
 import { tierOneX, tierOneY, tierTwoX, tierTwoY, tierThreeX, tierThreeY } from '@/helpers/GameDuelInit';
-import { isSoundMuted, setSoundMuted, setSoundScope } from '@/utils/sound';
+import { setSoundMuted } from '@/utils/sound';
+import { useSoundMuteSync } from '@/hooks/useSoundMuteSync';
 import { persistUserSoundMuted } from '@/utils/persistUserSoundMuted';
 import { useUserStore } from '@/store/useUserStore';
 import { UserFlag } from '@/components/UserFlag';
@@ -26,19 +27,9 @@ export function DuelGamePage({ uid }: { uid: string }) {
     const [prepareRevealedIds, setPrepareRevealedIds] = useState<number[]>([]);
     const [displayPrepareBatch, setDisplayPrepareBatch] = useState<1 | 2>(1);
     const [prepareActionLocked, setPrepareActionLocked] = useState(false);
-    const [soundMuted, setSoundMutedState] = useState(() => isSoundMuted());
     const profileSoundMuted = useUserStore((state) => state.fbUser.soundMuted);
-    useEffect(() => {
-        setSoundScope(uid);
-        setSoundMutedState(isSoundMuted());
-    }, [uid]);
+    const [soundMuted, setSoundMutedState] = useSoundMuteSync(uid, profileSoundMuted, true);
 
-    useEffect(() => {
-        if (typeof profileSoundMuted !== 'boolean') return;
-        if (profileSoundMuted === isSoundMuted()) return;
-        setSoundMuted(profileSoundMuted);
-        setSoundMutedState(profileSoundMuted);
-    }, [profileSoundMuted]);
     const {
         game,
         isObserver,
@@ -358,11 +349,11 @@ export function DuelGamePage({ uid }: { uid: string }) {
     }, [showActionModal, showCoinChoiceModal, showDestroyOpponentModal, showEpochStarterModal]);
 
     return (
-        <main className="mx-auto flex h-dvh max-h-dvh w-full max-w-[1400px] flex-col overflow-hidden p-2 text-slate-100 sm:p-3">
-            <header className="mb-2 flex min-w-0 max-w-full shrink-0 items-center justify-between gap-2 rounded-xl border border-white/20 bg-white/10 p-2 backdrop-blur sm:mb-3 sm:rounded-2xl sm:p-3">
+        <main className="mx-auto flex h-dvh max-h-dvh w-full max-w-[1400px] flex-col overflow-hidden p-2 text-[color:var(--app-text)] sm:p-3">
+            <header className="app-surface-header mb-2 flex min-w-0 max-w-full shrink-0 items-center justify-between gap-2 rounded-xl p-2 sm:mb-3 sm:rounded-2xl sm:p-3">
                 <div className="min-w-0">
                     <h1 className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1 text-lg font-semibold leading-tight">
-                        <span className="shrink-0">Duel</span>
+                        <span className="font-display shrink-0 tracking-wide">Duel</span>
                         <span className="text-xs font-normal opacity-80">
                             Turn: {isObserver ? 'Observer mode' : isMyTurn ? 'You' : 'Opponent'}
                         </span>
@@ -372,11 +363,12 @@ export function DuelGamePage({ uid }: { uid: string }) {
                     </p>
                 </div>
                 <div className="flex min-w-0 shrink items-center gap-2">
-                    <button className="btn-secondary hdrIconBtn" disabled={isObserver} onClick={surrender} title="Surrender">
+                    <button type="button" className="btn-secondary hdrIconBtn" disabled={isObserver} onClick={surrender} title="Surrender">
                         <ShieldAlert className="h-4 w-4" />
                         <span className="hdrBtnText">Surrender</span>
                     </button>
                     <button
+                        type="button"
                         className="btn-secondary hdrIconBtn"
                         onClick={() => {
                             const next = !soundMuted;
@@ -389,7 +381,7 @@ export function DuelGamePage({ uid }: { uid: string }) {
                         {soundMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
                         <span className="hdrBtnText">{soundMuted ? 'Muted' : 'Sound'}</span>
                     </button>
-                    <button className="btn-secondary hdrIconBtn" onClick={goBackToFeed} title="Back to feed">
+                    <button type="button" className="btn-secondary hdrIconBtn" onClick={goBackToFeed} title="Back to feed">
                         <ArrowLeft className="h-4 w-4" />
                         <span className="hdrBtnText">Feed</span>
                     </button>
@@ -397,8 +389,8 @@ export function DuelGamePage({ uid }: { uid: string }) {
             </header>
 
             {winnerUid ? (
-                <section className="mb-2 shrink-0 rounded-xl border border-cyan-200/30 bg-cyan-500/10 p-3 backdrop-blur sm:mb-3 sm:rounded-2xl sm:p-4">
-                    <h2 className="text-xl font-semibold">Game over</h2>
+                <section className="app-surface-callout mb-2 shrink-0 rounded-xl p-3 sm:mb-3 sm:rounded-2xl sm:p-4">
+                    <h2 className="font-display text-xl font-semibold tracking-wide">Game over</h2>
                     <p className="flex flex-wrap items-center gap-2 text-sm">
                         <span>Winner:</span>
                         <UserFlag code={winnerCountryCode} className="text-lg" />
@@ -569,7 +561,7 @@ export function DuelGamePage({ uid }: { uid: string }) {
                                             </div>
                                         )}
                                     </div>
-                                    <aside className="dg-graveyardPanel rounded-xl border border-white/15 bg-black/15 p-2 backdrop-blur-sm">
+                                    <aside className="dg-graveyardPanel rounded-xl border border-[rgb(195_150_95/30%)] bg-[rgb(14_10_7/72%)] p-2 shadow-[inset_0_1px_0_rgb(255_255_255/5%)]">
                                         <h3 className="mb-1 text-sm font-semibold">Graveyard</h3>
                                         <div
                                             className={`dg-graveyardCards duelPageScrollbar overflow-y-auto rounded-lg bg-black/20 p-1 ${

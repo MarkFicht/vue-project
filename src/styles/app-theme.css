@@ -1,0 +1,124 @@
+/**
+ * Warm brown / gold UI aligned with duel main_bg — shared buttons, inputs, panel surfaces.
+ */
+:root {
+    --app-accent: rgb(218 170 85);
+    --app-accent-bright: rgb(236 198 120);
+    --app-accent-deep: rgb(168 125 58);
+    --app-text: rgb(245 235 224);
+    --app-text-muted: rgb(190 175 158);
+    --app-on-accent: rgb(26 17 10);
+    --app-border: rgb(200 155 100 / 42%);
+    --app-border-soft: rgb(255 255 255 / 10%);
+}
+
+/** Feed header / login hero icon — gold accent + glow */
+.app-brand-icon {
+    color: var(--app-accent);
+    filter: drop-shadow(0 0 12px rgb(218 170 85 / 38%));
+}
+
+.btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60;
+    color: var(--app-on-accent);
+    border: 1px solid rgb(255 220 170 / 42%);
+    background: linear-gradient(
+        180deg,
+        var(--app-accent-bright) 0%,
+        var(--app-accent) 42%,
+        var(--app-accent-deep) 100%
+    );
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 28%),
+        0 2px 10px rgb(0 0 0 / 32%);
+}
+
+.btn-primary:hover:not(:disabled) {
+    filter: brightness(1.07);
+}
+
+.btn-primary:active:not(:disabled) {
+    filter: brightness(0.96);
+}
+
+.btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60;
+    color: var(--app-text);
+    border: 1px solid var(--app-border);
+    background: rgb(38 26 18 / 72%);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 6%);
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background: rgb(50 34 22 / 82%);
+    border-color: rgb(220 180 120 / 52%);
+}
+
+.input {
+    @apply w-full rounded-xl px-3 py-2 text-sm outline-none transition;
+    color: var(--app-text);
+    border: 1px solid rgb(160 120 75 / 45%);
+    background: rgb(12 9 6 / 58%);
+}
+
+.input::placeholder {
+    color: rgb(150 135 120 / 72%);
+}
+
+.input:focus {
+    border-color: rgb(218 170 85 / 85%);
+    box-shadow: 0 0 0 2px rgb(218 170 85 / 22%);
+}
+
+/** Login card: solid layered browns + rim light — no backdrop-blur */
+.app-surface-login {
+    background: linear-gradient(
+        165deg,
+        rgb(28 20 14 / 96%) 0%,
+        rgb(42 29 18 / 93%) 42%,
+        rgb(18 13 9 / 97%) 100%
+    );
+    border: 2px solid rgb(205 160 108 / 44%);
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 9%),
+        inset 0 0 60px rgb(0 0 0 / 18%),
+        0 16px 44px rgb(0 0 0 / 48%),
+        0 0 0 1px rgb(0 0 0 / 38%);
+}
+
+/** Dashboard header, duel toolbar — flat gradient, crisp border */
+.app-surface-header {
+    background: linear-gradient(180deg, rgb(36 25 17 / 94%) 0%, rgb(22 16 11 / 96%) 100%);
+    border: 1px solid rgb(195 150 95 / 38%);
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 7%),
+        0 10px 28px rgb(0 0 0 / 38%);
+}
+
+/** Notices (e.g. game over) — warm highlight without cyan */
+.app-surface-callout {
+    background: linear-gradient(135deg, rgb(48 34 22 / 88%) 0%, rgb(26 18 12 / 94%) 100%);
+    border: 1px solid rgb(210 165 95 / 38%);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 6%);
+}
+
+.modalLikeScrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(180 130 70 / 0.78) rgb(22 16 11 / 0.58);
+}
+
+.modalLikeScrollbar::-webkit-scrollbar {
+    width: 10px;
+}
+
+.modalLikeScrollbar::-webkit-scrollbar-track {
+    background: rgb(22 16 11 / 58%);
+    border-radius: 999px;
+    margin-block: 8px;
+}
+
+.modalLikeScrollbar::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, rgb(200 150 80 / 0.82), rgb(140 95 48 / 0.72));
+    border-radius: 999px;
+    border: 2px solid rgb(22 16 11 / 90%);
+}

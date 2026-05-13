@@ -1,0 +1,7 @@
+/**
+ * Login & dashboard: applied to document.body (see App.tsx).
+ * Matches duel table arena intent: centered image, cover (no stretch), warm fallback from duel tokens.
+ */
+body.app-body-main-bg {
+    background: var(--duel-bg-fallback) url('@/assets/duel/main_bg.png') center / cover no-repeat fixed;
+}
