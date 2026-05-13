@@ -34,6 +34,14 @@ Ultimately, the website is intended for `desktop computers` and tested in the `C
 
 -   Soon
 
+## Chat web push setup
+
+1. In Firebase Console open: Project settings -> Cloud Messaging.
+2. In "Web configuration" generate a Web Push certificate key pair.
+3. Create `.env` from `.env.example` and set `VITE_FIREBASE_VAPID_KEY`.
+4. Deploy updated Firestore rules (`firestore.rules`).
+5. Reload app and allow browser notifications.
+
 ## Status
 
 Project: <b>In progress</b>
