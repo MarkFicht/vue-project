@@ -566,6 +566,9 @@
        top: 183px;
        left: 260px;
     }
+    .dg-boardCoinSlot {
+        transform: rotate(0);
+    }
     /* Wonder-pick phase: conflict board like narrow layout — top, not shifted right beside pyramid */
     .dg-arenaTableCard:has(.dg-stageCards--prepare) .dg-militaryViewport {
         position: relative;
