@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { registerWebPushToken, subscribeToForegroundPush } from '@/utils/pushNotifications';
 import { saveChatNotifyMuted } from '@/utils/chatWidget';
-import { playUiSound } from '@/utils/sound';
+import { ensureUiSoundReady, playUiSound } from '@/utils/sound';
 
 type ChatSummaryLite = {
     chatId: string;
@@ -46,6 +46,10 @@ export function useChatNotifications({
         permissionPromptedRef.current = false;
         lastIncomingSummarySoundRef.current = '';
     }, [uid]);
+
+    useEffect(() => {
+        ensureUiSoundReady();
+    }, []);
 
     useEffect(() => {
         if (chatNotifyMuted || typeof Notification === 'undefined') return;
@@ -102,26 +106,29 @@ export function useChatNotifications({
             return;
         }
 
-        if (!newestIncoming || chatNotifyMuted || typeof Notification === 'undefined') return;
-        const currentChatOpen = isOpen && activeChatId === newestIncoming.chatId && document.visibilityState === 'visible';
-        if (currentChatOpen) return;
+        if (!newestIncoming || chatNotifyMuted) return;
+        const incoming: ChatSummaryLite = newestIncoming;
 
-        const senderUid = newestIncoming.participants.find((id) => id !== uid) || '';
-        const sender = usersById.get(senderUid);
-        const title = sender?.displayName || sender?.email || 'New message';
-        const body = newestIncoming.lastMessage || 'You have a new chat message.';
-        const incomingSoundKey = `${newestIncoming.chatId}:${newestIncoming.updatedAtMs}`;
-
+        const incomingSoundKey = `${incoming.chatId}:${incoming.updatedAtMs}`;
         if (lastIncomingSummarySoundRef.current !== incomingSoundKey) {
             lastIncomingSummarySoundRef.current = incomingSoundKey;
             playUiSound('notify');
         }
 
+        const currentChatOpen = isOpen && activeChatId === incoming.chatId && document.visibilityState === 'visible';
+        if (currentChatOpen) return;
+
+        if (typeof Notification === 'undefined') return;
+        const senderUid = incoming.participants.find((id) => id !== uid) || '';
+        const sender = usersById.get(senderUid);
+        const title = sender?.displayName || sender?.email || 'New message';
+        const body = incoming.lastMessage || 'You have a new chat message.';
+
         if (Notification.permission === 'granted') {
-            const notification = new Notification(title, { body, tag: newestIncoming.chatId });
+            const notification = new Notification(title, { body, tag: incoming.chatId });
             notification.onclick = () => {
                 window.focus();
-                openChat(newestIncoming.chatId, senderUid);
+                openChat(incoming.chatId, senderUid);
                 notification.close();
             };
             return;

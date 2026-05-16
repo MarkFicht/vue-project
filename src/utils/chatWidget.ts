@@ -26,6 +26,7 @@ export const CACHE_MSG_LIMIT = 12;
 export const CHAT_CACHE_PREFIX = 'chat-cache-v1:';
 export const CHAT_READ_PREFIX = 'chat-read-v1:';
 export const CHAT_NOTIFY_MUTE_PREFIX = 'chat-notify-muted-v1:';
+export const CHAT_RECENT_HIDDEN_PREFIX = 'chat-recent-hidden-v1:';
 export const READ_BOTTOM_THRESHOLD_PX = 56;
 
 export function formatChatTime(value?: Timestamp, createdAtMs?: number) {
@@ -63,6 +64,26 @@ export function loadChatNotifyMuted(uid: string) {
 export function saveChatNotifyMuted(uid: string, value: boolean) {
     try {
         localStorage.setItem(`${CHAT_NOTIFY_MUTE_PREFIX}${uid}`, value ? '1' : '0');
+    } catch {
+        // Ignore storage quota errors.
+    }
+}
+
+export function loadHiddenRecentChatIds(uid: string): string[] {
+    try {
+        const raw = localStorage.getItem(`${CHAT_RECENT_HIDDEN_PREFIX}${uid}`);
+        if (!raw) return [];
+        const parsed = JSON.parse(raw) as unknown;
+        if (!Array.isArray(parsed)) return [];
+        return parsed.filter((entry): entry is string => typeof entry === 'string' && entry.length > 0);
+    } catch {
+        return [];
+    }
+}
+
+export function saveHiddenRecentChatIds(uid: string, chatIds: string[]) {
+    try {
+        localStorage.setItem(`${CHAT_RECENT_HIDDEN_PREFIX}${uid}`, JSON.stringify(chatIds));
     } catch {
         // Ignore storage quota errors.
     }

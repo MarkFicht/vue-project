@@ -10,6 +10,7 @@ type SoundKind =
     | 'destroyGrey';
 
 let audioCtx: AudioContext | null = null;
+let soundUnlockBound = false;
 
 /** One device-local preference (Firestore mirrors separately); avoids uid/global key mismatches on first paint. */
 const MUTE_STORAGE_KEY = 'duel-sound-muted';
@@ -104,6 +105,28 @@ function getContext() {
         audioCtx = new Ctx();
     }
     return audioCtx;
+}
+
+export function ensureUiSoundReady() {
+    if (typeof window === 'undefined' || soundUnlockBound) return;
+    soundUnlockBound = true;
+
+    const tryResume = () => {
+        const ctx = getContext();
+        if (!ctx) return;
+        if (ctx.state === 'suspended') {
+            void ctx.resume();
+        }
+        if (ctx.state === 'running') {
+            window.removeEventListener('pointerdown', tryResume);
+            window.removeEventListener('touchstart', tryResume);
+            window.removeEventListener('keydown', tryResume);
+        }
+    };
+
+    window.addEventListener('pointerdown', tryResume, { passive: true });
+    window.addEventListener('touchstart', tryResume, { passive: true });
+    window.addEventListener('keydown', tryResume);
 }
 
 function playTones(tones: Array<{ freq: number; ms: number; type?: OscillatorType }>, gain = 0.05) {
