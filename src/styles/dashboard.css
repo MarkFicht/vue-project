@@ -10,7 +10,8 @@
 
 .dashHeader {
     display: flex;
-    width: min(96vw, 990px);
+    width: min(100%, 990px);
+    box-sizing: border-box;
     max-width: 100%;
     min-width: 0;
     justify-content: space-between;
@@ -19,6 +20,7 @@
     padding: 12px 14px;
     border-radius: 16px;
     gap: 10px;
+    position: relative;
 }
 
 .dashTitleMain {
@@ -36,8 +38,8 @@
 }
 
 .dashTitleMain svg {
-    width: clamp(18px, 2.85vw, 28px);
-    height: clamp(18px, 2.85vw, 28px);
+    width: clamp(26px, 3.2vw, 34px);
+    height: clamp(26px, 3.2vw, 34px);
     flex-shrink: 0;
 }
 
@@ -45,12 +47,40 @@
     flex-shrink: 0;
 }
 
+.dashHeaderActionsDesktop {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: auto;
+}
+
+.dashMobileMenuToggle {
+    display: none !important;
+}
+
+.dashMobileMenu {
+    display: none !important;
+}
+
+@keyframes dashMenuIn {
+    from {
+        opacity: 0;
+        transform: translateY(-6px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
 .dashWrapper {
     /** Jednolite tło panelu kart — ten sam kolor co „wcięcia” (pseudo-elementy), bez gradientu */
     --dash-surface-solid: rgb(22 16 11);
     --dash-surface: var(--dash-surface-solid);
     position: relative;
-    width: min(96vw, 990px);
+    width: min(100%, 990px);
+    box-sizing: border-box;
     min-height: calc(100vh - 190px);
     padding: 15px 10px;
     margin-bottom: 12px;
@@ -686,7 +716,7 @@
     }
 }
 
-@media (max-width: 720px) {
+@media (max-width: 768px) {
     .dashHeader {
         margin: 2px 0 16px;
         padding: 10px 12px;
@@ -702,9 +732,59 @@
         padding: 6px 10px;
     }
 
+    .dashHeaderActionsDesktop {
+        display: none !important;
+    }
+
+    .dashMobileMenuToggle {
+        display: inline-flex !important;
+        min-width: 2.35rem;
+        min-height: 2.35rem;
+        padding: 0.45rem;
+        border-radius: 0.9rem;
+        margin-left: auto;
+    }
+
+    .dashMobileMenu {
+        position: absolute;
+        top: calc(100% + 8px);
+        right: 0;
+        width: min(84vw, 16rem);
+        border-radius: 14px;
+        border: 1px solid rgb(195 150 95 / 38%);
+        background: linear-gradient(180deg, rgb(36 25 17 / 96%) 0%, rgb(22 16 11 / 98%) 100%);
+        box-shadow:
+            inset 0 1px 0 rgb(255 255 255 / 6%),
+            0 14px 28px rgb(0 0 0 / 42%);
+        display: block !important;
+        z-index: 20;
+        animation: dashMenuIn 0.18s ease-out;
+    }
+
+    .dashMobileMenuList {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+        padding: 0.5rem;
+    }
+
+    .dashMobileMenuItem {
+        width: 100%;
+        justify-content: flex-start;
+        min-height: 2.2rem;
+        border-radius: 0.75rem;
+    }
+
+    .dashMobileMenuText {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
     .dashCard {
         transform: scale(0.9);
-        margin: -2px 20px;
+        margin: -2px 30px;
     }
 }
 
@@ -712,6 +792,7 @@
     .dashCard {
         transform: scale(0.85);
         margin: -12px;
+        margin-left: -2px;
     }
 }
 
@@ -719,11 +800,14 @@
     .dashCard {
         transform: scale(0.75);
         margin: -30px;
+        margin-left: -20px;
+        width: 280px;
     }
 }
 
 @media (max-width: 340px) {
     .dashCard {
         margin-left: -10px;
+        width: 266px;
     }
 }

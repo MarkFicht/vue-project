@@ -2,6 +2,11 @@
     color: rgb(248 175 155);
 }
 
+.loginPage .app-surface-login > header .app-brand-icon {
+    width: clamp(2.45rem, 2.6vw, 2.35rem);
+    height: clamp(2.45rem, 2.6vw, 2.35rem);
+}
+
 .loginModeSwitch {
     --switch-surface: rgb(28 20 14);
     --switch-bg: linear-gradient(180deg, rgb(38 26 18) 0%, rgb(22 16 11) 100%);

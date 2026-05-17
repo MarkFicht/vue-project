@@ -15,7 +15,7 @@ import {
     writeBatch
 } from 'firebase/firestore';
 import { ref as rtdbRef, get as getRtdb, serverTimestamp as rtdbServerTimestamp, set as setRtdb } from 'firebase/database';
-import { Check, Copy, Gamepad2, LogOut, UserCircle2, UserX, Volume2, VolumeX } from 'lucide-react';
+import { Check, Copy, Gamepad2, LogOut, Menu, UserCircle2, UserX, Volume2, VolumeX, X } from 'lucide-react';
 import {
     EmailAuthProvider,
     deleteUser,
@@ -57,6 +57,8 @@ export function DashboardPage({ uid }: { uid: string }) {
     const [copiedField, setCopiedField] = useState('');
     const [nowMs, setNowMs] = useState(() => Date.now());
     const [liveMove, setLiveMove] = useState<number | null>(null);
+    const [showHeaderMobileMenu, setShowHeaderMobileMenu] = useState(false);
+    const headerRef = useRef<HTMLElement | null>(null);
     const user = useUserStore((state) => state.fbUser);
     const subUser = useUserStore((state) => state.subFirebaseConnect);
     const unSubUser = useUserStore((state) => state.unSubFirebaseConnect);
@@ -434,6 +436,18 @@ export function DashboardPage({ uid }: { uid: string }) {
         } finally {
             await signOut(auth);
         }
+    };
+
+    const openUserProfileModal = () => {
+        setProfileDisplayName(user.displayName || '');
+        setProfileCountryCode(normalizeCountryCode(user.countryCode) ?? guessCountryFromLocale());
+        setProfileError('');
+        setDeletePassword('');
+        setDeleteConfirmText('');
+        setDeleteError('');
+        setExportError('');
+        setShowUserModal(true);
+        setShowHeaderMobileMenu(false);
     };
     const deleteAccountSelf = async () => {
         const currentUser = auth.currentUser;
@@ -870,27 +884,37 @@ export function DashboardPage({ uid }: { uid: string }) {
         };
     }, [showDuelLobbyModal, showUserModal]);
 
+    useEffect(() => {
+        const onResize = () => {
+            if (window.innerWidth > 767) setShowHeaderMobileMenu(false);
+        };
+        window.addEventListener('resize', onResize);
+        return () => window.removeEventListener('resize', onResize);
+    }, []);
+
+    useEffect(() => {
+        if (!showHeaderMobileMenu) return;
+        const onPointerDown = (event: PointerEvent) => {
+            const target = event.target as Node | null;
+            if (headerRef.current?.contains(target)) return;
+            setShowHeaderMobileMenu(false);
+        };
+        document.addEventListener('pointerdown', onPointerDown);
+        return () => document.removeEventListener('pointerdown', onPointerDown);
+    }, [showHeaderMobileMenu]);
+
     return (
         <main className="dashboardPage">
-            <header className="dashHeader app-surface-header">
+            <header ref={headerRef} className="dashHeader app-surface-header">
                 <div className="dashTitleMain">
                     <Gamepad2 className="app-brand-icon" aria-hidden />
                     Feed Panel
                 </div>
-                <div className="flex min-w-0 shrink items-center gap-2">
+                <div className="dashHeaderActionsDesktop">
                     <button
                         type="button"
                         className="btn-secondary hdrIconBtn"
-                        onClick={() => {
-                            setProfileDisplayName(user.displayName || '');
-                            setProfileCountryCode(normalizeCountryCode(user.countryCode) ?? guessCountryFromLocale());
-                            setProfileError('');
-                            setDeletePassword('');
-                            setDeleteConfirmText('');
-                            setDeleteError('');
-                            setExportError('');
-                            setShowUserModal(true);
-                        }}
+                        onClick={openUserProfileModal}
                         title={
                             (user.displayName || user.email || 'User') +
                             ' — profile'
@@ -921,6 +945,46 @@ export function DashboardPage({ uid }: { uid: string }) {
                         <span className="hdrBtnText">Logout</span>
                     </button>
                 </div>
+                <button
+                    type="button"
+                    className="btn-secondary dashMobileMenuToggle"
+                    onClick={() => setShowHeaderMobileMenu((prev) => !prev)}
+                    aria-expanded={showHeaderMobileMenu}
+                    aria-label={showHeaderMobileMenu ? 'Close header menu' : 'Open header menu'}
+                    title={showHeaderMobileMenu ? 'Close menu' : 'Open menu'}
+                >
+                    {showHeaderMobileMenu ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+                </button>
+                {showHeaderMobileMenu && (
+                    <div className="dashMobileMenu">
+                        <div className="dashMobileMenuList">
+                            <button type="button" className="btn-secondary dashMobileMenuItem" onClick={openUserProfileModal}>
+                                <UserCircle2 className="h-4 w-4 shrink-0" />
+                                <span className="dashMobileMenuText">
+                                    {user.displayName || user.email || 'User'}
+                                </span>
+                            </button>
+                            <button
+                                type="button"
+                                className="btn-secondary dashMobileMenuItem"
+                                onClick={() => {
+                                    const next = !soundMuted;
+                                    setSoundMuted(next);
+                                    setSoundMutedState(next);
+                                    void persistUserSoundMuted(uid, next);
+                                }}
+                                title={soundMuted ? 'Unmute sounds' : 'Mute sounds'}
+                            >
+                                {soundMuted ? <VolumeX className="h-4 w-4 shrink-0" /> : <Volume2 className="h-4 w-4 shrink-0" />}
+                                <span className="dashMobileMenuText">{soundMuted ? 'Unmute sounds' : 'Mute sounds'}</span>
+                            </button>
+                            <button type="button" className="btn-secondary dashMobileMenuItem" onClick={logoutUser}>
+                                <LogOut className="h-4 w-4 shrink-0" />
+                                <span className="dashMobileMenuText">Logout</span>
+                            </button>
+                        </div>
+                    </div>
+                )}
             </header>
 
             {!!initError && (
