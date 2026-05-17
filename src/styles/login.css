@@ -117,3 +117,29 @@
 .loginModeIndicator.toRight {
     transform: translateX(var(--mode-width));
 }
+
+.loginGoogleBtn {
+    border-color: rgb(215 175 120 / 48%);
+    background: linear-gradient(180deg, rgb(52 37 25 / 92%) 0%, rgb(30 21 15 / 95%) 100%);
+    color: rgb(247 236 222);
+}
+
+.loginGoogleBtn:hover:not(:disabled) {
+    border-color: rgb(236 198 120 / 62%);
+    background: linear-gradient(180deg, rgb(66 45 30 / 95%) 0%, rgb(38 27 18 / 96%) 100%);
+}
+
+.loginGoogleIcon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.2rem;
+    height: 1.2rem;
+    margin-right: 0.4rem;
+}
+
+.loginGoogleIcon svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+}

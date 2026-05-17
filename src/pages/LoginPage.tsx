@@ -169,7 +169,7 @@ export function LoginPage() {
                 </form>
 
                 <button
-                    className="btn-secondary mt-3 w-full"
+                    className="btn-secondary loginGoogleBtn mt-3 w-full"
                     type="button"
                     onClick={async () => {
                         setError('');
@@ -182,6 +182,26 @@ export function LoginPage() {
                         }
                     }}
                 >
+                    <span className="loginGoogleIcon" aria-hidden>
+                        <svg viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+                            <path
+                                fill="#4285F4"
+                                d="M17.64 9.2c0-.64-.06-1.26-.16-1.85H9v3.5h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.9c1.7-1.57 2.7-3.88 2.7-6.63Z"
+                            />
+                            <path
+                                fill="#34A853"
+                                d="M9 18c2.43 0 4.47-.8 5.96-2.17l-2.9-2.26c-.8.54-1.84.86-3.06.86-2.35 0-4.33-1.58-5.04-3.7H.96V13c1.47 2.9 4.48 5 8.04 5Z"
+                            />
+                            <path
+                                fill="#FBBC05"
+                                d="M3.96 10.73A5.4 5.4 0 0 1 3.67 9c0-.6.1-1.18.29-1.73V4.98H.96A9 9 0 0 0 0 9c0 1.45.35 2.82.96 4l3-2.27Z"
+                            />
+                            <path
+                                fill="#EA4335"
+                                d="M9 3.58c1.32 0 2.5.45 3.43 1.33l2.58-2.58C13.46.9 11.42 0 9 0 5.44 0 2.43 2.1.96 4.98l3 2.29c.71-2.12 2.69-3.7 5.04-3.7Z"
+                            />
+                        </svg>
+                    </span>
                     Continue with Google
                 </button>
 
