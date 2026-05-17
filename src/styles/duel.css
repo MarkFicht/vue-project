@@ -11,6 +11,11 @@
     --duel-scrollbar-track: rgb(32 22 16 / 55%);
     --duel-scrollbar-thumb: rgba(100 62 38 / 0.88);
     --duel-scrollbar-thumb-hover: rgba(124 80 48 / 0.95);
+    --duel-panel-border: rgb(255 255 255 / 15%);
+    --duel-panel-bg: rgb(2 6 23 / 45%);
+    --duel-modal-bg: rgb(2 6 23 / 90%);
+    --duel-graveyard-bg: rgb(14 10 7 / 72%);
+    --duel-graveyard-inner-bg: rgb(0 0 0 / 20%);
     /* Full-size military board (.dg-board); visually rotate(90deg) × scale(...) */
     --dg-military-board-scale: 0.56;
 
@@ -35,6 +40,25 @@
     --width-board: 200px;
     --height-board: 500px;
     --coin-size: 42px;
+}
+
+:root[data-app-theme='ivory'] {
+    --duel-bg-fallback: rgb(62 46 33);
+    --duel-arena-gradient: linear-gradient(
+        168deg,
+        rgb(126 95 68 / 88%) 0%,
+        rgb(100 75 54 / 84%) 38%,
+        rgb(78 58 42 / 80%) 72%,
+        rgb(58 43 30 / 76%) 100%
+    );
+    --duel-scrollbar-track: rgb(66 49 35 / 58%);
+    --duel-scrollbar-thumb: rgba(244 223 186 / 0.9);
+    --duel-scrollbar-thumb-hover: rgba(255 239 212 / 0.96);
+    --duel-panel-border: rgb(236 211 170 / 34%);
+    --duel-panel-bg: rgb(66 49 35 / 42%);
+    --duel-modal-bg: rgb(52 38 27 / 90%);
+    --duel-graveyard-bg: rgb(62 46 33 / 72%);
+    --duel-graveyard-inner-bg: rgb(42 31 22 / 36%);
 }
 
 @media (min-width: 425px) {
@@ -494,8 +518,8 @@
 
 .dg-playerArea {
     border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    background: rgba(2, 6, 23, 0.45);
+    border: 1px solid var(--duel-panel-border);
+    background: var(--duel-panel-bg);
     padding: 6px 7px;
     min-width: 0;
 }
@@ -513,6 +537,8 @@
     flex-direction: column;
     align-items: stretch;
     gap: 6px;
+    border: 1px solid var(--duel-panel-border);
+    background: var(--duel-panel-bg);
 }
 
 .dg-duelArena {
@@ -677,6 +703,9 @@
 .dg-graveyardPanel {
     min-width: 0;
     width: 100%;
+    border: 1px solid rgb(195 150 95 / 30%);
+    background: var(--duel-graveyard-bg);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 5%);
 }
 
 .dg-graveyardCards {
@@ -686,6 +715,10 @@
     overflow-y: auto;
     overflow-x: hidden;
     scrollbar-gutter: stable;
+}
+
+.dg-graveyardCardsBox {
+    background: var(--duel-graveyard-inner-bg);
 }
 
 .dg-graveyardCardsTransform {
@@ -747,12 +780,20 @@
     width: min(88%, 390px);
     max-width: 430px;
     border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.22);
-    background: rgba(2, 6, 23, 0.9);
+    border: 1px solid rgb(255 255 255 / 22%);
+    background: var(--duel-modal-bg);
     backdrop-filter: blur(8px);
     padding: 7px 8px;
     box-shadow: 0 10px 26px rgba(0, 0, 0, 0.4);
     pointer-events: auto;
+}
+
+.dg-actionsModal p {
+    color: rgb(226 232 240);
+}
+
+:root[data-app-theme='ivory'] .dg-actionsModal p {
+    color: rgb(250 239 222);
 }
 
 .dg-actionsModal--instruction {

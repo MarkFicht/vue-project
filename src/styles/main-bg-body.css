@@ -5,3 +5,7 @@
 body.app-body-main-bg {
     background: var(--duel-bg-fallback) url('@/assets/duel/main_bg.png') center / cover no-repeat fixed;
 }
+
+:root[data-app-theme='ivory'] body.app-body-main-bg {
+    background: var(--duel-bg-fallback) url('@/assets/duel/main_bg_white.png') center / cover no-repeat fixed;
+}

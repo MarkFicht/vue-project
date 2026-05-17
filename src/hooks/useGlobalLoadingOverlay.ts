@@ -10,17 +10,29 @@ type UseGlobalLoadingOverlayParams = {
 };
 
 export function markLoginOverlayPending() {
-    sessionStorage.setItem(LOGIN_OVERLAY.flagStorageKey, '1');
+    try {
+        sessionStorage.setItem(LOGIN_OVERLAY.flagStorageKey, '1');
+    } catch {
+        // Ignore storage failures in restrictive environments.
+    }
 }
 
 function hasLoginOverlayFlag() {
-    return sessionStorage.getItem(LOGIN_OVERLAY.flagStorageKey) === '1';
+    try {
+        return sessionStorage.getItem(LOGIN_OVERLAY.flagStorageKey) === '1';
+    } catch {
+        return false;
+    }
 }
 
 function consumeLoginOverlayFlag() {
     const hasFlag = hasLoginOverlayFlag();
     if (hasFlag) {
-        sessionStorage.removeItem(LOGIN_OVERLAY.flagStorageKey);
+        try {
+            sessionStorage.removeItem(LOGIN_OVERLAY.flagStorageKey);
+        } catch {
+            // Ignore storage failures in restrictive environments.
+        }
     }
     return hasFlag;
 }

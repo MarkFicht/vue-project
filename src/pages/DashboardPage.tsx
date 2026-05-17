@@ -15,7 +15,7 @@ import {
     writeBatch
 } from 'firebase/firestore';
 import { ref as rtdbRef, get as getRtdb, serverTimestamp as rtdbServerTimestamp, set as setRtdb } from 'firebase/database';
-import { Check, Copy, Gamepad2, LogOut, Menu, UserCircle2, UserX, Volume2, VolumeX, X } from 'lucide-react';
+import { Check, Copy, Gamepad2, LogOut, Menu, Palette, UserCircle2, UserX, Volume2, VolumeX, X } from 'lucide-react';
 import {
     EmailAuthProvider,
     deleteUser,
@@ -37,9 +37,18 @@ import { getCountrySelectOptions, guessCountryFromLocale, normalizeCountryCode }
 import { CountrySelect } from '@/components/CountrySelect';
 import { UserFlag } from '@/components/UserFlag';
 import { LoadingOverlay } from '@/components/LoadingOverlay';
+import type { AppTheme } from '@/hooks/useAppTheme';
 import '@/styles/dashboard.css';
 
-export function DashboardPage({ uid }: { uid: string }) {
+export function DashboardPage({
+    uid,
+    theme,
+    onThemeChange
+}: {
+    uid: string;
+    theme: AppTheme;
+    onThemeChange: (theme: AppTheme) => void;
+}) {
     const REMOVE_COOLDOWN_MS = 3000;
     const navigate = useNavigate();
     const [initError, setInitError] = useState('');
@@ -419,6 +428,9 @@ export function DashboardPage({ uid }: { uid: string }) {
     const openLogoutModal = () => {
         setShowLogoutModal(true);
         setShowHeaderMobileMenu(false);
+    };
+    const toggleTheme = () => {
+        onThemeChange(theme === 'classic' ? 'ivory' : 'classic');
     };
 
     const logoutUser = async () => {
@@ -959,6 +971,15 @@ export function DashboardPage({ uid }: { uid: string }) {
                         {soundMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
                         <span className="hdrBtnText">{soundMuted ? 'Muted' : 'Sound'}</span>
                     </button>
+                    <button
+                        type="button"
+                        className="btn-secondary hdrIconBtn"
+                        onClick={toggleTheme}
+                        title={theme === 'classic' ? 'Switch to ivory theme' : 'Switch to classic theme'}
+                    >
+                        <Palette className="h-4 w-4" />
+                        <span className="hdrBtnText">{theme === 'classic' ? 'Ivory' : 'Classic'}</span>
+                    </button>
                     <button type="button" className="btn-secondary hdrIconBtn" title="Log out" onClick={openLogoutModal}>
                         <LogOut className="h-4 w-4" />
                         <span className="hdrBtnText">Logout</span>
@@ -996,6 +1017,12 @@ export function DashboardPage({ uid }: { uid: string }) {
                             >
                                 {soundMuted ? <VolumeX className="h-4 w-4 shrink-0" /> : <Volume2 className="h-4 w-4 shrink-0" />}
                                 <span className="dashMobileMenuText">{soundMuted ? 'Unmute sounds' : 'Mute sounds'}</span>
+                            </button>
+                            <button type="button" className="btn-secondary dashMobileMenuItem" onClick={toggleTheme}>
+                                <Palette className="h-4 w-4 shrink-0" />
+                                <span className="dashMobileMenuText">
+                                    {theme === 'classic' ? 'Switch to ivory theme' : 'Switch to classic theme'}
+                                </span>
                             </button>
                             <button type="button" className="btn-secondary dashMobileMenuItem" onClick={openLogoutModal}>
                                 <LogOut className="h-4 w-4 shrink-0" />
@@ -1095,7 +1122,7 @@ export function DashboardPage({ uid }: { uid: string }) {
                                         </div>
                                     );
                                 })}
-                                {!duel.players.length && <p className="opacity-70">No players in lobby.</p>}
+                                {!duel.players.length && <p className="dashLobbyEmptyText">No players in lobby.</p>}
                                 {duel.players.length === 2 && (
                                     <p className="text-[color:var(--app-accent-bright)]">
                                         {duel.isStarted
@@ -1122,7 +1149,7 @@ export function DashboardPage({ uid }: { uid: string }) {
                             </div>
                             <p>A board game inspired by a strategy game called 'Splendor'</p>
                             <div className="dashLobbyList">
-                                <p className="opacity-70">No players in lobby.</p>
+                                <p className="dashLobbyEmptyText">No players in lobby.</p>
                             </div>
                         </div>
                         <div className="dashCircle">
@@ -1142,7 +1169,7 @@ export function DashboardPage({ uid }: { uid: string }) {
                             </div>
                             <p>Game written from 0 in canvasJS. Cooperation against zombies</p>
                             <div className="dashLobbyList">
-                                <p className="opacity-70">No players in lobby.</p>
+                                <p className="dashLobbyEmptyText">No players in lobby.</p>
                             </div>
                         </div>
                         <div className="dashCircle">

@@ -470,7 +470,7 @@ export function DuelGamePage({ uid }: { uid: string }) {
                 <div className="dg-tableSurface duelPageScrollbar min-h-0 flex-1 overflow-y-auto">
                     <div className="dg-duelLayout">
                         <section className="dg-duelArena" aria-label="Draft area and conflict board">
-                            <div className="relative overflow-visible rounded-xl border border-white/15 bg-black/20 p-2 dg-arenaTableCard">
+                            <div className="relative overflow-visible rounded-xl p-2 dg-arenaTableCard">
                                 <div className="dg-militaryViewport">
                                     <div className="dg-militaryTransform">
                                         <DuelBoard
@@ -561,10 +561,10 @@ export function DuelGamePage({ uid }: { uid: string }) {
                                             </div>
                                         )}
                                     </div>
-                                    <aside className="dg-graveyardPanel rounded-xl border border-[rgb(195_150_95/30%)] bg-[rgb(14_10_7/72%)] p-2 shadow-[inset_0_1px_0_rgb(255_255_255/5%)]">
+                                    <aside className="dg-graveyardPanel rounded-xl p-2">
                                         <h3 className="mb-1 text-sm font-semibold">Graveyard</h3>
                                         <div
-                                            className={`dg-graveyardCards duelPageScrollbar overflow-y-auto rounded-lg bg-black/20 p-1 ${
+                                            className={`dg-graveyardCards dg-graveyardCardsBox duelPageScrollbar overflow-y-auto rounded-lg p-1 ${
                                                 isMyTurn && game.pickCardFromGraveyard === uid
                                                     ? 'ring-2 ring-emerald-300/60'
                                                     : ''

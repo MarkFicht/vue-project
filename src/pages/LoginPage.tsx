@@ -9,17 +9,25 @@ import {
     updateProfile
 } from 'firebase/auth';
 import { doc, getDoc, runTransaction, serverTimestamp } from 'firebase/firestore';
-import { Gamepad2, LogIn, UserPlus } from 'lucide-react';
+import { Gamepad2, LogIn, Palette, UserPlus, Volume2, VolumeX } from 'lucide-react';
 import { auth, db, googleProvider } from '@/firebaseConfig';
 import { displayNamesRef, usersRef } from '@/firebase/refs';
 import { markLoginOverlayPending } from '@/hooks/useGlobalLoadingOverlay';
+import type { AppTheme } from '@/hooks/useAppTheme';
+import { isSoundMuted, setSoundMuted } from '@/utils/sound';
 import { normalizeDisplayName, sanitizeDisplayName } from '@/utils/displayName';
 import { getCountrySelectOptions, guessCountryFromLocale, normalizeCountryCode } from '@/utils/country';
 import { CountrySelect } from '@/components/CountrySelect';
 import { LoadingOverlay } from '@/components/LoadingOverlay';
 import '@/styles/login.css';
 
-export function LoginPage() {
+export function LoginPage({
+    theme,
+    onThemeChange
+}: {
+    theme: AppTheme;
+    onThemeChange: (theme: AppTheme) => void;
+}) {
     const navigate = useNavigate();
     const [mode, setMode] = useState<'signin' | 'register'>('signin');
     const [displayName, setDisplayName] = useState('');
@@ -28,8 +36,15 @@ export function LoginPage() {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [authInProgress, setAuthInProgress] = useState(false);
+    const [soundMuted, setSoundMutedState] = useState(() => isSoundMuted());
     const isRegister = useMemo(() => mode === 'register', [mode]);
     const countryOptions = useMemo(() => getCountrySelectOptions(), []);
+    const toggleTheme = () => onThemeChange(theme === 'classic' ? 'ivory' : 'classic');
+    const toggleSound = () => {
+        const next = !soundMuted;
+        setSoundMuted(next);
+        setSoundMutedState(next);
+    };
 
     const ensureDisplayNameAvailable = async (displayNameKey: string) => {
         const displayNameRef = doc(displayNamesRef, displayNameKey);
@@ -43,6 +58,7 @@ export function LoginPage() {
         event.preventDefault();
         if (authInProgress) return;
         setError('');
+        const normalizedEmail = email.trim().toLowerCase();
         try {
             if (isRegister) {
                 const cleanDisplayName = sanitizeDisplayName(displayName);
@@ -58,7 +74,7 @@ export function LoginPage() {
                 }
                 setAuthInProgress(true);
                 await ensureDisplayNameAvailable(displayNameKey);
-                const res = await createUserWithEmailAndPassword(auth, email.trim().toLowerCase(), password);
+                const res = await createUserWithEmailAndPassword(auth, normalizedEmail, password);
                 try {
                     await updateProfile(res.user, { displayName: cleanDisplayName });
                     await runTransaction(db, async (tx) => {
@@ -71,7 +87,7 @@ export function LoginPage() {
                         const now = serverTimestamp();
                         tx.set(doc(usersRef, res.user.uid), {
                             uid: res.user.uid,
-                            email: res.user.email || email.trim().toLowerCase(),
+                            email: res.user.email || normalizedEmail,
                             displayName: cleanDisplayName,
                             displayNameKey,
                             game: '',
@@ -102,7 +118,7 @@ export function LoginPage() {
                 }
             } else {
                 setAuthInProgress(true);
-                await signInWithEmailAndPassword(auth, email.trim().toLowerCase(), password);
+                await signInWithEmailAndPassword(auth, normalizedEmail, password);
             }
             markLoginOverlayPending();
             navigate('/feed');
@@ -125,9 +141,45 @@ export function LoginPage() {
         }
     };
 
+    const signInWithGoogle = async () => {
+        if (authInProgress) return;
+        setError('');
+        try {
+            setAuthInProgress(true);
+            await signInWithPopup(auth, googleProvider);
+            markLoginOverlayPending();
+            navigate('/feed');
+        } catch (err) {
+            setAuthInProgress(false);
+            setError((err as Error).message);
+        }
+    };
+
     return (
         <main className="loginPage mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center p-4 text-[var(--app-text)]">
             <div className="app-surface-login w-full rounded-2xl p-6">
+                <div className="loginTopControls">
+                    <button
+                        type="button"
+                        className="btn-secondary loginTopControlBtn"
+                        onClick={toggleTheme}
+                        title={theme === 'classic' ? 'Switch to ivory theme' : 'Switch to classic theme'}
+                        disabled={authInProgress}
+                    >
+                        <Palette className="h-4 w-4" />
+                        <span>{theme === 'classic' ? 'Ivory' : 'Classic'}</span>
+                    </button>
+                    <button
+                        type="button"
+                        className="btn-secondary loginTopControlBtn"
+                        onClick={toggleSound}
+                        title={soundMuted ? 'Unmute sounds' : 'Mute sounds'}
+                        disabled={authInProgress}
+                    >
+                        {soundMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+                        <span>{soundMuted ? 'Muted' : 'Sound'}</span>
+                    </button>
+                </div>
                 <header className="font-display flex items-center justify-center gap-2 text-2xl font-bold tracking-wide">
                     <Gamepad2 className="app-brand-icon h-7 w-7" aria-hidden />
                     Game Board
@@ -178,19 +230,7 @@ export function LoginPage() {
                     className="btn-secondary loginGoogleBtn mt-3 w-full"
                     type="button"
                     disabled={authInProgress}
-                    onClick={async () => {
-                        if (authInProgress) return;
-                        setError('');
-                        try {
-                            setAuthInProgress(true);
-                            await signInWithPopup(auth, googleProvider);
-                            markLoginOverlayPending();
-                            navigate('/feed');
-                        } catch (err) {
-                            setAuthInProgress(false);
-                            setError((err as Error).message);
-                        }
-                    }}
+                    onClick={signInWithGoogle}
                 >
                     <span className="loginGoogleIcon" aria-hidden>
                         <svg viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">

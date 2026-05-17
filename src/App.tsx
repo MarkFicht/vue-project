@@ -2,6 +2,7 @@ import { useLayoutEffect } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { LoadingOverlay } from '@/components/LoadingOverlay';
 import { useAuth } from '@/hooks/useAuth';
+import { useAppTheme } from '@/hooks/useAppTheme';
 import { useGlobalClickSound } from '@/hooks/useGlobalClickSound';
 import { useGlobalLoadingOverlay } from '@/hooks/useGlobalLoadingOverlay';
 import { usePresence } from '@/hooks/usePresence';
@@ -12,6 +13,7 @@ import { ChatWidget } from '@/components/chat/ChatWidget';
 
 export default function App() {
     const { user, loading } = useAuth();
+    const { theme, setTheme } = useAppTheme();
     const location = useLocation();
     const { appReady, overlayState } = useGlobalLoadingOverlay({
         authLoading: loading,
@@ -30,8 +32,14 @@ export default function App() {
         <>
             {appReady && (
                 <Routes>
-                    <Route path="/" element={user ? <Navigate to="/feed" replace /> : <LoginPage />} />
-                    <Route path="/feed" element={user ? <DashboardPage uid={user.uid} /> : <Navigate to="/" replace />} />
+                    <Route
+                        path="/"
+                        element={user ? <Navigate to="/feed" replace /> : <LoginPage theme={theme} onThemeChange={setTheme} />}
+                    />
+                    <Route
+                        path="/feed"
+                        element={user ? <DashboardPage uid={user.uid} theme={theme} onThemeChange={setTheme} /> : <Navigate to="/" replace />}
+                    />
                     <Route
                         path="/duel-game"
                         element={user ? <DuelGamePage uid={user.uid} /> : <Navigate to="/" replace />}

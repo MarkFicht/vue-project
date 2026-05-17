@@ -20,6 +20,10 @@ body {
     background: radial-gradient(circle at 20% 20%, #244b6b 0%, #0f172a 35%, #020617 100%);
 }
 
+:root[data-app-theme='ivory'] body {
+    background: radial-gradient(circle at 20% 20%, #9a7d5b 0%, #614933 42%, #35271b 100%);
+}
+
 @media (max-width: 767px) {
     .hdrIconBtn {
         padding: 0.5rem !important;
@@ -49,6 +53,11 @@ body {
     transition: opacity 0.5s ease;
 }
 
+:root[data-app-theme='ivory'] .appLoginOverlay {
+    background:
+        radial-gradient(circle at 20% 18%, rgb(255 236 206 / 24%) 0%, rgb(58 42 29 / 90%) 42%, rgb(28 20 14 / 98%) 100%);
+}
+
 .appLoginOverlay.isFading {
     opacity: 0;
     pointer-events: none;
@@ -69,11 +78,21 @@ body {
     gap: 0.7rem;
 }
 
+:root[data-app-theme='ivory'] .appLoginOverlayCard {
+    border-color: rgb(230 203 162 / 46%);
+    background: linear-gradient(160deg, rgb(52 38 27 / 94%) 0%, rgb(37 27 20 / 96%) 58%, rgb(28 21 15 / 97%) 100%);
+}
+
 .appLoginOverlayLogo {
     width: 2.1rem;
     height: 2.1rem;
     color: rgb(226 184 110 / 96%);
     filter: drop-shadow(0 0 12px rgb(215 160 88 / 40%));
+}
+
+:root[data-app-theme='ivory'] .appLoginOverlayLogo {
+    color: rgb(255 245 226 / 97%);
+    filter: drop-shadow(0 0 12px rgb(255 229 188 / 42%));
 }
 
 .appLoginOverlayLabel {
@@ -94,6 +113,11 @@ body {
     border: 2px solid rgb(170 132 84 / 34%);
     border-top-color: rgb(236 198 120 / 98%);
     animation: appLoginOverlaySpin 0.8s linear infinite;
+}
+
+:root[data-app-theme='ivory'] .appLoginOverlaySpinner {
+    border-color: rgb(225 198 159 / 34%);
+    border-top-color: rgb(255 246 231 / 98%);
 }
 
 @keyframes appLoginOverlaySpin {
