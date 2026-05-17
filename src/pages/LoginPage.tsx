@@ -12,6 +12,7 @@ import { doc, getDoc, runTransaction, serverTimestamp } from 'firebase/firestore
 import { Gamepad2, LogIn, UserPlus } from 'lucide-react';
 import { auth, db, googleProvider } from '@/firebaseConfig';
 import { displayNamesRef, usersRef } from '@/firebase/refs';
+import { markLoginOverlayPending } from '@/hooks/useGlobalLoadingOverlay';
 import { normalizeDisplayName, sanitizeDisplayName } from '@/utils/displayName';
 import { getCountrySelectOptions, guessCountryFromLocale, normalizeCountryCode } from '@/utils/country';
 import { CountrySelect } from '@/components/CountrySelect';
@@ -98,6 +99,7 @@ export function LoginPage() {
             } else {
                 await signInWithEmailAndPassword(auth, email.trim().toLowerCase(), password);
             }
+            markLoginOverlayPending();
             navigate('/feed');
         } catch (err) {
             const firebaseError = err as { code?: string; message?: string };
@@ -173,6 +175,7 @@ export function LoginPage() {
                         setError('');
                         try {
                             await signInWithPopup(auth, googleProvider);
+                            markLoginOverlayPending();
                             navigate('/feed');
                         } catch (err) {
                             setError((err as Error).message);
