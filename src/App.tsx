@@ -2,6 +2,7 @@ import { useLayoutEffect } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { LoadingOverlay } from '@/components/LoadingOverlay';
 import { useAuth } from '@/hooks/useAuth';
+import { useGlobalClickSound } from '@/hooks/useGlobalClickSound';
 import { useGlobalLoadingOverlay } from '@/hooks/useGlobalLoadingOverlay';
 import { usePresence } from '@/hooks/usePresence';
 import { LoginPage } from '@/pages/LoginPage';
@@ -17,6 +18,7 @@ export default function App() {
         userId: user?.uid,
         pathname: location.pathname
     });
+    useGlobalClickSound();
     usePresence(user?.uid);
 
     useLayoutEffect(() => {

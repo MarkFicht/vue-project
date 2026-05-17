@@ -1,4 +1,5 @@
 type SoundKind =
+    | 'click'
     | 'notify'
     | 'start'
     | 'turn'
@@ -158,6 +159,15 @@ export function playUiSound(kind: SoundKind) {
     }
     if (muted) return;
     switch (kind) {
+        case 'click':
+            playTones(
+                [
+                    { freq: 910, ms: 28, type: 'triangle' },
+                    { freq: 740, ms: 24, type: 'triangle' }
+                ],
+                0.028
+            );
+            break;
         case 'notify':
             playTones([
                 { freq: 740, ms: 90, type: 'triangle' },
