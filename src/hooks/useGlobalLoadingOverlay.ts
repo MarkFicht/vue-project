@@ -13,8 +13,12 @@ export function markLoginOverlayPending() {
     sessionStorage.setItem(LOGIN_OVERLAY.flagStorageKey, '1');
 }
 
+function hasLoginOverlayFlag() {
+    return sessionStorage.getItem(LOGIN_OVERLAY.flagStorageKey) === '1';
+}
+
 function consumeLoginOverlayFlag() {
-    const hasFlag = sessionStorage.getItem(LOGIN_OVERLAY.flagStorageKey) === '1';
+    const hasFlag = hasLoginOverlayFlag();
     if (hasFlag) {
         sessionStorage.removeItem(LOGIN_OVERLAY.flagStorageKey);
     }
@@ -28,7 +32,9 @@ function supportsFontLoadingApi() {
 export function useGlobalLoadingOverlay({ authLoading, userId, pathname }: UseGlobalLoadingOverlayParams) {
     const [fontsReady, setFontsReady] = useState(() => !supportsFontLoadingApi());
     const [authOverlayState, setAuthOverlayState] = useState<OverlayState>('visible');
-    const [loginOverlayState, setLoginOverlayState] = useState<OverlayState>('hidden');
+    const [loginOverlayState, setLoginOverlayState] = useState<OverlayState>(() =>
+        pathname === LOGIN_OVERLAY.targetPathname && hasLoginOverlayFlag() ? 'visible' : 'hidden'
+    );
 
     useEffect(() => {
         if (fontsReady || !supportsFontLoadingApi()) {
@@ -81,6 +87,12 @@ export function useGlobalLoadingOverlay({ authLoading, userId, pathname }: UseGl
             window.clearTimeout(hideTimeout);
         };
     }, [authLoading, pathname, userId]);
+
+    useEffect(() => {
+        if (pathname !== LOGIN_OVERLAY.targetPathname && loginOverlayState !== 'hidden') {
+            setLoginOverlayState('hidden');
+        }
+    }, [loginOverlayState, pathname]);
 
     const overlayState: OverlayState =
         !fontsReady ? 'visible' : authOverlayState !== 'hidden' ? authOverlayState : loginOverlayState;

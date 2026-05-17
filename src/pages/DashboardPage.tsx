@@ -36,6 +36,7 @@ import { normalizeDisplayName, sanitizeDisplayName } from '@/utils/displayName';
 import { getCountrySelectOptions, guessCountryFromLocale, normalizeCountryCode } from '@/utils/country';
 import { CountrySelect } from '@/components/CountrySelect';
 import { UserFlag } from '@/components/UserFlag';
+import { LoadingOverlay } from '@/components/LoadingOverlay';
 import '@/styles/dashboard.css';
 
 export function DashboardPage({ uid }: { uid: string }) {
@@ -58,6 +59,9 @@ export function DashboardPage({ uid }: { uid: string }) {
     const [nowMs, setNowMs] = useState(() => Date.now());
     const [liveMove, setLiveMove] = useState<number | null>(null);
     const [showHeaderMobileMenu, setShowHeaderMobileMenu] = useState(false);
+    const [showLogoutModal, setShowLogoutModal] = useState(false);
+    const [loggingOut, setLoggingOut] = useState(false);
+    const [showLogoutLoadingOverlay, setShowLogoutLoadingOverlay] = useState(false);
     const headerRef = useRef<HTMLElement | null>(null);
     const user = useUserStore((state) => state.fbUser);
     const subUser = useUserStore((state) => state.subFirebaseConnect);
@@ -411,7 +415,17 @@ export function DashboardPage({ uid }: { uid: string }) {
     const leaveLobby = async () => {
         await removeUserFromLobby(uid);
     };
+
+    const openLogoutModal = () => {
+        setShowLogoutModal(true);
+        setShowHeaderMobileMenu(false);
+    };
+
     const logoutUser = async () => {
+        if (loggingOut) return;
+        setLoggingOut(true);
+        setShowLogoutModal(false);
+        setShowLogoutLoadingOverlay(true);
         try {
             if (inDuelLobby) {
                 await removeUserFromLobby(uid);
@@ -434,7 +448,12 @@ export function DashboardPage({ uid }: { uid: string }) {
         } catch {
             // best effort before sign-out
         } finally {
-            await signOut(auth);
+            setLoggingOut(false);
+            try {
+                await signOut(auth);
+            } catch {
+                setShowLogoutLoadingOverlay(false);
+            }
         }
     };
 
@@ -871,7 +890,7 @@ export function DashboardPage({ uid }: { uid: string }) {
     };
 
     useEffect(() => {
-        if (!showDuelLobbyModal && !showUserModal) return;
+        if (!showDuelLobbyModal && !showUserModal && !showLogoutModal) return;
 
         const prevBodyOverflow = document.body.style.overflow;
         const prevHtmlOverflow = document.documentElement.style.overflow;
@@ -882,7 +901,7 @@ export function DashboardPage({ uid }: { uid: string }) {
             document.body.style.overflow = prevBodyOverflow;
             document.documentElement.style.overflow = prevHtmlOverflow;
         };
-    }, [showDuelLobbyModal, showUserModal]);
+    }, [showDuelLobbyModal, showLogoutModal, showUserModal]);
 
     useEffect(() => {
         const onResize = () => {
@@ -940,7 +959,7 @@ export function DashboardPage({ uid }: { uid: string }) {
                         {soundMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
                         <span className="hdrBtnText">{soundMuted ? 'Muted' : 'Sound'}</span>
                     </button>
-                    <button type="button" className="btn-secondary hdrIconBtn" title="Log out" onClick={logoutUser}>
+                    <button type="button" className="btn-secondary hdrIconBtn" title="Log out" onClick={openLogoutModal}>
                         <LogOut className="h-4 w-4" />
                         <span className="hdrBtnText">Logout</span>
                     </button>
@@ -978,7 +997,7 @@ export function DashboardPage({ uid }: { uid: string }) {
                                 {soundMuted ? <VolumeX className="h-4 w-4 shrink-0" /> : <Volume2 className="h-4 w-4 shrink-0" />}
                                 <span className="dashMobileMenuText">{soundMuted ? 'Unmute sounds' : 'Mute sounds'}</span>
                             </button>
-                            <button type="button" className="btn-secondary dashMobileMenuItem" onClick={logoutUser}>
+                            <button type="button" className="btn-secondary dashMobileMenuItem" onClick={openLogoutModal}>
                                 <LogOut className="h-4 w-4 shrink-0" />
                                 <span className="dashMobileMenuText">Logout</span>
                             </button>
@@ -1310,6 +1329,23 @@ export function DashboardPage({ uid }: { uid: string }) {
                     </div>
                 </div>
             )}
+            {showLogoutModal && (
+                <div className="dashLobbyOverlay" onClick={() => setShowLogoutModal(false)}>
+                    <div className="dashLogoutModal" onClick={(event) => event.stopPropagation()}>
+                        <h3>Log out</h3>
+                        <p>Are you sure you want to log out?</p>
+                        <div className="dashLobbyActions">
+                            <button className="btn-secondary" type="button" onClick={() => setShowLogoutModal(false)}>
+                                Cancel
+                            </button>
+                            <button className="btn-primary" type="button" onClick={logoutUser} disabled={loggingOut}>
+                                {loggingOut ? 'Logging out...' : 'Log out'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            <LoadingOverlay state={showLogoutLoadingOverlay ? 'visible' : 'hidden'} />
         </main>
     );
 }

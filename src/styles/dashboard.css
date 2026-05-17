@@ -472,6 +472,30 @@
     margin-bottom: 12px;
 }
 
+.dashLogoutModal {
+    width: min(92vw, 440px);
+    border-radius: 16px;
+    border: 1px solid rgb(195 150 95 / 42%);
+    background: linear-gradient(175deg, rgb(34 24 17 / 96%) 0%, rgb(18 13 9 / 98%) 100%);
+    color: rgb(245 235 224);
+    padding: 16px;
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 7%),
+        0 16px 44px rgb(0 0 0 / 48%);
+}
+
+.dashLogoutModal h3 {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.dashLogoutModal p {
+    font-size: 14px;
+    opacity: 0.9;
+    margin-bottom: 12px;
+}
+
 .dashLobbyPlayers {
     border-radius: 10px;
     background: rgb(12 9 6 / 72%);

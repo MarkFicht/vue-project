@@ -16,6 +16,7 @@ import { markLoginOverlayPending } from '@/hooks/useGlobalLoadingOverlay';
 import { normalizeDisplayName, sanitizeDisplayName } from '@/utils/displayName';
 import { getCountrySelectOptions, guessCountryFromLocale, normalizeCountryCode } from '@/utils/country';
 import { CountrySelect } from '@/components/CountrySelect';
+import { LoadingOverlay } from '@/components/LoadingOverlay';
 import '@/styles/login.css';
 
 export function LoginPage() {
@@ -26,6 +27,7 @@ export function LoginPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [authInProgress, setAuthInProgress] = useState(false);
     const isRegister = useMemo(() => mode === 'register', [mode]);
     const countryOptions = useMemo(() => getCountrySelectOptions(), []);
 
@@ -39,6 +41,7 @@ export function LoginPage() {
 
     const onSubmit = async (event: FormEvent) => {
         event.preventDefault();
+        if (authInProgress) return;
         setError('');
         try {
             if (isRegister) {
@@ -53,6 +56,7 @@ export function LoginPage() {
                     setError('Choose a valid country.');
                     return;
                 }
+                setAuthInProgress(true);
                 await ensureDisplayNameAvailable(displayNameKey);
                 const res = await createUserWithEmailAndPassword(auth, email.trim().toLowerCase(), password);
                 try {
@@ -97,11 +101,13 @@ export function LoginPage() {
                     throw txError;
                 }
             } else {
+                setAuthInProgress(true);
                 await signInWithEmailAndPassword(auth, email.trim().toLowerCase(), password);
             }
             markLoginOverlayPending();
             navigate('/feed');
         } catch (err) {
+            setAuthInProgress(false);
             const firebaseError = err as { code?: string; message?: string };
             if (firebaseError.code === 'auth/email-already-in-use') {
                 setError('This email already exists in Firebase Authentication.');
@@ -163,21 +169,25 @@ export function LoginPage() {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                     />
-                    <button className="btn-primary w-full" type="submit">
-                        {isRegister ? 'Create account' : 'Login'}
+                    <button className="btn-primary w-full" type="submit" disabled={authInProgress}>
+                        {authInProgress ? 'Loading...' : isRegister ? 'Create account' : 'Login'}
                     </button>
                 </form>
 
                 <button
                     className="btn-secondary loginGoogleBtn mt-3 w-full"
                     type="button"
+                    disabled={authInProgress}
                     onClick={async () => {
+                        if (authInProgress) return;
                         setError('');
                         try {
+                            setAuthInProgress(true);
                             await signInWithPopup(auth, googleProvider);
                             markLoginOverlayPending();
                             navigate('/feed');
                         } catch (err) {
+                            setAuthInProgress(false);
                             setError((err as Error).message);
                         }
                     }}
@@ -232,6 +242,7 @@ export function LoginPage() {
                     <div className={`loginModeIndicator ${isRegister ? 'toRight' : ''}`} />
                 </nav>
             </section>
+            <LoadingOverlay state={authInProgress ? 'visible' : 'hidden'} />
         </main>
     );
 }
