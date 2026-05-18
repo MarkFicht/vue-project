@@ -1223,7 +1223,6 @@
 }
 
 .dg-playerCoins {
-    margin-top: 8px;
     min-height: 46px;
     display: flex;
     flex-wrap: wrap;

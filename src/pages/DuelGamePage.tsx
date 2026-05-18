@@ -1,11 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, Ban, Gamepad2, Hand, Palette, ShieldAlert, Volume2, VolumeX } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import { useGameState } from '@/hooks/useGameState';
-import { DuelSpriteCard } from '@/components/duel/DuelSpriteCard';
-import { DuelWonderSprite } from '@/components/duel/DuelWonderSprite';
 import { DuelBoard } from '@/components/duel/DuelBoard';
-import { DuelCoinSprite } from '@/components/duel/DuelCoinSprite';
 import { DuelPlayerColumns } from '@/components/duel/DuelPlayerColumns';
+import { DuelActionsOverlay } from '@/components/duel/DuelActionsOverlay';
+import { DuelPrepareStage } from '@/components/duel/DuelPrepareStage';
+import { DuelTierCardsStage } from '@/components/duel/DuelTierCardsStage';
+import { DuelGraveyardPanel } from '@/components/duel/DuelGraveyardPanel';
+import { DuelGameOverPanel } from '@/components/duel/DuelGameOverPanel';
+import { DuelGameHeader } from '@/components/duel/DuelGameHeader';
 import {
     countMilitaryPoints,
     countPointsFromCards,
@@ -18,9 +20,47 @@ import { setSoundMuted } from '@/utils/sound';
 import { useSoundMuteSync } from '@/hooks/useSoundMuteSync';
 import { persistUserSoundMuted } from '@/utils/persistUserSoundMuted';
 import { useUserStore } from '@/store/useUserStore';
-import { UserFlag } from '@/components/UserFlag';
-import { MobileHamburgerMenu } from '@/components/MobileHamburgerMenu';
+import { useDuelPreparePhase } from '@/hooks/useDuelPreparePhase';
+import { useDuelModalsState } from '@/hooks/useDuelModalsState';
 import type { AppTheme } from '@/hooks/useAppTheme';
+import type { IGameDuelCard, IGameDuelPlayer, Tier } from '@/interfaces/GameDuel';
+
+type PointBreakdown = {
+    cards: number;
+    guild: number;
+    coins: number;
+    military: number;
+    total: number;
+};
+
+const TIER_LAYOUTS: Record<Exclude<Tier, 'prepare' | 'end'>, { x: number[]; y: number[] }> = {
+    I: { x: tierOneX, y: tierOneY },
+    II: { x: tierTwoX, y: tierTwoY },
+    III: { x: tierThreeX, y: tierThreeY }
+};
+
+const resolveTierCards = (
+    tier: Tier,
+    game: { tierOneCards: IGameDuelCard[]; tierTwoCards: IGameDuelCard[]; tierThreeCards: IGameDuelCard[] }
+) => {
+    if (tier === 'I') return game.tierOneCards;
+    if (tier === 'II') return game.tierTwoCards;
+    if (tier === 'III') return game.tierThreeCards;
+    return [];
+};
+
+const resolveTierLayout = (tier: Tier) => {
+    if (tier === 'I' || tier === 'II' || tier === 'III') return TIER_LAYOUTS[tier];
+    return TIER_LAYOUTS.III;
+};
+
+const winnerDisplay = (winnerUid: string, p1: IGameDuelPlayer, p2: IGameDuelPlayer) => {
+    if (!winnerUid) return { name: '', countryCode: undefined as string | undefined };
+    if (winnerUid === 'draw') return { name: 'DRAW', countryCode: undefined as string | undefined };
+    if (winnerUid === p1.user.uid) return { name: p1.user.displayName || p1.user.email, countryCode: p1.user.countryCode };
+    if (winnerUid === p2.user.uid) return { name: p2.user.displayName || p2.user.email, countryCode: p2.user.countryCode };
+    return { name: winnerUid, countryCode: undefined as string | undefined };
+};
 
 export function DuelGamePage({
     uid,
@@ -34,12 +74,7 @@ export function DuelGamePage({
     const [wonderBuildMode, setWonderBuildMode] = useState(false);
     const [animatedP1Total, setAnimatedP1Total] = useState(0);
     const [animatedP2Total, setAnimatedP2Total] = useState(0);
-    const [prepareRevealedIds, setPrepareRevealedIds] = useState<number[]>([]);
-    const [displayPrepareBatch, setDisplayPrepareBatch] = useState<1 | 2>(1);
-    const [prepareActionLocked, setPrepareActionLocked] = useState(false);
-    const [showHeaderMobileMenu, setShowHeaderMobileMenu] = useState(false);
     const [showSurrenderModal, setShowSurrenderModal] = useState(false);
-    const headerRef = useRef<HTMLElement | null>(null);
     const profileSoundMuted = useUserStore((state) => state.fbUser.soundMuted);
     const [soundMuted, setSoundMutedState] = useSoundMuteSync(uid, profileSoundMuted, true);
 
@@ -65,39 +100,19 @@ export function DuelGamePage({
         goBackToFeed
     } = useGameState(uid);
 
-    const tierCards = useMemo(() => {
-        if (game.tier === 'I') return game.tierOneCards;
-        if (game.tier === 'II') return game.tierTwoCards;
-        if (game.tier === 'III') return game.tierThreeCards;
-        return [];
-    }, [game.tier, game.tierOneCards, game.tierThreeCards, game.tierTwoCards]);
+    const tierCards = useMemo(
+        () => resolveTierCards(game.tier, game),
+        [game.tier, game.tierOneCards, game.tierThreeCards, game.tierTwoCards]
+    );
+    const tierLayout = useMemo(() => resolveTierLayout(game.tier), [game.tier]);
 
-    const tierLayout = useMemo(() => {
-        if (game.tier === 'I') return { x: tierOneX, y: tierOneY };
-        if (game.tier === 'II') return { x: tierTwoX, y: tierTwoY };
-        return { x: tierThreeX, y: tierThreeY };
-    }, [game.tier]);
-
-    const batchOneWonders = useMemo(() => game.wonderCards.slice(0, 4), [game.wonderCards]);
-    const batchTwoWonders = useMemo(() => game.wonderCards.slice(4, 8), [game.wonderCards]);
-    const displayedPrepareWonders = useMemo(
-        () => (displayPrepareBatch === 1 ? batchOneWonders : batchTwoWonders),
-        [batchOneWonders, batchTwoWonders, displayPrepareBatch]
-    );
-    const selectablePrepareWonders = useMemo(
-        () => displayedPrepareWonders.filter((wonder) => !wonder.taken),
-        [displayedPrepareWonders]
-    );
-    const firstBatchComplete = useMemo(
-        () => batchOneWonders.length === 4 && batchOneWonders.every((wonder) => wonder.taken),
-        [batchOneWonders]
-    );
-    const prepareWonderSlots = useMemo(() => {
-        if (displayedPrepareWonders.length === 4) {
-            return displayedPrepareWonders as Array<(typeof displayedPrepareWonders)[number] | null>;
-        }
-        return Array(4).fill(null) as Array<(typeof displayedPrepareWonders)[number] | null>;
-    }, [displayedPrepareWonders]);
+    const { prepareActionLocked, prepareRevealedIds, prepareWonderSlots, handlePrepareWonderPick } = useDuelPreparePhase({
+        tier: game.tier,
+        wonderCards: game.wonderCards,
+        isMyTurn,
+        selectWondersForPlayersMove: game.selectWondersForPlayersMove,
+        chooseWonderForPlayer
+    });
 
     const topPlayer = isObserver ? game.player1 : currentPlayer;
     const bottomPlayer = isObserver ? game.player2 : opponent;
@@ -132,7 +147,7 @@ export function DuelGamePage({
         );
     }, [canBuyTierCard, game.selectedCard, isMyTurn, topPlayer.resources.cash]);
 
-    const pointBreakdown = useMemo(() => {
+    const pointBreakdown = useMemo<{ p1: PointBreakdown; p2: PointBreakdown }>(() => {
         const p1Cards = countPointsFromCards(game.player1);
         const p2Cards = countPointsFromCards(game.player2);
         const p1Guild = countPointsFromGuild(game.player1, game.player2);
@@ -160,67 +175,24 @@ export function DuelGamePage({
         };
     }, [game.board.pawn, game.player1, game.player2]);
 
-    const winnerUid = game.wonByArt || game.wonByAggressive || game.wonBySurr || game.wonByPoints;
-    const showEpochStarterModal =
-        !winnerUid &&
-        game.tier !== 'prepare' &&
-        game.chooseWhoWillStart &&
-        isMyTurn &&
-        !isObserver;
+    const {
+        winnerUid,
+        showEpochStarterModal,
+        showActionModal,
+        awaitingBoardCoinPick,
+        showCoinChoiceModal,
+        showDestroyOpponentModal,
+        visibleCoinChoices
+    } = useDuelModalsState({ game, uid, isObserver, isMyTurn });
 
-    const showActionModal =
-        !winnerUid &&
-        game.tier !== 'prepare' &&
-        !!game.selectedCard &&
-        !game.chooseWhoWillStart &&
-        !isObserver;
-
-    const awaitingBoardCoinPick =
-        !winnerUid &&
-        game.tier !== 'prepare' &&
-        !isObserver &&
-        isMyTurn &&
-        game.pickCoin === uid &&
-        game.pickCoin === game.turn;
-
-    const awaitingWonderThreeCoins =
-        !winnerUid &&
-        game.tier !== 'prepare' &&
-        !isObserver &&
-        isMyTurn &&
-        game.pickCoinOfThree === uid &&
-        game.pickCoinOfThree === game.turn;
-
-    const showCoinChoiceModal = awaitingBoardCoinPick || awaitingWonderThreeCoins;
-
-    const showDestroyOpponentModal =
-        !winnerUid &&
-        game.tier !== 'prepare' &&
-        !game.chooseWhoWillStart &&
-        !isObserver &&
-        isMyTurn &&
-        (game.destroyBrown === uid || game.destroyGrey === uid) &&
-        game.turn === uid;
-
-    const showArenaFoot = isMyTurn && game.pickCardFromGraveyard === uid;
     const closeSelectedCardActions = () => {
         game.setSelectedCard(null);
         setWonderBuildMode(false);
     };
-    const winnerName = useMemo(() => {
-        if (!winnerUid) return '';
-        if (winnerUid === 'draw') return 'DRAW';
-        if (winnerUid === game.player1.user.uid) return game.player1.user.displayName || game.player1.user.email;
-        if (winnerUid === game.player2.user.uid) return game.player2.user.displayName || game.player2.user.email;
-        return winnerUid;
-    }, [game.player1.user.displayName, game.player1.user.email, game.player1.user.uid, game.player2.user.displayName, game.player2.user.email, game.player2.user.uid, winnerUid]);
-
-    const winnerCountryCode = useMemo(() => {
-        if (!winnerUid || winnerUid === 'draw') return undefined;
-        if (winnerUid === game.player1.user.uid) return game.player1.user.countryCode;
-        if (winnerUid === game.player2.user.uid) return game.player2.user.countryCode;
-        return undefined;
-    }, [winnerUid, game.player1.user.countryCode, game.player1.user.uid, game.player2.user.countryCode, game.player2.user.uid]);
+    const winnerMeta = useMemo(
+        () => winnerDisplay(winnerUid, game.player1, game.player2),
+        [game.player1, game.player2, winnerUid]
+    );
 
     const victoryReason = game.wonByArt
         ? 'Scientific victory'
@@ -264,78 +236,6 @@ export function DuelGamePage({
     }, [game.selectedCard]);
 
     useEffect(() => {
-        if (game.tier !== 'prepare') {
-            setDisplayPrepareBatch(1);
-            setPrepareRevealedIds([]);
-            setPrepareActionLocked(false);
-        }
-    }, [game.tier]);
-
-    useEffect(() => {
-        const currentIds = displayedPrepareWonders.map((wonder) => wonder.id);
-        setPrepareRevealedIds((prev) => prev.filter((id) => currentIds.includes(id)));
-    }, [displayedPrepareWonders]);
-
-    useEffect(() => {
-        if (game.tier !== 'prepare') return;
-        if (displayPrepareBatch !== 1) return;
-        if (!firstBatchComplete) return;
-
-        const timer = window.setTimeout(() => {
-            setDisplayPrepareBatch(2);
-            setPrepareRevealedIds([]);
-        }, 760);
-
-        return () => window.clearTimeout(timer);
-    }, [displayPrepareBatch, firstBatchComplete, game.tier]);
-
-    useEffect(() => {
-        if (game.tier !== 'prepare') return;
-        if (displayPrepareBatch !== 2) return;
-        if (firstBatchComplete) return;
-        setDisplayPrepareBatch(1);
-        setPrepareRevealedIds([]);
-    }, [displayPrepareBatch, firstBatchComplete, game.tier]);
-
-    useEffect(() => {
-        if (game.tier !== 'prepare') return;
-        const pending = displayedPrepareWonders.filter((wonder) => !prepareRevealedIds.includes(wonder.id));
-        if (!pending.length) return;
-        const timers = pending.map((wonder, index) =>
-            window.setTimeout(() => {
-                setPrepareRevealedIds((prev) => (prev.includes(wonder.id) ? prev : [...prev, wonder.id]));
-            }, index * 340)
-        );
-        return () => timers.forEach((timer) => window.clearTimeout(timer));
-    }, [displayedPrepareWonders, game.tier, prepareRevealedIds]);
-
-    useEffect(() => {
-        if (game.tier !== 'prepare') return;
-        if (!isMyTurn) return;
-        if (game.selectWondersForPlayersMove !== 3 && game.selectWondersForPlayersMove !== 7) return;
-        if (selectablePrepareWonders.length !== 1) return;
-        if (prepareActionLocked) return;
-
-        const lastWonder = selectablePrepareWonders[0];
-        if (!prepareRevealedIds.includes(lastWonder.id)) return;
-        const timer = window.setTimeout(async () => {
-            setPrepareActionLocked(true);
-            await chooseWonderForPlayer(lastWonder.id);
-            setPrepareActionLocked(false);
-        }, 120);
-
-        return () => window.clearTimeout(timer);
-    }, [
-        chooseWonderForPlayer,
-        game.selectWondersForPlayersMove,
-        game.tier,
-        isMyTurn,
-        prepareActionLocked,
-        prepareRevealedIds,
-        selectablePrepareWonders
-    ]);
-
-    useEffect(() => {
         if (!showActionModal && !showEpochStarterModal && !showCoinChoiceModal && !showDestroyOpponentModal) return;
         const handlePointerDown = (event: PointerEvent) => {
             if (showEpochStarterModal || showCoinChoiceModal || showDestroyOpponentModal) return;
@@ -361,25 +261,6 @@ export function DuelGamePage({
         };
     }, [showActionModal, showCoinChoiceModal, showDestroyOpponentModal, showEpochStarterModal]);
 
-    useEffect(() => {
-        const onResize = () => {
-            if (window.innerWidth > 767) setShowHeaderMobileMenu(false);
-        };
-        window.addEventListener('resize', onResize);
-        return () => window.removeEventListener('resize', onResize);
-    }, []);
-
-    useEffect(() => {
-        if (!showHeaderMobileMenu) return;
-        const onPointerDown = (event: PointerEvent) => {
-            const target = event.target as Node | null;
-            if (headerRef.current?.contains(target)) return;
-            setShowHeaderMobileMenu(false);
-        };
-        document.addEventListener('pointerdown', onPointerDown);
-        return () => document.removeEventListener('pointerdown', onPointerDown);
-    }, [showHeaderMobileMenu]);
-
     const toggleSound = () => {
         const next = !soundMuted;
         setSoundMuted(next);
@@ -390,124 +271,33 @@ export function DuelGamePage({
     const openSurrenderModal = () => {
         if (isObserver) return;
         setShowSurrenderModal(true);
-        setShowHeaderMobileMenu(false);
     };
     const confirmSurrender = () => {
         setShowSurrenderModal(false);
         surrender();
     };
-    const turnLabel = isObserver ? 'Observer mode' : isMyTurn ? 'YOU' : 'Opponent';
-    const turnToneClass = isObserver ? 'dgTurnBadgeObserver' : isMyTurn ? 'dgTurnBadgeYou' : 'dgTurnBadgeOpponent';
-
+    const handleBuildSelectedWonder = async (wonderId: number) => {
+        if (!wonderBuildMode) return;
+        const wonder = topPlayer.wonderCards.find((item) => item.id === wonderId);
+        if (!wonder) return;
+        selectWonder(wonder);
+        await buildWonder(wonder);
+        setWonderBuildMode(false);
+    };
     return (
         <main className="mx-auto flex h-dvh max-h-dvh w-full max-w-[1400px] flex-col overflow-hidden p-2 text-[color:var(--app-text)] sm:p-3">
-            <header
-                ref={headerRef}
-                className="app-surface-header mb-2 flex min-w-0 max-w-full shrink-0 items-center justify-between gap-2 rounded-xl p-2 sm:mb-3 sm:rounded-2xl sm:p-3 dgHeader"
-            >
-                <div className="min-w-0">
-                    <h1 className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1 text-lg font-semibold leading-tight">
-                        <span className="font-display inline-flex shrink-0 items-center gap-2 tracking-wide">
-                            <Gamepad2 className="app-brand-icon h-5 w-5" aria-hidden />
-                            Duel
-                        </span>
-                    </h1>
-                    <p className="dgMetaLine text-xs">
-                        <span className="dgMetaStrong">Turn:</span> <span className={`mr-1 dgTurnBadge ${turnToneClass}`}>{turnLabel}</span> ·{' '}
-                        <span className="ml-1 dgMetaStrong">Tier:</span> <span className="mr-1 dgMetaValue">{game.tier}</span> ·{' '}
-                        <span className="ml-1 dgMetaStrong">Move:</span> <span className="mr-1 dgMetaValue">{game.move}</span>
-                    </p>
-                </div>
-                <div className="dgHeaderActionsDesktop min-w-0 shrink items-center gap-2">
-                    <button
-                        type="button"
-                        className="btn-secondary hdrIconBtn"
-                        disabled={isObserver}
-                        onClick={openSurrenderModal}
-                        title="Surrender"
-                    >
-                        <ShieldAlert className="h-4 w-4" />
-                        <span className="hdrBtnText">Surrender</span>
-                    </button>
-                    <button
-                        type="button"
-                        className="btn-secondary hdrIconBtn"
-                        onClick={toggleSound}
-                        title={soundMuted ? 'Unmute sounds' : 'Mute sounds'}
-                    >
-                        {soundMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-                        <span className="hdrBtnText">{soundMuted ? 'Muted' : 'Sound'}</span>
-                    </button>
-                    <button
-                        type="button"
-                        className="btn-secondary hdrIconBtn"
-                        onClick={toggleTheme}
-                        title={theme === 'classic' ? 'Switch to ivory theme' : 'Switch to classic theme'}
-                    >
-                        <Palette className="h-4 w-4" />
-                        <span className="hdrBtnText">{theme === 'classic' ? 'Ivory' : 'Classic'}</span>
-                    </button>
-                    <button type="button" className="btn-secondary hdrIconBtn" onClick={goBackToFeed} title="Back to feed">
-                        <ArrowLeft className="h-4 w-4" />
-                        <span className="hdrBtnText">Feed</span>
-                    </button>
-                </div>
-                <MobileHamburgerMenu
-                    open={showHeaderMobileMenu}
-                    onToggle={() => setShowHeaderMobileMenu((prev) => !prev)}
-                    toggleClassName="btn-secondary dgMobileMenuToggle"
-                    panelClassName="dgMobileMenu"
-                    listClassName="dgMobileMenuList"
-                    openLabel="Open header menu"
-                    closeLabel="Close header menu"
-                >
-                    <button
-                        type="button"
-                        className="btn-secondary dgMobileMenuItem"
-                        disabled={isObserver}
-                        onClick={openSurrenderModal}
-                    >
-                        <ShieldAlert className="h-4 w-4 shrink-0" />
-                        <span className="dgMobileMenuText">Surrender</span>
-                    </button>
-                    <button
-                        type="button"
-                        className="btn-secondary dgMobileMenuItem"
-                        onClick={() => {
-                            toggleSound();
-                            setShowHeaderMobileMenu(false);
-                        }}
-                        title={soundMuted ? 'Unmute sounds' : 'Mute sounds'}
-                    >
-                        {soundMuted ? <VolumeX className="h-4 w-4 shrink-0" /> : <Volume2 className="h-4 w-4 shrink-0" />}
-                        <span className="dgMobileMenuText">{soundMuted ? 'Unmute sounds' : 'Mute sounds'}</span>
-                    </button>
-                    <button
-                        type="button"
-                        className="btn-secondary dgMobileMenuItem"
-                        onClick={() => {
-                            toggleTheme();
-                            setShowHeaderMobileMenu(false);
-                        }}
-                    >
-                        <Palette className="h-4 w-4 shrink-0" />
-                        <span className="dgMobileMenuText">
-                            {theme === 'classic' ? 'Switch to ivory theme' : 'Switch to classic theme'}
-                        </span>
-                    </button>
-                    <button
-                        type="button"
-                        className="btn-secondary dgMobileMenuItem"
-                        onClick={() => {
-                            setShowHeaderMobileMenu(false);
-                            goBackToFeed();
-                        }}
-                    >
-                        <ArrowLeft className="h-4 w-4 shrink-0" />
-                        <span className="dgMobileMenuText">Feed</span>
-                    </button>
-                </MobileHamburgerMenu>
-            </header>
+            <DuelGameHeader
+                isObserver={isObserver}
+                isMyTurn={isMyTurn}
+                tier={game.tier}
+                move={game.move}
+                soundMuted={soundMuted}
+                theme={theme}
+                onOpenSurrender={openSurrenderModal}
+                onToggleSound={toggleSound}
+                onToggleTheme={toggleTheme}
+                onBackToFeed={goBackToFeed}
+            />
 
             {showSurrenderModal && (
                 <div className="dgSurrenderOverlay" onClick={() => setShowSurrenderModal(false)}>
@@ -526,83 +316,20 @@ export function DuelGamePage({
                 </div>
             )}
 
-            {winnerUid ? (
-                <section className="app-surface-callout mb-2 shrink-0 rounded-xl p-3 sm:mb-3 sm:rounded-2xl sm:p-4">
-                    <h2 className="font-display text-xl font-semibold tracking-wide">Game over</h2>
-                    <p className="flex flex-wrap items-center gap-2 text-sm">
-                        <span>Winner:</span>
-                        <UserFlag code={winnerCountryCode} className="text-lg" />
-                        <span>{winnerName}</span>
-                    </p>
-                    <p className="mt-1 text-xs opacity-90">{victoryReason}</p>
-                    {game.wonByAggressive ? (
-                        <div className="mt-2 inline-flex items-center gap-2 rounded-md bg-black/20 px-2 py-1 text-xs">
-                            <span className="dg-endIcon dg-endIconMilitary dg-endFocus dg-endFocusMilitary" />
-                            Military domination
-                        </div>
-                    ) : null}
-                    {game.wonByArt ? (
-                        <div className="mt-2 inline-flex items-center gap-2 rounded-md bg-black/20 px-2 py-1 text-xs">
-                            <span className="dg-endIcon dg-endIconScience dg-endFocus dg-endFocusScience" />
-                            Scientific domination
-                        </div>
-                    ) : null}
-                    {game.wonByPoints ? (
-                        <div className="mt-3 grid gap-2 md:grid-cols-2">
-                            <div className="rounded-lg bg-black/20 p-3 text-sm">
-                                <p className="mb-1 inline-flex items-center gap-1.5 font-semibold">
-                                    <UserFlag code={game.player1.user.countryCode} className="text-base" />
-                                    <span>{game.player1.user.displayName || game.player1.user.email || 'Player 1'}</span>
-                                </p>
-                                <p>Cards/Wonders: {pointBreakdown.p1.cards}</p>
-                                <p>Guilds: {pointBreakdown.p1.guild}</p>
-                                <p>Coins: {pointBreakdown.p1.coins}</p>
-                                <p
-                                    className={`rounded px-1 ${game.wonByAggressive ? 'dg-endFocus dg-endFocusMilitary' : ''}`}
-                                >
-                                    Military: {pointBreakdown.p1.military}
-                                </p>
-                                <p className="mt-1 font-semibold">
-                                    <span
-                                        className={
-                                            game.wonByPoints && winnerUid === game.player1.user.uid
-                                                ? 'dg-endFocus dg-endFocusPoints rounded px-1'
-                                                : ''
-                                        }
-                                    >
-                                        Total: {animatedP1Total}
-                                    </span>
-                                </p>
-                            </div>
-                            <div className="rounded-lg bg-black/20 p-3 text-sm">
-                                <p className="mb-1 inline-flex items-center gap-1.5 font-semibold">
-                                    <UserFlag code={game.player2.user.countryCode} className="text-base" />
-                                    <span>{game.player2.user.displayName || game.player2.user.email || 'Player 2'}</span>
-                                </p>
-                                <p>Cards/Wonders: {pointBreakdown.p2.cards}</p>
-                                <p>Guilds: {pointBreakdown.p2.guild}</p>
-                                <p>Coins: {pointBreakdown.p2.coins}</p>
-                                <p
-                                    className={`rounded px-1 ${game.wonByAggressive ? 'dg-endFocus dg-endFocusMilitary' : ''}`}
-                                >
-                                    Military: {pointBreakdown.p2.military}
-                                </p>
-                                <p className="mt-1 font-semibold">
-                                    <span
-                                        className={
-                                            game.wonByPoints && winnerUid === game.player2.user.uid
-                                                ? 'dg-endFocus dg-endFocusPoints rounded px-1'
-                                                : ''
-                                        }
-                                    >
-                                        Total: {animatedP2Total}
-                                    </span>
-                                </p>
-                            </div>
-                        </div>
-                    ) : null}
-                </section>
-            ) : null}
+            <DuelGameOverPanel
+                winnerUid={winnerUid}
+                winnerName={winnerMeta.name}
+                winnerCountryCode={winnerMeta.countryCode}
+                victoryReason={victoryReason}
+                wonByAggressive={!!game.wonByAggressive}
+                wonByArt={!!game.wonByArt}
+                wonByPoints={!!game.wonByPoints}
+                player1={game.player1}
+                player2={game.player2}
+                pointBreakdown={pointBreakdown}
+                animatedP1Total={animatedP1Total}
+                animatedP2Total={animatedP2Total}
+            />
 
             <div className="dg-tableArena flex min-h-0 flex-1 flex-col overflow-hidden">
                 <div className="dg-tableSurface duelPageScrollbar min-h-0 flex-1 overflow-y-auto">
@@ -630,237 +357,52 @@ export function DuelGamePage({
                                         className={`dg-stageCards${game.tier === 'prepare' ? ' dg-stageCards--prepare' : ''}`}
                                     >
                                         {game.tier === 'prepare' ? (
-                                            <>
-                                                <h2 className="mb-2 text-sm font-semibold">
-                                                    Pick wonders {isMyTurn ? '(your turn)' : '(opponent picks)'}
-                                                </h2>
-                                                <div className="dg-wondersPickTransform">
-                                                    <div className="dg-wondersPick">
-                                                        {prepareWonderSlots.map((wonder, index) => (
-                                                            <DuelWonderSprite
-                                                                key={wonder ? wonder.id : `prepare-placeholder-${index}`}
-                                                                card={wonder ?? undefined}
-                                                                showFront={
-                                                                    !!wonder &&
-                                                                    !wonder.taken &&
-                                                                    prepareRevealedIds.includes(wonder.id)
-                                                                }
-                                                                flipDelayMs={0}
-                                                                disabled={
-                                                                    !isMyTurn ||
-                                                                    !wonder ||
-                                                                    wonder.taken ||
-                                                                    !prepareRevealedIds.includes(wonder.id) ||
-                                                                    prepareActionLocked
-                                                                }
-                                                                onClick={
-                                                                    wonder
-                                                                        ? async () => {
-                                                                              if (prepareActionLocked) return;
-                                                                              setPrepareActionLocked(true);
-                                                                              await chooseWonderForPlayer(wonder.id);
-                                                                              setPrepareActionLocked(false);
-                                                                          }
-                                                                        : undefined
-                                                                }
-                                                            />
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            </>
+                                            <DuelPrepareStage
+                                                isMyTurn={isMyTurn}
+                                                prepareWonderSlots={prepareWonderSlots}
+                                                prepareRevealedIds={prepareRevealedIds}
+                                                prepareActionLocked={prepareActionLocked}
+                                                onPickWonder={(wonderId) => void handlePrepareWonderPick(wonderId)}
+                                            />
                                         ) : (
-                                            <div className="dg-cardBoardShell">
-                                                <div className="dg-epochCardsTransform">
-                                                    <div className="dg-cardBoard">
-                                                        {tierCards.map((card, index) => (
-                                                            <DuelSpriteCard
-                                                                key={`${card.tier}-${card.id}`}
-                                                                card={card}
-                                                                x={tierLayout.x[index]}
-                                                                y={tierLayout.y[index]}
-                                                                selected={game.selectedCard?.id === card.id}
-                                                                cash1P={
-                                                                    (card.coversBy?.length ?? 0) === 0
-                                                                        ? showPrice(card, topPlayer, bottomPlayer)
-                                                                        : -1
-                                                                }
-                                                                cash2P={
-                                                                    (card.coversBy?.length ?? 0) === 0
-                                                                        ? showPrice(card, bottomPlayer, topPlayer)
-                                                                        : -1
-                                                                }
-                                                                res1P={topPlayer.resources.cash}
-                                                                res2P={bottomPlayer.resources.cash}
-                                                                onClick={() => selectTierCard(card)}
-                                                            />
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            </div>
+                                            <DuelTierCardsStage
+                                                tierCards={tierCards}
+                                                tierLayout={tierLayout}
+                                                selectedCardId={game.selectedCard?.id}
+                                                topPlayer={topPlayer}
+                                                bottomPlayer={bottomPlayer}
+                                                onSelectTierCard={selectTierCard}
+                                            />
                                         )}
                                     </div>
-                                    <aside className="dg-graveyardPanel rounded-xl p-2">
-                                        <h3 className="mb-1 text-sm font-semibold">Graveyard</h3>
-                                        <div
-                                            className={`dg-graveyardCards dg-graveyardCardsBox duelPageScrollbar overflow-y-auto rounded-lg p-1 ${
-                                                isMyTurn && game.pickCardFromGraveyard === uid
-                                                    ? 'ring-2 ring-emerald-300/60'
-                                                    : ''
-                                            }`}
-                                        >
-                                            <div className="dg-graveyardCardsTransform">
-                                                {game.graveyard.map((card, idx) => (
-                                                    <DuelSpriteCard
-                                                        key={`grave-${card.id}-${idx}`}
-                                                        card={card}
-                                                        x={0}
-                                                        y={0}
-                                                        compact
-                                                        disabled={
-                                                            !(
-                                                                isMyTurn &&
-                                                                game.pickCardFromGraveyard === uid
-                                                            )
-                                                        }
-                                                        onClick={() => pickCardFromGraveyard(card)}
-                                                    />
-                                                ))}
-                                                {!game.graveyard.length && (
-                                                    <span className="text-xs opacity-70">empty</span>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </aside>
-                                {showArenaFoot ? (
-                                    <div className="relative dg-arenaFoot">
-                                        <div className="flex flex-wrap items-center gap-2">
-                                            {isMyTurn && game.pickCardFromGraveyard === uid && (
-                                                    <span className="rounded-md border border-emerald-300/50 bg-emerald-500/20 px-2 py-1 text-xs">
-                                                        Select card from graveyard
-                                                    </span>
-                                                )}
-                                            </div>
-                                    </div>
-                                ) : null}
-                                {showCoinChoiceModal ? (
-                                    <div
-                                        className="dg-actionsBackdropInBoard dg-actionsBackdropInBoard--blocking"
-                                        role="dialog"
-                                        aria-modal="true"
-                                        aria-label={
-                                            awaitingBoardCoinPick
-                                                ? 'Choose progress coin after matching pair'
-                                                : 'Choose progress coin from wonder'
-                                        }
-                                    >
-                                        <div className="dg-actionsModal">
-                                            <p className="mb-3 px-1 text-center text-sm text-slate-200">
-                                                {awaitingBoardCoinPick
-                                                    ? 'You matched green science icons — choose one progress coin from the shared board pool.'
-                                                    : 'Pick one of the three progress coins offered by the wonder:'}
-                                            </p>
-                                            <div className="dg-actionsModalCoins">
-                                                {(awaitingBoardCoinPick ? game.board.coins : game.theRestOfCoins.slice(0, 3)).map(
-                                                    (coin, idx) => (
-                                                        <span
-                                                            key={`${awaitingBoardCoinPick ? 'b' : 'w'}-${coin}-${idx}`}
-                                                            className="dg-actionsModalCoinWrap"
-                                                            title={coin}
-                                                        >
-                                                            <DuelCoinSprite
-                                                                coin={coin}
-                                                                onClick={() =>
-                                                                    awaitingBoardCoinPick
-                                                                        ? pickCoin(coin)
-                                                                        : pickCoinOfThree(coin)
-                                                                }
-                                                            />
-                                                        </span>
-                                                    )
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                ) : showDestroyOpponentModal ? (
-                                    <div
-                                        className="dg-actionsBackdropInBoard dg-actionsBackdropInBoard--blocking"
-                                        role="dialog"
-                                        aria-modal="true"
-                                        aria-label="Destroy opponent card"
-                                    >
-                                        <div className="dg-actionsModal dg-actionsModal--instruction">
-                                            <p className="px-1 text-center text-sm leading-snug text-slate-200">
-                                                {game.destroyBrown === uid
-                                                    ? 'Wonder effect: choose one of your opponent\'s brown (raw material) cards to discard. Tap a highlighted card in their city below.'
-                                                    : 'Wonder effect: choose one of your opponent\'s grey (manufactured goods) cards to discard. Tap a highlighted card in their city below.'}
-                                            </p>
-                                        </div>
-                                    </div>
-                                ) : showEpochStarterModal ? (
-                                    <div
-                                        className="dg-actionsBackdropInBoard dg-actionsBackdropInBoard--blocking"
-                                        role="dialog"
-                                        aria-modal="true"
-                                        aria-label="Choose who starts this age"
-                                    >
-                                        <div className="dg-actionsModal">
-                                            <p className="mb-3 px-1 text-center text-sm text-slate-200">
-                                                Who takes the first turn this age? By the rules that should be{' '}
-                                                <span className="font-medium text-white">you</span> — you may keep first
-                                                move or pass it to your opponent.
-                                            </p>
-                                            <div className="dg-actionsButtons dg-actionsButtons--starter">
-                                                <button
-                                                    type="button"
-                                                    className="btn-primary"
-                                                    onClick={() => chooseWhoStarts(uid)}
-                                                >
-                                                    I stay first
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    className="btn-secondary"
-                                                    onClick={() => chooseWhoStarts(opponent.user.uid)}
-                                                >
-                                                    Opponent goes first
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ) : showActionModal ? (
-                                    <div className="dg-actionsBackdropInBoard" role="dialog" aria-modal="true">
-                                        <div className="dg-actionsModal">
-                                            <div className="dg-actionsButtons">
-                                                <button
-                                                    className="btn-primary"
-                                                    disabled={!canBuySelectedCard}
-                                                    onClick={buySelectedCard}
-                                                >
-                                                    {canBuySelectedCard ? (
-                                                        <Hand className="h-3.5 w-3.5" />
-                                                    ) : (
-                                                        <Ban className="h-3.5 w-3.5" />
-                                                    )}
-                                                    Buy {canBuyTierCard > -1 ? `(${canBuyTierCard})` : ''}
-                                                </button>
-                                                <button
-                                                    className="btn-secondary"
-                                                    disabled={!isMyTurn || !game.selectedCard}
-                                                    onClick={sellSelectedCard}
-                                                >
-                                                    Sell
-                                                </button>
-                                                <button
-                                                    className={`btn-secondary ${!hasBuildableWonder ? '!bg-red-600/40 !text-red-100' : ''}`}
-                                                    disabled={!hasBuildableWonder}
-                                                    onClick={() => setWonderBuildMode((prev) => !prev)}
-                                                >
-                                                    {wonderBuildMode ? 'Select wonder...' : 'Build wonder'}
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ) : null}
+                                <DuelGraveyardPanel
+                                    graveyard={game.graveyard}
+                                    isMyTurn={isMyTurn}
+                                    pickCardFromGraveyardUid={game.pickCardFromGraveyard}
+                                    currentUid={uid}
+                                    onPickCardFromGraveyard={pickCardFromGraveyard}
+                                />
+                                <DuelActionsOverlay
+                                    showCoinChoiceModal={showCoinChoiceModal}
+                                    awaitingBoardCoinPick={awaitingBoardCoinPick}
+                                    visibleCoinChoices={visibleCoinChoices}
+                                    onPickCoin={pickCoin}
+                                    onPickCoinOfThree={pickCoinOfThree}
+                                    showDestroyOpponentModal={showDestroyOpponentModal}
+                                    destroyBrownActive={game.destroyBrown === uid}
+                                    showEpochStarterModal={showEpochStarterModal}
+                                    onChooseSelfStarts={() => chooseWhoStarts(uid)}
+                                    onChooseOpponentStarts={() => chooseWhoStarts(opponent.user.uid)}
+                                    showActionModal={showActionModal}
+                                    canBuySelectedCard={canBuySelectedCard}
+                                    buyPrice={canBuyTierCard}
+                                    onBuySelectedCard={buySelectedCard}
+                                    canSellSelectedCard={isMyTurn && !!game.selectedCard}
+                                    onSellSelectedCard={sellSelectedCard}
+                                    hasBuildableWonder={hasBuildableWonder}
+                                    wonderBuildMode={wonderBuildMode}
+                                    onToggleWonderBuildMode={() => setWonderBuildMode((prev) => !prev)}
+                                />
                             </div>
                         </section>
 
@@ -875,14 +417,7 @@ export function DuelGamePage({
                                         canSelectWonder={wonderBuildMode && isMyTurn && !!game.selectedCard}
                                         affordableWonderIds={wonderBuildMode ? affordableWonderIds : []}
                                         selectedWonderId={game.selectedWonder?.id}
-                                        onSelectWonder={async (wonderId) => {
-                                            if (!wonderBuildMode) return;
-                                            const wonder = topPlayer.wonderCards.find((w) => w.id === wonderId);
-                                            if (!wonder) return;
-                                            selectWonder(wonder);
-                                            await buildWonder(wonder);
-                                            setWonderBuildMode(false);
-                                        }}
+                                        onSelectWonder={handleBuildSelectedWonder}
                                         destroyMode={null}
                                         isDestroyTarget={false}
                                         pulseScienceVictory={!!game.wonByArt && game.wonByArt === topPlayer.user.uid}
