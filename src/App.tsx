@@ -42,7 +42,7 @@ export default function App() {
                     />
                     <Route
                         path="/duel-game"
-                        element={user ? <DuelGamePage uid={user.uid} /> : <Navigate to="/" replace />}
+                        element={user ? <DuelGamePage uid={user.uid} theme={theme} onThemeChange={setTheme} /> : <Navigate to="/" replace />}
                     />
                     <Route path="*" element={<Navigate to={user ? '/feed' : '/'} replace />} />
                 </Routes>

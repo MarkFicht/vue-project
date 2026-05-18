@@ -15,7 +15,7 @@ import {
     writeBatch
 } from 'firebase/firestore';
 import { ref as rtdbRef, get as getRtdb, serverTimestamp as rtdbServerTimestamp, set as setRtdb } from 'firebase/database';
-import { Check, Copy, Gamepad2, LogOut, Menu, Palette, UserCircle2, UserX, Volume2, VolumeX, X } from 'lucide-react';
+import { Check, Copy, Gamepad2, LogOut, Palette, UserCircle2, UserX, Volume2, VolumeX } from 'lucide-react';
 import {
     EmailAuthProvider,
     deleteUser,
@@ -37,6 +37,7 @@ import { getCountrySelectOptions, guessCountryFromLocale, normalizeCountryCode }
 import { CountrySelect } from '@/components/CountrySelect';
 import { UserFlag } from '@/components/UserFlag';
 import { LoadingOverlay } from '@/components/LoadingOverlay';
+import { MobileHamburgerMenu } from '@/components/MobileHamburgerMenu';
 import { SkeletonDot, SkeletonInput, SkeletonTag, SkeletonText } from '@/components/Skeleton';
 import type { AppTheme } from '@/hooks/useAppTheme';
 import '@/styles/dashboard.css';
@@ -143,49 +144,43 @@ function DashboardHeader({
                     <span className="hdrBtnText">Logout</span>
                 </button>
             </div>
-            <button
-                type="button"
-                className="btn-secondary dashMobileMenuToggle"
-                onClick={() => setShowHeaderMobileMenu((prev) => !prev)}
-                aria-expanded={showHeaderMobileMenu}
-                aria-label={showHeaderMobileMenu ? 'Close header menu' : 'Open header menu'}
-                title={showHeaderMobileMenu ? 'Close menu' : 'Open menu'}
+            <MobileHamburgerMenu
+                open={showHeaderMobileMenu}
+                onToggle={() => setShowHeaderMobileMenu((prev) => !prev)}
+                toggleClassName="btn-secondary dashMobileMenuToggle"
+                panelClassName="dashMobileMenu"
+                listClassName="dashMobileMenuList"
+                openLabel="Open header menu"
+                closeLabel="Close header menu"
             >
-                {showHeaderMobileMenu ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
-            </button>
-            {showHeaderMobileMenu && (
-                <div className="dashMobileMenu">
-                    <div className="dashMobileMenuList">
-                        <button type="button" className="btn-secondary dashMobileMenuItem" onClick={openUserProfileModal}>
-                            <UserCircle2 className="h-4 w-4 shrink-0" />
-                            {isLoadingUser ? (
-                                <SkeletonText className="dashSkeletonTextMobile" />
-                            ) : (
-                                <span className="dashMobileMenuText">{resolvedUserLabel}</span>
-                            )}
-                        </button>
-                        <button
-                            type="button"
-                            className="btn-secondary dashMobileMenuItem"
-                            onClick={toggleSound}
-                            title={soundMuted ? 'Unmute sounds' : 'Mute sounds'}
-                        >
-                            {soundMuted ? <VolumeX className="h-4 w-4 shrink-0" /> : <Volume2 className="h-4 w-4 shrink-0" />}
-                            <span className="dashMobileMenuText">{soundMuted ? 'Unmute sounds' : 'Mute sounds'}</span>
-                        </button>
-                        <button type="button" className="btn-secondary dashMobileMenuItem" onClick={toggleTheme}>
-                            <Palette className="h-4 w-4 shrink-0" />
-                            <span className="dashMobileMenuText">
-                                {theme === 'classic' ? 'Switch to ivory theme' : 'Switch to classic theme'}
-                            </span>
-                        </button>
-                        <button type="button" className="btn-secondary dashMobileMenuItem" onClick={openLogoutModal}>
-                            <LogOut className="h-4 w-4 shrink-0" />
-                            <span className="dashMobileMenuText">Logout</span>
-                        </button>
-                    </div>
-                </div>
-            )}
+                <button type="button" className="btn-secondary dashMobileMenuItem" onClick={openUserProfileModal}>
+                    <UserCircle2 className="h-4 w-4 shrink-0" />
+                    {isLoadingUser ? (
+                        <SkeletonText className="dashSkeletonTextMobile" />
+                    ) : (
+                        <span className="dashMobileMenuText">{resolvedUserLabel}</span>
+                    )}
+                </button>
+                <button
+                    type="button"
+                    className="btn-secondary dashMobileMenuItem"
+                    onClick={toggleSound}
+                    title={soundMuted ? 'Unmute sounds' : 'Mute sounds'}
+                >
+                    {soundMuted ? <VolumeX className="h-4 w-4 shrink-0" /> : <Volume2 className="h-4 w-4 shrink-0" />}
+                    <span className="dashMobileMenuText">{soundMuted ? 'Unmute sounds' : 'Mute sounds'}</span>
+                </button>
+                <button type="button" className="btn-secondary dashMobileMenuItem" onClick={toggleTheme}>
+                    <Palette className="h-4 w-4 shrink-0" />
+                    <span className="dashMobileMenuText">
+                        {theme === 'classic' ? 'Switch to ivory theme' : 'Switch to classic theme'}
+                    </span>
+                </button>
+                <button type="button" className="btn-secondary dashMobileMenuItem" onClick={openLogoutModal}>
+                    <LogOut className="h-4 w-4 shrink-0" />
+                    <span className="dashMobileMenuText">Logout</span>
+                </button>
+            </MobileHamburgerMenu>
         </header>
     );
 }
