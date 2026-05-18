@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, Ban, Hand, ShieldAlert, Volume2, VolumeX } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ArrowLeft, Ban, Gamepad2, Hand, Palette, ShieldAlert, Volume2, VolumeX } from 'lucide-react';
 import { useGameState } from '@/hooks/useGameState';
 import { DuelSpriteCard } from '@/components/duel/DuelSpriteCard';
 import { DuelWonderSprite } from '@/components/duel/DuelWonderSprite';
@@ -19,14 +19,27 @@ import { useSoundMuteSync } from '@/hooks/useSoundMuteSync';
 import { persistUserSoundMuted } from '@/utils/persistUserSoundMuted';
 import { useUserStore } from '@/store/useUserStore';
 import { UserFlag } from '@/components/UserFlag';
+import { MobileHamburgerMenu } from '@/components/MobileHamburgerMenu';
+import type { AppTheme } from '@/hooks/useAppTheme';
 
-export function DuelGamePage({ uid }: { uid: string }) {
+export function DuelGamePage({
+    uid,
+    theme,
+    onThemeChange
+}: {
+    uid: string;
+    theme: AppTheme;
+    onThemeChange: (theme: AppTheme) => void;
+}) {
     const [wonderBuildMode, setWonderBuildMode] = useState(false);
     const [animatedP1Total, setAnimatedP1Total] = useState(0);
     const [animatedP2Total, setAnimatedP2Total] = useState(0);
     const [prepareRevealedIds, setPrepareRevealedIds] = useState<number[]>([]);
     const [displayPrepareBatch, setDisplayPrepareBatch] = useState<1 | 2>(1);
     const [prepareActionLocked, setPrepareActionLocked] = useState(false);
+    const [showHeaderMobileMenu, setShowHeaderMobileMenu] = useState(false);
+    const [showSurrenderModal, setShowSurrenderModal] = useState(false);
+    const headerRef = useRef<HTMLElement | null>(null);
     const profileSoundMuted = useUserStore((state) => state.fbUser.soundMuted);
     const [soundMuted, setSoundMutedState] = useSoundMuteSync(uid, profileSoundMuted, true);
 
@@ -348,45 +361,170 @@ export function DuelGamePage({ uid }: { uid: string }) {
         };
     }, [showActionModal, showCoinChoiceModal, showDestroyOpponentModal, showEpochStarterModal]);
 
+    useEffect(() => {
+        const onResize = () => {
+            if (window.innerWidth > 767) setShowHeaderMobileMenu(false);
+        };
+        window.addEventListener('resize', onResize);
+        return () => window.removeEventListener('resize', onResize);
+    }, []);
+
+    useEffect(() => {
+        if (!showHeaderMobileMenu) return;
+        const onPointerDown = (event: PointerEvent) => {
+            const target = event.target as Node | null;
+            if (headerRef.current?.contains(target)) return;
+            setShowHeaderMobileMenu(false);
+        };
+        document.addEventListener('pointerdown', onPointerDown);
+        return () => document.removeEventListener('pointerdown', onPointerDown);
+    }, [showHeaderMobileMenu]);
+
+    const toggleSound = () => {
+        const next = !soundMuted;
+        setSoundMuted(next);
+        setSoundMutedState(next);
+        void persistUserSoundMuted(uid, next);
+    };
+    const toggleTheme = () => onThemeChange(theme === 'classic' ? 'ivory' : 'classic');
+    const openSurrenderModal = () => {
+        if (isObserver) return;
+        setShowSurrenderModal(true);
+        setShowHeaderMobileMenu(false);
+    };
+    const confirmSurrender = () => {
+        setShowSurrenderModal(false);
+        surrender();
+    };
+    const turnLabel = isObserver ? 'Observer mode' : isMyTurn ? 'YOU' : 'Opponent';
+    const turnToneClass = isObserver ? 'dgTurnBadgeObserver' : isMyTurn ? 'dgTurnBadgeYou' : 'dgTurnBadgeOpponent';
+
     return (
         <main className="mx-auto flex h-dvh max-h-dvh w-full max-w-[1400px] flex-col overflow-hidden p-2 text-[color:var(--app-text)] sm:p-3">
-            <header className="app-surface-header mb-2 flex min-w-0 max-w-full shrink-0 items-center justify-between gap-2 rounded-xl p-2 sm:mb-3 sm:rounded-2xl sm:p-3">
+            <header
+                ref={headerRef}
+                className="app-surface-header mb-2 flex min-w-0 max-w-full shrink-0 items-center justify-between gap-2 rounded-xl p-2 sm:mb-3 sm:rounded-2xl sm:p-3 dgHeader"
+            >
                 <div className="min-w-0">
                     <h1 className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1 text-lg font-semibold leading-tight">
-                        <span className="font-display shrink-0 tracking-wide">Duel</span>
-                        <span className="text-xs font-normal opacity-80">
-                            Turn: {isObserver ? 'Observer mode' : isMyTurn ? 'You' : 'Opponent'}
+                        <span className="font-display inline-flex shrink-0 items-center gap-2 tracking-wide">
+                            <Gamepad2 className="app-brand-icon h-5 w-5" aria-hidden />
+                            Duel
                         </span>
                     </h1>
-                    <p className="text-xs opacity-80">
-                        Tier: {game.tier} · Move: {game.move}
+                    <p className="dgMetaLine text-xs">
+                        <span className="dgMetaStrong">Turn:</span> <span className={`mr-1 dgTurnBadge ${turnToneClass}`}>{turnLabel}</span> ·{' '}
+                        <span className="ml-1 dgMetaStrong">Tier:</span> <span className="mr-1 dgMetaValue">{game.tier}</span> ·{' '}
+                        <span className="ml-1 dgMetaStrong">Move:</span> <span className="mr-1 dgMetaValue">{game.move}</span>
                     </p>
                 </div>
-                <div className="flex min-w-0 shrink items-center gap-2">
-                    <button type="button" className="btn-secondary hdrIconBtn" disabled={isObserver} onClick={surrender} title="Surrender">
+                <div className="dgHeaderActionsDesktop min-w-0 shrink items-center gap-2">
+                    <button
+                        type="button"
+                        className="btn-secondary hdrIconBtn"
+                        disabled={isObserver}
+                        onClick={openSurrenderModal}
+                        title="Surrender"
+                    >
                         <ShieldAlert className="h-4 w-4" />
                         <span className="hdrBtnText">Surrender</span>
                     </button>
                     <button
                         type="button"
                         className="btn-secondary hdrIconBtn"
-                        onClick={() => {
-                            const next = !soundMuted;
-                            setSoundMuted(next);
-                            setSoundMutedState(next);
-                            void persistUserSoundMuted(uid, next);
-                        }}
+                        onClick={toggleSound}
                         title={soundMuted ? 'Unmute sounds' : 'Mute sounds'}
                     >
                         {soundMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
                         <span className="hdrBtnText">{soundMuted ? 'Muted' : 'Sound'}</span>
+                    </button>
+                    <button
+                        type="button"
+                        className="btn-secondary hdrIconBtn"
+                        onClick={toggleTheme}
+                        title={theme === 'classic' ? 'Switch to ivory theme' : 'Switch to classic theme'}
+                    >
+                        <Palette className="h-4 w-4" />
+                        <span className="hdrBtnText">{theme === 'classic' ? 'Ivory' : 'Classic'}</span>
                     </button>
                     <button type="button" className="btn-secondary hdrIconBtn" onClick={goBackToFeed} title="Back to feed">
                         <ArrowLeft className="h-4 w-4" />
                         <span className="hdrBtnText">Feed</span>
                     </button>
                 </div>
+                <MobileHamburgerMenu
+                    open={showHeaderMobileMenu}
+                    onToggle={() => setShowHeaderMobileMenu((prev) => !prev)}
+                    toggleClassName="btn-secondary dgMobileMenuToggle"
+                    panelClassName="dgMobileMenu"
+                    listClassName="dgMobileMenuList"
+                    openLabel="Open header menu"
+                    closeLabel="Close header menu"
+                >
+                    <button
+                        type="button"
+                        className="btn-secondary dgMobileMenuItem"
+                        disabled={isObserver}
+                        onClick={openSurrenderModal}
+                    >
+                        <ShieldAlert className="h-4 w-4 shrink-0" />
+                        <span className="dgMobileMenuText">Surrender</span>
+                    </button>
+                    <button
+                        type="button"
+                        className="btn-secondary dgMobileMenuItem"
+                        onClick={() => {
+                            toggleSound();
+                            setShowHeaderMobileMenu(false);
+                        }}
+                        title={soundMuted ? 'Unmute sounds' : 'Mute sounds'}
+                    >
+                        {soundMuted ? <VolumeX className="h-4 w-4 shrink-0" /> : <Volume2 className="h-4 w-4 shrink-0" />}
+                        <span className="dgMobileMenuText">{soundMuted ? 'Unmute sounds' : 'Mute sounds'}</span>
+                    </button>
+                    <button
+                        type="button"
+                        className="btn-secondary dgMobileMenuItem"
+                        onClick={() => {
+                            toggleTheme();
+                            setShowHeaderMobileMenu(false);
+                        }}
+                    >
+                        <Palette className="h-4 w-4 shrink-0" />
+                        <span className="dgMobileMenuText">
+                            {theme === 'classic' ? 'Switch to ivory theme' : 'Switch to classic theme'}
+                        </span>
+                    </button>
+                    <button
+                        type="button"
+                        className="btn-secondary dgMobileMenuItem"
+                        onClick={() => {
+                            setShowHeaderMobileMenu(false);
+                            goBackToFeed();
+                        }}
+                    >
+                        <ArrowLeft className="h-4 w-4 shrink-0" />
+                        <span className="dgMobileMenuText">Feed</span>
+                    </button>
+                </MobileHamburgerMenu>
             </header>
+
+            {showSurrenderModal && (
+                <div className="dgSurrenderOverlay" onClick={() => setShowSurrenderModal(false)}>
+                    <div className="dgSurrenderModal" onClick={(event) => event.stopPropagation()}>
+                        <h3>Surrender</h3>
+                        <p>Are you sure you want to surrender this game?</p>
+                        <div className="dgSurrenderActions">
+                            <button className="btn-secondary" type="button" onClick={() => setShowSurrenderModal(false)}>
+                                Cancel
+                            </button>
+                            <button className="btn-primary" type="button" onClick={confirmSurrender}>
+                                Surrender
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {winnerUid ? (
                 <section className="app-surface-callout mb-2 shrink-0 rounded-xl p-3 sm:mb-3 sm:rounded-2xl sm:p-4">
@@ -470,7 +608,7 @@ export function DuelGamePage({ uid }: { uid: string }) {
                 <div className="dg-tableSurface duelPageScrollbar min-h-0 flex-1 overflow-y-auto">
                     <div className="dg-duelLayout">
                         <section className="dg-duelArena" aria-label="Draft area and conflict board">
-                            <div className="relative overflow-visible rounded-xl border border-white/15 bg-black/20 p-2 dg-arenaTableCard">
+                            <div className="relative overflow-visible rounded-xl p-2 dg-arenaTableCard">
                                 <div className="dg-militaryViewport">
                                     <div className="dg-militaryTransform">
                                         <DuelBoard
@@ -561,10 +699,10 @@ export function DuelGamePage({ uid }: { uid: string }) {
                                             </div>
                                         )}
                                     </div>
-                                    <aside className="dg-graveyardPanel rounded-xl border border-[rgb(195_150_95/30%)] bg-[rgb(14_10_7/72%)] p-2 shadow-[inset_0_1px_0_rgb(255_255_255/5%)]">
+                                    <aside className="dg-graveyardPanel rounded-xl p-2">
                                         <h3 className="mb-1 text-sm font-semibold">Graveyard</h3>
                                         <div
-                                            className={`dg-graveyardCards duelPageScrollbar overflow-y-auto rounded-lg bg-black/20 p-1 ${
+                                            className={`dg-graveyardCards dg-graveyardCardsBox duelPageScrollbar overflow-y-auto rounded-lg p-1 ${
                                                 isMyTurn && game.pickCardFromGraveyard === uid
                                                     ? 'ring-2 ring-emerald-300/60'
                                                     : ''

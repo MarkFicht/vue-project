@@ -10,7 +10,7 @@ import {
     writeBatch,
     type Timestamp
 } from 'firebase/firestore';
-import { Bell, BellOff, MessageCircle, Send, X } from 'lucide-react';
+import { Bell, BellOff, ChevronDown, ChevronUp, MessageCircle, Send, X } from 'lucide-react';
 import { db } from '@/firebaseConfig';
 import { privateChatsRef, usersRef } from '@/firebase/refs';
 import { usePresenceMap } from '@/hooks/usePresenceMap';
@@ -22,8 +22,10 @@ import { buildPrivateChatId } from '@/utils/chat';
 import {
     buildChatRenderRows,
     formatChatTime,
+    loadHiddenRecentChatIds,
     loadChatNotifyMuted,
     loadReadMap,
+    saveHiddenRecentChatIds,
     saveReadMap,
     type ChatMessageLite,
     type ChatRenderRow
@@ -70,14 +72,25 @@ export function ChatWidget({ uid }: { uid: string }) {
     const [nowMs, setNowMs] = useState(() => Date.now());
     const [readMap, setReadMap] = useState<Record<string, number>>(() => loadReadMap(uid));
     const [chatNotifyMuted, setChatNotifyMuted] = useState(() => loadChatNotifyMuted(uid));
+    const [hiddenRecentChatIds, setHiddenRecentChatIds] = useState<string[]>(() => loadHiddenRecentChatIds(uid));
+    const [isRecentExpanded, setIsRecentExpanded] = useState(() => {
+        if (typeof window === 'undefined') return true;
+        return window.innerWidth > 767;
+    });
+    const [recentSwipeOffset, setRecentSwipeOffset] = useState<Record<string, number>>({});
     const sentAtRef = useRef<number[]>([]);
     const lastSentRef = useRef<{ text: string; at: number }>({ text: '', at: 0 });
     const seenMessageIdsRef = useRef<Set<string>>(new Set());
+    const composerInputRef = useRef<HTMLInputElement | null>(null);
+    const recentTouchStartXRef = useRef(0);
+    const activeSwipeRecentIdRef = useRef('');
+    const blockedOpenRecentIdRef = useRef('');
     const presenceMap = usePresenceMap();
 
     useEffect(() => {
         setReadMap(loadReadMap(uid));
         setChatNotifyMuted(loadChatNotifyMuted(uid));
+        setHiddenRecentChatIds(loadHiddenRecentChatIds(uid));
         setSendError('');
         setFreshMessageIds({});
         setNowMs(Date.now());
@@ -390,9 +403,84 @@ export function ChatWidget({ uid }: { uid: string }) {
                     userInfo
                 };
             })
-            .filter((entry) => entry.otherUid)
+            .filter((entry) => entry.otherUid && !hiddenRecentChatIds.includes(entry.chatId))
             .slice(0, 8);
-    }, [chatSummaries, uid, usersById]);
+    }, [chatSummaries, hiddenRecentChatIds, uid, usersById]);
+
+    const hiddenRecentConversations = useMemo(() => {
+        return chatSummaries
+            .map((summary) => {
+                const otherUid = summary.participants.find((id) => id !== uid) || '';
+                const userInfo = usersById.get(otherUid);
+                return {
+                    ...summary,
+                    otherUid,
+                    userInfo
+                };
+            })
+            .filter((entry) => entry.otherUid && hiddenRecentChatIds.includes(entry.chatId))
+            .slice(0, 8);
+    }, [chatSummaries, hiddenRecentChatIds, uid, usersById]);
+
+    const hideRecentConversation = (chatId: string) => {
+        if (!chatId) return;
+        setHiddenRecentChatIds((prev) => {
+            if (prev.includes(chatId)) return prev;
+            const next = [...prev, chatId];
+            saveHiddenRecentChatIds(uid, next);
+            return next;
+        });
+    };
+
+    const restoreHiddenRecentConversations = () => {
+        setHiddenRecentChatIds([]);
+        saveHiddenRecentChatIds(uid, []);
+    };
+
+    const restoreHiddenRecentConversation = (chatId: string) => {
+        if (!chatId) return;
+        setHiddenRecentChatIds((prev) => {
+            const next = prev.filter((id) => id !== chatId);
+            saveHiddenRecentChatIds(uid, next);
+            return next;
+        });
+    };
+
+    const clearRecentSwipe = (chatId: string) => {
+        setRecentSwipeOffset((prev) => {
+            if (!(chatId in prev)) return prev;
+            const next = { ...prev };
+            delete next[chatId];
+            return next;
+        });
+    };
+
+    const handleRecentTouchStart = (chatId: string, event: React.TouchEvent<HTMLDivElement>) => {
+        if (window.innerWidth > 767) return;
+        recentTouchStartXRef.current = event.touches[0]?.clientX ?? 0;
+        activeSwipeRecentIdRef.current = chatId;
+    };
+
+    const handleRecentTouchMove = (chatId: string, event: React.TouchEvent<HTMLDivElement>) => {
+        if (window.innerWidth > 767) return;
+        if (activeSwipeRecentIdRef.current !== chatId) return;
+        const currentX = event.touches[0]?.clientX ?? recentTouchStartXRef.current;
+        const delta = currentX - recentTouchStartXRef.current;
+        const clamped = Math.max(Math.min(delta, 0), -76);
+        setRecentSwipeOffset((prev) => (prev[chatId] === clamped ? prev : { ...prev, [chatId]: clamped }));
+    };
+
+    const handleRecentTouchEnd = (chatId: string) => {
+        if (window.innerWidth > 767) return;
+        if (activeSwipeRecentIdRef.current !== chatId) return;
+        activeSwipeRecentIdRef.current = '';
+        const offset = recentSwipeOffset[chatId] ?? 0;
+        if (offset <= -44) {
+            blockedOpenRecentIdRef.current = chatId;
+            hideRecentConversation(chatId);
+        }
+        clearRecentSwipe(chatId);
+    };
 
     const typingUserLabel = useMemo(() => {
         if (!activePeerUid) return '';
@@ -418,6 +506,14 @@ export function ChatWidget({ uid }: { uid: string }) {
     useEffect(() => {
         resetTypingMap();
     }, [resetTypingMap, uid]);
+
+    useEffect(() => {
+        if (!isOpen || !activeChatId) return;
+        const raf = window.requestAnimationFrame(() => {
+            composerInputRef.current?.focus({ preventScroll: true });
+        });
+        return () => window.cancelAnimationFrame(raf);
+    }, [activeChatId, isOpen]);
 
     return (
         <aside className="chatWidgetRoot" aria-live="polite">
@@ -472,33 +568,109 @@ export function ChatWidget({ uid }: { uid: string }) {
 
                 {hasConversations && (
                     <div className="chatRecentWrap">
-                        <p className="chatSectionLabel">Recent chats</p>
-                        <div className="chatRecentList modalLikeScrollbar">
-                            {recentConversations.map((entry) => {
-                                const label = entry.userInfo?.displayName || entry.userInfo?.email || entry.otherUid;
-                                const isUnread =
-                                    entry.lastMessageSenderUid &&
-                                    entry.lastMessageSenderUid !== uid &&
-                                    entry.updatedAtMs > (readMap[entry.chatId] ?? 0);
-                                return (
+                        <div className="chatSectionHeader">
+                            <p className="chatSectionLabel">Recent chats</p>
+                            <div className="chatSectionActions">
+                                {hiddenRecentChatIds.length > 0 && (
                                     <button
-                                        key={entry.chatId}
                                         type="button"
-                                        className={`chatRecentItem ${activeUserId === entry.otherUid ? 'chatRecentItemActive' : ''}`}
-                                        onClick={() => toggleConversation(entry.otherUid, entry.chatId)}
+                                        className="chatRestoreRecentBtn"
+                                        onClick={restoreHiddenRecentConversations}
+                                        title="Restore hidden recent chats"
                                     >
-                                        <span className="chatRecentMain">
-                                            <UserFlag code={entry.userInfo?.countryCode} className="text-sm" />
-                                            <span className="chatRecentName">{label}</span>
-                                        </span>
-                                        <span className="chatRecentMeta">
-                                            {isUnread && <span className="chatRecentUnreadDot" />}
-                                            <span>{formatChatTime(entry.updatedAt, entry.updatedAtMs)}</span>
-                                        </span>
+                                        Restore all ({hiddenRecentChatIds.length})
                                     </button>
-                                );
-                            })}
+                                )}
+                                <button
+                                    type="button"
+                                    className="chatRecentToggleBtn"
+                                    onClick={() => setIsRecentExpanded((prev) => !prev)}
+                                    aria-expanded={isRecentExpanded}
+                                    title={isRecentExpanded ? 'Collapse recent chats' : 'Expand recent chats'}
+                                >
+                                    {isRecentExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                                    <span>{isRecentExpanded ? 'Collapse' : 'Expand'}</span>
+                                </button>
+                            </div>
                         </div>
+                        {isRecentExpanded && (
+                            <>
+                                <div className="chatRecentList modalLikeScrollbar">
+                                    {recentConversations.map((entry) => {
+                                        const label = entry.userInfo?.displayName || entry.userInfo?.email || entry.otherUid;
+                                        const isUnread =
+                                            entry.lastMessageSenderUid &&
+                                            entry.lastMessageSenderUid !== uid &&
+                                            entry.updatedAtMs > (readMap[entry.chatId] ?? 0);
+                                        return (
+                                            <div
+                                                key={entry.chatId}
+                                                className={`chatRecentItem ${activeUserId === entry.otherUid ? 'chatRecentItemActive' : ''} ${
+                                                    (recentSwipeOffset[entry.chatId] ?? 0) < 0 ? 'chatRecentItemSwiping' : ''
+                                                }`}
+                                                style={{ transform: `translateX(${recentSwipeOffset[entry.chatId] ?? 0}px)` }}
+                                                onTouchStart={(event) => handleRecentTouchStart(entry.chatId, event)}
+                                                onTouchMove={(event) => handleRecentTouchMove(entry.chatId, event)}
+                                                onTouchEnd={() => handleRecentTouchEnd(entry.chatId)}
+                                                onTouchCancel={() => handleRecentTouchEnd(entry.chatId)}
+                                            >
+                                                <button
+                                                    type="button"
+                                                    className="chatRecentOpenBtn"
+                                                    onClick={() => {
+                                                        if (blockedOpenRecentIdRef.current === entry.chatId) {
+                                                            blockedOpenRecentIdRef.current = '';
+                                                            return;
+                                                        }
+                                                        toggleConversation(entry.otherUid, entry.chatId);
+                                                    }}
+                                                >
+                                                    <span className="chatRecentMain">
+                                                        <UserFlag code={entry.userInfo?.countryCode} className="text-sm" />
+                                                        <span className="chatRecentName">{label}</span>
+                                                    </span>
+                                                    <span className="chatRecentMeta">
+                                                        {isUnread && <span className="chatRecentUnreadDot" />}
+                                                        <span>{formatChatTime(entry.updatedAt, entry.updatedAtMs)}</span>
+                                                    </span>
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className="chatRecentCloseItemBtn"
+                                                    onClick={() => hideRecentConversation(entry.chatId)}
+                                                    aria-label={`Hide chat with ${label}`}
+                                                    title="Hide from recent chats"
+                                                >
+                                                    <X className="h-3.5 w-3.5" />
+                                                </button>
+                                            </div>
+                                        );
+                                    })}
+                                    {!recentConversations.length && hiddenRecentChatIds.length > 0 && (
+                                        <p className="chatRecentEmptyHint">All recent chats are hidden.</p>
+                                    )}
+                                </div>
+                                {!!hiddenRecentConversations.length && (
+                                    <div className="chatHiddenRecentList modalLikeScrollbar">
+                                        {hiddenRecentConversations.map((entry) => {
+                                            const label = entry.userInfo?.displayName || entry.userInfo?.email || entry.otherUid;
+                                            return (
+                                                <button
+                                                    key={`hidden-${entry.chatId}`}
+                                                    type="button"
+                                                    className="chatHiddenRecentItem"
+                                                    onClick={() => restoreHiddenRecentConversation(entry.chatId)}
+                                                    title={`Restore chat with ${label}`}
+                                                >
+                                                    <span className="chatHiddenRecentName">{label}</span>
+                                                    <span className="chatHiddenRecentAction">Unhide</span>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </>
+                        )}
                     </div>
                 )}
 
@@ -590,6 +762,7 @@ export function ChatWidget({ uid }: { uid: string }) {
 
                         <form className="chatComposer" onSubmit={sendMessage}>
                             <input
+                                ref={composerInputRef}
                                 className="input"
                                 placeholder="Write a message..."
                                 value={draft}

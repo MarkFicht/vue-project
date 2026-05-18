@@ -11,6 +11,11 @@
     --duel-scrollbar-track: rgb(32 22 16 / 55%);
     --duel-scrollbar-thumb: rgba(100 62 38 / 0.88);
     --duel-scrollbar-thumb-hover: rgba(124 80 48 / 0.95);
+    --duel-panel-border: rgb(255 255 255 / 15%);
+    --duel-panel-bg: rgb(2 6 23 / 45%);
+    --duel-modal-bg: rgb(2 6 23 / 90%);
+    --duel-graveyard-bg: rgb(14 10 7 / 72%);
+    --duel-graveyard-inner-bg: rgb(0 0 0 / 20%);
     /* Full-size military board (.dg-board); visually rotate(90deg) × scale(...) */
     --dg-military-board-scale: 0.56;
 
@@ -35,6 +40,25 @@
     --width-board: 200px;
     --height-board: 500px;
     --coin-size: 42px;
+}
+
+:root[data-app-theme='ivory'] {
+    --duel-bg-fallback: rgb(62 46 33);
+    --duel-arena-gradient: linear-gradient(
+        168deg,
+        rgb(126 95 68 / 88%) 0%,
+        rgb(100 75 54 / 84%) 38%,
+        rgb(78 58 42 / 80%) 72%,
+        rgb(58 43 30 / 76%) 100%
+    );
+    --duel-scrollbar-track: rgb(66 49 35 / 58%);
+    --duel-scrollbar-thumb: rgba(244 223 186 / 0.9);
+    --duel-scrollbar-thumb-hover: rgba(255 239 212 / 0.96);
+    --duel-panel-border: rgb(236 211 170 / 34%);
+    --duel-panel-bg: rgb(66 49 35 / 42%);
+    --duel-modal-bg: rgb(52 38 27 / 90%);
+    --duel-graveyard-bg: rgb(62 46 33 / 72%);
+    --duel-graveyard-inner-bg: rgb(42 31 22 / 36%);
 }
 
 @media (min-width: 425px) {
@@ -494,8 +518,8 @@
 
 .dg-playerArea {
     border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    background: rgba(2, 6, 23, 0.45);
+    border: 1px solid var(--duel-panel-border);
+    background: var(--duel-panel-bg);
     padding: 6px 7px;
     min-width: 0;
 }
@@ -508,11 +532,149 @@
     min-height: 0;
 }
 
+.dgHeader {
+    position: relative;
+}
+
+.dgMetaLine {
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    opacity: 0.95;
+}
+
+.dgMetaStrong {
+    color: rgb(252 236 204 / 0.96);
+}
+
+.dgMetaValue {
+    font-weight: 400;
+}
+
+.dgTurnBadge {
+    display: inline;
+    font-weight: 400;
+    letter-spacing: 0.02em;
+}
+
+.dgTurnBadgeYou {
+    color: rgb(198 244 214 / 0.92);
+}
+
+.dgTurnBadgeOpponent {
+    color: rgb(255 226 197 / 0.92);
+}
+
+.dgTurnBadgeObserver {
+    color: rgb(222 213 200 / 0.92);
+}
+
+.dgHeaderActionsDesktop {
+    display: flex;
+}
+
+.dgMobileMenuToggle {
+    display: none !important;
+}
+
+.dgMobileMenu {
+    display: none !important;
+}
+
+@keyframes dgMenuIn {
+    from {
+        opacity: 0;
+        transform: translateY(-6px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@media (max-width: 768px) {
+    .dgHeader .btn-secondary {
+        padding: 6px 10px;
+    }
+
+    .dgHeaderActionsDesktop {
+        display: none !important;
+    }
+
+    .dgMobileMenuToggle {
+        display: inline-flex !important;
+        min-width: 2.35rem;
+        min-height: 2.35rem;
+        padding: 0.45rem;
+        border-radius: 0.9rem;
+        margin-left: auto;
+    }
+
+    .dgMobileMenu {
+        position: absolute;
+        top: calc(100% + 8px);
+        right: 0;
+        width: min(84vw, 16rem);
+        border-radius: 14px;
+        border: 1px solid rgb(195 150 95 / 38%);
+        background: linear-gradient(180deg, rgb(36 25 17 / 96%) 0%, rgb(22 16 11 / 98%) 100%);
+        box-shadow:
+            inset 0 1px 0 rgb(255 255 255 / 6%),
+            0 14px 28px rgb(0 0 0 / 42%);
+        display: block !important;
+        z-index: 120;
+        animation: dgMenuIn 0.18s ease-out;
+    }
+
+    .dgMobileMenuList {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+        padding: 0.5rem;
+    }
+
+    .dgMobileMenuItem {
+        width: 100%;
+        justify-content: flex-start;
+        min-height: 2.2rem;
+        border-radius: 0.75rem;
+    }
+
+    .dgMobileMenuText {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}
+
+:root[data-app-theme='ivory'] .dgMobileMenu {
+    border-color: rgb(222 197 154 / 38%);
+    background: linear-gradient(180deg, rgb(55 41 30 / 96%) 0%, rgb(35 26 19 / 98%) 100%);
+}
+
+:root[data-app-theme='ivory'] .dgMetaStrong {
+    color: rgb(255 243 219 / 0.97);
+}
+
+:root[data-app-theme='ivory'] .dgTurnBadgeYou {
+    color: rgb(223 255 237 / 0.95);
+}
+
+:root[data-app-theme='ivory'] .dgTurnBadgeOpponent {
+    color: rgb(255 236 214 / 0.95);
+}
+
+:root[data-app-theme='ivory'] .dgTurnBadgeObserver {
+    color: rgb(244 231 216 / 0.94);
+}
+
 .dg-arenaTableCard {
     display: flex;
     flex-direction: column;
     align-items: stretch;
     gap: 6px;
+    border: 1px solid var(--duel-panel-border);
+    background: var(--duel-panel-bg);
 }
 
 .dg-duelArena {
@@ -677,6 +839,9 @@
 .dg-graveyardPanel {
     min-width: 0;
     width: 100%;
+    border: 1px solid rgb(195 150 95 / 30%);
+    background: var(--duel-graveyard-bg);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 5%);
 }
 
 .dg-graveyardCards {
@@ -686,6 +851,10 @@
     overflow-y: auto;
     overflow-x: hidden;
     scrollbar-gutter: stable;
+}
+
+.dg-graveyardCardsBox {
+    background: var(--duel-graveyard-inner-bg);
 }
 
 .dg-graveyardCardsTransform {
@@ -723,6 +892,55 @@
     border-radius: 0.875rem;
 }
 
+.dgSurrenderOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 140;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    background: rgb(2 6 23 / 55%);
+    backdrop-filter: blur(2px);
+}
+
+.dgSurrenderModal {
+    width: min(92vw, 440px);
+    border-radius: 16px;
+    border: 1px solid rgb(195 150 95 / 42%);
+    background: linear-gradient(175deg, rgb(34 24 17 / 96%) 0%, rgb(18 13 9 / 98%) 100%);
+    color: rgb(245 235 224);
+    padding: 16px;
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 7%),
+        0 16px 44px rgb(0 0 0 / 48%);
+}
+
+.dgSurrenderModal h3 {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.dgSurrenderModal p {
+    font-size: 14px;
+    opacity: 0.9;
+    margin-bottom: 12px;
+}
+
+.dgSurrenderActions {
+    margin-top: 14px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+}
+
+:root[data-app-theme='ivory'] .dgSurrenderModal {
+    border-color: rgb(222 196 154 / 42%);
+    background: linear-gradient(175deg, rgb(54 40 29 / 96%) 0%, rgb(32 24 18 / 98%) 100%);
+}
+
 .dg-playerShell {
     min-width: 0;
 }
@@ -747,12 +965,20 @@
     width: min(88%, 390px);
     max-width: 430px;
     border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.22);
-    background: rgba(2, 6, 23, 0.9);
+    border: 1px solid rgb(255 255 255 / 22%);
+    background: var(--duel-modal-bg);
     backdrop-filter: blur(8px);
     padding: 7px 8px;
     box-shadow: 0 10px 26px rgba(0, 0, 0, 0.4);
     pointer-events: auto;
+}
+
+.dg-actionsModal p {
+    color: rgb(226 232 240);
+}
+
+:root[data-app-theme='ivory'] .dg-actionsModal p {
+    color: rgb(250 239 222);
 }
 
 .dg-actionsModal--instruction {

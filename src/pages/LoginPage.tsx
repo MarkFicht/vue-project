@@ -9,15 +9,24 @@ import {
     updateProfile
 } from 'firebase/auth';
 import { doc, getDoc, runTransaction, serverTimestamp } from 'firebase/firestore';
-import { Gamepad2, LogIn, UserPlus } from 'lucide-react';
+import { Gamepad2, LogIn, Palette, UserPlus, Volume2, VolumeX } from 'lucide-react';
 import { auth, db, googleProvider } from '@/firebaseConfig';
 import { displayNamesRef, usersRef } from '@/firebase/refs';
+import { clearLoginOverlayPending, markLoginOverlayPending } from '@/hooks/useGlobalLoadingOverlay';
+import type { AppTheme } from '@/hooks/useAppTheme';
+import { isSoundMuted, setSoundMuted } from '@/utils/sound';
 import { normalizeDisplayName, sanitizeDisplayName } from '@/utils/displayName';
 import { getCountrySelectOptions, guessCountryFromLocale, normalizeCountryCode } from '@/utils/country';
 import { CountrySelect } from '@/components/CountrySelect';
 import '@/styles/login.css';
 
-export function LoginPage() {
+export function LoginPage({
+    theme,
+    onThemeChange
+}: {
+    theme: AppTheme;
+    onThemeChange: (theme: AppTheme) => void;
+}) {
     const navigate = useNavigate();
     const [mode, setMode] = useState<'signin' | 'register'>('signin');
     const [displayName, setDisplayName] = useState('');
@@ -25,8 +34,16 @@ export function LoginPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [authInProgress, setAuthInProgress] = useState(false);
+    const [soundMuted, setSoundMutedState] = useState(() => isSoundMuted());
     const isRegister = useMemo(() => mode === 'register', [mode]);
     const countryOptions = useMemo(() => getCountrySelectOptions(), []);
+    const toggleTheme = () => onThemeChange(theme === 'classic' ? 'ivory' : 'classic');
+    const toggleSound = () => {
+        const next = !soundMuted;
+        setSoundMuted(next);
+        setSoundMutedState(next);
+    };
 
     const ensureDisplayNameAvailable = async (displayNameKey: string) => {
         const displayNameRef = doc(displayNamesRef, displayNameKey);
@@ -38,7 +55,9 @@ export function LoginPage() {
 
     const onSubmit = async (event: FormEvent) => {
         event.preventDefault();
+        if (authInProgress) return;
         setError('');
+        const normalizedEmail = email.trim().toLowerCase();
         try {
             if (isRegister) {
                 const cleanDisplayName = sanitizeDisplayName(displayName);
@@ -52,8 +71,10 @@ export function LoginPage() {
                     setError('Choose a valid country.');
                     return;
                 }
+                setAuthInProgress(true);
+                markLoginOverlayPending();
                 await ensureDisplayNameAvailable(displayNameKey);
-                const res = await createUserWithEmailAndPassword(auth, email.trim().toLowerCase(), password);
+                const res = await createUserWithEmailAndPassword(auth, normalizedEmail, password);
                 try {
                     await updateProfile(res.user, { displayName: cleanDisplayName });
                     await runTransaction(db, async (tx) => {
@@ -66,7 +87,7 @@ export function LoginPage() {
                         const now = serverTimestamp();
                         tx.set(doc(usersRef, res.user.uid), {
                             uid: res.user.uid,
-                            email: res.user.email || email.trim().toLowerCase(),
+                            email: res.user.email || normalizedEmail,
                             displayName: cleanDisplayName,
                             displayNameKey,
                             game: '',
@@ -96,10 +117,14 @@ export function LoginPage() {
                     throw txError;
                 }
             } else {
-                await signInWithEmailAndPassword(auth, email.trim().toLowerCase(), password);
+                setAuthInProgress(true);
+                markLoginOverlayPending();
+                await signInWithEmailAndPassword(auth, normalizedEmail, password);
             }
             navigate('/feed');
         } catch (err) {
+            clearLoginOverlayPending();
+            setAuthInProgress(false);
             const firebaseError = err as { code?: string; message?: string };
             if (firebaseError.code === 'auth/email-already-in-use') {
                 setError('This email already exists in Firebase Authentication.');
@@ -117,9 +142,46 @@ export function LoginPage() {
         }
     };
 
+    const signInWithGoogle = async () => {
+        if (authInProgress) return;
+        setError('');
+        try {
+            setAuthInProgress(true);
+            markLoginOverlayPending();
+            await signInWithPopup(auth, googleProvider);
+            navigate('/feed');
+        } catch (err) {
+            clearLoginOverlayPending();
+            setAuthInProgress(false);
+            setError((err as Error).message);
+        }
+    };
+
     return (
         <main className="loginPage mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center p-4 text-[var(--app-text)]">
             <div className="app-surface-login w-full rounded-2xl p-6">
+                <div className="loginTopControls">
+                    <button
+                        type="button"
+                        className="btn-secondary loginTopControlBtn"
+                        onClick={toggleTheme}
+                        title={theme === 'classic' ? 'Switch to ivory theme' : 'Switch to classic theme'}
+                        disabled={authInProgress}
+                    >
+                        <Palette className="h-4 w-4" />
+                        <span>{theme === 'classic' ? 'Ivory' : 'Classic'}</span>
+                    </button>
+                    <button
+                        type="button"
+                        className="btn-secondary loginTopControlBtn"
+                        onClick={toggleSound}
+                        title={soundMuted ? 'Unmute sounds' : 'Mute sounds'}
+                        disabled={authInProgress}
+                    >
+                        {soundMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+                        <span>{soundMuted ? 'Muted' : 'Sound'}</span>
+                    </button>
+                </div>
                 <header className="font-display flex items-center justify-center gap-2 text-2xl font-bold tracking-wide">
                     <Gamepad2 className="app-brand-icon h-7 w-7" aria-hidden />
                     Game Board
@@ -161,24 +223,37 @@ export function LoginPage() {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                     />
-                    <button className="btn-primary w-full" type="submit">
-                        {isRegister ? 'Create account' : 'Login'}
+                    <button className="btn-primary w-full" type="submit" disabled={authInProgress}>
+                        {authInProgress ? 'Loading...' : isRegister ? 'Create account' : 'Login'}
                     </button>
                 </form>
 
                 <button
-                    className="btn-secondary mt-3 w-full"
+                    className="btn-secondary loginGoogleBtn mt-3 w-full"
                     type="button"
-                    onClick={async () => {
-                        setError('');
-                        try {
-                            await signInWithPopup(auth, googleProvider);
-                            navigate('/feed');
-                        } catch (err) {
-                            setError((err as Error).message);
-                        }
-                    }}
+                    disabled={authInProgress}
+                    onClick={signInWithGoogle}
                 >
+                    <span className="loginGoogleIcon" aria-hidden>
+                        <svg viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+                            <path
+                                fill="#4285F4"
+                                d="M17.64 9.2c0-.64-.06-1.26-.16-1.85H9v3.5h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.9c1.7-1.57 2.7-3.88 2.7-6.63Z"
+                            />
+                            <path
+                                fill="#34A853"
+                                d="M9 18c2.43 0 4.47-.8 5.96-2.17l-2.9-2.26c-.8.54-1.84.86-3.06.86-2.35 0-4.33-1.58-5.04-3.7H.96V13c1.47 2.9 4.48 5 8.04 5Z"
+                            />
+                            <path
+                                fill="#FBBC05"
+                                d="M3.96 10.73A5.4 5.4 0 0 1 3.67 9c0-.6.1-1.18.29-1.73V4.98H.96A9 9 0 0 0 0 9c0 1.45.35 2.82.96 4l3-2.27Z"
+                            />
+                            <path
+                                fill="#EA4335"
+                                d="M9 3.58c1.32 0 2.5.45 3.43 1.33l2.58-2.58C13.46.9 11.42 0 9 0 5.44 0 2.43 2.1.96 4.98l3 2.29c.71-2.12 2.69-3.7 5.04-3.7Z"
+                            />
+                        </svg>
+                    </span>
                     Continue with Google
                 </button>
 
