@@ -536,6 +536,38 @@
     position: relative;
 }
 
+.dgMetaLine {
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    opacity: 0.95;
+}
+
+.dgMetaStrong {
+    color: rgb(252 236 204 / 0.96);
+}
+
+.dgMetaValue {
+    font-weight: 400;
+}
+
+.dgTurnBadge {
+    display: inline;
+    font-weight: 400;
+    letter-spacing: 0.02em;
+}
+
+.dgTurnBadgeYou {
+    color: rgb(198 244 214 / 0.92);
+}
+
+.dgTurnBadgeOpponent {
+    color: rgb(255 226 197 / 0.92);
+}
+
+.dgTurnBadgeObserver {
+    color: rgb(222 213 200 / 0.92);
+}
+
 .dgHeaderActionsDesktop {
     display: flex;
 }
@@ -618,6 +650,22 @@
 :root[data-app-theme='ivory'] .dgMobileMenu {
     border-color: rgb(222 197 154 / 38%);
     background: linear-gradient(180deg, rgb(55 41 30 / 96%) 0%, rgb(35 26 19 / 98%) 100%);
+}
+
+:root[data-app-theme='ivory'] .dgMetaStrong {
+    color: rgb(255 243 219 / 0.97);
+}
+
+:root[data-app-theme='ivory'] .dgTurnBadgeYou {
+    color: rgb(223 255 237 / 0.95);
+}
+
+:root[data-app-theme='ivory'] .dgTurnBadgeOpponent {
+    color: rgb(255 236 214 / 0.95);
+}
+
+:root[data-app-theme='ivory'] .dgTurnBadgeObserver {
+    color: rgb(244 231 216 / 0.94);
 }
 
 .dg-arenaTableCard {
@@ -842,6 +890,55 @@
     gap: 10px;
     min-height: 0;
     border-radius: 0.875rem;
+}
+
+.dgSurrenderOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 140;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    background: rgb(2 6 23 / 55%);
+    backdrop-filter: blur(2px);
+}
+
+.dgSurrenderModal {
+    width: min(92vw, 440px);
+    border-radius: 16px;
+    border: 1px solid rgb(195 150 95 / 42%);
+    background: linear-gradient(175deg, rgb(34 24 17 / 96%) 0%, rgb(18 13 9 / 98%) 100%);
+    color: rgb(245 235 224);
+    padding: 16px;
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 7%),
+        0 16px 44px rgb(0 0 0 / 48%);
+}
+
+.dgSurrenderModal h3 {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.dgSurrenderModal p {
+    font-size: 14px;
+    opacity: 0.9;
+    margin-bottom: 12px;
+}
+
+.dgSurrenderActions {
+    margin-top: 14px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+}
+
+:root[data-app-theme='ivory'] .dgSurrenderModal {
+    border-color: rgb(222 196 154 / 42%);
+    background: linear-gradient(175deg, rgb(54 40 29 / 96%) 0%, rgb(32 24 18 / 98%) 100%);
 }
 
 .dg-playerShell {

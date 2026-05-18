@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, Ban, Hand, Palette, ShieldAlert, Volume2, VolumeX } from 'lucide-react';
+import { ArrowLeft, Ban, Gamepad2, Hand, Palette, ShieldAlert, Volume2, VolumeX } from 'lucide-react';
 import { useGameState } from '@/hooks/useGameState';
 import { DuelSpriteCard } from '@/components/duel/DuelSpriteCard';
 import { DuelWonderSprite } from '@/components/duel/DuelWonderSprite';
@@ -38,6 +38,7 @@ export function DuelGamePage({
     const [displayPrepareBatch, setDisplayPrepareBatch] = useState<1 | 2>(1);
     const [prepareActionLocked, setPrepareActionLocked] = useState(false);
     const [showHeaderMobileMenu, setShowHeaderMobileMenu] = useState(false);
+    const [showSurrenderModal, setShowSurrenderModal] = useState(false);
     const headerRef = useRef<HTMLElement | null>(null);
     const profileSoundMuted = useUserStore((state) => state.fbUser.soundMuted);
     const [soundMuted, setSoundMutedState] = useSoundMuteSync(uid, profileSoundMuted, true);
@@ -386,6 +387,17 @@ export function DuelGamePage({
         void persistUserSoundMuted(uid, next);
     };
     const toggleTheme = () => onThemeChange(theme === 'classic' ? 'ivory' : 'classic');
+    const openSurrenderModal = () => {
+        if (isObserver) return;
+        setShowSurrenderModal(true);
+        setShowHeaderMobileMenu(false);
+    };
+    const confirmSurrender = () => {
+        setShowSurrenderModal(false);
+        surrender();
+    };
+    const turnLabel = isObserver ? 'Observer mode' : isMyTurn ? 'YOU' : 'Opponent';
+    const turnToneClass = isObserver ? 'dgTurnBadgeObserver' : isMyTurn ? 'dgTurnBadgeYou' : 'dgTurnBadgeOpponent';
 
     return (
         <main className="mx-auto flex h-dvh max-h-dvh w-full max-w-[1400px] flex-col overflow-hidden p-2 text-[color:var(--app-text)] sm:p-3">
@@ -395,17 +407,25 @@ export function DuelGamePage({
             >
                 <div className="min-w-0">
                     <h1 className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1 text-lg font-semibold leading-tight">
-                        <span className="font-display shrink-0 tracking-wide">Duel</span>
-                        <span className="text-xs font-normal opacity-80">
-                            Turn: {isObserver ? 'Observer mode' : isMyTurn ? 'You' : 'Opponent'}
+                        <span className="font-display inline-flex shrink-0 items-center gap-2 tracking-wide">
+                            <Gamepad2 className="app-brand-icon h-5 w-5" aria-hidden />
+                            Duel
                         </span>
                     </h1>
-                    <p className="text-xs opacity-80">
-                        Tier: {game.tier} · Move: {game.move}
+                    <p className="dgMetaLine text-xs">
+                        <span className="dgMetaStrong">Turn:</span> <span className={`mr-1 dgTurnBadge ${turnToneClass}`}>{turnLabel}</span> ·{' '}
+                        <span className="ml-1 dgMetaStrong">Tier:</span> <span className="mr-1 dgMetaValue">{game.tier}</span> ·{' '}
+                        <span className="ml-1 dgMetaStrong">Move:</span> <span className="mr-1 dgMetaValue">{game.move}</span>
                     </p>
                 </div>
                 <div className="dgHeaderActionsDesktop min-w-0 shrink items-center gap-2">
-                    <button type="button" className="btn-secondary hdrIconBtn" disabled={isObserver} onClick={surrender} title="Surrender">
+                    <button
+                        type="button"
+                        className="btn-secondary hdrIconBtn"
+                        disabled={isObserver}
+                        onClick={openSurrenderModal}
+                        title="Surrender"
+                    >
                         <ShieldAlert className="h-4 w-4" />
                         <span className="hdrBtnText">Surrender</span>
                     </button>
@@ -444,22 +464,8 @@ export function DuelGamePage({
                     <button
                         type="button"
                         className="btn-secondary dgMobileMenuItem"
-                        onClick={() => {
-                            setShowHeaderMobileMenu(false);
-                            goBackToFeed();
-                        }}
-                    >
-                        <ArrowLeft className="h-4 w-4 shrink-0" />
-                        <span className="dgMobileMenuText">Feed</span>
-                    </button>
-                    <button
-                        type="button"
-                        className="btn-secondary dgMobileMenuItem"
                         disabled={isObserver}
-                        onClick={() => {
-                            setShowHeaderMobileMenu(false);
-                            surrender();
-                        }}
+                        onClick={openSurrenderModal}
                     >
                         <ShieldAlert className="h-4 w-4 shrink-0" />
                         <span className="dgMobileMenuText">Surrender</span>
@@ -489,8 +495,36 @@ export function DuelGamePage({
                             {theme === 'classic' ? 'Switch to ivory theme' : 'Switch to classic theme'}
                         </span>
                     </button>
+                    <button
+                        type="button"
+                        className="btn-secondary dgMobileMenuItem"
+                        onClick={() => {
+                            setShowHeaderMobileMenu(false);
+                            goBackToFeed();
+                        }}
+                    >
+                        <ArrowLeft className="h-4 w-4 shrink-0" />
+                        <span className="dgMobileMenuText">Feed</span>
+                    </button>
                 </MobileHamburgerMenu>
             </header>
+
+            {showSurrenderModal && (
+                <div className="dgSurrenderOverlay" onClick={() => setShowSurrenderModal(false)}>
+                    <div className="dgSurrenderModal" onClick={(event) => event.stopPropagation()}>
+                        <h3>Surrender</h3>
+                        <p>Are you sure you want to surrender this game?</p>
+                        <div className="dgSurrenderActions">
+                            <button className="btn-secondary" type="button" onClick={() => setShowSurrenderModal(false)}>
+                                Cancel
+                            </button>
+                            <button className="btn-primary" type="button" onClick={confirmSurrender}>
+                                Surrender
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {winnerUid ? (
                 <section className="app-surface-callout mb-2 shrink-0 rounded-xl p-3 sm:mb-3 sm:rounded-2xl sm:p-4">
