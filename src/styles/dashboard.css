@@ -63,6 +63,47 @@
     display: none !important;
 }
 
+.dashSkeletonDot {
+    width: 0.9rem;
+    height: 0.9rem;
+    flex-shrink: 0;
+}
+
+.dashSkeletonText {
+    width: clamp(72px, 16vw, 126px);
+    height: 0.72rem;
+}
+
+.dashSkeletonTextMobile {
+    width: 112px;
+}
+
+.dashSkeletonTextPlayer {
+    width: 116px;
+}
+
+.dashSkeletonTag {
+    width: 52px;
+    height: 0.68rem;
+}
+
+.dashSkeletonInput {
+    width: 100%;
+    height: 0.72rem;
+}
+
+.dashLobbySkeletonStack {
+    display: grid;
+    gap: 8px;
+}
+
+.dashLobbySkeletonRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
 @keyframes dashMenuIn {
     from {
         opacity: 0;
@@ -624,6 +665,11 @@
     padding-right: 34px;
 }
 
+.dashReadonlyInputSkeleton {
+    padding-right: 12px;
+    pointer-events: none;
+}
+
 .dashUserField .input[readonly] {
     background: rgb(12 9 6 / 58%);
     color: var(--app-text-muted);
@@ -946,3 +992,4 @@
     border-color: rgb(222 197 154 / 38%);
     background: linear-gradient(180deg, rgb(55 41 30 / 96%) 0%, rgb(35 26 19 / 98%) 100%);
 }
+

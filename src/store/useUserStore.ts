@@ -5,6 +5,7 @@ import { usersRef } from '@/firebase/refs';
 
 type UserState = {
     fbUser: IUser;
+    hasLoadedSnapshot: boolean;
     unsubscribe?: () => void;
     subFirebaseConnect: (uid: string) => void;
     unSubFirebaseConnect: () => void;
@@ -28,11 +29,14 @@ const emptyUser: IUser = {
 
 export const useUserStore = create<UserState>((set, get) => ({
     fbUser: emptyUser,
+    hasLoadedSnapshot: false,
     unsubscribe: undefined,
     subFirebaseConnect: (uid: string) => {
+        set({ hasLoadedSnapshot: false });
         get().unsubscribe?.();
         const unsubscribe = onSnapshot(doc(usersRef, uid), (snapshot) => {
             if (!snapshot.exists()) {
+                set({ hasLoadedSnapshot: true });
                 return;
             }
 
@@ -53,7 +57,8 @@ export const useUserStore = create<UserState>((set, get) => ({
                     schemaVersion: data.schemaVersion,
                     soundMuted: typeof data.soundMuted === 'boolean' ? data.soundMuted : false,
                     countryCode: data.countryCode
-                }
+                },
+                hasLoadedSnapshot: true
             });
         });
 
@@ -61,6 +66,6 @@ export const useUserStore = create<UserState>((set, get) => ({
     },
     unSubFirebaseConnect: () => {
         get().unsubscribe?.();
-        set({ unsubscribe: undefined });
+        set({ fbUser: emptyUser, unsubscribe: undefined, hasLoadedSnapshot: false });
     }
 }));

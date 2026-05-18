@@ -125,3 +125,34 @@ body {
         transform: rotate(360deg);
     }
 }
+
+.appSkeleton {
+    position: relative;
+    display: inline-block;
+    overflow: hidden;
+    border-radius: 999px;
+    background: rgb(255 255 255 / 14%);
+}
+
+.appSkeleton::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, rgb(255 255 255 / 22%), transparent);
+    animation: appSkeletonShimmer 1.05s ease-in-out infinite;
+}
+
+@keyframes appSkeletonShimmer {
+    to {
+        transform: translateX(100%);
+    }
+}
+
+:root[data-app-theme='ivory'] .appSkeleton {
+    background: rgb(255 246 228 / 17%);
+}
+
+:root[data-app-theme='ivory'] .appSkeleton::after {
+    background: linear-gradient(90deg, transparent, rgb(255 251 242 / 24%), transparent);
+}

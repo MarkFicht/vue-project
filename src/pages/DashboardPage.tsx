@@ -37,11 +37,31 @@ import { getCountrySelectOptions, guessCountryFromLocale, normalizeCountryCode }
 import { CountrySelect } from '@/components/CountrySelect';
 import { UserFlag } from '@/components/UserFlag';
 import { LoadingOverlay } from '@/components/LoadingOverlay';
+import { SkeletonDot, SkeletonInput, SkeletonTag, SkeletonText } from '@/components/Skeleton';
 import type { AppTheme } from '@/hooks/useAppTheme';
 import '@/styles/dashboard.css';
 
+type LobbySkeletonProps = {
+    rows?: number;
+    withTag?: boolean;
+};
+
+function LobbySkeleton({ rows = 1, withTag = false }: LobbySkeletonProps) {
+    return (
+        <div className="dashLobbySkeletonStack">
+            {Array.from({ length: rows }, (_, index) => (
+                <div key={index} className="dashLobbySkeletonRow">
+                    <SkeletonText />
+                    {withTag && <SkeletonTag />}
+                </div>
+            ))}
+        </div>
+    );
+}
+
 type DashboardHeaderProps = {
     headerRef: React.RefObject<HTMLElement | null>;
+    isLoadingUser: boolean;
     displayName: string;
     email: string;
     countryCode?: string;
@@ -57,6 +77,7 @@ type DashboardHeaderProps = {
 
 function DashboardHeader({
     headerRef,
+    isLoadingUser,
     displayName,
     email,
     countryCode,
@@ -78,11 +99,25 @@ function DashboardHeader({
                 Feed Panel
             </div>
             <div className="dashHeaderActionsDesktop">
-                <button type="button" className="btn-secondary hdrIconBtn" onClick={openUserProfileModal} title={`${resolvedUserLabel} — profile`}>
+                <button
+                    type="button"
+                    className="btn-secondary hdrIconBtn"
+                    onClick={openUserProfileModal}
+                    title={isLoadingUser ? 'Loading profile...' : `${resolvedUserLabel} — profile`}
+                >
                     <UserCircle2 className="h-4 w-4 shrink-0" />
                     <span className="hdrBtnLabelGroup inline-flex min-w-0 items-center gap-1.5">
-                        <UserFlag code={countryCode} className="text-base shrink-0" />
-                        <span className="hdrBtnText">{resolvedUserLabel}</span>
+                        {isLoadingUser ? (
+                            <>
+                                <SkeletonDot />
+                                <SkeletonText />
+                            </>
+                        ) : (
+                            <>
+                                <UserFlag code={countryCode} className="text-base shrink-0" />
+                                <span className="hdrBtnText">{resolvedUserLabel}</span>
+                            </>
+                        )}
                     </span>
                 </button>
                 <button
@@ -123,7 +158,11 @@ function DashboardHeader({
                     <div className="dashMobileMenuList">
                         <button type="button" className="btn-secondary dashMobileMenuItem" onClick={openUserProfileModal}>
                             <UserCircle2 className="h-4 w-4 shrink-0" />
-                            <span className="dashMobileMenuText">{resolvedUserLabel}</span>
+                            {isLoadingUser ? (
+                                <SkeletonText className="dashSkeletonTextMobile" />
+                            ) : (
+                                <span className="dashMobileMenuText">{resolvedUserLabel}</span>
+                            )}
                         </button>
                         <button
                             type="button"
@@ -214,12 +253,16 @@ export function DashboardPage({
     const [showLogoutLoadingOverlay, setShowLogoutLoadingOverlay] = useState(false);
     const headerRef = useRef<HTMLElement | null>(null);
     const user = useUserStore((state) => state.fbUser);
+    const hasLoadedUserSnapshot = useUserStore((state) => state.hasLoadedSnapshot);
     const subUser = useUserStore((state) => state.subFirebaseConnect);
     const unSubUser = useUserStore((state) => state.unSubFirebaseConnect);
 
     const [soundMuted, setSoundMutedState] = useSoundMuteSync(uid, user.soundMuted, !!user.uid && user.uid === uid);
 
     const duel = useGameStore((state) => state.duel);
+    const duelLoaded = useGameStore((state) => state.duelLoaded);
+    const gemsLoaded = useGameStore((state) => state.gemsLoaded);
+    const reflexLoaded = useGameStore((state) => state.reflexLoaded);
     const subGame = useGameStore((state) => state.subFirebaseConnect);
     const unSubGame = useGameStore((state) => state.unSubFirebaseConnect);
     const prevPlayersLenRef = useRef(duel.players.length);
@@ -394,6 +437,13 @@ export function DashboardPage({
         if (duel.players.length === 2) return 'Busy';
         return 'Lobby';
     }, [duel.players.length]);
+    const resolvedHeaderDisplayName = useMemo(
+        () => sanitizeDisplayName(user.displayName || auth.currentUser?.displayName || ''),
+        [user.displayName]
+    );
+    const resolvedHeaderEmail = useMemo(() => user.email || auth.currentUser?.email || '', [user.email]);
+    const isUserSnapshotReady = hasLoadedUserSnapshot && user.uid === uid;
+    const isHeaderIdentityReady = isUserSnapshotReady && Boolean(resolvedHeaderDisplayName || resolvedHeaderEmail);
     const countryOptions = useMemo(() => getCountrySelectOptions(), []);
 
     useEffect(() => {
@@ -910,19 +960,27 @@ export function DashboardPage({
             setExportingData(false);
         }
     };
-    const renderReadonlyField = (label: string, value: string, fieldKey: string) => (
+    const renderReadonlyField = (label: string, value: string, fieldKey: string, isLoading = false) => (
         <label className="dashUserField">
             <span>{label}</span>
             <div className="dashReadonlyInputWrap">
-                <input className="input dashReadonlyInput" value={value} readOnly />
-                <button
-                    type="button"
-                    className="dashInputCopyBtn"
-                    onClick={() => copyFieldValue(fieldKey, value)}
-                    title={copiedField === fieldKey ? 'Copied' : 'Copy value'}
-                >
-                    {copiedField === fieldKey ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-                </button>
+                {isLoading ? (
+                    <div className="input dashReadonlyInput dashReadonlyInputSkeleton" aria-hidden>
+                        <SkeletonInput />
+                    </div>
+                ) : (
+                    <>
+                        <input className="input dashReadonlyInput" value={value} readOnly />
+                        <button
+                            type="button"
+                            className="dashInputCopyBtn"
+                            onClick={() => copyFieldValue(fieldKey, value)}
+                            title={copiedField === fieldKey ? 'Copied' : 'Copy value'}
+                        >
+                            {copiedField === fieldKey ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                        </button>
+                    </>
+                )}
             </div>
         </label>
     );
@@ -1085,8 +1143,9 @@ export function DashboardPage({
         <main className="dashboardPage">
             <DashboardHeader
                 headerRef={headerRef}
-                displayName={user.displayName}
-                email={user.email}
+                isLoadingUser={!isHeaderIdentityReady}
+                displayName={resolvedHeaderDisplayName}
+                email={resolvedHeaderEmail}
                 countryCode={user.countryCode}
                 soundMuted={soundMuted}
                 theme={theme}
@@ -1134,66 +1193,77 @@ export function DashboardPage({
                             </div>
                             <p>A board game inspired by a strategy game called '7 Wonders of the World'</p>
                             <div className="dashLobbyList">
-                                {duel.players.map((player) => {
-                                    const removeCooldown = getRemoveCooldown(player.joinedAt);
-                                    const removeDisabled = !isBootstrapped || !removeCooldown.canRemove;
-                                    return (
-                                        <div key={player.uid} className="dashLobbyRow">
-                                            <span className="truncate flex items-center gap-2">
-                                                <span
-                                                    className={`dashPresenceDot ${
-                                                        getPresence(player.uid) === 'online'
-                                                            ? 'dashPresenceOnline'
-                                                            : getPresence(player.uid) === 'away'
-                                                              ? 'dashPresenceAway'
-                                                              : 'dashPresenceOffline'
-                                                    }`}
-                                                />
-                                                <UserFlag code={player.countryCode} className="text-base" />
-                                                {player.displayName || player.email}
-                                            </span>
-                                            <div className="flex items-center gap-2">
-                                                <span className={player.readyToGame ? 'text-emerald-300' : 'text-amber-300'}>
-                                                    {player.readyToGame ? 'ready' : 'waiting'}
-                                                </span>
-                                                {player.uid !== uid && (
-                                                    <button
-                                                        type="button"
-                                                        className={`dashRemoveButton ${
-                                                            removeCooldown.canRemove ? 'dashRemoveButtonReady' : 'dashRemoveButtonLocked'
-                                                        }`}
-                                                        style={
-                                                            {
-                                                                '--dash-remove-progress': removeCooldown.progressDeg
-                                                            } as CSSProperties
-                                                        }
-                                                        onClick={() => removeUserFromLobby(player.uid)}
-                                                        disabled={removeDisabled || duel.isStarted}
-                                                        title={
-                                                            duel.isStarted
-                                                                ? 'Cannot remove players while game is running'
-                                                                :
-                                                            !isBootstrapped
-                                                                ? 'Loading lobby data...'
-                                                                : removeCooldown.canRemove
-                                                                  ? 'Remove user from lobby'
-                                                                  : `Remove available in ${removeCooldown.secondsLeft}s`
-                                                        }
-                                                    >
-                                                        <UserX className="h-3 w-3" />
-                                                    </button>
-                                                )}
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                                {!duel.players.length && <p className="dashLobbyEmptyText">No players in lobby.</p>}
-                                {duel.players.length === 2 && (
-                                    <p className="text-[color:var(--app-accent-bright)]">
-                                        {duel.isStarted
-                                            ? `Game in progress · Turn: ${typeof liveMove === 'number' ? liveMove + 1 : 1}`
-                                            : 'Creating game...'}
-                                    </p>
+                                {!duelLoaded ? (
+                                    <LobbySkeleton rows={2} withTag />
+                                ) : (
+                                    <>
+                                        {duel.players.map((player) => {
+                                            const removeCooldown = getRemoveCooldown(player.joinedAt);
+                                            const removeDisabled = !isBootstrapped || !removeCooldown.canRemove;
+                                            const playerLabel = player.displayName || player.email;
+                                            return (
+                                                <div key={player.uid} className="dashLobbyRow">
+                                                    <span className="truncate flex items-center gap-2">
+                                                        <span
+                                                            className={`dashPresenceDot ${
+                                                                getPresence(player.uid) === 'online'
+                                                                    ? 'dashPresenceOnline'
+                                                                    : getPresence(player.uid) === 'away'
+                                                                      ? 'dashPresenceAway'
+                                                                      : 'dashPresenceOffline'
+                                                            }`}
+                                                        />
+                                                        <UserFlag code={player.countryCode} className="text-base" />
+                                                        {playerLabel ? (
+                                                            playerLabel
+                                                        ) : (
+                                                            <SkeletonText className="dashSkeletonTextPlayer" />
+                                                        )}
+                                                    </span>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className={player.readyToGame ? 'text-emerald-300' : 'text-amber-300'}>
+                                                            {player.readyToGame ? 'ready' : 'waiting'}
+                                                        </span>
+                                                        {player.uid !== uid && (
+                                                            <button
+                                                                type="button"
+                                                                className={`dashRemoveButton ${
+                                                                    removeCooldown.canRemove ? 'dashRemoveButtonReady' : 'dashRemoveButtonLocked'
+                                                                }`}
+                                                                style={
+                                                                    {
+                                                                        '--dash-remove-progress': removeCooldown.progressDeg
+                                                                    } as CSSProperties
+                                                                }
+                                                                onClick={() => removeUserFromLobby(player.uid)}
+                                                                disabled={removeDisabled || duel.isStarted}
+                                                                title={
+                                                                    duel.isStarted
+                                                                        ? 'Cannot remove players while game is running'
+                                                                        :
+                                                                    !isBootstrapped
+                                                                        ? 'Loading lobby data...'
+                                                                        : removeCooldown.canRemove
+                                                                          ? 'Remove user from lobby'
+                                                                          : `Remove available in ${removeCooldown.secondsLeft}s`
+                                                                }
+                                                            >
+                                                                <UserX className="h-3 w-3" />
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                        {!duel.players.length && <p className="dashLobbyEmptyText">No players in lobby.</p>}
+                                        {duel.players.length === 2 && (
+                                            <p className="text-[color:var(--app-accent-bright)]">
+                                                {duel.isStarted
+                                                    ? `Game in progress · Turn: ${typeof liveMove === 'number' ? liveMove + 1 : 1}`
+                                                    : 'Creating game...'}
+                                            </p>
+                                        )}
+                                    </>
                                 )}
                             </div>
                         </div>
@@ -1214,7 +1284,11 @@ export function DashboardPage({
                             </div>
                             <p>A board game inspired by a strategy game called 'Splendor'</p>
                             <div className="dashLobbyList">
-                                <p className="dashLobbyEmptyText">No players in lobby.</p>
+                                {!gemsLoaded ? (
+                                    <LobbySkeleton />
+                                ) : (
+                                    <p className="dashLobbyEmptyText">No players in lobby.</p>
+                                )}
                             </div>
                         </div>
                         <div className="dashCircle">
@@ -1234,7 +1308,11 @@ export function DashboardPage({
                             </div>
                             <p>Game written from 0 in canvasJS. Cooperation against zombies</p>
                             <div className="dashLobbyList">
-                                <p className="dashLobbyEmptyText">No players in lobby.</p>
+                                {!reflexLoaded ? (
+                                    <LobbySkeleton />
+                                ) : (
+                                    <p className="dashLobbyEmptyText">No players in lobby.</p>
+                                )}
                             </div>
                         </div>
                         <div className="dashCircle">
@@ -1254,6 +1332,7 @@ export function DashboardPage({
                             {duel.players.map((player) => {
                                 const removeCooldown = getRemoveCooldown(player.joinedAt);
                                 const removeDisabled = !isBootstrapped || !removeCooldown.canRemove;
+                                const playerLabel = player.displayName || player.email;
                                 return (
                                     <div key={`modal-${player.uid}`} className="dashLobbyPlayer">
                                         <span className="flex items-center gap-2">
@@ -1267,7 +1346,7 @@ export function DashboardPage({
                                                 }`}
                                             />
                                             <UserFlag code={player.countryCode} className="text-base" />
-                                            {player.displayName || player.email}
+                                            {playerLabel ? playerLabel : <SkeletonText className="dashSkeletonTextPlayer" />}
                                         </span>
                                         <div className="flex items-center gap-2">
                                             <span className={player.readyToGame ? 'text-emerald-300' : 'text-amber-300'}>
@@ -1326,7 +1405,7 @@ export function DashboardPage({
                         <div className="dashUserModalBody modalLikeScrollbar">
                             <div className="dashUserGrid">
                                 {renderReadonlyField('UID', uid, 'uid')}
-                                {renderReadonlyField('Email', user.email || '', 'email')}
+                                {renderReadonlyField('Email', user.email || '', 'email', !isUserSnapshotReady || !user.email)}
                                 <label className="dashUserField">
                                     <span>Display name</span>
                                     <input
@@ -1345,18 +1424,20 @@ export function DashboardPage({
                                     />
                                 </label>
                                 {renderReadonlyField('Connection status (auto)', getPresence(uid), 'connectionStatus')}
-                                {renderReadonlyField('Current game', user.game || '-', 'currentGame')}
+                                {renderReadonlyField('Current game', user.game || '-', 'currentGame', !isUserSnapshotReady)}
                                 {renderReadonlyField(
                                     'Ready status',
                                     user.readyToGame ? 'ready' : 'not ready',
-                                    'readyStatus'
+                                    'readyStatus',
+                                    !isUserSnapshotReady
                                 )}
                                 {renderReadonlyField(
                                     'Created at',
                                     formatUserTimestamp(user.createdAt),
-                                    'createdAt'
+                                    'createdAt',
+                                    !isUserSnapshotReady
                                 )}
-                                {renderReadonlyField('Last seen', formatUserTimestamp(user.lastSeenAt), 'lastSeen')}
+                                {renderReadonlyField('Last seen', formatUserTimestamp(user.lastSeenAt), 'lastSeen', !isUserSnapshotReady)}
                             </div>
                             {profileError && <p className="mt-2 text-sm text-red-300">{profileError}</p>}
                             <div className="dashDataZone">
