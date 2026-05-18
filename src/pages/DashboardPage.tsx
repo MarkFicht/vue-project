@@ -40,6 +40,147 @@ import { LoadingOverlay } from '@/components/LoadingOverlay';
 import type { AppTheme } from '@/hooks/useAppTheme';
 import '@/styles/dashboard.css';
 
+type DashboardHeaderProps = {
+    headerRef: React.RefObject<HTMLElement | null>;
+    displayName: string;
+    email: string;
+    countryCode?: string;
+    soundMuted: boolean;
+    theme: AppTheme;
+    showHeaderMobileMenu: boolean;
+    openUserProfileModal: () => void;
+    toggleSound: () => void;
+    toggleTheme: () => void;
+    openLogoutModal: () => void;
+    setShowHeaderMobileMenu: React.Dispatch<React.SetStateAction<boolean>>;
+};
+
+function DashboardHeader({
+    headerRef,
+    displayName,
+    email,
+    countryCode,
+    soundMuted,
+    theme,
+    showHeaderMobileMenu,
+    openUserProfileModal,
+    toggleSound,
+    toggleTheme,
+    openLogoutModal,
+    setShowHeaderMobileMenu
+}: DashboardHeaderProps) {
+    const resolvedUserLabel = displayName || email || 'User';
+
+    return (
+        <header ref={headerRef} className="dashHeader app-surface-header">
+            <div className="dashTitleMain">
+                <Gamepad2 className="app-brand-icon" aria-hidden />
+                Feed Panel
+            </div>
+            <div className="dashHeaderActionsDesktop">
+                <button type="button" className="btn-secondary hdrIconBtn" onClick={openUserProfileModal} title={`${resolvedUserLabel} — profile`}>
+                    <UserCircle2 className="h-4 w-4 shrink-0" />
+                    <span className="hdrBtnLabelGroup inline-flex min-w-0 items-center gap-1.5">
+                        <UserFlag code={countryCode} className="text-base shrink-0" />
+                        <span className="hdrBtnText">{resolvedUserLabel}</span>
+                    </span>
+                </button>
+                <button
+                    type="button"
+                    className="btn-secondary hdrIconBtn"
+                    onClick={toggleSound}
+                    title={soundMuted ? 'Unmute sounds' : 'Mute sounds'}
+                >
+                    {soundMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+                    <span className="hdrBtnText">{soundMuted ? 'Muted' : 'Sound'}</span>
+                </button>
+                <button
+                    type="button"
+                    className="btn-secondary hdrIconBtn"
+                    onClick={toggleTheme}
+                    title={theme === 'classic' ? 'Switch to ivory theme' : 'Switch to classic theme'}
+                >
+                    <Palette className="h-4 w-4" />
+                    <span className="hdrBtnText">{theme === 'classic' ? 'Ivory' : 'Classic'}</span>
+                </button>
+                <button type="button" className="btn-secondary hdrIconBtn" title="Log out" onClick={openLogoutModal}>
+                    <LogOut className="h-4 w-4" />
+                    <span className="hdrBtnText">Logout</span>
+                </button>
+            </div>
+            <button
+                type="button"
+                className="btn-secondary dashMobileMenuToggle"
+                onClick={() => setShowHeaderMobileMenu((prev) => !prev)}
+                aria-expanded={showHeaderMobileMenu}
+                aria-label={showHeaderMobileMenu ? 'Close header menu' : 'Open header menu'}
+                title={showHeaderMobileMenu ? 'Close menu' : 'Open menu'}
+            >
+                {showHeaderMobileMenu ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+            </button>
+            {showHeaderMobileMenu && (
+                <div className="dashMobileMenu">
+                    <div className="dashMobileMenuList">
+                        <button type="button" className="btn-secondary dashMobileMenuItem" onClick={openUserProfileModal}>
+                            <UserCircle2 className="h-4 w-4 shrink-0" />
+                            <span className="dashMobileMenuText">{resolvedUserLabel}</span>
+                        </button>
+                        <button
+                            type="button"
+                            className="btn-secondary dashMobileMenuItem"
+                            onClick={toggleSound}
+                            title={soundMuted ? 'Unmute sounds' : 'Mute sounds'}
+                        >
+                            {soundMuted ? <VolumeX className="h-4 w-4 shrink-0" /> : <Volume2 className="h-4 w-4 shrink-0" />}
+                            <span className="dashMobileMenuText">{soundMuted ? 'Unmute sounds' : 'Mute sounds'}</span>
+                        </button>
+                        <button type="button" className="btn-secondary dashMobileMenuItem" onClick={toggleTheme}>
+                            <Palette className="h-4 w-4 shrink-0" />
+                            <span className="dashMobileMenuText">
+                                {theme === 'classic' ? 'Switch to ivory theme' : 'Switch to classic theme'}
+                            </span>
+                        </button>
+                        <button type="button" className="btn-secondary dashMobileMenuItem" onClick={openLogoutModal}>
+                            <LogOut className="h-4 w-4 shrink-0" />
+                            <span className="dashMobileMenuText">Logout</span>
+                        </button>
+                    </div>
+                </div>
+            )}
+        </header>
+    );
+}
+
+type LogoutConfirmModalProps = {
+    show: boolean;
+    loggingOut: boolean;
+    onClose: () => void;
+    onConfirm: () => void;
+};
+
+function LogoutConfirmModal({ show, loggingOut, onClose, onConfirm }: LogoutConfirmModalProps) {
+    if (!show) {
+        return null;
+    }
+
+    return (
+        <div className="dashLobbyOverlay" onClick={onClose}>
+            <div className="dashLogoutModal" onClick={(event) => event.stopPropagation()}>
+                <h3>Log out</h3>
+                <p>Are you sure you want to log out?</p>
+                <div className="dashLobbyActions">
+                    <button className="btn-secondary" type="button" onClick={onClose}>
+                        Cancel
+                    </button>
+                    <button className="btn-primary" type="button" onClick={onConfirm} disabled={loggingOut}>
+                        {loggingOut ? 'Logging out...' : 'Log out'}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 export function DashboardPage({
     uid,
     theme,
@@ -431,6 +572,12 @@ export function DashboardPage({
     };
     const toggleTheme = () => {
         onThemeChange(theme === 'classic' ? 'ivory' : 'classic');
+    };
+    const toggleSound = () => {
+        const next = !soundMuted;
+        setSoundMuted(next);
+        setSoundMutedState(next);
+        void persistUserSoundMuted(uid, next);
     };
 
     const logoutUser = async () => {
@@ -936,102 +1083,20 @@ export function DashboardPage({
 
     return (
         <main className="dashboardPage">
-            <header ref={headerRef} className="dashHeader app-surface-header">
-                <div className="dashTitleMain">
-                    <Gamepad2 className="app-brand-icon" aria-hidden />
-                    Feed Panel
-                </div>
-                <div className="dashHeaderActionsDesktop">
-                    <button
-                        type="button"
-                        className="btn-secondary hdrIconBtn"
-                        onClick={openUserProfileModal}
-                        title={
-                            (user.displayName || user.email || 'User') +
-                            ' — profile'
-                        }
-                    >
-                        <UserCircle2 className="h-4 w-4 shrink-0" />
-                        <span className="hdrBtnLabelGroup inline-flex min-w-0 items-center gap-1.5">
-                            <UserFlag code={user.countryCode} className="text-base shrink-0" />
-                            <span className="hdrBtnText">{user.displayName || user.email || 'User'}</span>
-                        </span>
-                    </button>
-                    <button
-                        type="button"
-                        className="btn-secondary hdrIconBtn"
-                        onClick={() => {
-                            const next = !soundMuted;
-                            setSoundMuted(next);
-                            setSoundMutedState(next);
-                            void persistUserSoundMuted(uid, next);
-                        }}
-                        title={soundMuted ? 'Unmute sounds' : 'Mute sounds'}
-                    >
-                        {soundMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-                        <span className="hdrBtnText">{soundMuted ? 'Muted' : 'Sound'}</span>
-                    </button>
-                    <button
-                        type="button"
-                        className="btn-secondary hdrIconBtn"
-                        onClick={toggleTheme}
-                        title={theme === 'classic' ? 'Switch to ivory theme' : 'Switch to classic theme'}
-                    >
-                        <Palette className="h-4 w-4" />
-                        <span className="hdrBtnText">{theme === 'classic' ? 'Ivory' : 'Classic'}</span>
-                    </button>
-                    <button type="button" className="btn-secondary hdrIconBtn" title="Log out" onClick={openLogoutModal}>
-                        <LogOut className="h-4 w-4" />
-                        <span className="hdrBtnText">Logout</span>
-                    </button>
-                </div>
-                <button
-                    type="button"
-                    className="btn-secondary dashMobileMenuToggle"
-                    onClick={() => setShowHeaderMobileMenu((prev) => !prev)}
-                    aria-expanded={showHeaderMobileMenu}
-                    aria-label={showHeaderMobileMenu ? 'Close header menu' : 'Open header menu'}
-                    title={showHeaderMobileMenu ? 'Close menu' : 'Open menu'}
-                >
-                    {showHeaderMobileMenu ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
-                </button>
-                {showHeaderMobileMenu && (
-                    <div className="dashMobileMenu">
-                        <div className="dashMobileMenuList">
-                            <button type="button" className="btn-secondary dashMobileMenuItem" onClick={openUserProfileModal}>
-                                <UserCircle2 className="h-4 w-4 shrink-0" />
-                                <span className="dashMobileMenuText">
-                                    {user.displayName || user.email || 'User'}
-                                </span>
-                            </button>
-                            <button
-                                type="button"
-                                className="btn-secondary dashMobileMenuItem"
-                                onClick={() => {
-                                    const next = !soundMuted;
-                                    setSoundMuted(next);
-                                    setSoundMutedState(next);
-                                    void persistUserSoundMuted(uid, next);
-                                }}
-                                title={soundMuted ? 'Unmute sounds' : 'Mute sounds'}
-                            >
-                                {soundMuted ? <VolumeX className="h-4 w-4 shrink-0" /> : <Volume2 className="h-4 w-4 shrink-0" />}
-                                <span className="dashMobileMenuText">{soundMuted ? 'Unmute sounds' : 'Mute sounds'}</span>
-                            </button>
-                            <button type="button" className="btn-secondary dashMobileMenuItem" onClick={toggleTheme}>
-                                <Palette className="h-4 w-4 shrink-0" />
-                                <span className="dashMobileMenuText">
-                                    {theme === 'classic' ? 'Switch to ivory theme' : 'Switch to classic theme'}
-                                </span>
-                            </button>
-                            <button type="button" className="btn-secondary dashMobileMenuItem" onClick={openLogoutModal}>
-                                <LogOut className="h-4 w-4 shrink-0" />
-                                <span className="dashMobileMenuText">Logout</span>
-                            </button>
-                        </div>
-                    </div>
-                )}
-            </header>
+            <DashboardHeader
+                headerRef={headerRef}
+                displayName={user.displayName}
+                email={user.email}
+                countryCode={user.countryCode}
+                soundMuted={soundMuted}
+                theme={theme}
+                showHeaderMobileMenu={showHeaderMobileMenu}
+                openUserProfileModal={openUserProfileModal}
+                toggleSound={toggleSound}
+                toggleTheme={toggleTheme}
+                openLogoutModal={openLogoutModal}
+                setShowHeaderMobileMenu={setShowHeaderMobileMenu}
+            />
 
             {!!initError && (
                 <section className="mb-3 rounded-2xl border border-red-300/40 bg-red-500/20 p-3 text-sm text-red-100">
@@ -1356,22 +1421,12 @@ export function DashboardPage({
                     </div>
                 </div>
             )}
-            {showLogoutModal && (
-                <div className="dashLobbyOverlay" onClick={() => setShowLogoutModal(false)}>
-                    <div className="dashLogoutModal" onClick={(event) => event.stopPropagation()}>
-                        <h3>Log out</h3>
-                        <p>Are you sure you want to log out?</p>
-                        <div className="dashLobbyActions">
-                            <button className="btn-secondary" type="button" onClick={() => setShowLogoutModal(false)}>
-                                Cancel
-                            </button>
-                            <button className="btn-primary" type="button" onClick={logoutUser} disabled={loggingOut}>
-                                {loggingOut ? 'Logging out...' : 'Log out'}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <LogoutConfirmModal
+                show={showLogoutModal}
+                loggingOut={loggingOut}
+                onClose={() => setShowLogoutModal(false)}
+                onConfirm={logoutUser}
+            />
             <LoadingOverlay state={showLogoutLoadingOverlay ? 'visible' : 'hidden'} />
         </main>
     );
