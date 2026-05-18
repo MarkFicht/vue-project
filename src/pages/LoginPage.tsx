@@ -12,13 +12,12 @@ import { doc, getDoc, runTransaction, serverTimestamp } from 'firebase/firestore
 import { Gamepad2, LogIn, Palette, UserPlus, Volume2, VolumeX } from 'lucide-react';
 import { auth, db, googleProvider } from '@/firebaseConfig';
 import { displayNamesRef, usersRef } from '@/firebase/refs';
-import { markLoginOverlayPending } from '@/hooks/useGlobalLoadingOverlay';
+import { clearLoginOverlayPending, markLoginOverlayPending } from '@/hooks/useGlobalLoadingOverlay';
 import type { AppTheme } from '@/hooks/useAppTheme';
 import { isSoundMuted, setSoundMuted } from '@/utils/sound';
 import { normalizeDisplayName, sanitizeDisplayName } from '@/utils/displayName';
 import { getCountrySelectOptions, guessCountryFromLocale, normalizeCountryCode } from '@/utils/country';
 import { CountrySelect } from '@/components/CountrySelect';
-import { LoadingOverlay } from '@/components/LoadingOverlay';
 import '@/styles/login.css';
 
 export function LoginPage({
@@ -73,6 +72,7 @@ export function LoginPage({
                     return;
                 }
                 setAuthInProgress(true);
+                markLoginOverlayPending();
                 await ensureDisplayNameAvailable(displayNameKey);
                 const res = await createUserWithEmailAndPassword(auth, normalizedEmail, password);
                 try {
@@ -118,11 +118,12 @@ export function LoginPage({
                 }
             } else {
                 setAuthInProgress(true);
+                markLoginOverlayPending();
                 await signInWithEmailAndPassword(auth, normalizedEmail, password);
             }
-            markLoginOverlayPending();
             navigate('/feed');
         } catch (err) {
+            clearLoginOverlayPending();
             setAuthInProgress(false);
             const firebaseError = err as { code?: string; message?: string };
             if (firebaseError.code === 'auth/email-already-in-use') {
@@ -146,10 +147,11 @@ export function LoginPage({
         setError('');
         try {
             setAuthInProgress(true);
-            await signInWithPopup(auth, googleProvider);
             markLoginOverlayPending();
+            await signInWithPopup(auth, googleProvider);
             navigate('/feed');
         } catch (err) {
+            clearLoginOverlayPending();
             setAuthInProgress(false);
             setError((err as Error).message);
         }
@@ -282,7 +284,6 @@ export function LoginPage({
                     <div className={`loginModeIndicator ${isRegister ? 'toRight' : ''}`} />
                 </nav>
             </section>
-            <LoadingOverlay state={authInProgress ? 'visible' : 'hidden'} />
         </main>
     );
 }

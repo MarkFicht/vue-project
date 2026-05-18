@@ -3,6 +3,6 @@ export const LOGIN_OVERLAY = {
     label: 'Loading...',
     targetPathname: '/feed',
     authFadeMs: 500,
-    visibleMsAfterLogin: 650,
-    totalMsAfterLogin: 1150
+    visibleMsAfterLogin: 500,
+    totalMsAfterLogin: 1000
 } as const;
