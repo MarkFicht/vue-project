@@ -767,7 +767,7 @@
     }
 
     .dg-graveyardPanel {
-        width: 390px !important;
+        width: 430px !important;
         margin: 0 auto !important;
         transform: translateX(-50px) !important;
     }
@@ -785,12 +785,11 @@
 @media (min-width: 1440px) {
     .dg-duelLayout {
         flex-direction: row;
-        justify-content: center;
     }
 
     .dg-duelArena {
         order: 1;
-        width: 730px;
+        width: 754px;
     }
 
     .dg-militaryViewport {
@@ -816,13 +815,11 @@
 
 .dg-playerColumnsScroller {
     width: 100%;
-    max-width: 100%;
-    min-width: 0;
     overflow-x: auto;
     overscroll-behavior-x: contain;
     -webkit-overflow-scrolling: touch;
     scrollbar-gutter: stable;
-    padding-bottom: 4px;
+    padding-bottom: 2px;
 }
 
 .dg-cardBoardShell {
@@ -1004,8 +1001,7 @@
     left: 50%;
     bottom: 88px;
     transform: translateX(-50%);
-    width: min(88%, 390px);
-    max-width: 430px;
+    width: min(88%, 430px);
     min-height: 42px;
     border-radius: 12px;
     border: 1px solid rgb(255 255 255 / 22%);
@@ -1021,12 +1017,13 @@
     left: auto;
     bottom: auto;
     transform: none !important;
-    /* width: min(96%, 430px); */
+    width: 100%;
 }
 
 @media (min-width: 1024px) {
     .dg-actionsInlineWrap .dg-actionsModal {
         margin-left: -100px;
+        width: 430px;
     }
 }
 
@@ -1136,7 +1133,7 @@
 }
 
 .dg-columns {
-    --dg-col-gap: 6px;
+    --dg-col-gap: 2px;
     display: flex;
     flex-wrap: nowrap;
     align-items: flex-start;
@@ -1153,7 +1150,7 @@
     justify-content: center;
     gap: var(--dg-player-wonders-gap);
     /* Extra gap when wonders are scaled down — they overlap neighbors less */
-    margin-bottom: 10px;
+    margin-bottom: 2px;
 }
 
 .dg-playerWonders .dg-wonderWrapper {
@@ -1281,15 +1278,15 @@
 }
 
 .dg-playerCoins {
-    min-height: 46px;
+    min-height: 0px;
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: 2px;
     align-items: center;
 }
 
 .dg-playerCoinsBox {
-    margin-top: 6px;
+    margin-top: 4px;
 }
 
 .dg-playerCoinsLabel {
