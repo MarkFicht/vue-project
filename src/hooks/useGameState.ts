@@ -323,6 +323,7 @@ export function useGameState(currentUserUid: string) {
     ]);
 
     useEffect(() => {
+        if (!isMyTurn) return;
         if (game.move >= 20 && game.move < 40 && game.tier !== 'II' && !game.wonBySurr) {
             updateDoc(tableGameDuelRef, { tier: 'II' });
         }
@@ -332,10 +333,10 @@ export function useGameState(currentUserUid: string) {
         if (game.move >= 60 && !game.wonByAggressive && !game.wonByArt && !game.wonBySurr) {
             updateDoc(tableGameDuelRef, { tier: 'end' });
         }
-    }, [game.move, game.tier, game.wonByAggressive, game.wonByArt, game.wonBySurr]);
+    }, [game.move, game.tier, game.wonByAggressive, game.wonByArt, game.wonBySurr, isMyTurn]);
 
     useEffect(() => {
-        if (isObserver) return;
+        if (isObserver || !isMyTurn) return;
         if (!game.player1.user?.uid || !game.player2.user?.uid) return;
         if (game.wonByArt || game.wonByAggressive || game.wonBySurr || game.wonByPoints) return;
         if (game.tier === 'prepare') return;
@@ -355,10 +356,12 @@ export function useGameState(currentUserUid: string) {
         game.wonByPoints,
         game.wonBySurr,
         game.tier,
+        isMyTurn,
         isObserver
     ]);
 
     useEffect(() => {
+        if (!isMyTurn) return;
         if (game.wonByArt || game.wonByAggressive || game.wonBySurr || game.wonByPoints) return;
         if (game.tier !== 'end' && game.move < 60) return;
 
@@ -383,10 +386,12 @@ export function useGameState(currentUserUid: string) {
         game.wonByAggressive,
         game.wonByArt,
         game.wonByPoints,
-        game.wonBySurr
+        game.wonBySurr,
+        isMyTurn
     ]);
 
     useEffect(() => {
+        if (!isMyTurn) return;
         if (game.tier !== 'prepare') return;
         if (game.move !== 0) return;
         if (game.player1.wonderCards.length !== 4 || game.player2.wonderCards.length !== 4) return;
@@ -394,15 +399,16 @@ export function useGameState(currentUserUid: string) {
             updateDoc(tableGameDuelRef, { tier: 'I' });
         }, 980);
         return () => window.clearTimeout(timer);
-    }, [game.move, game.player1.wonderCards.length, game.player2.wonderCards.length, game.tier]);
+    }, [game.move, game.player1.wonderCards.length, game.player2.wonderCards.length, game.tier, isMyTurn]);
 
     useEffect(() => {
+        if (isObserver) return;
         if (!game.wonByArt && !game.wonByAggressive && !game.wonBySurr) return;
         if (!duelStateReadyRef.current) return;
         deleteGameDuel().finally(() => {
             setTimeout(() => navigate('/feed'), 2000);
         });
-    }, [deleteGameDuel, game.wonByAggressive, game.wonByArt, game.wonBySurr, navigate]);
+    }, [deleteGameDuel, game.wonByAggressive, game.wonByArt, game.wonBySurr, isObserver, navigate]);
 
     useEffect(() => {
         const winner = game.wonByArt || game.wonByAggressive || game.wonBySurr || game.wonByPoints;

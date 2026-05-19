@@ -6,6 +6,14 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function isSelf(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isNonEmptyString(value) {
+      return value is string && value.size() > 0;
+    }
+
     function hasRequiredUserKeys(data) {
       return data.keys().hasAll([
         'uid',
@@ -24,17 +32,39 @@ service cloud.firestore {
       ]);
     }
 
+    function hasOnlyAllowedUserKeys(data) {
+      return data.keys().hasOnly([
+        'uid',
+        'email',
+        'displayName',
+        'displayNameKey',
+        'game',
+        'readyToGame',
+        'status',
+        'timestamp',
+        'createdAt',
+        'updatedAt',
+        'lastSeenAt',
+        'schemaVersion',
+        'soundMuted',
+        'countryCode'
+      ]);
+    }
+
     function userDocShapeIsValid(data, userId) {
       return data.uid == userId
         && data.uid is string
         && data.email is string
-        && data.displayName is string
-        && data.displayName.size() > 0
-        && data.displayNameKey is string
-        && data.displayNameKey.size() > 0
+        && isNonEmptyString(data.displayName)
+        && isNonEmptyString(data.displayNameKey)
         && data.game is string
+        && (data.game in ['', 'Duel', 'Gems', 'Reflex'])
         && data.readyToGame is bool
         && (data.status in ['online', 'away', 'offline'])
+        && data.timestamp is timestamp
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp
+        && data.lastSeenAt is timestamp
         && data.schemaVersion is int
         && data.soundMuted is bool
         && (!('countryCode' in data)
@@ -54,18 +84,291 @@ service cloud.firestore {
         && (request.auth.uid in getAfter(/databases/$(database)/documents/privateChats/$(chatId)).data.participants);
     }
 
+    function isGameStatusDocId(docId) {
+      return docId in ['Duel', 'Gems', 'Reflex'];
+    }
+
+    function validGameStatusPlayer(player, gameId) {
+      return player is map
+        && player.keys().hasOnly([
+          'uid',
+          'displayName',
+          'email',
+          'game',
+          'readyToGame',
+          'status',
+          'joinedAt',
+          'schemaVersion',
+          'countryCode'
+        ])
+        && isNonEmptyString(player.uid)
+        && isNonEmptyString(player.displayName)
+        && player.email is string
+        && player.game == gameId
+        && player.readyToGame is bool
+        && (!('status' in player) || (player.status in ['online', 'away', 'offline']))
+        && (!('joinedAt' in player) || player.joinedAt is int)
+        && (!('schemaVersion' in player) || player.schemaVersion is int)
+        && (!('countryCode' in player)
+          || (player.countryCode is string
+            && player.countryCode.size() == 2));
+    }
+
+    function validGameStatusPlayers(players, gameId) {
+      return players is list
+        && players.size() <= 2
+        && (
+          players.size() == 0
+          || (players.size() == 1
+            && validGameStatusPlayer(players[0], gameId))
+          || (players.size() == 2
+            && validGameStatusPlayer(players[0], gameId)
+            && validGameStatusPlayer(players[1], gameId)
+            && players[0].uid != players[1].uid)
+        );
+    }
+
+    function isGameStatusParticipant(data) {
+      return data.players is list
+        && (
+          (data.players.size() == 1
+            && data.players[0].uid == request.auth.uid)
+          || (data.players.size() == 2
+            && request.auth.uid in [data.players[0].uid, data.players[1].uid])
+        );
+    }
+
+    function validGameStatusDocument(data, docId) {
+      return data.keys().hasOnly(['isStarted', 'players'])
+        && data.isStarted is bool
+        && validGameStatusPlayers(data.players, docId)
+        && (!data.isStarted || data.players.size() == 2);
+    }
+
+    function sameGameStatusUidOrder(beforePlayers, afterPlayers) {
+      return beforePlayers.size() == afterPlayers.size()
+        && (
+          beforePlayers.size() == 0
+          || (beforePlayers.size() == 1
+            && beforePlayers[0].uid == afterPlayers[0].uid)
+          || (beforePlayers.size() == 2
+            && beforePlayers[0].uid == afterPlayers[0].uid
+            && beforePlayers[1].uid == afterPlayers[1].uid)
+        );
+    }
+
+    function gameStatusOtherPlayersAreImmutable(beforePlayers, afterPlayers) {
+      return beforePlayers.size() == afterPlayers.size()
+        && (
+          beforePlayers.size() == 0
+          || (beforePlayers.size() == 1
+            && (beforePlayers[0].uid == request.auth.uid
+              || beforePlayers[0] == afterPlayers[0]))
+          || (beforePlayers.size() == 2
+            && (beforePlayers[0].uid == request.auth.uid
+              || beforePlayers[0] == afterPlayers[0])
+            && (beforePlayers[1].uid == request.auth.uid
+              || beforePlayers[1] == afterPlayers[1]))
+        );
+    }
+
+    function validGameStatusTransition() {
+      let beforePlayers = resource.data.players;
+      let afterPlayers = request.resource.data.players;
+      return (
+        // Same roster, only caller's own player object may change.
+        (sameGameStatusUidOrder(beforePlayers, afterPlayers)
+          && gameStatusOtherPlayersAreImmutable(beforePlayers, afterPlayers))
+        // Join empty lobby as caller.
+        || (beforePlayers.size() == 0
+          && afterPlayers.size() == 1
+          && afterPlayers[0].uid == request.auth.uid)
+        // Join 1-player lobby as second player; existing player immutable.
+        || (beforePlayers.size() == 1
+          && afterPlayers.size() == 2
+          && beforePlayers[0].uid != request.auth.uid
+          && afterPlayers[0] == beforePlayers[0]
+          && afterPlayers[1].uid == request.auth.uid)
+        // Leave single-player lobby where caller is the only player.
+        || (beforePlayers.size() == 1
+          && beforePlayers[0].uid == request.auth.uid
+          && afterPlayers.size() == 0)
+        // Leave 2-player lobby; remaining player immutable.
+        || (beforePlayers.size() == 2
+          && afterPlayers.size() == 1
+          && (
+            (beforePlayers[0].uid == request.auth.uid
+              && afterPlayers[0] == beforePlayers[1])
+            || (beforePlayers[1].uid == request.auth.uid
+              && afterPlayers[0] == beforePlayers[0])
+          ))
+        // Game cleanup: participant may clear roster.
+        || (beforePlayers.size() == 2
+          && afterPlayers.size() == 0
+          && request.auth.uid in [beforePlayers[0].uid, beforePlayers[1].uid])
+      );
+    }
+
+    function validGameStatusStartedTransition() {
+      return (
+        // normal lobby changes while game not started
+        (!resource.data.isStarted && !request.resource.data.isStarted)
+        // start game only when both players are ready
+        || (!resource.data.isStarted
+          && request.resource.data.isStarted
+          && request.resource.data.players.size() == 2
+          && request.resource.data.players[0].readyToGame == true
+          && request.resource.data.players[1].readyToGame == true
+          && request.auth.uid in [
+            request.resource.data.players[0].uid,
+            request.resource.data.players[1].uid
+          ])
+        // keep started state immutable
+        || (resource.data.isStarted
+          && request.resource.data.isStarted
+          && request.resource.data.players == resource.data.players)
+        // allow ending/reset by participant
+        || (resource.data.isStarted
+          && !request.resource.data.isStarted
+          && resource.data.players.size() == 2
+          && request.auth.uid in [resource.data.players[0].uid, resource.data.players[1].uid])
+      );
+    }
+
+    function hasDuelSeats(data) {
+      return data.player1 is map
+        && data.player2 is map
+        && data.player1.user is map
+        && data.player2.user is map
+        && isNonEmptyString(data.player1.user.uid)
+        && isNonEmptyString(data.player2.user.uid)
+        && data.player1.user.uid != data.player2.user.uid;
+    }
+
+    function isDuelTableParticipant(data) {
+      return hasDuelSeats(data)
+        && request.auth.uid in [data.player1.user.uid, data.player2.user.uid];
+    }
+
+    function duelSeatOwnersAreImmutable() {
+      return hasDuelSeats(resource.data)
+        && hasDuelSeats(request.resource.data)
+        && request.resource.data.player1.user.uid == resource.data.player1.user.uid
+        && request.resource.data.player2.user.uid == resource.data.player2.user.uid;
+    }
+
+    function duelTopLevelShapeIsValid(data) {
+      return data.keys().hasOnly([
+          'player1',
+          'player2',
+          'selectWondersForPlayers',
+          'selectWondersForPlayersMove',
+          'chooseWhoWillStart',
+          'turn',
+          'gameBoard',
+          'tierICards',
+          'tierIICards',
+          'tierIIICards',
+          'wonderCards',
+          'graveyard',
+          'theRestOfCoins',
+          'tier',
+          'move',
+          'pickCoin',
+          'pickCoinOfThree',
+          'pickCardFromGraveyard',
+          'destroyBrown',
+          'destroyGrey',
+          'actionUid',
+          'actionType',
+          'wonByArt',
+          'wonByAggressive',
+          'wonBySurr',
+          'wonByPoints'
+        ])
+        && data.player1 is map
+        && data.player2 is map
+        && data.selectWondersForPlayers is list
+        && data.selectWondersForPlayersMove is int
+        && data.chooseWhoWillStart is bool
+        && isNonEmptyString(data.turn)
+        && data.gameBoard is map
+        && data.gameBoard.keys().hasOnly([
+          'pawn',
+          'coins',
+          'punishment1',
+          'punishment2',
+          'punishment3',
+          'punishment4'
+        ])
+        && data.gameBoard.pawn is int
+        && data.gameBoard.coins is list
+        && data.gameBoard.punishment1 is bool
+        && data.gameBoard.punishment2 is bool
+        && data.gameBoard.punishment3 is bool
+        && data.gameBoard.punishment4 is bool
+        && data.tierICards is list
+        && data.tierIICards is list
+        && data.tierIIICards is list
+        && data.wonderCards is list
+        && data.graveyard is list
+        && data.theRestOfCoins is list
+        && (data.tier in ['prepare', 'I', 'II', 'III', 'end'])
+        && data.move is int
+        && data.move >= 0
+        && data.move <= 60
+        && data.pickCoin is string
+        && data.pickCoinOfThree is string
+        && data.pickCardFromGraveyard is string
+        && data.destroyBrown is string
+        && data.destroyGrey is string
+        && data.actionUid is string
+        && data.actionType is string
+        && data.wonByArt is string
+        && data.wonByAggressive is string
+        && data.wonBySurr is string
+        && data.wonByPoints is string;
+    }
+
+    function duelTurnIsValid(data) {
+      return hasDuelSeats(data)
+        && data.turn in [data.player1.user.uid, data.player2.user.uid];
+    }
+
+    function duelMoveProgressionIsValid() {
+      return request.resource.data.move >= resource.data.move
+        && request.resource.data.move <= resource.data.move + 1
+        && request.resource.data.selectWondersForPlayersMove >= resource.data.selectWondersForPlayersMove
+        && request.resource.data.selectWondersForPlayersMove <= resource.data.selectWondersForPlayersMove + 1;
+    }
+
     match /users/{userId} {
       allow read: if isSignedIn();
-      allow create, update: if isSignedIn()
+      allow create: if isSelf(userId)
         && hasRequiredUserKeys(request.resource.data)
-        && userDocShapeIsValid(request.resource.data, userId);
-      allow delete: if isSignedIn() && request.auth.uid == userId;
+        && hasOnlyAllowedUserKeys(request.resource.data)
+        && userDocShapeIsValid(request.resource.data, userId)
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.lastSeenAt == request.time
+        && request.resource.data.timestamp == request.time;
+      allow update: if isSelf(userId)
+        && hasRequiredUserKeys(request.resource.data)
+        && hasOnlyAllowedUserKeys(request.resource.data)
+        && userDocShapeIsValid(request.resource.data, userId)
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.timestamp == request.time
+        && (
+          request.resource.data.lastSeenAt == resource.data.lastSeenAt
+          || request.resource.data.lastSeenAt == request.time
+        );
+      allow delete: if isSelf(userId);
     }
 
     match /users/{userId}/pushTokens/{tokenId} {
-      allow read: if isSignedIn() && request.auth.uid == userId;
-      allow create, update: if isSignedIn()
-        && request.auth.uid == userId
+      allow read: if isSelf(userId);
+      allow create, update: if isSelf(userId)
         && request.resource.data.keys().hasOnly([
           'uid',
           'token',
@@ -82,7 +385,7 @@ service cloud.firestore {
         && request.resource.data.userAgent.size() <= 300
         && request.resource.data.createdAt is timestamp
         && request.resource.data.updatedAt is timestamp;
-      allow delete: if isSignedIn() && request.auth.uid == userId;
+      allow delete: if isSelf(userId);
     }
 
     match /displayNames/{displayNameKey} {
@@ -90,21 +393,57 @@ service cloud.firestore {
       allow list: if isSignedIn();
       allow create: if isSignedIn()
         && !exists(/databases/$(database)/documents/displayNames/$(displayNameKey))
+        && request.resource.data.keys().hasOnly(['uid', 'displayName', 'createdAt', 'updatedAt'])
         && request.resource.data.uid == request.auth.uid
-        && request.resource.data.displayName is string;
+        && isNonEmptyString(request.resource.data.displayName)
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.updatedAt is timestamp
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
       allow update: if isSignedIn()
         && resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['uid', 'displayName', 'createdAt', 'updatedAt'])
         && request.resource.data.uid == request.auth.uid
-        && request.resource.data.displayName is string;
+        && isNonEmptyString(request.resource.data.displayName)
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.updatedAt is timestamp
+        && request.resource.data.updatedAt == request.time;
       allow delete: if isSignedIn() && resource.data.uid == request.auth.uid;
     }
 
     match /gameStatus/{docId} {
-      allow read, write: if isSignedIn();
+      allow read: if isSignedIn();
+      allow create: if isSignedIn()
+        && isGameStatusDocId(docId)
+        && validGameStatusDocument(request.resource.data, docId)
+        && isGameStatusParticipant(request.resource.data);
+      allow update: if isSignedIn()
+        && isGameStatusDocId(docId)
+        && validGameStatusDocument(request.resource.data, docId)
+        && isGameStatusParticipant(resource.data)
+        && validGameStatusTransition()
+        && validGameStatusStartedTransition();
+      allow delete: if false;
     }
 
     match /gameDuel/{docId} {
-      allow read, write: if isSignedIn();
+      allow read: if isSignedIn();
+      allow create: if docId == 'table1'
+        && isSignedIn()
+        && isDuelTableParticipant(request.resource.data)
+        && duelTopLevelShapeIsValid(request.resource.data)
+        && duelTurnIsValid(request.resource.data);
+      allow update: if docId == 'table1'
+        && isSignedIn()
+        && isDuelTableParticipant(resource.data)
+        && request.auth.uid == resource.data.turn
+        && duelSeatOwnersAreImmutable()
+        && duelTopLevelShapeIsValid(request.resource.data)
+        && duelTurnIsValid(request.resource.data)
+        && duelMoveProgressionIsValid();
+      allow delete: if docId == 'table1'
+        && isSignedIn()
+        && isDuelTableParticipant(resource.data);
     }
 
     match /privateChats/{chatId} {
@@ -120,6 +459,9 @@ service cloud.firestore {
         ])
         && request.resource.data.participants is list
         && request.resource.data.participants.size() == 2
+        && request.resource.data.participants[0] is string
+        && request.resource.data.participants[1] is string
+        && request.resource.data.participants[0] != request.resource.data.participants[1]
         && request.auth.uid in request.resource.data.participants
         && request.resource.data.schemaVersion is int
         && request.resource.data.lastMessage is string
@@ -141,6 +483,7 @@ service cloud.firestore {
           'updatedAt'
         ])
         && request.resource.data.participants == resource.data.participants
+        && request.resource.data.schemaVersion is int
         && request.resource.data.lastMessage is string
         && request.resource.data.lastMessage.size() > 0
         && request.resource.data.lastMessage.size() <= 500

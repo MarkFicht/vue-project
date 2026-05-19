@@ -520,29 +520,14 @@ export function DashboardPage({
         if (duel.isStarted) return;
 
         const nextPlayers = duel.players
-            .filter((player) => player.uid !== targetUid)
-            .map((player) => ({ ...player, readyToGame: false }));
+            .filter((player) => player.uid !== targetUid);
 
         const batch = writeBatch(db);
-        batch.set(
-            doc(usersRef, targetUid),
-            {
-                game: '',
-                readyToGame: false,
-                status: 'online',
-                online: deleteField(),
-                timestamp: serverTimestamp(),
-                updatedAt: serverTimestamp(),
-                lastSeenAt: serverTimestamp(),
-                schemaVersion: 1
-            },
-            { merge: true }
-        );
-        nextPlayers.forEach((player) => {
+        if (targetUid === uid) {
             batch.set(
-                doc(usersRef, player.uid),
+                doc(usersRef, targetUid),
                 {
-                    game: 'Duel',
+                    game: '',
                     readyToGame: false,
                     status: 'online',
                     online: deleteField(),
@@ -553,7 +538,7 @@ export function DashboardPage({
                 },
                 { merge: true }
             );
-        });
+        }
         batch.set(
             gameStatusDuelRef,
             {
@@ -732,8 +717,7 @@ export function DashboardPage({
                 }
 
                 const nextPlayers = players
-                    .filter((player) => player.uid !== uid)
-                    .map((player) => ({ ...player, readyToGame: false }));
+                    .filter((player) => player.uid !== uid);
                 statusBatch.set(
                     statusRef,
                     {
@@ -1219,7 +1203,7 @@ export function DashboardPage({
                                                         <span className={player.readyToGame ? 'text-emerald-300' : 'text-amber-300'}>
                                                             {player.readyToGame ? 'ready' : 'waiting'}
                                                         </span>
-                                                        {player.uid !== uid && (
+                                                        {player.uid === uid && (
                                                             <button
                                                                 type="button"
                                                                 className={`dashRemoveButton ${
@@ -1239,7 +1223,7 @@ export function DashboardPage({
                                                                     !isBootstrapped
                                                                         ? 'Loading lobby data...'
                                                                         : removeCooldown.canRemove
-                                                                          ? 'Remove user from lobby'
+                                                                          ? 'Leave lobby'
                                                                           : `Remove available in ${removeCooldown.secondsLeft}s`
                                                                 }
                                                             >
@@ -1347,7 +1331,7 @@ export function DashboardPage({
                                             <span className={player.readyToGame ? 'text-emerald-300' : 'text-amber-300'}>
                                                 {player.readyToGame ? 'ready' : 'waiting'}
                                             </span>
-                                            {player.uid !== uid && (
+                                            {player.uid === uid && (
                                                 <button
                                                     type="button"
                                                     className={`dashRemoveButton ${
@@ -1367,7 +1351,7 @@ export function DashboardPage({
                                                         !isBootstrapped
                                                             ? 'Loading lobby data...'
                                                             : removeCooldown.canRemove
-                                                              ? 'Remove user from lobby'
+                                                              ? 'Leave lobby'
                                                               : `Remove available in ${removeCooldown.secondsLeft}s`
                                                     }
                                                 >

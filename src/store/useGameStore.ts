@@ -8,6 +8,7 @@ import {
     tableGameDuelRef,
     usersRef
 } from '@/firebase/refs';
+import { auth } from '@/firebaseConfig';
 
 type GameCardInfo = {
     isStarted: boolean;
@@ -84,26 +85,24 @@ export const useGameStore = create<GameStoreState>((set, get) => ({
         });
     },
     deleteGameDuel: async () => {
-        const players = get().duel.players;
-
         await updateDoc(gameStatusDuelRef, {
             isStarted: false,
             players: []
         });
 
-        await Promise.all(
-            players.map(async ({ uid, game }) => {
-                if (game !== 'Duel') return;
-
-                await updateDoc(doc(usersRef, uid), {
-                    game: '',
-                    readyToGame: false,
-                    status: 'online',
-                    online: deleteField(),
-                    timestamp: serverTimestamp()
-                });
-            })
-        );
+        const currentUid = auth.currentUser?.uid;
+        if (currentUid) {
+            await updateDoc(doc(usersRef, currentUid), {
+                game: '',
+                readyToGame: false,
+                status: 'online',
+                online: deleteField(),
+                timestamp: serverTimestamp(),
+                updatedAt: serverTimestamp(),
+                lastSeenAt: serverTimestamp(),
+                schemaVersion: 1
+            });
+        }
 
         await deleteDoc(tableGameDuelRef);
     }
