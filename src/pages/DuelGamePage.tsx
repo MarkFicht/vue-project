@@ -97,7 +97,8 @@ export function DuelGamePage({
         pickCardFromGraveyard,
         destroyEnemyCard,
         surrender,
-        goBackToFeed
+        goBackToFeed,
+        setActionHint
     } = useGameState(uid);
 
     const tierCards = useMemo(
@@ -182,7 +183,10 @@ export function DuelGamePage({
         awaitingBoardCoinPick,
         showCoinChoiceModal,
         showDestroyOpponentModal,
-        visibleCoinChoices
+        visibleCoinChoices,
+        showOpponentActionModal,
+        opponentActionMessage,
+        showIdlePrompt
     } = useDuelModalsState({ game, uid, isObserver, isMyTurn });
 
     const closeSelectedCardActions = () => {
@@ -232,8 +236,9 @@ export function DuelGamePage({
     useEffect(() => {
         if (!game.selectedCard) {
             setWonderBuildMode(false);
+            void setActionHint('');
         }
-    }, [game.selectedCard]);
+    }, [game.selectedCard, setActionHint]);
 
     useEffect(() => {
         if (!showActionModal && !showEpochStarterModal && !showCoinChoiceModal && !showDestroyOpponentModal) return;
@@ -283,6 +288,14 @@ export function DuelGamePage({
         selectWonder(wonder);
         await buildWonder(wonder);
         setWonderBuildMode(false);
+        void setActionHint('');
+    };
+    const toggleWonderBuildMode = () => {
+        setWonderBuildMode((prev) => {
+            const next = !prev;
+            void setActionHint(next ? 'choose-wonder-build' : 'choose-card-action');
+            return next;
+        });
     };
     return (
         <main className="mx-auto flex h-dvh max-h-dvh w-full max-w-[1400px] flex-col overflow-hidden p-2 text-[color:var(--app-text)] sm:p-3">
@@ -366,6 +379,7 @@ export function DuelGamePage({
                                             />
                                         ) : (
                                             <DuelTierCardsStage
+                                                tier={game.tier}
                                                 tierCards={tierCards}
                                                 tierLayout={tierLayout}
                                                 selectedCardId={game.selectedCard?.id}
@@ -375,14 +389,8 @@ export function DuelGamePage({
                                             />
                                         )}
                                     </div>
-                                <DuelGraveyardPanel
-                                    graveyard={game.graveyard}
-                                    isMyTurn={isMyTurn}
-                                    pickCardFromGraveyardUid={game.pickCardFromGraveyard}
-                                    currentUid={uid}
-                                    onPickCardFromGraveyard={pickCardFromGraveyard}
-                                />
                                 <DuelActionsOverlay
+                                    inline
                                     showCoinChoiceModal={showCoinChoiceModal}
                                     awaitingBoardCoinPick={awaitingBoardCoinPick}
                                     visibleCoinChoices={visibleCoinChoices}
@@ -401,7 +409,17 @@ export function DuelGamePage({
                                     onSellSelectedCard={sellSelectedCard}
                                     hasBuildableWonder={hasBuildableWonder}
                                     wonderBuildMode={wonderBuildMode}
-                                    onToggleWonderBuildMode={() => setWonderBuildMode((prev) => !prev)}
+                                    onToggleWonderBuildMode={toggleWonderBuildMode}
+                                    showOpponentActionModal={showOpponentActionModal}
+                                    opponentActionMessage={opponentActionMessage}
+                                    showIdlePrompt={showIdlePrompt}
+                                />
+                                <DuelGraveyardPanel
+                                    graveyard={game.graveyard}
+                                    isMyTurn={isMyTurn}
+                                    pickCardFromGraveyardUid={game.pickCardFromGraveyard}
+                                    currentUid={uid}
+                                    onPickCardFromGraveyard={pickCardFromGraveyard}
                                 />
                             </div>
                         </section>

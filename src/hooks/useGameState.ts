@@ -176,6 +176,8 @@ export function useGameState(currentUserUid: string) {
                         pickCardFromGraveyard: '',
                         destroyBrown: '',
                         destroyGrey: '',
+                        actionUid: '',
+                        actionType: '',
                         wonByArt: '',
                         wonByAggressive: '',
                         wonBySurr: '',
@@ -472,16 +474,28 @@ export function useGameState(currentUserUid: string) {
     const upgradeTurnAndMove = useCallback(
         async (uid: string, withoutMove = false, opts?: { openEpochStarterChoice?: boolean }) => {
             if (withoutMove) {
-                await updateDoc(tableGameDuelRef, { turn: uid });
+                await updateDoc(tableGameDuelRef, { turn: uid, actionUid: '', actionType: '' });
                 return;
             }
             await updateDoc(tableGameDuelRef, {
                 turn: uid,
                 move: increment(1),
+                actionUid: '',
+                actionType: '',
                 ...(opts?.openEpochStarterChoice ? { chooseWhoWillStart: true } : {})
             });
         },
         []
+    );
+
+    const setActionHint = useCallback(
+        async (actionType: string) => {
+            await updateDoc(tableGameDuelRef, {
+                actionUid: actionType ? game.turn : '',
+                actionType
+            });
+        },
+        [game.turn]
     );
 
     const finishTurnAfterSpecialAction = useCallback(async () => {
@@ -535,7 +549,9 @@ export function useGameState(currentUserUid: string) {
             if (!isMyTurn || !game.chooseWhoWillStart) return;
             await updateDoc(tableGameDuelRef, {
                 turn: uid,
-                chooseWhoWillStart: false
+                chooseWhoWillStart: false,
+                actionUid: '',
+                actionType: ''
             });
         },
         [game.chooseWhoWillStart, isMyTurn]
@@ -547,8 +563,9 @@ export function useGameState(currentUserUid: string) {
             if ((card.coversBy?.length ?? 0) > 0 || card.taken !== 'inGame') return;
             game.setSelectedWonder(null);
             game.setSelectedCard(card);
+            void setActionHint('choose-card-action');
         },
-        [game, isMyTurn]
+        [game, isMyTurn, setActionHint]
     );
 
     const setCardStateInTier = useCallback(
@@ -1032,6 +1049,7 @@ export function useGameState(currentUserUid: string) {
         pickCardFromGraveyard,
         destroyEnemyCard,
         surrender,
-        goBackToFeed
+        goBackToFeed,
+        setActionHint
     };
 }

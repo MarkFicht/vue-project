@@ -3,6 +3,7 @@ import { DuelCoinSprite } from '@/components/duel/DuelCoinSprite';
 import type { IGameDuelCoin } from '@/interfaces/GameDuel';
 
 type DuelActionsOverlayProps = {
+    inline?: boolean;
     showCoinChoiceModal: boolean;
     awaitingBoardCoinPick: boolean;
     visibleCoinChoices: IGameDuelCoin['effect'][];
@@ -22,9 +23,13 @@ type DuelActionsOverlayProps = {
     hasBuildableWonder: boolean;
     wonderBuildMode: boolean;
     onToggleWonderBuildMode: () => void;
+    showOpponentActionModal?: boolean;
+    opponentActionMessage?: string | null;
+    showIdlePrompt?: boolean;
 };
 
 export function DuelActionsOverlay({
+    inline = false,
     showCoinChoiceModal,
     awaitingBoardCoinPick,
     visibleCoinChoices,
@@ -43,12 +48,20 @@ export function DuelActionsOverlay({
     onSellSelectedCard,
     hasBuildableWonder,
     wonderBuildMode,
-    onToggleWonderBuildMode
+    onToggleWonderBuildMode,
+    showOpponentActionModal,
+    opponentActionMessage,
+    showIdlePrompt
 }: DuelActionsOverlayProps) {
+    const containerClass = inline ? 'dg-actionsInlineWrap' : 'dg-actionsBackdropInBoard';
+    const blockingContainerClass = inline
+        ? 'dg-actionsInlineWrap dg-actionsInlineWrap--blocking'
+        : 'dg-actionsBackdropInBoard dg-actionsBackdropInBoard--blocking';
+
     if (showCoinChoiceModal) {
         return (
             <div
-                className="dg-actionsBackdropInBoard dg-actionsBackdropInBoard--blocking"
+                className={blockingContainerClass}
                 role="dialog"
                 aria-modal="true"
                 aria-label={awaitingBoardCoinPick ? 'Choose progress coin after matching pair' : 'Choose progress coin from wonder'}
@@ -81,7 +94,7 @@ export function DuelActionsOverlay({
     if (showDestroyOpponentModal) {
         return (
             <div
-                className="dg-actionsBackdropInBoard dg-actionsBackdropInBoard--blocking"
+                className={blockingContainerClass}
                 role="dialog"
                 aria-modal="true"
                 aria-label="Destroy opponent card"
@@ -100,7 +113,7 @@ export function DuelActionsOverlay({
     if (showEpochStarterModal) {
         return (
             <div
-                className="dg-actionsBackdropInBoard dg-actionsBackdropInBoard--blocking"
+                className={blockingContainerClass}
                 role="dialog"
                 aria-modal="true"
                 aria-label="Choose who starts this age"
@@ -125,7 +138,7 @@ export function DuelActionsOverlay({
 
     if (showActionModal) {
         return (
-            <div className="dg-actionsBackdropInBoard" role="dialog" aria-modal="true">
+            <div className={containerClass} role="dialog" aria-modal="true">
                 <div className="dg-actionsModal">
                     <div className="dg-actionsButtons">
                         <button className="btn-primary" disabled={!canBuySelectedCard} onClick={onBuySelectedCard}>
@@ -143,6 +156,33 @@ export function DuelActionsOverlay({
                             {wonderBuildMode ? 'Select wonder...' : 'Build wonder'}
                         </button>
                     </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (showIdlePrompt) {
+        return (
+            <div className={containerClass} role="status" aria-label="Awaiting card selection">
+                <div className="dg-actionsModal dg-actionsModal--instruction">
+                    <p className="px-1 text-center text-sm leading-snug text-slate-200">
+                        Your turn — pick a tier card!
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
+    if (showOpponentActionModal && opponentActionMessage) {
+        return (
+            <div
+                className={blockingContainerClass}
+                role="status"
+                aria-live="polite"
+                aria-label="Opponent action status"
+            >
+                <div className="dg-actionsModal dg-actionsModal--instruction">
+                    <p className="px-1 text-center text-sm leading-snug text-slate-200">{opponentActionMessage}</p>
                 </div>
             </div>
         );

@@ -21,6 +21,8 @@ export type DuelGameState = {
     pickCardFromGraveyard: string;
     destroyBrown: string;
     destroyGrey: string;
+    actionUid: string;
+    actionType: string;
     tierOneCards: IGameDuelCard[];
     tierTwoCards: IGameDuelCard[];
     tierThreeCards: IGameDuelCard[];
@@ -59,6 +61,8 @@ const initialState = {
     pickCardFromGraveyard: '',
     destroyBrown: '',
     destroyGrey: '',
+    actionUid: '',
+    actionType: '',
     tierOneCards: [] as IGameDuelCard[],
     tierTwoCards: [] as IGameDuelCard[],
     tierThreeCards: [] as IGameDuelCard[],
@@ -107,6 +111,8 @@ export const useDuelGameStore = create<DuelGameState>((set, get) => ({
                 pickCardFromGraveyard: data.pickCardFromGraveyard,
                 destroyBrown: data.destroyBrown,
                 destroyGrey: data.destroyGrey,
+                actionUid: data.actionUid ?? '',
+                actionType: data.actionType ?? '',
                 selectWondersForPlayers: data.selectWondersForPlayers,
                 selectWondersForPlayersMove: data.selectWondersForPlayersMove,
                 chooseWhoWillStart: data.chooseWhoWillStart,
