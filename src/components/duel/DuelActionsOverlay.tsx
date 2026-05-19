@@ -11,6 +11,7 @@ type DuelActionsOverlayProps = {
     onPickCoinOfThree: (coin: IGameDuelCoin['effect']) => void;
     showDestroyOpponentModal: boolean;
     destroyBrownActive: boolean;
+    showGraveyardPickModal?: boolean;
     showEpochStarterModal: boolean;
     onChooseSelfStarts: () => void;
     onChooseOpponentStarts: () => void;
@@ -37,6 +38,7 @@ export function DuelActionsOverlay({
     onPickCoinOfThree,
     showDestroyOpponentModal,
     destroyBrownActive,
+    showGraveyardPickModal,
     showEpochStarterModal,
     onChooseSelfStarts,
     onChooseOpponentStarts,
@@ -105,6 +107,21 @@ export function DuelActionsOverlay({
                             ? "Wonder effect: choose one of your opponent's brown (raw material) cards to discard. Tap a highlighted card in their city below."
                             : "Wonder effect: choose one of your opponent's grey (manufactured goods) cards to discard. Tap a highlighted card in their city below."}
                     </p>
+                </div>
+            </div>
+        );
+    }
+
+    if (showGraveyardPickModal) {
+        return (
+            <div
+                className={blockingContainerClass}
+                role="dialog"
+                aria-modal="true"
+                aria-label="Pick card from graveyard"
+            >
+                <div className="dg-actionsModal dg-actionsModal--instruction">
+                    <p className="px-1 text-center text-sm leading-snug text-slate-200">Pick a card from the graveyard.</p>
                 </div>
             </div>
         );

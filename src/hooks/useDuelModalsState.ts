@@ -27,6 +27,12 @@ export function useDuelModalsState({ game, uid, isObserver, isMyTurn }: UseDuelM
             isMyTurn &&
             (game.destroyBrown === uid || game.destroyGrey === uid) &&
             game.turn === uid;
+        const showGraveyardPickModal =
+            activeInGameTurn &&
+            !game.chooseWhoWillStart &&
+            isMyTurn &&
+            game.pickCardFromGraveyard === uid &&
+            game.pickCardFromGraveyard === game.turn;
         const visibleCoinChoices: IGameDuelCoin['effect'][] = awaitingBoardCoinPick
             ? game.board.coins
             : game.theRestOfCoins.slice(0, 3);
@@ -64,7 +70,8 @@ export function useDuelModalsState({ game, uid, isObserver, isMyTurn }: UseDuelM
             !game.selectedCard &&
             !game.chooseWhoWillStart &&
             !showCoinChoiceModal &&
-            !showDestroyOpponentModal;
+            !showDestroyOpponentModal &&
+            !showGraveyardPickModal;
 
         return {
             winnerUid,
@@ -74,6 +81,7 @@ export function useDuelModalsState({ game, uid, isObserver, isMyTurn }: UseDuelM
             awaitingWonderThreeCoins,
             showCoinChoiceModal,
             showDestroyOpponentModal,
+            showGraveyardPickModal,
             visibleCoinChoices,
             showOpponentActionModal,
             opponentActionMessage,

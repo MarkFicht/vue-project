@@ -853,11 +853,23 @@
 }
 
 .dg-graveyardPanel {
+    position: relative;
     min-width: 0;
     width: 100%;
     border: 1px solid rgb(195 150 95 / 30%);
     background: var(--duel-graveyard-bg);
     box-shadow: inset 0 1px 0 rgb(255 255 255 / 5%);
+}
+
+.dg-graveyardPanel--pickActive::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    border-radius: inherit;
+    border: 3px dotted tomato;
+    animation: dg-pulseBorder 1.5s ease-in-out infinite;
+    pointer-events: none;
 }
 
 .dg-graveyardCards {

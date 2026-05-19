@@ -183,6 +183,7 @@ export function DuelGamePage({
         awaitingBoardCoinPick,
         showCoinChoiceModal,
         showDestroyOpponentModal,
+        showGraveyardPickModal,
         visibleCoinChoices,
         showOpponentActionModal,
         opponentActionMessage,
@@ -241,9 +242,10 @@ export function DuelGamePage({
     }, [game.selectedCard, setActionHint]);
 
     useEffect(() => {
-        if (!showActionModal && !showEpochStarterModal && !showCoinChoiceModal && !showDestroyOpponentModal) return;
+        if (!showActionModal && !showEpochStarterModal && !showCoinChoiceModal && !showDestroyOpponentModal && !showGraveyardPickModal)
+            return;
         const handlePointerDown = (event: PointerEvent) => {
-            if (showEpochStarterModal || showCoinChoiceModal || showDestroyOpponentModal) return;
+            if (showEpochStarterModal || showCoinChoiceModal || showDestroyOpponentModal || showGraveyardPickModal) return;
             const target = event.target as Element | null;
             if (!target) return;
             if (target.closest('.dg-cardWrapper') || target.closest('.dg-wonderWrapper') || target.closest('.dg-actionsModal')) return;
@@ -251,7 +253,7 @@ export function DuelGamePage({
         };
         const handleKeyDown = (event: KeyboardEvent) => {
             if (
-                (showEpochStarterModal || showCoinChoiceModal || showDestroyOpponentModal) &&
+                (showEpochStarterModal || showCoinChoiceModal || showDestroyOpponentModal || showGraveyardPickModal) &&
                 event.key === 'Escape'
             ) {
                 return;
@@ -264,7 +266,7 @@ export function DuelGamePage({
             window.removeEventListener('pointerdown', handlePointerDown);
             window.removeEventListener('keydown', handleKeyDown);
         };
-    }, [showActionModal, showCoinChoiceModal, showDestroyOpponentModal, showEpochStarterModal]);
+    }, [showActionModal, showCoinChoiceModal, showDestroyOpponentModal, showEpochStarterModal, showGraveyardPickModal]);
 
     const toggleSound = () => {
         const next = !soundMuted;
@@ -398,6 +400,7 @@ export function DuelGamePage({
                                     onPickCoinOfThree={pickCoinOfThree}
                                     showDestroyOpponentModal={showDestroyOpponentModal}
                                     destroyBrownActive={game.destroyBrown === uid}
+                                    showGraveyardPickModal={showGraveyardPickModal}
                                     showEpochStarterModal={showEpochStarterModal}
                                     onChooseSelfStarts={() => chooseWhoStarts(uid)}
                                     onChooseOpponentStarts={() => chooseWhoStarts(opponent.user.uid)}
