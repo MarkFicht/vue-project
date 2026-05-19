@@ -179,6 +179,7 @@ export function DuelGamePage({
     const {
         winnerUid,
         showEpochStarterModal,
+        showPrepareWonderPickModal,
         showActionModal,
         awaitingBoardCoinPick,
         showCoinChoiceModal,
@@ -402,6 +403,7 @@ export function DuelGamePage({
                                     destroyBrownActive={game.destroyBrown === uid}
                                     showGraveyardPickModal={showGraveyardPickModal}
                                     showEpochStarterModal={showEpochStarterModal}
+                                    showPrepareWonderPickModal={showPrepareWonderPickModal}
                                     onChooseSelfStarts={() => chooseWhoStarts(uid)}
                                     onChooseOpponentStarts={() => chooseWhoStarts(opponent.user.uid)}
                                     showActionModal={showActionModal}

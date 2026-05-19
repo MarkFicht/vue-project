@@ -14,6 +14,7 @@ export function useDuelModalsState({ game, uid, isObserver, isMyTurn }: UseDuelM
         const winnerUid = game.wonByArt || game.wonByAggressive || game.wonBySurr || game.wonByPoints;
         const showEpochStarterModal =
             !winnerUid && game.tier !== 'prepare' && game.chooseWhoWillStart && isMyTurn && !isObserver;
+        const showPrepareWonderPickModal = !winnerUid && game.tier === 'prepare' && isMyTurn && !isObserver;
 
         const activeInGameTurn = !winnerUid && game.tier !== 'prepare' && !isObserver;
         const showActionModal = activeInGameTurn && isMyTurn && !!game.selectedCard && !game.chooseWhoWillStart;
@@ -76,6 +77,7 @@ export function useDuelModalsState({ game, uid, isObserver, isMyTurn }: UseDuelM
         return {
             winnerUid,
             showEpochStarterModal,
+            showPrepareWonderPickModal,
             showActionModal,
             awaitingBoardCoinPick,
             awaitingWonderThreeCoins,
