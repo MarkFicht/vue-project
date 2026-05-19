@@ -42,6 +42,8 @@ import { SkeletonDot, SkeletonInput, SkeletonTag, SkeletonText } from '@/compone
 import type { AppTheme } from '@/hooks/useAppTheme';
 import '@/styles/dashboard.css';
 
+const MAX_DISPLAY_NAME_LENGTH = 32;
+
 type LobbySkeletonProps = {
     rows?: number;
     withTag?: boolean;
@@ -972,6 +974,10 @@ export function DashboardPage({
         }
         if (displayName.length < 2) {
             setProfileError('Display name must have at least 2 characters.');
+            return;
+        }
+        if (displayName.length > MAX_DISPLAY_NAME_LENGTH) {
+            setProfileError(`Display name is too long (max ${MAX_DISPLAY_NAME_LENGTH} characters).`);
             return;
         }
         const countryNorm = normalizeCountryCode(profileCountryCode);

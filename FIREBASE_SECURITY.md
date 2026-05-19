@@ -32,6 +32,7 @@ firebase deploy --only firestore:rules,database,storage
 5. Restrict Authentication authorized domains to production + required localhost entries.
 6. Enable Firebase Audit Logs in Google Cloud and review them regularly.
 7. Rotate any server-side secrets and move them to Secret Manager (if backend exists).
+8. Configure Authentication password policy (min length, complexity, breach checks) in Firebase Auth settings.
 
 ## Important Note
 
