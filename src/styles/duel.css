@@ -1,21 +1,4 @@
 :root {
-    --duel-bg-fallback: rgb(26 18 13);
-    /** Table arena: translucent warm gradient so `main_bg` on body shows through slightly */
-    --duel-arena-gradient: linear-gradient(
-        168deg,
-        rgb(40 28 20 / 88%) 0%,
-        rgb(28 20 14 / 84%) 38%,
-        rgb(20 14 10 / 80%) 72%,
-        rgb(14 10 7 / 76%) 100%
-    );
-    --duel-scrollbar-track: rgb(32 22 16 / 55%);
-    --duel-scrollbar-thumb: rgba(100 62 38 / 0.88);
-    --duel-scrollbar-thumb-hover: rgba(124 80 48 / 0.95);
-    --duel-panel-border: rgb(255 255 255 / 15%);
-    --duel-panel-bg: rgb(2 6 23 / 45%);
-    --duel-modal-bg: rgb(2 6 23 / 90%);
-    --duel-graveyard-bg: rgb(14 10 7 / 72%);
-    --duel-graveyard-inner-bg: rgb(0 0 0 / 20%);
     /* Full-size military board (.dg-board); visually rotate(90deg) × scale(...) */
     --dg-military-board-scale: 0.56;
 
@@ -41,25 +24,6 @@
     --width-board: 200px;
     --height-board: 500px;
     --coin-size: 42px;
-}
-
-:root[data-app-theme='ivory'] {
-    --duel-bg-fallback: rgb(62 46 33);
-    --duel-arena-gradient: linear-gradient(
-        168deg,
-        rgb(126 95 68 / 88%) 0%,
-        rgb(100 75 54 / 84%) 38%,
-        rgb(78 58 42 / 80%) 72%,
-        rgb(58 43 30 / 76%) 100%
-    );
-    --duel-scrollbar-track: rgb(66 49 35 / 58%);
-    --duel-scrollbar-thumb: rgba(244 223 186 / 0.9);
-    --duel-scrollbar-thumb-hover: rgba(255 239 212 / 0.96);
-    --duel-panel-border: rgb(236 211 170 / 34%);
-    --duel-panel-bg: rgb(66 49 35 / 42%);
-    --duel-modal-bg: rgb(52 38 27 / 90%);
-    --duel-graveyard-bg: rgb(62 46 33 / 72%);
-    --duel-graveyard-inner-bg: rgb(42 31 22 / 36%);
 }
 
 @media (min-width: 425px) {
@@ -528,6 +492,58 @@
     min-width: 0;
 }
 
+@media (min-width: 425px) {
+    .dg-playerShell {
+        max-width: 490px;
+    }
+    .dg-duelBand {
+        display: flex;
+        justify-content: center;
+    }
+    .dg-playerArea {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        grid-template-areas:
+            'header header'
+            'wonders coins'
+            'columns columns';
+        column-gap: 12px;
+        align-items: start;
+    }
+
+    .dg-playerHeader {
+        grid-area: header;
+    }
+
+    .dg-playerWonders {
+        grid-area: wonders;
+        justify-content: start;
+        justify-self: start;
+        margin-right: auto;
+        margin-bottom: 4px !important;
+    }
+
+    .dg-playerColumnsScroller {
+        grid-area: columns;
+    }
+
+    .dg-playerCoinsBox {
+        grid-area: coins;
+        margin-top: 0;
+        justify-self: stretch;
+        align-self: stretch;
+    }
+}
+
+@media (min-width: 768px) {
+    .dg-playerWonders {
+        margin-bottom: 14px !important;
+    }
+    .dg-playerCoinsBox {
+        margin-left: 8px;
+    }
+}
+
 /** Duel layout — single column first (wider breakpoints add row layout below) */
 .dg-duelLayout {
     display: flex;
@@ -547,7 +563,7 @@
 }
 
 .dgMetaStrong {
-    color: rgb(252 236 204 / 0.96);
+    color: var(--duel-meta-strong);
 }
 
 .dgMetaValue {
@@ -561,15 +577,15 @@
 }
 
 .dgTurnBadgeYou {
-    color: rgb(198 244 214 / 0.92);
+    color: var(--duel-turn-badge-you);
 }
 
 .dgTurnBadgeOpponent {
-    color: rgb(255 226 197 / 0.92);
+    color: var(--duel-turn-badge-opponent);
 }
 
 .dgTurnBadgeObserver {
-    color: rgb(222 213 200 / 0.92);
+    color: var(--duel-turn-badge-observer);
 }
 
 .dgHeaderActionsDesktop {
@@ -619,11 +635,9 @@
         right: 0;
         width: min(84vw, 16rem);
         border-radius: 14px;
-        border: 1px solid rgb(195 150 95 / 38%);
-        background: linear-gradient(180deg, rgb(36 25 17 / 96%) 0%, rgb(22 16 11 / 98%) 100%);
-        box-shadow:
-            inset 0 1px 0 rgb(255 255 255 / 6%),
-            0 14px 28px rgb(0 0 0 / 42%);
+        border: 1px solid var(--duel-mobile-menu-border);
+        background: var(--duel-mobile-menu-bg);
+        box-shadow: var(--duel-mobile-menu-shadow);
         display: block !important;
         z-index: 120;
         animation: dgMenuIn 0.18s ease-out;
@@ -649,27 +663,6 @@
         text-overflow: ellipsis;
         white-space: nowrap;
     }
-}
-
-:root[data-app-theme='ivory'] .dgMobileMenu {
-    border-color: rgb(222 197 154 / 38%);
-    background: linear-gradient(180deg, rgb(55 41 30 / 96%) 0%, rgb(35 26 19 / 98%) 100%);
-}
-
-:root[data-app-theme='ivory'] .dgMetaStrong {
-    color: rgb(255 243 219 / 0.97);
-}
-
-:root[data-app-theme='ivory'] .dgTurnBadgeYou {
-    color: rgb(223 255 237 / 0.95);
-}
-
-:root[data-app-theme='ivory'] .dgTurnBadgeOpponent {
-    color: rgb(255 236 214 / 0.95);
-}
-
-:root[data-app-theme='ivory'] .dgTurnBadgeObserver {
-    color: rgb(244 231 216 / 0.94);
 }
 
 .dg-arenaTableCard {
@@ -727,6 +720,23 @@
 }
 
 @media (min-width: 1024px) {
+    .dg-playerBand:nth-child(1) {
+        justify-self: end;
+    }
+    .dg-playerBand:nth-child(2) {
+        justify-self: start;
+    }
+
+    .dg-playerShell {
+        width: fit-content;
+        max-width: 100%;
+    }
+
+    .dg-playerArea {
+        width: fit-content;
+        max-width: 100%;
+    }
+
     .dg-stageCards:not(.dg-stageCards--prepare) {
         margin-left: -50px;
         margin-top: -20px !important;
@@ -778,13 +788,22 @@
         gap: 10px;
         min-width: 0;
         align-items: start;
+        justify-content: center;
     }
 }
 
 /* Wide screens: player column stack on the right, fixed-width arena on the left */
 @media (min-width: 1440px) {
+    .dg-playerBand:nth-child(1) {
+        justify-self: unset;
+    }
+    .dg-playerBand:nth-child(2) {
+        justify-self: unset;
+    }
+
     .dg-duelLayout {
         flex-direction: row;
+        justify-content: center;
     }
 
     .dg-duelArena {
@@ -803,6 +822,11 @@
         flex-direction: column;
         min-width: 0;
         align-items: stretch;
+        justify-content: start;
+    }
+
+    .dg-playerBand {
+        align-self: flex-start;
     }
 }
 
@@ -853,9 +877,9 @@
     position: relative;
     min-width: 0;
     width: 100%;
-    border: 1px solid rgb(195 150 95 / 30%);
+    border: 1px solid var(--duel-graveyard-border);
     background: var(--duel-graveyard-bg);
-    box-shadow: inset 0 1px 0 rgb(255 255 255 / 5%);
+    box-shadow: var(--duel-graveyard-shadow);
 }
 
 .dg-graveyardPanel--pickActive::after {
@@ -932,8 +956,8 @@
 .dgSurrenderModal {
     width: min(92vw, 440px);
     border-radius: 16px;
-    border: 1px solid rgb(195 150 95 / 42%);
-    background: linear-gradient(175deg, rgb(34 24 17 / 96%) 0%, rgb(18 13 9 / 98%) 100%);
+    border: 1px solid var(--duel-surrender-modal-border);
+    background: var(--duel-surrender-modal-bg);
     color: rgb(245 235 224);
     padding: 16px;
     box-shadow:
@@ -959,11 +983,6 @@
     flex-wrap: wrap;
     justify-content: center;
     gap: 10px;
-}
-
-:root[data-app-theme='ivory'] .dgSurrenderModal {
-    border-color: rgb(222 196 154 / 42%);
-    background: linear-gradient(175deg, rgb(54 40 29 / 96%) 0%, rgb(32 24 18 / 98%) 100%);
 }
 
 .dg-playerShell {
@@ -1004,11 +1023,11 @@
     width: min(88%, 430px);
     min-height: 42px;
     border-radius: 12px;
-    border: 1px solid rgb(255 255 255 / 22%);
-    background: var(--duel-modal-bg);
+    border: 1px solid var(--duel-actionbar-border);
+    background: var(--duel-actionbar-bg);
     backdrop-filter: blur(8px);
     padding: 7px;
-    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.4);
+    box-shadow: var(--duel-actionbar-shadow);
     pointer-events: auto;
 }
 
@@ -1028,11 +1047,7 @@
 }
 
 .dg-actionsModal p {
-    color: rgb(226 232 240);
-}
-
-:root[data-app-theme='ivory'] .dg-actionsModal p {
-    color: rgb(250 239 222);
+    color: var(--duel-actionbar-text);
 }
 
 .dg-actionsModal--instruction {
@@ -1145,8 +1160,8 @@
 }
 
 .dg-playerWonders {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(2, var(--width-wonder));
     justify-content: center;
     gap: var(--dg-player-wonders-gap);
     /* Extra gap when wonders are scaled down — they overlap neighbors less */
@@ -1287,6 +1302,8 @@
 
 .dg-playerCoinsBox {
     margin-top: 4px;
+    width: 100%;
+    max-width: none;
 }
 
 .dg-playerCoinsLabel {
