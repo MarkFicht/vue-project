@@ -53,7 +53,7 @@
 }
 
 .loginModeSwitch {
-    --switch-surface: var(--app-secondary-bg);
+    --switch-surface: var(--theme-bg-800);
     --mode-width: 78px;
     --switch-accent: var(--app-accent, rgb(218 170 85));
     margin-top: 48px;
@@ -129,8 +129,9 @@
 .loginModeIndicator {
     --indicator-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 94 54'%3E%3Cpath d='M47 17C57.2 17 65.2 22.2 68.3 29.9C69 31.6 70.5 32.6 72.5 32.6H83A7.4 7.4 0 0 1 83 47.4H11A7.4 7.4 0 0 1 11 32.6H21.5C23.5 32.6 25 31.6 25.7 29.9C28.8 22.2 36.8 17 47 17Z' fill='black'/%3E%3C/svg%3E");
     --indicator-stroke: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 94 54'%3E%3Cpath d='M7.5 32.6H21.5C23.8 31.9 25.2 30.7 25.7 29.9C28.8 22.2 36.8 17 47 17C57.2 17 65.2 22.2 68.3 29.9C68.8 30.7 70.2 31.9 72.5 32.6H96.8' fill='none' stroke='%23ffffff' stroke-opacity='0.2' stroke-width='3.708' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    --indicator-cut-bottom: 20.9px;
     position: absolute;
-    top: -32.5px;
+    top: -30.9px;
     left: -8px;
     width: 94px;
     height: 54px;
@@ -144,6 +145,8 @@
     mask-repeat: no-repeat;
     -webkit-mask-position: center;
     mask-position: center;
+    -webkit-clip-path: inset(0 0 var(--indicator-cut-bottom) 0);
+    clip-path: inset(0 0 var(--indicator-cut-bottom) 0);
     transition: 0.35s ease;
 }
 
