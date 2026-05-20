@@ -1149,7 +1149,7 @@ export function DashboardPage({
             )}
 
             <section className={`dashWrapper ${showDuelLobbyModal ? 'modalOpen' : ''}`}>
-                <div className="dashGameContainer">
+                <div className="dashScrollViewport dashGameContainer modalLikeScrollbar">
                     <article className="dashCard" style={{ '--dash-clr': '#4589cc' } as CSSProperties}>
                         <div className="dashBox dashBoxTop">Video soon!</div>
                         <div className="dashBox dashBoxBottom">
