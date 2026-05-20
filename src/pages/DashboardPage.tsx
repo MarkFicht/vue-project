@@ -42,6 +42,8 @@ import { SkeletonDot, SkeletonInput, SkeletonTag, SkeletonText } from '@/compone
 import type { AppTheme } from '@/hooks/useAppTheme';
 import '@/styles/dashboard.css';
 
+const MAX_DISPLAY_NAME_LENGTH = 32;
+
 type LobbySkeletonProps = {
     rows?: number;
     withTag?: boolean;
@@ -520,29 +522,14 @@ export function DashboardPage({
         if (duel.isStarted) return;
 
         const nextPlayers = duel.players
-            .filter((player) => player.uid !== targetUid)
-            .map((player) => ({ ...player, readyToGame: false }));
+            .filter((player) => player.uid !== targetUid);
 
         const batch = writeBatch(db);
-        batch.set(
-            doc(usersRef, targetUid),
-            {
-                game: '',
-                readyToGame: false,
-                status: 'online',
-                online: deleteField(),
-                timestamp: serverTimestamp(),
-                updatedAt: serverTimestamp(),
-                lastSeenAt: serverTimestamp(),
-                schemaVersion: 1
-            },
-            { merge: true }
-        );
-        nextPlayers.forEach((player) => {
+        if (targetUid === uid) {
             batch.set(
-                doc(usersRef, player.uid),
+                doc(usersRef, targetUid),
                 {
-                    game: 'Duel',
+                    game: '',
                     readyToGame: false,
                     status: 'online',
                     online: deleteField(),
@@ -553,7 +540,7 @@ export function DashboardPage({
                 },
                 { merge: true }
             );
-        });
+        }
         batch.set(
             gameStatusDuelRef,
             {
@@ -732,8 +719,7 @@ export function DashboardPage({
                 }
 
                 const nextPlayers = players
-                    .filter((player) => player.uid !== uid)
-                    .map((player) => ({ ...player, readyToGame: false }));
+                    .filter((player) => player.uid !== uid);
                 statusBatch.set(
                     statusRef,
                     {
@@ -990,6 +976,10 @@ export function DashboardPage({
             setProfileError('Display name must have at least 2 characters.');
             return;
         }
+        if (displayName.length > MAX_DISPLAY_NAME_LENGTH) {
+            setProfileError(`Display name is too long (max ${MAX_DISPLAY_NAME_LENGTH} characters).`);
+            return;
+        }
         const countryNorm = normalizeCountryCode(profileCountryCode);
         if (!countryNorm) {
             setProfileError('Choose a valid country.');
@@ -1159,7 +1149,7 @@ export function DashboardPage({
             )}
 
             <section className={`dashWrapper ${showDuelLobbyModal ? 'modalOpen' : ''}`}>
-                <div className="dashGameContainer">
+                <div className="dashScrollViewport dashGameContainer modalLikeScrollbar">
                     <article className="dashCard" style={{ '--dash-clr': '#4589cc' } as CSSProperties}>
                         <div className="dashBox dashBoxTop">Video soon!</div>
                         <div className="dashBox dashBoxBottom">
@@ -1219,7 +1209,7 @@ export function DashboardPage({
                                                         <span className={player.readyToGame ? 'text-emerald-300' : 'text-amber-300'}>
                                                             {player.readyToGame ? 'ready' : 'waiting'}
                                                         </span>
-                                                        {player.uid !== uid && (
+                                                        {player.uid === uid && (
                                                             <button
                                                                 type="button"
                                                                 className={`dashRemoveButton ${
@@ -1239,7 +1229,7 @@ export function DashboardPage({
                                                                     !isBootstrapped
                                                                         ? 'Loading lobby data...'
                                                                         : removeCooldown.canRemove
-                                                                          ? 'Remove user from lobby'
+                                                                          ? 'Leave lobby'
                                                                           : `Remove available in ${removeCooldown.secondsLeft}s`
                                                                 }
                                                             >
@@ -1347,7 +1337,7 @@ export function DashboardPage({
                                             <span className={player.readyToGame ? 'text-emerald-300' : 'text-amber-300'}>
                                                 {player.readyToGame ? 'ready' : 'waiting'}
                                             </span>
-                                            {player.uid !== uid && (
+                                            {player.uid === uid && (
                                                 <button
                                                     type="button"
                                                     className={`dashRemoveButton ${
@@ -1367,7 +1357,7 @@ export function DashboardPage({
                                                         !isBootstrapped
                                                             ? 'Loading lobby data...'
                                                             : removeCooldown.canRemove
-                                                              ? 'Remove user from lobby'
+                                                              ? 'Leave lobby'
                                                               : `Remove available in ${removeCooldown.secondsLeft}s`
                                                     }
                                                 >

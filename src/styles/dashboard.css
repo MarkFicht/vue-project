@@ -1,11 +1,13 @@
 .dashboardPage {
     display: flex;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: center;
     flex-direction: column;
-    min-height: 100vh;
-    padding: 16px;
-    color: rgb(245 235 224);
+    height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden;
+    padding: 8px;
+    color: var(--app-text);
 }
 
 .dashHeader {
@@ -16,10 +18,10 @@
     min-width: 0;
     justify-content: space-between;
     align-items: center;
-    margin: 8px 0 20px;
-    padding: 12px 14px;
-    border-radius: 16px;
-    gap: 10px;
+    margin: 0 0 8px;
+    padding: 8px;
+    border-radius: 12px;
+    gap: 8px;
     position: relative;
 }
 
@@ -32,7 +34,7 @@
     font-size: clamp(1.08rem, 2.65vw, 1.72rem);
     line-height: 1.1;
     letter-spacing: 0.06em;
-    color: rgb(245 235 224);
+    color: var(--app-text);
     min-width: 0;
     white-space: nowrap;
 }
@@ -117,17 +119,20 @@
 
 .dashWrapper {
     /** Jednolite tło panelu kart — ten sam kolor co „wcięcia” (pseudo-elementy), bez gradientu */
-    --dash-surface-solid: rgb(22 16 11);
+    --dash-surface-solid: var(--theme-bg-900);
     --dash-surface: var(--dash-surface-solid);
     position: relative;
     width: min(100%, 990px);
     box-sizing: border-box;
-    min-height: calc(100vh - 190px);
-    padding: 15px 10px;
-    margin-bottom: 12px;
-    border: 1px solid rgb(195 150 95 / 38%);
+    min-height: 0;
+    flex: 1 1 auto;
+    overflow: hidden;
+    padding: 12px 8px;
+    padding-left: 14px;
+    margin-bottom: 0;
+    border: 1px solid var(--app-border);
     box-shadow:
-        inset 0 1px 0 rgb(255 255 255 / 6%),
+        inset 0 1px 0 var(--app-border-soft),
         0 12px 40px rgb(0 0 0 / 42%);
     border-radius: 20px;
     background: var(--dash-surface-solid);
@@ -138,8 +143,15 @@
     overflow: hidden;
 }
 
-.dashWrapper.modalOpen .dashGameContainer {
+.dashWrapper.modalOpen .dashScrollViewport {
     overflow: hidden;
+}
+
+.dashScrollViewport {
+    height: 100%;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 .dashGameContainer {
@@ -148,21 +160,14 @@
     display: flex;
     justify-content: center;
     flex-wrap: wrap;
-    overflow-x: hidden;
-    overflow-y: auto;
 }
 
 .dashCard {
     --dash-clr: #2196f3;
     /** Upper / lower card panels — warm leather–parchment vs dashboard brown */
-    --dash-card-top-from: rgb(118 90 68);
-    --dash-card-top-to: rgb(92 70 52);
-    --dash-card-bottom-from: rgb(74 54 40);
-    --dash-card-bottom-via: rgb(56 40 30);
-    --dash-card-bottom-to: rgb(44 32 24);
     position: relative;
     width: 300px;
-    margin: 15px 60px 40px;
+    margin: 25px 64px 30px;
     min-height: 350px;
     display: flex;
     flex-direction: column;
@@ -179,8 +184,8 @@
     flex-direction: column;
     text-align: center;
     padding: 16px;
-    color: rgb(252 246 236);
-    background: linear-gradient(180deg, var(--dash-card-top-from) 0%, var(--dash-card-top-to) 100%);
+    color: var(--app-text);
+    background: var(--app-game-card-top-bg);
     box-shadow:
         inset 0 1px 0 rgb(255 255 255 / 14%),
         inset 0 -1px 0 rgb(0 0 0 / 12%);
@@ -202,13 +207,8 @@
 
 .dashBoxBottom {
     min-height: 220px;
-    background: linear-gradient(
-        168deg,
-        var(--dash-card-bottom-from) 0%,
-        var(--dash-card-bottom-via) 52%,
-        var(--dash-card-bottom-to) 100%
-    );
-    color: rgb(236 226 212);
+    background: var(--app-game-card-bottom-bg);
+    color: var(--app-text-muted);
     position: relative;
     z-index: 3;
     box-shadow:
@@ -223,7 +223,7 @@
     margin-left: 16px;
     margin-right: 16px;
     text-align: justify;
-    color: rgb(222 210 194 / 96%);
+    color: var(--app-text-muted);
 }
 
 .dashCard .dashBoxTop::before,
@@ -320,7 +320,7 @@
     border: 10px solid var(--dash-surface-solid);
     outline: none;
     border-radius: 30px;
-    color: #fff;
+    color: var(--app-text);
     background-color: var(--dash-clr);
     font-family: var(--font-arcade);
     font-size: 12px;
@@ -361,13 +361,17 @@
 }
 
 .dashMiniButton {
-    border: 1px solid rgb(195 150 95 / 38%);
-    background: rgb(38 26 18 / 82%);
-    color: rgb(245 235 224);
+    border: 1px solid var(--app-border);
+    background: var(--app-secondary-bg);
+    color: var(--app-text);
     border-radius: 10px;
     padding: 4px 8px;
     font-size: 12px;
     box-shadow: inset 0 1px 0 rgb(255 255 255 / 6%);
+}
+
+.dashMiniButton:hover {
+    background: var(--app-secondary-bg-hover);
 }
 
 .dashLobbyList {
@@ -492,9 +496,9 @@
 .dashLobbyModal {
     width: min(92vw, 480px);
     border-radius: 16px;
-    border: 1px solid rgb(195 150 95 / 42%);
-    background: linear-gradient(175deg, rgb(34 24 17 / 96%) 0%, rgb(18 13 9 / 98%) 100%);
-    color: rgb(245 235 224);
+    border: 1px solid var(--app-surface-login-border);
+    background: var(--app-surface-login-bg);
+    color: var(--app-text);
     padding: 16px;
     box-shadow:
         inset 0 1px 0 rgb(255 255 255 / 7%),
@@ -516,9 +520,9 @@
 .dashLogoutModal {
     width: min(92vw, 440px);
     border-radius: 16px;
-    border: 1px solid rgb(195 150 95 / 42%);
-    background: linear-gradient(175deg, rgb(34 24 17 / 96%) 0%, rgb(18 13 9 / 98%) 100%);
-    color: rgb(245 235 224);
+    border: 1px solid var(--app-surface-login-border);
+    background: var(--app-surface-login-bg);
+    color: var(--app-text);
     padding: 16px;
     box-shadow:
         inset 0 1px 0 rgb(255 255 255 / 7%),
@@ -539,8 +543,8 @@
 
 .dashLobbyPlayers {
     border-radius: 10px;
-    background: rgb(12 9 6 / 72%);
-    border: 1px solid rgb(180 135 80 / 26%);
+    background: var(--app-secondary-bg);
+    border: 1px solid var(--app-border);
     padding: 10px;
 }
 
@@ -592,9 +596,9 @@
     display: flex;
     flex-direction: column;
     border-radius: 16px;
-    border: 1px solid rgb(195 150 95 / 42%);
-    background: linear-gradient(175deg, rgb(34 24 17 / 96%) 0%, rgb(18 13 9 / 98%) 100%);
-    color: rgb(245 235 224);
+    border: 1px solid var(--app-surface-login-border);
+    background: var(--app-surface-login-bg);
+    color: var(--app-text);
     padding: 0;
     box-shadow:
         inset 0 1px 0 rgb(255 255 255 / 7%),
@@ -605,8 +609,8 @@
 .dashUserModalHeader {
     flex: 0 0 auto;
     padding: 14px 16px 10px;
-    background: rgb(28 20 14 / 94%);
-    border-bottom: 1px solid rgb(195 150 95 / 28%);
+    background: var(--app-secondary-bg);
+    border-bottom: 1px solid var(--app-border);
 }
 
 .dashUserModalBody {
@@ -633,8 +637,8 @@
     flex: 0 0 auto;
     margin: 0;
     padding: 10px 16px 14px;
-    background: rgb(22 16 11 / 94%);
-    border-top: 1px solid rgb(195 150 95 / 28%);
+    background: var(--app-secondary-bg);
+    border-top: 1px solid var(--app-border);
     box-shadow: inset 0 1px 0 rgb(255 255 255 / 5%);
 }
 
@@ -705,9 +709,9 @@
 
 .dashDataZone {
     margin-top: 14px;
-    border: 1px solid rgb(195 150 95 / 38%);
+    border: 1px solid var(--app-border);
     border-radius: 10px;
-    background: rgb(38 26 18 / 35%);
+    background: var(--app-secondary-bg);
     padding: 10px;
     box-shadow: inset 0 1px 0 rgb(255 255 255 / 5%);
 }
@@ -734,29 +738,29 @@
 
 .dashDangerZone {
     margin-top: 14px;
-    border: 1px solid rgba(248, 113, 113, 0.4);
+    border: 1px solid color-mix(in srgb, var(--theme-danger) 44%, transparent);
     border-radius: 10px;
-    background: rgba(127, 29, 29, 0.2);
+    background: color-mix(in srgb, var(--theme-danger) 24%, transparent);
     padding: 10px;
 }
 
 .dashDangerZone h4 {
     font-size: 14px;
     font-weight: 700;
-    color: #fecaca;
+    color: color-mix(in srgb, var(--theme-danger) 32%, white);
     margin-bottom: 4px;
 }
 
 .dashDangerZone > p {
     font-size: 12px;
-    color: #fecaca;
+    color: color-mix(in srgb, var(--theme-danger) 32%, white);
     margin-bottom: 8px;
     opacity: 0.95;
 }
 
 .dashDangerHint {
     font-size: 12px;
-    color: #fca5a5;
+    color: color-mix(in srgb, var(--theme-danger) 45%, white);
     margin-bottom: 8px;
 }
 
@@ -771,31 +775,26 @@
 }
 
 .dashDangerButton {
-    border-color: rgba(248, 113, 113, 0.5);
-    background: rgba(153, 27, 27, 0.75);
-    color: #fee2e2;
+    border-color: color-mix(in srgb, var(--theme-danger) 52%, transparent);
+    background: color-mix(in srgb, var(--theme-danger) 62%, transparent);
+    color: color-mix(in srgb, var(--theme-danger) 14%, white);
 }
 
 .dashDangerButton:hover:not(:disabled) {
-    background: rgba(185, 28, 28, 0.82);
+    background: color-mix(in srgb, var(--theme-danger) 72%, transparent);
 }
 
 .dashLobbyEmptyText {
-    color: rgb(232 220 201 / 88%);
+    color: var(--app-text-muted);
     letter-spacing: 0.02em;
 }
 
-@media (max-width: 640px) {
-    .dashUserGrid {
-        grid-template-columns: 1fr;
-    }
-}
-
+/** Responsive */
 @media (max-width: 768px) {
     .dashHeader {
-        margin: 2px 0 16px;
-        padding: 10px 12px;
-        border-radius: 14px;
+        margin: 0 0 8px;
+        padding: 8px;
+        border-radius: 12px;
     }
 
     .dashTitleMain {
@@ -826,8 +825,8 @@
         right: 0;
         width: min(84vw, 16rem);
         border-radius: 14px;
-        border: 1px solid rgb(195 150 95 / 38%);
-        background: linear-gradient(180deg, rgb(36 25 17 / 96%) 0%, rgb(22 16 11 / 98%) 100%);
+        border: 1px solid var(--app-surface-header-border);
+        background: var(--app-surface-header-bg);
         box-shadow:
             inset 0 1px 0 rgb(255 255 255 / 6%),
             0 14px 28px rgb(0 0 0 / 42%);
@@ -859,7 +858,25 @@
 
     .dashCard {
         transform: scale(0.9);
-        margin: -2px 30px;
+        margin: -2px 34px;
+    }
+}
+
+@media (max-width: 640px) {
+    .dashUserGrid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (min-width: 640px) {
+    .dashboardPage {
+        padding: 12px;
+    }
+
+    .dashHeader {
+        margin-bottom: 12px;
+        padding: 12px;
+        border-radius: 16px;
     }
 }
 
@@ -885,111 +902,5 @@
         margin-left: -10px;
         width: 266px;
     }
-}
-
-:root[data-app-theme='ivory'] .dashboardPage {
-    color: rgb(250 245 236);
-}
-
-:root[data-app-theme='ivory'] .dashWrapper {
-    --dash-surface-solid: rgb(46 34 25);
-    border-color: rgb(236 211 170 / 40%);
-    box-shadow:
-        inset 0 1px 0 rgb(255 255 255 / 10%),
-        0 12px 40px rgb(12 8 5 / 52%);
-    background: var(--dash-surface-solid);
-}
-
-:root[data-app-theme='ivory'] .dashCard {
-    --dash-card-top-from: rgb(165 129 94);
-    --dash-card-top-to: rgb(137 106 78);
-    --dash-card-bottom-from: rgb(110 83 60);
-    --dash-card-bottom-via: rgb(84 63 45);
-    --dash-card-bottom-to: rgb(64 48 35);
-}
-
-:root[data-app-theme='ivory'] .dashBox {
-    color: rgb(244 249 255);
-}
-
-:root[data-app-theme='ivory'] .dashBoxBottom {
-    color: rgb(240 231 216);
-}
-
-:root[data-app-theme='ivory'] .dashBoxBottom p {
-    color: rgb(228 214 194 / 98%);
-}
-
-:root[data-app-theme='ivory'] .dashCardButton {
-    border-color: var(--dash-surface-solid);
-    color: rgb(248 252 255);
-}
-
-:root[data-app-theme='ivory'] .dashMiniButton {
-    border-color: rgb(236 211 170 / 44%);
-    background: rgb(62 46 33 / 82%);
-}
-
-:root[data-app-theme='ivory'] .dashMiniButton:hover {
-    background: rgb(78 58 41 / 88%);
-}
-
-:root[data-app-theme='ivory'] .dashLobbyModal,
-:root[data-app-theme='ivory'] .dashUserModal,
-:root[data-app-theme='ivory'] .dashLogoutModal {
-    border-color: rgb(222 196 154 / 42%);
-    background: linear-gradient(175deg, rgb(54 40 29 / 96%) 0%, rgb(32 24 18 / 98%) 100%);
-}
-
-:root[data-app-theme='ivory'] .dashLobbyPlayers,
-:root[data-app-theme='ivory'] .dashDataZone {
-    border-color: rgb(212 184 144 / 30%);
-    background: rgb(36 27 20 / 66%);
-}
-
-:root[data-app-theme='ivory'] .dashDangerZone {
-    border-color: rgb(248 153 153 / 44%);
-    background: rgb(127 29 29 / 0.24);
-}
-
-:root[data-app-theme='ivory'] .dashDangerZone h4 {
-    color: rgb(253 214 214);
-}
-
-:root[data-app-theme='ivory'] .dashDangerZone > p {
-    color: rgb(252 217 222);
-}
-
-:root[data-app-theme='ivory'] .dashDangerHint {
-    color: rgb(249 178 178);
-}
-
-:root[data-app-theme='ivory'] .dashDangerButton {
-    border-color: rgb(248 153 153 / 52%);
-    background: rgb(185 28 28 / 0.62);
-    color: rgb(255 235 238);
-}
-
-:root[data-app-theme='ivory'] .dashDangerButton:hover:not(:disabled) {
-    background: rgb(220 38 38 / 0.72);
-}
-
-:root[data-app-theme='ivory'] .dashLobbyEmptyText {
-    color: rgb(242 230 211 / 92%);
-}
-
-:root[data-app-theme='ivory'] .dashUserModalHeader {
-    background: rgb(47 35 25 / 95%);
-    border-bottom-color: rgb(222 197 154 / 26%);
-}
-
-:root[data-app-theme='ivory'] .dashUserModalFooter {
-    background: rgb(34 25 18 / 95%);
-    border-top-color: rgb(222 197 154 / 26%);
-}
-
-:root[data-app-theme='ivory'] .dashMobileMenu {
-    border-color: rgb(222 197 154 / 38%);
-    background: linear-gradient(180deg, rgb(55 41 30 / 96%) 0%, rgb(35 26 19 / 98%) 100%);
 }
 

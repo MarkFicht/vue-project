@@ -176,6 +176,8 @@ export function useGameState(currentUserUid: string) {
                         pickCardFromGraveyard: '',
                         destroyBrown: '',
                         destroyGrey: '',
+                        actionUid: '',
+                        actionType: '',
                         wonByArt: '',
                         wonByAggressive: '',
                         wonBySurr: '',
@@ -321,6 +323,7 @@ export function useGameState(currentUserUid: string) {
     ]);
 
     useEffect(() => {
+        if (!isMyTurn) return;
         if (game.move >= 20 && game.move < 40 && game.tier !== 'II' && !game.wonBySurr) {
             updateDoc(tableGameDuelRef, { tier: 'II' });
         }
@@ -330,10 +333,10 @@ export function useGameState(currentUserUid: string) {
         if (game.move >= 60 && !game.wonByAggressive && !game.wonByArt && !game.wonBySurr) {
             updateDoc(tableGameDuelRef, { tier: 'end' });
         }
-    }, [game.move, game.tier, game.wonByAggressive, game.wonByArt, game.wonBySurr]);
+    }, [game.move, game.tier, game.wonByAggressive, game.wonByArt, game.wonBySurr, isMyTurn]);
 
     useEffect(() => {
-        if (isObserver) return;
+        if (isObserver || !isMyTurn) return;
         if (!game.player1.user?.uid || !game.player2.user?.uid) return;
         if (game.wonByArt || game.wonByAggressive || game.wonBySurr || game.wonByPoints) return;
         if (game.tier === 'prepare') return;
@@ -353,10 +356,12 @@ export function useGameState(currentUserUid: string) {
         game.wonByPoints,
         game.wonBySurr,
         game.tier,
+        isMyTurn,
         isObserver
     ]);
 
     useEffect(() => {
+        if (!isMyTurn) return;
         if (game.wonByArt || game.wonByAggressive || game.wonBySurr || game.wonByPoints) return;
         if (game.tier !== 'end' && game.move < 60) return;
 
@@ -381,10 +386,12 @@ export function useGameState(currentUserUid: string) {
         game.wonByAggressive,
         game.wonByArt,
         game.wonByPoints,
-        game.wonBySurr
+        game.wonBySurr,
+        isMyTurn
     ]);
 
     useEffect(() => {
+        if (!isMyTurn) return;
         if (game.tier !== 'prepare') return;
         if (game.move !== 0) return;
         if (game.player1.wonderCards.length !== 4 || game.player2.wonderCards.length !== 4) return;
@@ -392,15 +399,16 @@ export function useGameState(currentUserUid: string) {
             updateDoc(tableGameDuelRef, { tier: 'I' });
         }, 980);
         return () => window.clearTimeout(timer);
-    }, [game.move, game.player1.wonderCards.length, game.player2.wonderCards.length, game.tier]);
+    }, [game.move, game.player1.wonderCards.length, game.player2.wonderCards.length, game.tier, isMyTurn]);
 
     useEffect(() => {
+        if (isObserver) return;
         if (!game.wonByArt && !game.wonByAggressive && !game.wonBySurr) return;
         if (!duelStateReadyRef.current) return;
         deleteGameDuel().finally(() => {
             setTimeout(() => navigate('/feed'), 2000);
         });
-    }, [deleteGameDuel, game.wonByAggressive, game.wonByArt, game.wonBySurr, navigate]);
+    }, [deleteGameDuel, game.wonByAggressive, game.wonByArt, game.wonBySurr, isObserver, navigate]);
 
     useEffect(() => {
         const winner = game.wonByArt || game.wonByAggressive || game.wonBySurr || game.wonByPoints;
@@ -472,16 +480,36 @@ export function useGameState(currentUserUid: string) {
     const upgradeTurnAndMove = useCallback(
         async (uid: string, withoutMove = false, opts?: { openEpochStarterChoice?: boolean }) => {
             if (withoutMove) {
-                await updateDoc(tableGameDuelRef, { turn: uid });
+                await updateDoc(tableGameDuelRef, { turn: uid, actionUid: '', actionType: '' });
                 return;
             }
             await updateDoc(tableGameDuelRef, {
                 turn: uid,
                 move: increment(1),
+                actionUid: '',
+                actionType: '',
                 ...(opts?.openEpochStarterChoice ? { chooseWhoWillStart: true } : {})
             });
         },
         []
+    );
+
+    const setActionHint = useCallback(
+        async (actionType: string) => {
+            if (!isMyTurn || !game.turn) return;
+            try {
+                await updateDoc(tableGameDuelRef, {
+                    actionUid: actionType ? game.turn : '',
+                    actionType
+                });
+            } catch (error) {
+                const code = (error as { code?: string }).code ?? '';
+                if (code !== 'permission-denied') {
+                    throw error;
+                }
+            }
+        },
+        [game.turn, isMyTurn]
     );
 
     const finishTurnAfterSpecialAction = useCallback(async () => {
@@ -535,7 +563,9 @@ export function useGameState(currentUserUid: string) {
             if (!isMyTurn || !game.chooseWhoWillStart) return;
             await updateDoc(tableGameDuelRef, {
                 turn: uid,
-                chooseWhoWillStart: false
+                chooseWhoWillStart: false,
+                actionUid: '',
+                actionType: ''
             });
         },
         [game.chooseWhoWillStart, isMyTurn]
@@ -547,8 +577,9 @@ export function useGameState(currentUserUid: string) {
             if ((card.coversBy?.length ?? 0) > 0 || card.taken !== 'inGame') return;
             game.setSelectedWonder(null);
             game.setSelectedCard(card);
+            void setActionHint('choose-card-action');
         },
-        [game, isMyTurn]
+        [game, isMyTurn, setActionHint]
     );
 
     const setCardStateInTier = useCallback(
@@ -1032,6 +1063,7 @@ export function useGameState(currentUserUid: string) {
         pickCardFromGraveyard,
         destroyEnemyCard,
         surrender,
-        goBackToFeed
+        goBackToFeed,
+        setActionHint
     };
 }

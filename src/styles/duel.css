@@ -1,25 +1,9 @@
 :root {
-    --duel-bg-fallback: rgb(26 18 13);
-    /** Table arena: translucent warm gradient so `main_bg` on body shows through slightly */
-    --duel-arena-gradient: linear-gradient(
-        168deg,
-        rgb(40 28 20 / 88%) 0%,
-        rgb(28 20 14 / 84%) 38%,
-        rgb(20 14 10 / 80%) 72%,
-        rgb(14 10 7 / 76%) 100%
-    );
-    --duel-scrollbar-track: rgb(32 22 16 / 55%);
-    --duel-scrollbar-thumb: rgba(100 62 38 / 0.88);
-    --duel-scrollbar-thumb-hover: rgba(124 80 48 / 0.95);
-    --duel-panel-border: rgb(255 255 255 / 15%);
-    --duel-panel-bg: rgb(2 6 23 / 45%);
-    --duel-modal-bg: rgb(2 6 23 / 90%);
-    --duel-graveyard-bg: rgb(14 10 7 / 72%);
-    --duel-graveyard-inner-bg: rgb(0 0 0 / 20%);
     /* Full-size military board (.dg-board); visually rotate(90deg) × scale(...) */
     --dg-military-board-scale: 0.56;
 
     --dg-card-board-height: 420px;
+    --dg-card-board-height-compact: 350px;
     --dg-card-board-width: calc(var(--width-tier) * 7);
     /* Age pyramid (.dg-cardBoard): full logical size, visual scale only */
     --dg-epoch-cards-scale: 0.62;
@@ -40,68 +24,6 @@
     --width-board: 200px;
     --height-board: 500px;
     --coin-size: 42px;
-}
-
-:root[data-app-theme='ivory'] {
-    --duel-bg-fallback: rgb(62 46 33);
-    --duel-arena-gradient: linear-gradient(
-        168deg,
-        rgb(126 95 68 / 88%) 0%,
-        rgb(100 75 54 / 84%) 38%,
-        rgb(78 58 42 / 80%) 72%,
-        rgb(58 43 30 / 76%) 100%
-    );
-    --duel-scrollbar-track: rgb(66 49 35 / 58%);
-    --duel-scrollbar-thumb: rgba(244 223 186 / 0.9);
-    --duel-scrollbar-thumb-hover: rgba(255 239 212 / 0.96);
-    --duel-panel-border: rgb(236 211 170 / 34%);
-    --duel-panel-bg: rgb(66 49 35 / 42%);
-    --duel-modal-bg: rgb(52 38 27 / 90%);
-    --duel-graveyard-bg: rgb(62 46 33 / 72%);
-    --duel-graveyard-inner-bg: rgb(42 31 22 / 36%);
-}
-
-@media (min-width: 425px) {
-    :root {
-        --dg-military-board-scale: 0.71;
-        --dg-epoch-cards-scale: 0.8;
-        --dg-wonder-prepare-scale: 0.8;
-        --dg-player-wonders-scale: 0.9;
-        --dg-player-wonders-gap: 12px;
-    }
-    .dg-militaryViewport {
-        margin-top: -20px !important;
-    }
-    .dg-stageCards:not(.dg-stageCards--prepare) {
-        margin-bottom: 26px !important;
-        margin-top: -36px !important;
-    }
-}
-
-@media (min-width: 768px) {
-    :root {
-        --dg-military-board-scale: 0.9;
-        --dg-epoch-cards-scale: 0.95;
-        --dg-wonder-prepare-scale: 0.95;
-        --dg-player-wonders-scale: 1;
-        --dg-player-wonders-gap: 20px;
-    }
-    .dg-militaryViewport {
-        margin-top: -26px !important;
-    }
-    .dg-stageCards:not(.dg-stageCards--prepare) {
-        margin-bottom: 22px !important;
-        margin-top: -44px !important;
-    }
-}
-
-@media (min-width: 1024px) {
-    :root {
-        --dg-military-board-scale: 1;
-        --dg-epoch-cards-scale: 1;
-        --dg-wonder-prepare-scale: 1;
-        --dg-player-wonders-scale: 1;
-    }
 }
 
 .cashSum {
@@ -125,7 +47,7 @@
 .dg-cardBoard {
     position: relative;
     width: var(--dg-card-board-width);
-    height: var(--dg-card-board-height);
+    height: var(--dg-card-board-current-height, var(--dg-card-board-height));
     margin: 0 auto;
     overflow: hidden;
     border-radius: 10px;
@@ -543,7 +465,7 @@
 }
 
 .dgMetaStrong {
-    color: rgb(252 236 204 / 0.96);
+    color: var(--duel-meta-strong);
 }
 
 .dgMetaValue {
@@ -557,15 +479,15 @@
 }
 
 .dgTurnBadgeYou {
-    color: rgb(198 244 214 / 0.92);
+    color: var(--duel-turn-badge-you);
 }
 
 .dgTurnBadgeOpponent {
-    color: rgb(255 226 197 / 0.92);
+    color: var(--duel-turn-badge-opponent);
 }
 
 .dgTurnBadgeObserver {
-    color: rgb(222 213 200 / 0.92);
+    color: var(--duel-turn-badge-observer);
 }
 
 .dgHeaderActionsDesktop {
@@ -591,83 +513,6 @@
     }
 }
 
-@media (max-width: 768px) {
-    .dgHeader .btn-secondary {
-        padding: 6px 10px;
-    }
-
-    .dgHeaderActionsDesktop {
-        display: none !important;
-    }
-
-    .dgMobileMenuToggle {
-        display: inline-flex !important;
-        min-width: 2.35rem;
-        min-height: 2.35rem;
-        padding: 0.45rem;
-        border-radius: 0.9rem;
-        margin-left: auto;
-    }
-
-    .dgMobileMenu {
-        position: absolute;
-        top: calc(100% + 8px);
-        right: 0;
-        width: min(84vw, 16rem);
-        border-radius: 14px;
-        border: 1px solid rgb(195 150 95 / 38%);
-        background: linear-gradient(180deg, rgb(36 25 17 / 96%) 0%, rgb(22 16 11 / 98%) 100%);
-        box-shadow:
-            inset 0 1px 0 rgb(255 255 255 / 6%),
-            0 14px 28px rgb(0 0 0 / 42%);
-        display: block !important;
-        z-index: 120;
-        animation: dgMenuIn 0.18s ease-out;
-    }
-
-    .dgMobileMenuList {
-        display: flex;
-        flex-direction: column;
-        gap: 0.35rem;
-        padding: 0.5rem;
-    }
-
-    .dgMobileMenuItem {
-        width: 100%;
-        justify-content: flex-start;
-        min-height: 2.2rem;
-        border-radius: 0.75rem;
-    }
-
-    .dgMobileMenuText {
-        min-width: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-}
-
-:root[data-app-theme='ivory'] .dgMobileMenu {
-    border-color: rgb(222 197 154 / 38%);
-    background: linear-gradient(180deg, rgb(55 41 30 / 96%) 0%, rgb(35 26 19 / 98%) 100%);
-}
-
-:root[data-app-theme='ivory'] .dgMetaStrong {
-    color: rgb(255 243 219 / 0.97);
-}
-
-:root[data-app-theme='ivory'] .dgTurnBadgeYou {
-    color: rgb(223 255 237 / 0.95);
-}
-
-:root[data-app-theme='ivory'] .dgTurnBadgeOpponent {
-    color: rgb(255 236 214 / 0.95);
-}
-
-:root[data-app-theme='ivory'] .dgTurnBadgeObserver {
-    color: rgb(244 231 216 / 0.94);
-}
-
 .dg-arenaTableCard {
     display: flex;
     flex-direction: column;
@@ -690,7 +535,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin-bottom: 28px;
+    margin-bottom: -24px;
     margin-top: -32px;
 }
 
@@ -722,84 +567,6 @@
     transform-origin: center center;
 }
 
-@media (min-width: 1024px) {
-    .dg-stageCards:not(.dg-stageCards--prepare) {
-        margin-left: -50px;
-        margin-top: -20px !important;
-    }
-    .dg-actionsModal {
-        transform: translateX(-63%) !important;
-    }
-    .dg-militaryViewport {
-       position: absolute;
-       transform: rotate(-90deg) scale(var(--dg-military-board-scale));
-       top: 183px;
-       left: 260px;
-    }
-    .dg-boardCoinSlot {
-        transform: rotate(0);
-    }
-    .dg-arenaTableCard:has(.dg-stageCards--prepare) .dg-boardCoinSlot {
-        transform: rotate(-90deg);
-    }
-    /* Wonder-pick phase: conflict board like narrow layout — top, not shifted right beside pyramid */
-    .dg-arenaTableCard:has(.dg-stageCards--prepare) .dg-militaryViewport {
-        position: relative;
-        top: auto;
-        left: auto;
-        inset: auto;
-        transform: none;
-        width: 100%;
-        justify-self: auto;
-        align-self: auto;
-        height: calc(var(--width-board) * var(--dg-military-board-scale));
-        margin-top: -14px;
-        min-height: unset;
-        display: block;
-        max-width: none;
-    }
-
-    .dg-graveyardPanel {
-        width: 390px !important;
-        margin: 0 auto !important;
-        transform: translateX(-50px) !important;
-    }
-
-    .dg-duelPlayersRow {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-        gap: 10px;
-        min-width: 0;
-        align-items: start;
-    }
-}
-
-/* Wide screens: player column stack on the right, fixed-width arena on the left */
-@media (min-width: 1440px) {
-    .dg-duelLayout {
-        flex-direction: row;
-        justify-content: center;
-    }
-
-    .dg-duelArena {
-        order: 1;
-        width: 730px;
-    }
-
-    .dg-militaryViewport {
-        left: 442px;
-        width: 50%;
-    }
-
-    .dg-duelPlayersRow {
-        order: 2;
-        display: flex;
-        flex-direction: column;
-        min-width: 0;
-        align-items: stretch;
-    }
-}
-
 .dg-duelBand {
     min-width: 0;
     flex-shrink: 0;
@@ -809,23 +576,30 @@
 
 .dg-playerColumnsScroller {
     width: 100%;
-    max-width: 100%;
-    min-width: 0;
     overflow-x: auto;
     overscroll-behavior-x: contain;
     -webkit-overflow-scrolling: touch;
     scrollbar-gutter: stable;
-    padding-bottom: 4px;
+    padding-bottom: 2px;
 }
 
 .dg-cardBoardShell {
+    --dg-card-board-current-height: var(--dg-card-board-height);
     margin-inline: auto;
     width: 100%;
     padding-inline: 6px;
     position: relative;
     overflow: visible;
     /* Layout height = scaled pyramid height (not full 420px) */
-    height: calc(var(--dg-card-board-height) * var(--dg-epoch-cards-scale));
+    height: calc(var(--dg-card-board-current-height) * var(--dg-epoch-cards-scale));
+}
+
+.dg-cardBoardShell--compact {
+    --dg-card-board-current-height: var(--dg-card-board-height-compact);
+}
+
+.dg-cardBoardShell--tall {
+    --dg-card-board-current-height: var(--dg-card-board-height);
 }
 
 .dg-epochCardsTransform {
@@ -837,11 +611,23 @@
 }
 
 .dg-graveyardPanel {
+    position: relative;
     min-width: 0;
     width: 100%;
-    border: 1px solid rgb(195 150 95 / 30%);
+    border: 1px solid var(--duel-graveyard-border);
     background: var(--duel-graveyard-bg);
-    box-shadow: inset 0 1px 0 rgb(255 255 255 / 5%);
+    box-shadow: var(--duel-graveyard-shadow);
+}
+
+.dg-graveyardPanel--pickActive::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    border-radius: inherit;
+    border: 3px dotted tomato;
+    animation: dg-pulseBorder 1.5s ease-in-out infinite;
+    pointer-events: none;
 }
 
 .dg-graveyardCards {
@@ -907,8 +693,8 @@
 .dgSurrenderModal {
     width: min(92vw, 440px);
     border-radius: 16px;
-    border: 1px solid rgb(195 150 95 / 42%);
-    background: linear-gradient(175deg, rgb(34 24 17 / 96%) 0%, rgb(18 13 9 / 98%) 100%);
+    border: 1px solid var(--duel-surrender-modal-border);
+    background: var(--duel-surrender-modal-bg);
     color: rgb(245 235 224);
     padding: 16px;
     box-shadow:
@@ -936,11 +722,6 @@
     gap: 10px;
 }
 
-:root[data-app-theme='ivory'] .dgSurrenderModal {
-    border-color: rgb(222 196 154 / 42%);
-    background: linear-gradient(175deg, rgb(54 40 29 / 96%) 0%, rgb(32 24 18 / 98%) 100%);
-}
-
 .dg-playerShell {
     min-width: 0;
 }
@@ -957,32 +738,51 @@
     pointer-events: auto;
 }
 
+.dg-actionsInlineWrap {
+    position: relative;
+    width: 100%;
+    z-index: 8;
+    display: flex;
+    justify-content: center;
+    pointer-events: none;
+    margin-top: 2px;
+}
+
+.dg-actionsInlineWrap--blocking {
+    pointer-events: auto;
+}
+
 .dg-actionsModal {
     position: absolute;
     left: 50%;
     bottom: 88px;
     transform: translateX(-50%);
-    width: min(88%, 390px);
-    max-width: 430px;
+    width: min(88%, 430px);
+    min-height: 42px;
     border-radius: 12px;
-    border: 1px solid rgb(255 255 255 / 22%);
-    background: var(--duel-modal-bg);
+    border: 1px solid var(--duel-actionbar-border);
+    background: var(--duel-actionbar-bg);
     backdrop-filter: blur(8px);
-    padding: 7px 8px;
-    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.4);
+    padding: 7px;
+    box-shadow: var(--duel-actionbar-shadow);
     pointer-events: auto;
 }
 
-.dg-actionsModal p {
-    color: rgb(226 232 240);
+.dg-actionsInlineWrap .dg-actionsModal {
+    position: relative;
+    left: auto;
+    bottom: auto;
+    transform: none !important;
+    width: 100%;
 }
 
-:root[data-app-theme='ivory'] .dg-actionsModal p {
-    color: rgb(250 239 222);
+.dg-actionsModal p {
+    color: var(--duel-actionbar-text);
 }
 
 .dg-actionsModal--instruction {
-    padding: 11px 12px 13px;
+    padding: 8px;
+    padding-top: 10px;
 }
 
 .dg-actionsModal--instruction p {
@@ -1000,12 +800,6 @@
 .dg-actionsButtons--starter {
     flex-direction: column;
     flex-wrap: wrap;
-}
-
-@media (min-width: 480px) {
-    .dg-actionsButtons--starter {
-        flex-direction: row;
-    }
 }
 
 .dg-actionsModalCoins {
@@ -1078,7 +872,7 @@
 }
 
 .dg-columns {
-    --dg-col-gap: 6px;
+    --dg-col-gap: 2px;
     display: flex;
     flex-wrap: nowrap;
     align-items: flex-start;
@@ -1090,12 +884,12 @@
 }
 
 .dg-playerWonders {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(2, var(--width-wonder));
     justify-content: center;
     gap: var(--dg-player-wonders-gap);
     /* Extra gap when wonders are scaled down — they overlap neighbors less */
-    margin-bottom: 10px;
+    margin-bottom: 2px;
 }
 
 .dg-playerWonders .dg-wonderWrapper {
@@ -1223,15 +1017,18 @@
 }
 
 .dg-playerCoins {
-    min-height: 46px;
+    min-height: 0px;
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
     align-items: center;
+    margin-bottom: 2px;
 }
 
 .dg-playerCoinsBox {
-    margin-top: 6px;
+    margin-top: 4px;
+    width: 100%;
+    max-width: none;
 }
 
 .dg-playerCoinsLabel {
@@ -1431,5 +1228,296 @@
             0 0 0 4px rgba(110, 231, 183, 0.45),
             0 0 20px rgba(34, 197, 94, 0.2);
         filter: brightness(1.12);
+    }
+}
+
+/* =========================================================
+   Responsive Overrides (kept together for maintainability)
+   ========================================================= */
+
+@media (max-width: 768px) {
+    .dgHeader .btn-secondary {
+        padding: 6px 10px;
+    }
+
+    .dgHeaderActionsDesktop {
+        display: none !important;
+    }
+
+    .dgMobileMenuToggle {
+        display: inline-flex !important;
+        min-width: 2.35rem;
+        min-height: 2.35rem;
+        padding: 0.45rem;
+        border-radius: 0.9rem;
+        margin-left: auto;
+    }
+
+    .dgMobileMenu {
+        position: absolute;
+        top: calc(100% + 8px);
+        right: 0;
+        width: min(84vw, 16rem);
+        border-radius: 14px;
+        border: 1px solid var(--duel-mobile-menu-border);
+        background: var(--duel-mobile-menu-bg);
+        box-shadow: var(--duel-mobile-menu-shadow);
+        display: block !important;
+        z-index: 120;
+        animation: dgMenuIn 0.18s ease-out;
+    }
+
+    .dgMobileMenuList {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+        padding: 0.5rem;
+    }
+
+    .dgMobileMenuItem {
+        width: 100%;
+        justify-content: flex-start;
+        min-height: 2.2rem;
+        border-radius: 0.75rem;
+    }
+
+    .dgMobileMenuText {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}
+
+@media (min-width: 425px) {
+    :root {
+        --dg-military-board-scale: 0.71;
+        --dg-epoch-cards-scale: 0.8;
+        --dg-wonder-prepare-scale: 0.8;
+        --dg-player-wonders-scale: 0.9;
+        --dg-player-wonders-gap: 12px;
+    }
+
+    .dg-actionsInlineWrap {
+        margin-bottom: 4px;
+    }
+
+    .dg-militaryViewport {
+        margin-top: -20px !important;
+    }
+
+    .dg-stageCards:not(.dg-stageCards--prepare) {
+        margin-bottom: -30px !important;
+        margin-top: -36px !important;
+    }
+
+    .dg-playerShell {
+        max-width: 490px;
+    }
+
+    .dg-duelBand {
+        display: flex;
+        justify-content: center;
+    }
+
+    .dg-playerArea {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        grid-template-areas:
+            'header header'
+            'wonders coins'
+            'columns columns';
+        column-gap: 12px;
+        align-items: start;
+    }
+
+    .dg-playerHeader {
+        grid-area: header;
+    }
+
+    .dg-playerWonders {
+        grid-area: wonders;
+        justify-content: start;
+        justify-self: start;
+        margin-right: auto;
+        margin-bottom: 4px !important;
+    }
+
+    .dg-playerColumnsScroller {
+        grid-area: columns;
+    }
+
+    .dg-playerCoinsBox {
+        grid-area: coins;
+        margin-top: 0;
+        justify-self: stretch;
+        align-self: stretch;
+    }
+}
+
+@media (min-width: 480px) {
+    .dg-actionsButtons--starter {
+        flex-direction: row;
+    }
+}
+
+@media (min-width: 768px) {
+    :root {
+        --dg-military-board-scale: 0.9;
+        --dg-epoch-cards-scale: 0.95;
+        --dg-wonder-prepare-scale: 0.95;
+        --dg-player-wonders-scale: 1;
+        --dg-player-wonders-gap: 20px;
+    }
+
+    .dg-militaryViewport {
+        margin-top: -26px !important;
+    }
+
+    .dg-stageCards:not(.dg-stageCards--prepare) {
+        margin-bottom: -32px !important;
+        margin-top: -44px !important;
+    }
+
+    .dg-playerWonders {
+        margin-bottom: 14px !important;
+    }
+
+    .dg-playerCoinsBox {
+        margin-left: 8px;
+    }
+}
+
+@media (min-width: 1024px) {
+    :root {
+        --dg-military-board-scale: 1;
+        --dg-epoch-cards-scale: 1;
+        --dg-wonder-prepare-scale: 1;
+        --dg-player-wonders-scale: 1;
+    }
+
+    .dg-playerBand:nth-child(1) {
+        justify-self: end;
+    }
+
+    .dg-playerBand:nth-child(2) {
+        justify-self: start;
+    }
+
+    .dg-playerShell {
+        width: fit-content;
+        max-width: 100%;
+    }
+
+    .dg-playerArea {
+        width: fit-content;
+        max-width: 100%;
+    }
+
+    .dg-stageCards:not(.dg-stageCards--prepare) {
+        margin-left: -50px;
+        margin-top: -20px !important;
+    }
+
+    .dg-actionsModal {
+        transform: translateX(-63%) !important;
+    }
+
+    .dg-actionsInlineWrap:not(.dg-actionsInlineWrap--prepare) .dg-actionsModal {
+        margin-left: -100px;
+    }
+
+    .dg-actionsInlineWrap .dg-actionsModal {
+        width: 430px;
+    }
+
+    .dg-arenaTableCard {
+        min-height: 516px;
+    }
+
+    .dg-militaryViewport {
+       position: absolute;
+       transform: rotate(-90deg) scale(var(--dg-military-board-scale));
+       top: 183px;
+       left: 260px;
+    }
+
+    .dg-boardCoinSlot {
+        transform: rotate(0);
+    }
+
+    .dg-arenaTableCard:has(.dg-stageCards--prepare) .dg-boardCoinSlot {
+        transform: rotate(-90deg);
+    }
+
+    /* Wonder-pick phase: conflict board like narrow layout — top, not shifted right beside pyramid */
+    .dg-arenaTableCard:has(.dg-stageCards--prepare) .dg-militaryViewport {
+        position: relative;
+        top: auto;
+        left: auto;
+        inset: auto;
+        transform: none;
+        width: 100%;
+        justify-self: auto;
+        align-self: auto;
+        height: calc(var(--width-board) * var(--dg-military-board-scale));
+        margin-top: -14px;
+        min-height: unset;
+        display: block;
+        max-width: none;
+    }
+
+    .dg-graveyardPanel {
+        width: 430px !important;
+        margin: 0 auto !important;
+        transform: translateX(-50px) !important;
+    }
+
+    .dg-duelPlayersRow {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 10px;
+        min-width: 0;
+        align-items: start;
+        justify-content: center;
+    }
+}
+
+/* Wide screens: player column stack on the right, fixed-width arena on the left */
+@media (min-width: 1440px) {
+    .dg-playerBand:nth-child(1) {
+        justify-self: unset;
+    }
+
+    .dg-playerBand:nth-child(2) {
+        justify-self: unset;
+    }
+
+    .dg-duelLayout {
+        flex-direction: row;
+        justify-content: center;
+    }
+
+    .dg-duelArena {
+        order: 1;
+        width: 754px;
+    }
+
+    .dg-militaryViewport {
+        left: 442px;
+        width: 50%;
+    }
+
+    .dg-duelPlayersRow {
+        order: 2;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        align-items: stretch;
+        justify-content: start;
+    }
+
+    .dg-playerBand {
+        align-self: flex-start;
     }
 }

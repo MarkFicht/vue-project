@@ -2,13 +2,25 @@
  * Warm brown / gold UI aligned with duel main_bg — shared buttons, inputs, panel surfaces.
  */
 :root {
-    --app-accent: rgb(218 170 85);
-    --app-accent-bright: rgb(236 198 120);
-    --app-accent-deep: rgb(168 125 58);
-    --app-text: rgb(245 235 224);
-    --app-text-muted: rgb(190 175 158);
-    --app-on-accent: rgb(26 17 10);
-    --app-border: rgb(200 155 100 / 42%);
+    /* Core palette (classic) */
+    --theme-bg-950: rgb(18 13 9);
+    --theme-bg-900: rgb(26 18 13);
+    --theme-bg-800: rgb(36 25 17);
+    --theme-border: rgb(205 160 105 / 42%);
+    --theme-text: rgb(245 235 224);
+    --theme-text-muted: rgb(198 180 158);
+    --theme-accent: rgb(218 170 85);
+    --theme-accent-strong: rgb(236 198 120);
+    --theme-accent-deep: rgb(168 125 58);
+    --theme-danger: rgb(185 28 28);
+
+    --app-accent: var(--theme-accent);
+    --app-accent-bright: var(--theme-accent-strong);
+    --app-accent-deep: var(--theme-accent-deep);
+    --app-text: var(--theme-text);
+    --app-text-muted: var(--theme-text-muted);
+    --app-on-accent: var(--theme-bg-900);
+    --app-border: var(--theme-border);
     --app-border-soft: rgb(255 255 255 / 10%);
     --app-secondary-bg: rgb(38 26 18 / 72%);
     --app-secondary-bg-hover: rgb(50 34 22 / 82%);
@@ -29,19 +41,92 @@
     --app-surface-header-border: rgb(195 150 95 / 38%);
     --app-surface-callout-bg: linear-gradient(135deg, rgb(48 34 22 / 88%) 0%, rgb(26 18 12 / 94%) 100%);
     --app-surface-callout-border: rgb(210 165 95 / 38%);
+    --app-game-card-top-bg: linear-gradient(180deg, rgb(118 90 68) 0%, rgb(92 70 52) 100%);
+    --app-game-card-bottom-bg: linear-gradient(
+        168deg,
+        rgb(74 54 40) 0%,
+        rgb(56 40 30) 52%,
+        rgb(44 32 24) 100%
+    );
     --app-scroll-track: rgb(22 16 11 / 58%);
     --app-scroll-thumb: linear-gradient(180deg, rgb(200 150 80 / 0.82), rgb(140 95 48 / 0.72));
     --app-scroll-thumb-border: rgb(22 16 11 / 90%);
+    --duel-bg-fallback: var(--theme-bg-900);
+    --duel-arena-gradient: linear-gradient(
+        168deg,
+        rgb(40 28 20 / 88%) 0%,
+        rgb(28 20 14 / 84%) 38%,
+        rgb(20 14 10 / 80%) 72%,
+        rgb(14 10 7 / 76%) 100%
+    );
+    --duel-scrollbar-track: rgb(32 22 16 / 55%);
+    --duel-scrollbar-thumb: rgb(100 62 38 / 88%);
+    --duel-scrollbar-thumb-hover: rgb(124 80 48 / 95%);
+    --duel-panel-border: color-mix(in srgb, var(--theme-border) 84%, transparent);
+    --duel-panel-bg: color-mix(in srgb, var(--theme-bg-800) 54%, transparent);
+    --duel-actionbar-bg: linear-gradient(180deg, rgb(25 18 13 / 95%) 0%, rgb(14 10 8 / 98%) 100%);
+    --duel-actionbar-border: rgb(213 171 110 / 58%);
+    --duel-actionbar-text: rgb(244 232 214 / 96%);
+    --duel-actionbar-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 9%),
+        0 12px 30px rgb(0 0 0 / 46%);
+    --duel-graveyard-bg: linear-gradient(180deg, rgb(30 22 16 / 88%) 0%, rgb(18 13 10 / 92%) 100%);
+    --duel-graveyard-inner-bg: rgb(7 5 4 / 34%);
+    --duel-graveyard-border: rgb(206 164 106 / 52%);
+    --duel-graveyard-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 8%),
+        0 8px 20px rgb(0 0 0 / 28%);
+    --duel-mobile-menu-bg: linear-gradient(180deg, rgb(36 25 17 / 96%) 0%, rgb(22 16 11 / 98%) 100%);
+    --duel-mobile-menu-border: rgb(195 150 95 / 38%);
+    --duel-mobile-menu-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 6%),
+        0 14px 28px rgb(0 0 0 / 42%);
+    --duel-meta-strong: rgb(252 236 204 / 96%);
+    --duel-turn-badge-you: rgb(198 244 214 / 92%);
+    --duel-turn-badge-opponent: rgb(255 226 197 / 92%);
+    --duel-turn-badge-observer: rgb(222 213 200 / 92%);
+    --duel-surrender-modal-bg: linear-gradient(175deg, rgb(34 24 17 / 96%) 0%, rgb(18 13 9 / 98%) 100%);
+    --duel-surrender-modal-border: rgb(195 150 95 / 42%);
+    --app-page-bg: radial-gradient(circle at 20% 20%, #244b6b 0%, #0f172a 35%, #020617 100%);
+    --app-main-bg-image: url('@/assets/duel/main_bg.png');
+    --app-login-overlay-bg: radial-gradient(
+        circle at 22% 18%,
+        rgb(165 118 70 / 24%) 0%,
+        rgb(36 24 16 / 92%) 42%,
+        rgb(12 8 6 / 98%) 100%
+    );
+    --app-login-overlay-card-border: rgb(210 165 102 / 38%);
+    --app-login-overlay-card-bg: linear-gradient(160deg, rgb(33 23 16 / 94%) 0%, rgb(22 16 11 / 96%) 58%, rgb(16 11 8 / 97%) 100%);
+    --app-login-overlay-logo-color: rgb(226 184 110 / 96%);
+    --app-login-overlay-logo-filter: drop-shadow(0 0 12px rgb(215 160 88 / 40%));
+    --app-login-overlay-spinner-border: rgb(170 132 84 / 34%);
+    --app-login-overlay-spinner-top: rgb(236 198 120 / 98%);
+    --app-skeleton-bg: rgb(255 255 255 / 14%);
+    --app-skeleton-shimmer: linear-gradient(90deg, transparent, rgb(255 255 255 / 22%), transparent);
+    --app-brand-icon-color: var(--app-accent);
+    --app-brand-icon-filter: drop-shadow(0 0 12px rgb(218 170 85 / 38%));
 }
 
 :root[data-app-theme='ivory'] {
-    --app-accent: rgb(250 242 228);
-    --app-accent-bright: rgb(255 253 246);
-    --app-accent-deep: rgb(228 204 166);
-    --app-text: rgb(255 251 245);
-    --app-text-muted: rgb(231 216 192);
+    /* Core palette (ivory) */
+    --theme-bg-950: rgb(28 21 15);
+    --theme-bg-900: rgb(38 28 21);
+    --theme-bg-800: rgb(62 46 33);
+    --theme-border: rgb(236 214 176 / 48%);
+    --theme-text: rgb(255 251 245);
+    --theme-text-muted: rgb(231 216 192);
+    --theme-accent: rgb(250 242 228);
+    --theme-accent-strong: rgb(255 253 246);
+    --theme-accent-deep: rgb(228 204 166);
+    --theme-danger: rgb(220 38 38);
+
+    --app-accent: var(--theme-accent);
+    --app-accent-bright: var(--theme-accent-strong);
+    --app-accent-deep: var(--theme-accent-deep);
+    --app-text: var(--theme-text);
+    --app-text-muted: var(--theme-text-muted);
     --app-on-accent: rgb(52 37 21);
-    --app-border: rgb(236 214 176 / 48%);
+    --app-border: var(--theme-border);
     --app-border-soft: rgb(255 250 240 / 22%);
     --app-secondary-bg: rgb(70 52 37 / 64%);
     --app-secondary-bg-hover: rgb(86 63 44 / 80%);
@@ -57,20 +142,76 @@
     --app-surface-header-border: rgb(230 204 164 / 42%);
     --app-surface-callout-bg: linear-gradient(135deg, rgb(76 57 40 / 88%) 0%, rgb(52 38 28 / 92%) 100%);
     --app-surface-callout-border: rgb(238 214 174 / 44%);
+    --app-game-card-top-bg: linear-gradient(180deg, rgb(165 129 94) 0%, rgb(137 106 78) 100%);
+    --app-game-card-bottom-bg: linear-gradient(
+        168deg,
+        rgb(110 83 60) 0%,
+        rgb(84 63 45) 52%,
+        rgb(64 48 35) 100%
+    );
     --app-scroll-track: rgb(43 32 23 / 62%);
     --app-scroll-thumb: linear-gradient(180deg, rgb(255 251 241 / 0.88), rgb(232 208 170 / 0.82));
     --app-scroll-thumb-border: rgb(34 25 18 / 90%);
+    --duel-bg-fallback: var(--theme-bg-800);
+    --duel-arena-gradient: linear-gradient(
+        168deg,
+        rgb(126 95 68 / 88%) 0%,
+        rgb(100 75 54 / 84%) 38%,
+        rgb(78 58 42 / 80%) 72%,
+        rgb(58 43 30 / 76%) 100%
+    );
+    --duel-scrollbar-track: rgb(66 49 35 / 58%);
+    --duel-scrollbar-thumb: rgb(244 223 186 / 90%);
+    --duel-scrollbar-thumb-hover: rgb(255 239 212 / 96%);
+    --duel-panel-border: color-mix(in srgb, var(--theme-border) 88%, transparent);
+    --duel-panel-bg: color-mix(in srgb, var(--theme-bg-800) 58%, transparent);
+    --duel-actionbar-bg: linear-gradient(180deg, rgb(66 49 35 / 92%) 0%, rgb(46 34 25 / 96%) 100%);
+    --duel-actionbar-border: rgb(236 211 170 / 42%);
+    --duel-actionbar-text: rgb(250 239 222);
+    --duel-actionbar-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 10%),
+        0 12px 30px rgb(0 0 0 / 36%);
+    --duel-graveyard-bg: rgb(62 46 33 / 72%);
+    --duel-graveyard-inner-bg: rgb(42 31 22 / 36%);
+    --duel-graveyard-border: rgb(222 196 154 / 40%);
+    --duel-graveyard-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 8%),
+        0 8px 20px rgb(0 0 0 / 22%);
+    --duel-mobile-menu-bg: linear-gradient(180deg, rgb(55 41 30 / 96%) 0%, rgb(35 26 19 / 98%) 100%);
+    --duel-mobile-menu-border: rgb(222 197 154 / 38%);
+    --duel-mobile-menu-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 8%),
+        0 14px 28px rgb(0 0 0 / 36%);
+    --duel-meta-strong: rgb(255 243 219 / 97%);
+    --duel-turn-badge-you: rgb(223 255 237 / 95%);
+    --duel-turn-badge-opponent: rgb(255 236 214 / 95%);
+    --duel-turn-badge-observer: rgb(244 231 216 / 94%);
+    --duel-surrender-modal-bg: linear-gradient(175deg, rgb(54 40 29 / 96%) 0%, rgb(32 24 18 / 98%) 100%);
+    --duel-surrender-modal-border: rgb(222 196 154 / 42%);
+    --app-page-bg: radial-gradient(circle at 20% 20%, #9a7d5b 0%, #614933 42%, #35271b 100%);
+    --app-main-bg-image: url('@/assets/duel/main_bg_white.png');
+    --app-login-overlay-bg: radial-gradient(
+        circle at 20% 18%,
+        rgb(255 236 206 / 24%) 0%,
+        rgb(58 42 29 / 90%) 42%,
+        rgb(28 20 14 / 98%) 100%
+    );
+    --app-login-overlay-card-border: rgb(230 203 162 / 46%);
+    --app-login-overlay-card-bg: linear-gradient(160deg, rgb(52 38 27 / 94%) 0%, rgb(37 27 20 / 96%) 58%, rgb(28 21 15 / 97%) 100%);
+    --app-login-overlay-logo-color: rgb(255 245 226 / 97%);
+    --app-login-overlay-logo-filter: drop-shadow(0 0 12px rgb(255 229 188 / 42%));
+    --app-login-overlay-spinner-border: rgb(225 198 159 / 34%);
+    --app-login-overlay-spinner-top: rgb(255 246 231 / 98%);
+    --app-skeleton-bg: rgb(255 246 228 / 17%);
+    --app-skeleton-shimmer: linear-gradient(90deg, transparent, rgb(255 251 242 / 24%), transparent);
+    --app-brand-icon-color: rgb(255 224 158);
+    --app-brand-icon-filter: drop-shadow(0 0 12px rgb(255 193 87 / 44%));
 }
 
 /** Feed header / login hero icon — gold accent + glow */
 .app-brand-icon {
-    color: var(--app-accent);
-    filter: drop-shadow(0 0 12px rgb(218 170 85 / 38%));
-}
-
-:root[data-app-theme='ivory'] .app-brand-icon {
-    color: rgb(255 224 158);
-    filter: drop-shadow(0 0 12px rgb(255 193 87 / 44%));
+    color: var(--app-brand-icon-color);
+    filter: var(--app-brand-icon-filter);
 }
 
 .btn-primary {

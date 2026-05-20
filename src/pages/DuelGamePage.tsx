@@ -97,7 +97,8 @@ export function DuelGamePage({
         pickCardFromGraveyard,
         destroyEnemyCard,
         surrender,
-        goBackToFeed
+        goBackToFeed,
+        setActionHint
     } = useGameState(uid);
 
     const tierCards = useMemo(
@@ -178,11 +179,16 @@ export function DuelGamePage({
     const {
         winnerUid,
         showEpochStarterModal,
+        showPrepareWonderPickModal,
         showActionModal,
         awaitingBoardCoinPick,
         showCoinChoiceModal,
         showDestroyOpponentModal,
-        visibleCoinChoices
+        showGraveyardPickModal,
+        visibleCoinChoices,
+        showOpponentActionModal,
+        opponentActionMessage,
+        showIdlePrompt
     } = useDuelModalsState({ game, uid, isObserver, isMyTurn });
 
     const closeSelectedCardActions = () => {
@@ -232,13 +238,15 @@ export function DuelGamePage({
     useEffect(() => {
         if (!game.selectedCard) {
             setWonderBuildMode(false);
+            void setActionHint('');
         }
-    }, [game.selectedCard]);
+    }, [game.selectedCard, setActionHint]);
 
     useEffect(() => {
-        if (!showActionModal && !showEpochStarterModal && !showCoinChoiceModal && !showDestroyOpponentModal) return;
+        if (!showActionModal && !showEpochStarterModal && !showCoinChoiceModal && !showDestroyOpponentModal && !showGraveyardPickModal)
+            return;
         const handlePointerDown = (event: PointerEvent) => {
-            if (showEpochStarterModal || showCoinChoiceModal || showDestroyOpponentModal) return;
+            if (showEpochStarterModal || showCoinChoiceModal || showDestroyOpponentModal || showGraveyardPickModal) return;
             const target = event.target as Element | null;
             if (!target) return;
             if (target.closest('.dg-cardWrapper') || target.closest('.dg-wonderWrapper') || target.closest('.dg-actionsModal')) return;
@@ -246,7 +254,7 @@ export function DuelGamePage({
         };
         const handleKeyDown = (event: KeyboardEvent) => {
             if (
-                (showEpochStarterModal || showCoinChoiceModal || showDestroyOpponentModal) &&
+                (showEpochStarterModal || showCoinChoiceModal || showDestroyOpponentModal || showGraveyardPickModal) &&
                 event.key === 'Escape'
             ) {
                 return;
@@ -259,7 +267,7 @@ export function DuelGamePage({
             window.removeEventListener('pointerdown', handlePointerDown);
             window.removeEventListener('keydown', handleKeyDown);
         };
-    }, [showActionModal, showCoinChoiceModal, showDestroyOpponentModal, showEpochStarterModal]);
+    }, [showActionModal, showCoinChoiceModal, showDestroyOpponentModal, showEpochStarterModal, showGraveyardPickModal]);
 
     const toggleSound = () => {
         const next = !soundMuted;
@@ -283,6 +291,14 @@ export function DuelGamePage({
         selectWonder(wonder);
         await buildWonder(wonder);
         setWonderBuildMode(false);
+        void setActionHint('');
+    };
+    const toggleWonderBuildMode = () => {
+        setWonderBuildMode((prev) => {
+            const next = !prev;
+            void setActionHint(next ? 'choose-wonder-build' : 'choose-card-action');
+            return next;
+        });
     };
     return (
         <main className="mx-auto flex h-dvh max-h-dvh w-full max-w-[1400px] flex-col overflow-hidden p-2 text-[color:var(--app-text)] sm:p-3">
@@ -366,6 +382,7 @@ export function DuelGamePage({
                                             />
                                         ) : (
                                             <DuelTierCardsStage
+                                                tier={game.tier}
                                                 tierCards={tierCards}
                                                 tierLayout={tierLayout}
                                                 selectedCardId={game.selectedCard?.id}
@@ -375,14 +392,9 @@ export function DuelGamePage({
                                             />
                                         )}
                                     </div>
-                                <DuelGraveyardPanel
-                                    graveyard={game.graveyard}
-                                    isMyTurn={isMyTurn}
-                                    pickCardFromGraveyardUid={game.pickCardFromGraveyard}
-                                    currentUid={uid}
-                                    onPickCardFromGraveyard={pickCardFromGraveyard}
-                                />
                                 <DuelActionsOverlay
+                                    inline
+                                    isPrepareTier={game.tier === 'prepare'}
                                     showCoinChoiceModal={showCoinChoiceModal}
                                     awaitingBoardCoinPick={awaitingBoardCoinPick}
                                     visibleCoinChoices={visibleCoinChoices}
@@ -390,7 +402,9 @@ export function DuelGamePage({
                                     onPickCoinOfThree={pickCoinOfThree}
                                     showDestroyOpponentModal={showDestroyOpponentModal}
                                     destroyBrownActive={game.destroyBrown === uid}
+                                    showGraveyardPickModal={showGraveyardPickModal}
                                     showEpochStarterModal={showEpochStarterModal}
+                                    showPrepareWonderPickModal={showPrepareWonderPickModal}
                                     onChooseSelfStarts={() => chooseWhoStarts(uid)}
                                     onChooseOpponentStarts={() => chooseWhoStarts(opponent.user.uid)}
                                     showActionModal={showActionModal}
@@ -401,7 +415,17 @@ export function DuelGamePage({
                                     onSellSelectedCard={sellSelectedCard}
                                     hasBuildableWonder={hasBuildableWonder}
                                     wonderBuildMode={wonderBuildMode}
-                                    onToggleWonderBuildMode={() => setWonderBuildMode((prev) => !prev)}
+                                    onToggleWonderBuildMode={toggleWonderBuildMode}
+                                    showOpponentActionModal={showOpponentActionModal}
+                                    opponentActionMessage={opponentActionMessage}
+                                    showIdlePrompt={showIdlePrompt}
+                                />
+                                <DuelGraveyardPanel
+                                    graveyard={game.graveyard}
+                                    isMyTurn={isMyTurn}
+                                    pickCardFromGraveyardUid={game.pickCardFromGraveyard}
+                                    currentUid={uid}
+                                    onPickCardFromGraveyard={pickCardFromGraveyard}
                                 />
                             </div>
                         </section>

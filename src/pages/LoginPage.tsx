@@ -20,6 +20,11 @@ import { getCountrySelectOptions, guessCountryFromLocale, normalizeCountryCode }
 import { CountrySelect } from '@/components/CountrySelect';
 import '@/styles/login.css';
 
+const MAX_EMAIL_LENGTH = 254;
+const MAX_DISPLAY_NAME_LENGTH = 32;
+const MIN_PASSWORD_LENGTH_REGISTER = 10;
+const MAX_PASSWORD_LENGTH = 128;
+
 export function LoginPage({
     theme,
     onThemeChange
@@ -58,11 +63,31 @@ export function LoginPage({
         if (authInProgress) return;
         setError('');
         const normalizedEmail = email.trim().toLowerCase();
+        if (!normalizedEmail) {
+            setError('Email is required.');
+            return;
+        }
+        if (normalizedEmail.length > MAX_EMAIL_LENGTH) {
+            setError(`Email is too long (max ${MAX_EMAIL_LENGTH} characters).`);
+            return;
+        }
+        if (password.length > MAX_PASSWORD_LENGTH) {
+            setError(`Password is too long (max ${MAX_PASSWORD_LENGTH} characters).`);
+            return;
+        }
         try {
             if (isRegister) {
                 const cleanDisplayName = sanitizeDisplayName(displayName);
                 if (!cleanDisplayName) {
                     setError('Display name is required.');
+                    return;
+                }
+                if (cleanDisplayName.length > MAX_DISPLAY_NAME_LENGTH) {
+                    setError(`Display name is too long (max ${MAX_DISPLAY_NAME_LENGTH} characters).`);
+                    return;
+                }
+                if (password.length < MIN_PASSWORD_LENGTH_REGISTER) {
+                    setError(`Password must have at least ${MIN_PASSWORD_LENGTH_REGISTER} characters.`);
                     return;
                 }
                 const displayNameKey = normalizeDisplayName(cleanDisplayName);
@@ -198,6 +223,7 @@ export function LoginPage({
                                 placeholder="Display name"
                                 value={displayName}
                                 onChange={(e) => setDisplayName(e.target.value)}
+                                maxLength={MAX_DISPLAY_NAME_LENGTH}
                                 required
                             />
                             <label className="block text-xs text-[var(--app-text-muted)]">
@@ -212,9 +238,13 @@ export function LoginPage({
                     )}
                     <input
                         className="input"
+                        type="email"
                         placeholder="Email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
+                        maxLength={MAX_EMAIL_LENGTH}
+                        autoComplete="email"
+                        required
                     />
                     <input
                         className="input"
@@ -222,6 +252,10 @@ export function LoginPage({
                         placeholder="Password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
+                        maxLength={MAX_PASSWORD_LENGTH}
+                        minLength={isRegister ? MIN_PASSWORD_LENGTH_REGISTER : 1}
+                        autoComplete={isRegister ? 'new-password' : 'current-password'}
+                        required
                     />
                     <button className="btn-primary w-full" type="submit" disabled={authInProgress}>
                         {authInProgress ? 'Loading...' : isRegister ? 'Create account' : 'Login'}

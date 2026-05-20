@@ -14,9 +14,10 @@ export function useDuelModalsState({ game, uid, isObserver, isMyTurn }: UseDuelM
         const winnerUid = game.wonByArt || game.wonByAggressive || game.wonBySurr || game.wonByPoints;
         const showEpochStarterModal =
             !winnerUid && game.tier !== 'prepare' && game.chooseWhoWillStart && isMyTurn && !isObserver;
+        const showPrepareWonderPickModal = !winnerUid && game.tier === 'prepare' && isMyTurn && !isObserver;
 
         const activeInGameTurn = !winnerUid && game.tier !== 'prepare' && !isObserver;
-        const showActionModal = activeInGameTurn && !!game.selectedCard && !game.chooseWhoWillStart;
+        const showActionModal = activeInGameTurn && isMyTurn && !!game.selectedCard && !game.chooseWhoWillStart;
         const awaitingBoardCoinPick = activeInGameTurn && isMyTurn && game.pickCoin === uid && game.pickCoin === game.turn;
         const awaitingWonderThreeCoins =
             activeInGameTurn && isMyTurn && game.pickCoinOfThree === uid && game.pickCoinOfThree === game.turn;
@@ -27,19 +28,66 @@ export function useDuelModalsState({ game, uid, isObserver, isMyTurn }: UseDuelM
             isMyTurn &&
             (game.destroyBrown === uid || game.destroyGrey === uid) &&
             game.turn === uid;
+        const showGraveyardPickModal =
+            activeInGameTurn &&
+            !game.chooseWhoWillStart &&
+            isMyTurn &&
+            game.pickCardFromGraveyard === uid &&
+            game.pickCardFromGraveyard === game.turn;
         const visibleCoinChoices: IGameDuelCoin['effect'][] = awaitingBoardCoinPick
             ? game.board.coins
             : game.theRestOfCoins.slice(0, 3);
+        const showOpponentActionModal = !isObserver && !winnerUid && !!game.turn && !isMyTurn;
+        let opponentActionMessage: string | null = null;
+
+        if (showOpponentActionModal && game.tier === 'prepare') {
+            opponentActionMessage = 'Opponent is choosing a wonder.';
+        } else if (showOpponentActionModal && game.tier !== 'prepare') {
+            if (game.chooseWhoWillStart) {
+                opponentActionMessage = 'Opponent is choosing who starts.';
+            } else if (game.pickCoin === game.turn) {
+                opponentActionMessage = 'Opponent is choosing a coin.';
+            } else if (game.pickCoinOfThree === game.turn) {
+                opponentActionMessage = 'Opponent is choosing 1 of 3 coins.';
+            } else if (game.pickCardFromGraveyard === game.turn) {
+                opponentActionMessage = 'Opponent is choosing a graveyard card.';
+            } else if (game.destroyBrown === game.turn) {
+                opponentActionMessage = 'Opponent is choosing a brown card to destroy.';
+            } else if (game.destroyGrey === game.turn) {
+                opponentActionMessage = 'Opponent is choosing a grey card to destroy.';
+            } else if (game.actionUid === game.turn && game.actionType === 'choose-wonder-build') {
+                opponentActionMessage = 'Opponent is choosing a wonder.';
+            } else if (game.actionUid === game.turn && game.actionType === 'choose-card-action') {
+                opponentActionMessage = 'Opponent is choosing an action.';
+            }
+        }
+        if (showOpponentActionModal && !opponentActionMessage) {
+            opponentActionMessage = 'Opponent is making a move.';
+        }
+
+        const showIdlePrompt =
+            activeInGameTurn &&
+            isMyTurn &&
+            !game.selectedCard &&
+            !game.chooseWhoWillStart &&
+            !showCoinChoiceModal &&
+            !showDestroyOpponentModal &&
+            !showGraveyardPickModal;
 
         return {
             winnerUid,
             showEpochStarterModal,
+            showPrepareWonderPickModal,
             showActionModal,
             awaitingBoardCoinPick,
             awaitingWonderThreeCoins,
             showCoinChoiceModal,
             showDestroyOpponentModal,
-            visibleCoinChoices
+            showGraveyardPickModal,
+            visibleCoinChoices,
+            showOpponentActionModal,
+            opponentActionMessage,
+            showIdlePrompt
         };
     }, [game, isMyTurn, isObserver, uid]);
 }

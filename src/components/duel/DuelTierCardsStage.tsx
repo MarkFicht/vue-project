@@ -1,8 +1,9 @@
 import { DuelSpriteCard } from '@/components/duel/DuelSpriteCard';
 import { showPrice } from '@/helpers/GameDuelHelpers';
-import type { IGameDuelCard, IGameDuelPlayer } from '@/interfaces/GameDuel';
+import type { IGameDuelCard, IGameDuelPlayer, Tier } from '@/interfaces/GameDuel';
 
 type DuelTierCardsStageProps = {
+    tier: Tier;
     tierCards: IGameDuelCard[];
     tierLayout: { x: number[]; y: number[] };
     selectedCardId?: number;
@@ -12,6 +13,7 @@ type DuelTierCardsStageProps = {
 };
 
 export function DuelTierCardsStage({
+    tier,
     tierCards,
     tierLayout,
     selectedCardId,
@@ -20,7 +22,7 @@ export function DuelTierCardsStage({
     onSelectTierCard
 }: DuelTierCardsStageProps) {
     return (
-        <div className="dg-cardBoardShell">
+        <div className={`dg-cardBoardShell ${tier === 'III' ? 'dg-cardBoardShell--tall' : 'dg-cardBoardShell--compact'}`}>
             <div className="dg-epochCardsTransform">
                 <div className="dg-cardBoard">
                     {tierCards.map((card, index) => (
