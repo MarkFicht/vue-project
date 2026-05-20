@@ -1,6 +1,6 @@
 /**
  * DashGameCardDummyPngPreview — isolated _2 card art test harness.
- * Masks: src/assets/duel/masks/_2_mask_*.png (600×600, binary — skalowane do karty)
+ * Masks: src/assets/masks/_2_mask_*.png (600×600, binary — skalowane do karty)
  *
  * Override colors:
  *   --dg2-clr           circle accent
@@ -47,13 +47,13 @@
 .dg2Card__layer--bottom {
     z-index: 1;
     --dg2-layer-fill: var(--dg2-mask-bottom);
-    --dg2-layer-mask: url('@/assets/duel/masks/_2_mask_bottom.png');
+    --dg2-layer-mask: url('@/assets/masks/_2_mask_bottom.png');
 }
 
 .dg2Card__layer--top {
     z-index: 2;
     --dg2-layer-fill: var(--dg2-mask-top);
-    --dg2-layer-mask: url('@/assets/duel/masks/_2_mask_top.png');
+    --dg2-layer-mask: url('@/assets/masks/_2_mask_top.png');
 }
 
 .dg2Card__top,

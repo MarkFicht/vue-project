@@ -1,5 +1,5 @@
 /**
- * Warm brown / gold UI aligned with duel main_bg — shared buttons, inputs, panel surfaces.
+ * Warm brown / gold UI aligned with theme backgrounds — shared buttons, inputs, panel surfaces.
  */
 :root {
     /* Core palette (classic) */
@@ -89,7 +89,7 @@
     --duel-surrender-modal-bg: linear-gradient(175deg, rgb(34 24 17 / 96%) 0%, rgb(18 13 9 / 98%) 100%);
     --duel-surrender-modal-border: rgb(195 150 95 / 42%);
     --app-page-bg: radial-gradient(circle at 20% 20%, #244b6b 0%, #0f172a 35%, #020617 100%);
-    --app-main-bg-image: url('@/assets/duel/main_bg.png');
+    --app-main-bg-image: url('@/assets/themes/main_bg.png');
     --app-login-overlay-bg: radial-gradient(
         circle at 22% 18%,
         rgb(165 118 70 / 24%) 0%,
@@ -205,7 +205,7 @@
     --duel-surrender-modal-bg: linear-gradient(175deg, rgb(54 40 29 / 96%) 0%, rgb(32 24 18 / 98%) 100%);
     --duel-surrender-modal-border: rgb(222 196 154 / 42%);
     --app-page-bg: radial-gradient(circle at 20% 20%, #9a7d5b 0%, #614933 42%, #35271b 100%);
-    --app-main-bg-image: url('@/assets/duel/main_bg_white.png');
+    --app-main-bg-image: url('@/assets/themes/main_bg_white.png');
     --app-login-overlay-bg: radial-gradient(
         circle at 20% 18%,
         rgb(255 236 206 / 24%) 0%,
@@ -321,7 +321,7 @@
     --duel-surrender-modal-bg: linear-gradient(175deg, rgb(42 23 90 / 97%) 0%, rgb(14 8 38 / 99%) 100%);
     --duel-surrender-modal-border: rgb(90 244 255 / 44%);
     --app-page-bg: radial-gradient(circle at 18% 18%, #7d2bff 0%, #2a1366 38%, #0b0424 100%);
-    --app-main-bg-image: url('@/assets/duel/main_bg_cyber.png');
+    --app-main-bg-image: url('@/assets/themes/main_bg_cyber.png');
     --app-login-overlay-bg: radial-gradient(circle at 20% 16%, rgb(164 86 255 / 24%) 0%, rgb(33 18 78 / 88%) 40%, rgb(10 5 29 / 98%) 100%);
     --app-login-overlay-card-border: rgb(80 242 255 / 44%);
     --app-login-overlay-card-bg: linear-gradient(160deg, rgb(40 22 90 / 94%) 0%, rgb(21 12 56 / 97%) 58%, rgb(10 5 30 / 98%) 100%);
@@ -432,7 +432,7 @@
     --duel-surrender-modal-bg: linear-gradient(175deg, rgb(36 46 72 / 97%) 0%, rgb(14 18 32 / 99%) 100%);
     --duel-surrender-modal-border: rgb(96 210 255 / 42%);
     --app-page-bg: radial-gradient(circle at 22% 18%, #4a6fa5 0%, #243552 36%, #0c1220 100%);
-    --app-main-bg-image: url('@/assets/duel/main_bg_sci.png');
+    --app-main-bg-image: url('@/assets/themes/main_bg_sci.png');
     --app-login-overlay-bg: radial-gradient(circle at 20% 16%, rgb(88 210 255 / 22%) 0%, rgb(28 36 58 / 88%) 40%, rgb(10 14 26 / 98%) 100%);
     --app-login-overlay-card-border: rgb(96 210 255 / 42%);
     --app-login-overlay-card-bg: linear-gradient(160deg, rgb(38 48 74 / 94%) 0%, rgb(22 30 52 / 97%) 58%, rgb(12 16 28 / 98%) 100%);
@@ -458,6 +458,117 @@
     --chat-text-danger: rgb(255 154 180 / 97%);
     --chat-text-read: rgb(96 220 255 / 97%);
     --chat-typing: rgb(176 228 255 / 94%);
+}
+
+:root[data-app-theme='luxury'] {
+    /* Core palette (luxury — obsidian, gold, marble) */
+    --theme-bg-950: rgb(12 12 14);
+    --theme-bg-900: rgb(20 20 24);
+    --theme-bg-800: rgb(38 38 44);
+    --theme-border: rgb(212 175 90 / 50%);
+    --theme-text: rgb(248 244 236);
+    --theme-text-muted: rgb(178 172 162);
+    --theme-accent: rgb(220 178 72);
+    --theme-accent-strong: rgb(255 228 150);
+    --theme-accent-deep: rgb(176 132 42);
+    --theme-danger: rgb(220 72 88);
+
+    --app-accent: var(--theme-accent);
+    --app-accent-bright: var(--theme-accent-strong);
+    --app-accent-deep: var(--theme-accent-deep);
+    --app-text: var(--theme-text);
+    --app-text-muted: var(--theme-text-muted);
+    --app-on-accent: rgb(28 22 14);
+    --app-border: var(--theme-border);
+    --app-border-soft: rgb(212 175 90 / 22%);
+    --app-secondary-bg: rgb(42 40 48 / 72%);
+    --app-secondary-bg-hover: rgb(58 56 64 / 84%);
+    --app-secondary-border-hover: rgb(230 198 120 / 72%);
+    --app-input-border: rgb(168 148 118 / 52%);
+    --app-input-bg: rgb(14 14 18 / 78%);
+    --app-input-placeholder: rgb(156 150 140 / 76%);
+    --app-input-focus: rgb(230 198 120 / 92%);
+    --app-input-focus-shadow: rgb(212 175 90 / 24%);
+    --app-surface-login-bg: linear-gradient(165deg, rgb(48 46 54 / 94%) 0%, rgb(30 28 34 / 96%) 45%, rgb(16 16 20 / 97%) 100%);
+    --app-surface-login-border: rgb(212 175 90 / 44%);
+    --app-surface-header-bg: linear-gradient(180deg, rgb(52 50 58 / 92%) 0%, rgb(24 24 28 / 95%) 100%);
+    --app-surface-header-border: rgb(200 168 96 / 42%);
+    --app-surface-callout-bg: linear-gradient(135deg, rgb(58 56 64 / 90%) 0%, rgb(28 28 32 / 94%) 100%);
+    --app-surface-callout-border: rgb(212 175 90 / 40%);
+    --app-game-card-top-bg: linear-gradient(
+        168deg,
+        rgb(248 232 188) 0%,
+        rgb(226 198 142) 52%,
+        rgb(196 162 98) 100%
+    );
+    --app-game-card-bottom-bg: linear-gradient(
+        168deg,
+        rgb(210 206 198) 0%,
+        rgb(188 184 176) 52%,
+        rgb(164 160 152) 100%
+    );
+    --app-game-card-bottom-text: rgb(58 54 48 / 91%);
+    --app-scroll-track: rgb(20 18 16 / 68%);
+    --app-scroll-thumb: linear-gradient(180deg, rgb(255 232 158 / 0.96), rgb(212 162 58 / 0.92));
+    --app-scroll-thumb-border: rgb(18 14 10 / 94%);
+    --app-scrollbar-color: rgb(255 210 96);
+    --duel-bg-fallback: var(--theme-bg-900);
+    --duel-arena-gradient: linear-gradient(168deg, rgb(48 46 54 / 90%) 0%, rgb(32 30 38 / 84%) 42%, rgb(16 16 20 / 82%) 100%);
+    --duel-scrollbar-track: rgb(28 28 32 / 64%);
+    --duel-scrollbar-thumb: rgb(255 210 96 / 90%);
+    --duel-scrollbar-thumb-hover: rgb(255 234 168 / 96%);
+    --duel-panel-border: color-mix(in srgb, var(--theme-border) 86%, transparent);
+    --duel-panel-bg: color-mix(in srgb, var(--theme-bg-800) 56%, transparent);
+    --duel-actionbar-bg: linear-gradient(180deg, rgb(44 42 50 / 95%) 0%, rgb(18 18 22 / 98%) 100%);
+    --duel-actionbar-border: rgb(212 175 90 / 54%);
+    --duel-actionbar-text: rgb(248 244 236 / 96%);
+    --duel-actionbar-shadow:
+        inset 0 1px 0 rgb(255 248 230 / 12%),
+        0 12px 30px rgb(0 0 0 / 50%);
+    --duel-graveyard-bg: linear-gradient(180deg, rgb(38 36 44 / 88%) 0%, rgb(20 20 24 / 92%) 100%);
+    --duel-graveyard-inner-bg: rgb(10 10 14 / 46%);
+    --duel-graveyard-border: rgb(200 168 96 / 46%);
+    --duel-graveyard-shadow:
+        inset 0 1px 0 rgb(255 248 230 / 8%),
+        0 8px 20px rgb(0 0 0 / 34%);
+    --duel-mobile-menu-bg: linear-gradient(180deg, rgb(48 46 54 / 96%) 0%, rgb(22 22 26 / 98%) 100%);
+    --duel-mobile-menu-border: rgb(200 168 96 / 40%);
+    --duel-mobile-menu-shadow:
+        inset 0 1px 0 rgb(255 248 230 / 8%),
+        0 14px 28px rgb(0 0 0 / 46%);
+    --duel-meta-strong: rgb(248 236 210 / 97%);
+    --duel-turn-badge-you: rgb(198 244 214 / 95%);
+    --duel-turn-badge-opponent: rgb(255 226 197 / 95%);
+    --duel-turn-badge-observer: rgb(210 206 198 / 94%);
+    --duel-surrender-modal-bg: linear-gradient(175deg, rgb(44 42 50 / 97%) 0%, rgb(16 16 20 / 99%) 100%);
+    --duel-surrender-modal-border: rgb(200 168 96 / 42%);
+    --app-page-bg: radial-gradient(circle at 20% 16%, #5c5240 0%, #2a282e 38%, #0e0e12 100%);
+    --app-main-bg-image: url('@/assets/themes/main_bg_lux.png');
+    --app-login-overlay-bg: radial-gradient(circle at 20% 16%, rgb(212 175 90 / 20%) 0%, rgb(36 34 42 / 88%) 40%, rgb(12 12 14 / 98%) 100%);
+    --app-login-overlay-card-border: rgb(212 175 90 / 42%);
+    --app-login-overlay-card-bg: linear-gradient(160deg, rgb(48 46 54 / 94%) 0%, rgb(28 28 32 / 97%) 58%, rgb(14 14 18 / 98%) 100%);
+    --app-login-overlay-logo-color: rgb(255 220 120 / 98%);
+    --app-login-overlay-logo-filter: drop-shadow(0 0 16px rgb(255 196 72 / 58%));
+    --app-login-overlay-spinner-border: rgb(176 140 72 / 44%);
+    --app-login-overlay-spinner-top: rgb(255 228 150 / 98%);
+    --app-skeleton-bg: rgb(220 178 72 / 18%);
+    --app-skeleton-shimmer: linear-gradient(90deg, transparent, rgb(255 228 150 / 28%), transparent);
+    --app-brand-icon-color: rgb(255 216 96);
+    --app-brand-icon-filter: drop-shadow(0 0 16px rgb(255 196 64 / 62%));
+    --app-login-overlay-label-color: rgb(248 244 236 / 98%);
+    --chat-panel-border: rgb(200 168 96 / 44%);
+    --chat-panel-bg: linear-gradient(165deg, rgb(38 36 44 / 96%) 0%, rgb(14 14 18 / 97%) 100%);
+    --chat-panel-header-border: rgb(200 168 96 / 32%);
+    --chat-panel-header-bg: linear-gradient(180deg, rgb(52 50 58 / 92%) 0%, rgb(22 22 26 / 95%) 100%);
+    --chat-surface-soft: rgb(36 34 42 / 78%);
+    --chat-surface-strong: rgb(52 50 58 / 88%);
+    --chat-border-soft: rgb(168 148 118 / 32%);
+    --chat-border-strong: rgb(212 175 90 / 56%);
+    --chat-text-warning: rgb(255 210 130 / 96%);
+    --chat-text-success: rgb(168 230 190 / 98%);
+    --chat-text-danger: rgb(255 154 168 / 97%);
+    --chat-text-read: rgb(212 175 90 / 97%);
+    --chat-typing: rgb(230 210 170 / 94%);
 }
 
 /** Feed header / login hero icon — gold accent + glow */
