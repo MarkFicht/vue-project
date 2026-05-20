@@ -9,7 +9,7 @@ import {
     updateProfile
 } from 'firebase/auth';
 import { doc, getDoc, runTransaction, serverTimestamp } from 'firebase/firestore';
-import { Gamepad2, LogIn, Palette, UserPlus, Volume2, VolumeX } from 'lucide-react';
+import { ArrowRight, Gamepad2, LogIn, Palette, UserPlus, Volume2, VolumeX } from 'lucide-react';
 import { auth, db, googleProvider } from '@/firebaseConfig';
 import { displayNamesRef, usersRef } from '@/firebase/refs';
 import { clearLoginOverlayPending, markLoginOverlayPending } from '@/hooks/useGlobalLoadingOverlay';
@@ -24,6 +24,26 @@ const MAX_EMAIL_LENGTH = 254;
 const MAX_DISPLAY_NAME_LENGTH = 32;
 const MIN_PASSWORD_LENGTH_REGISTER = 10;
 const MAX_PASSWORD_LENGTH = 128;
+const LOGIN_THEME_HINT_KEY = 'login-theme-hint-seen';
+
+function readThemeHintVisible(): boolean {
+    if (typeof window === 'undefined') {
+        return true;
+    }
+    try {
+        return window.localStorage.getItem(LOGIN_THEME_HINT_KEY) !== '1';
+    } catch {
+        return true;
+    }
+}
+
+function dismissThemeHint() {
+    try {
+        window.localStorage.setItem(LOGIN_THEME_HINT_KEY, '1');
+    } catch {
+        // Ignore storage failures (private mode, quota, etc.).
+    }
+}
 
 export function LoginPage({
     theme,
@@ -41,9 +61,16 @@ export function LoginPage({
     const [error, setError] = useState('');
     const [authInProgress, setAuthInProgress] = useState(false);
     const [soundMuted, setSoundMutedState] = useState(() => isSoundMuted());
+    const [showThemeHint, setShowThemeHint] = useState(readThemeHintVisible);
     const isRegister = useMemo(() => mode === 'register', [mode]);
     const countryOptions = useMemo(() => getCountrySelectOptions(), []);
-    const toggleTheme = () => onThemeChange(getNextTheme(theme));
+    const toggleTheme = () => {
+        if (showThemeHint) {
+            setShowThemeHint(false);
+            dismissThemeHint();
+        }
+        onThemeChange(getNextTheme(theme));
+    };
     const toggleSound = () => {
         const next = !soundMuted;
         setSoundMuted(next);
@@ -188,11 +215,14 @@ export function LoginPage({
                 <div className="loginTopControls">
                     <button
                         type="button"
-                        className="btn-secondary loginTopControlBtn"
+                        className={`btn-secondary loginTopControlBtn${showThemeHint ? ' loginThemeHintBtn' : ''}`}
                         onClick={toggleTheme}
                         title={getThemeSwitchTitle(theme)}
                         disabled={authInProgress}
                     >
+                        {showThemeHint && (
+                            <ArrowRight className="loginThemeHintArrow" strokeWidth={2.5} aria-hidden />
+                        )}
                         <Palette className="h-4 w-4" />
                         <span>{getThemeLabel(theme)}</span>
                     </button>
