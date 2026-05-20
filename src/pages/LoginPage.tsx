@@ -13,7 +13,7 @@ import { Gamepad2, LogIn, Palette, UserPlus, Volume2, VolumeX } from 'lucide-rea
 import { auth, db, googleProvider } from '@/firebaseConfig';
 import { displayNamesRef, usersRef } from '@/firebase/refs';
 import { clearLoginOverlayPending, markLoginOverlayPending } from '@/hooks/useGlobalLoadingOverlay';
-import type { AppTheme } from '@/hooks/useAppTheme';
+import { getNextTheme, getThemeLabel, getThemeSwitchTitle, type AppTheme } from '@/hooks/useAppTheme';
 import { isSoundMuted, setSoundMuted } from '@/utils/sound';
 import { normalizeDisplayName, sanitizeDisplayName } from '@/utils/displayName';
 import { getCountrySelectOptions, guessCountryFromLocale, normalizeCountryCode } from '@/utils/country';
@@ -43,7 +43,7 @@ export function LoginPage({
     const [soundMuted, setSoundMutedState] = useState(() => isSoundMuted());
     const isRegister = useMemo(() => mode === 'register', [mode]);
     const countryOptions = useMemo(() => getCountrySelectOptions(), []);
-    const toggleTheme = () => onThemeChange(theme === 'classic' ? 'ivory' : 'classic');
+    const toggleTheme = () => onThemeChange(getNextTheme(theme));
     const toggleSound = () => {
         const next = !soundMuted;
         setSoundMuted(next);
@@ -190,11 +190,11 @@ export function LoginPage({
                         type="button"
                         className="btn-secondary loginTopControlBtn"
                         onClick={toggleTheme}
-                        title={theme === 'classic' ? 'Switch to ivory theme' : 'Switch to classic theme'}
+                        title={getThemeSwitchTitle(theme)}
                         disabled={authInProgress}
                     >
                         <Palette className="h-4 w-4" />
-                        <span>{theme === 'classic' ? 'Ivory' : 'Classic'}</span>
+                        <span>{getThemeLabel(theme)}</span>
                     </button>
                     <button
                         type="button"

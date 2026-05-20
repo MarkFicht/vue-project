@@ -22,7 +22,7 @@ import { persistUserSoundMuted } from '@/utils/persistUserSoundMuted';
 import { useUserStore } from '@/store/useUserStore';
 import { useDuelPreparePhase } from '@/hooks/useDuelPreparePhase';
 import { useDuelModalsState } from '@/hooks/useDuelModalsState';
-import type { AppTheme } from '@/hooks/useAppTheme';
+import { getNextTheme, type AppTheme } from '@/hooks/useAppTheme';
 import type { IGameDuelCard, IGameDuelPlayer, Tier } from '@/interfaces/GameDuel';
 
 type PointBreakdown = {
@@ -275,7 +275,7 @@ export function DuelGamePage({
         setSoundMutedState(next);
         void persistUserSoundMuted(uid, next);
     };
-    const toggleTheme = () => onThemeChange(theme === 'classic' ? 'ivory' : 'classic');
+    const toggleTheme = () => onThemeChange(getNextTheme(theme));
     const openSurrenderModal = () => {
         if (isObserver) return;
         setShowSurrenderModal(true);
