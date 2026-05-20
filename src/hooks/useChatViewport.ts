@@ -18,12 +18,15 @@ export function useChatViewport({
 }) {
     const lastTailMessageIdRef = useRef('');
     const initialScrollChatIdRef = useRef('');
+    const userInteractedRef = useRef(false);
+    const pendingInteractionForNextChatRef = useRef(false);
     const messageRefs = useRef<Record<string, HTMLElement | null>>({});
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
     const messagesContainerRef = useRef<HTMLDivElement | null>(null);
 
     const maybeMarkActiveChatAsRead = useCallback(() => {
         if (!isOpen || !activeChatId) return;
+        if (!userInteractedRef.current) return;
         if (!isNearBottom(messagesContainerRef.current)) return;
         const latestIncomingAt = messages.reduce((latest, entry) => {
             if (entry.senderUid === uid) return latest;
@@ -36,12 +39,16 @@ export function useChatViewport({
     useEffect(() => {
         initialScrollChatIdRef.current = '';
         lastTailMessageIdRef.current = '';
+        userInteractedRef.current = false;
+        pendingInteractionForNextChatRef.current = false;
         messageRefs.current = {};
     }, [uid]);
 
     useEffect(() => {
         if (!isOpen || !activeChatId) return;
         initialScrollChatIdRef.current = activeChatId;
+        userInteractedRef.current = pendingInteractionForNextChatRef.current;
+        pendingInteractionForNextChatRef.current = false;
     }, [activeChatId, isOpen]);
 
     useEffect(() => {
@@ -75,6 +82,10 @@ export function useChatViewport({
                 }
             }
         }
+        if (hasUnread && readAt <= 0) {
+            initialScrollChatIdRef.current = '';
+            return;
+        }
 
         const raf = window.requestAnimationFrame(() => {
             if (hasUnread && targetId && messageRefs.current[targetId]) {
@@ -88,17 +99,29 @@ export function useChatViewport({
     }, [activeChatId, messages, readMap, uid]);
 
     useEffect(() => {
-        if (!isOpen) return;
+        if (!isOpen || !userInteractedRef.current) return;
         const raf = window.requestAnimationFrame(() => {
             maybeMarkActiveChatAsRead();
         });
         return () => window.cancelAnimationFrame(raf);
     }, [isOpen, activeChatId, messages, maybeMarkActiveChatAsRead]);
 
+    const registerConversationInteraction = useCallback(() => {
+        pendingInteractionForNextChatRef.current = true;
+        userInteractedRef.current = true;
+    }, []);
+
+    const handleMessagesScroll = useCallback(() => {
+        userInteractedRef.current = true;
+        maybeMarkActiveChatAsRead();
+    }, [maybeMarkActiveChatAsRead]);
+
     return {
         messageRefs,
         messagesEndRef,
         messagesContainerRef,
-        maybeMarkActiveChatAsRead
+        maybeMarkActiveChatAsRead,
+        registerConversationInteraction,
+        handleMessagesScroll
     };
 }
