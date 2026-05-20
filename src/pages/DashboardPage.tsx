@@ -41,6 +41,7 @@ import { MobileHamburgerMenu } from '@/components/MobileHamburgerMenu';
 import { SkeletonDot, SkeletonInput, SkeletonTag, SkeletonText } from '@/components/Skeleton';
 import { getNextTheme, getThemeLabel, getThemeSwitchTitle, type AppTheme } from '@/hooks/useAppTheme';
 import '@/styles/dashboard.css';
+import { DashGameCardDummyPngPreview } from '@/components/dashboard/DashGameCardDummyPngPreview';
 
 const MAX_DISPLAY_NAME_LENGTH = 32;
 
@@ -1163,6 +1164,8 @@ export function DashboardPage({
 
             <section className={`dashWrapper ${showDuelLobbyModal ? 'modalOpen' : ''}`}>
                 <div className="dashScrollViewport dashGameContainer modalLikeScrollbar">
+                    <DashGameCardDummyPngPreview />
+
                     <article className="dashCard" style={{ '--dash-clr': '#4589cc' } as CSSProperties}>
                         <div className="dashBox dashBoxTop">Video soon!</div>
                         <div className="dashBox dashBoxBottom">
