@@ -496,12 +496,20 @@ export function useGameState(currentUserUid: string) {
 
     const setActionHint = useCallback(
         async (actionType: string) => {
-            await updateDoc(tableGameDuelRef, {
-                actionUid: actionType ? game.turn : '',
-                actionType
-            });
+            if (!isMyTurn || !game.turn) return;
+            try {
+                await updateDoc(tableGameDuelRef, {
+                    actionUid: actionType ? game.turn : '',
+                    actionType
+                });
+            } catch (error) {
+                const code = (error as { code?: string }).code ?? '';
+                if (code !== 'permission-denied') {
+                    throw error;
+                }
+            }
         },
-        [game.turn]
+        [game.turn, isMyTurn]
     );
 
     const finishTurnAfterSpecialAction = useCallback(async () => {

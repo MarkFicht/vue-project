@@ -5,6 +5,7 @@ import type { IGameDuelCoin } from '@/interfaces/GameDuel';
 
 type DuelActionsOverlayProps = {
     inline?: boolean;
+    isPrepareTier?: boolean;
     showCoinChoiceModal: boolean;
     awaitingBoardCoinPick: boolean;
     visibleCoinChoices: IGameDuelCoin['effect'][];
@@ -42,6 +43,7 @@ type ModalFrameOptions = {
 
 export function DuelActionsOverlay({
     inline = false,
+    isPrepareTier = false,
     showCoinChoiceModal,
     awaitingBoardCoinPick,
     visibleCoinChoices,
@@ -67,9 +69,10 @@ export function DuelActionsOverlay({
     opponentActionMessage,
     showIdlePrompt
 }: DuelActionsOverlayProps) {
-    const containerClass = inline ? 'dg-actionsInlineWrap' : 'dg-actionsBackdropInBoard';
+    const inlineContainerClass = `dg-actionsInlineWrap${isPrepareTier ? ' dg-actionsInlineWrap--prepare' : ''}`;
+    const containerClass = inline ? inlineContainerClass : 'dg-actionsBackdropInBoard';
     const blockingContainerClass = inline
-        ? 'dg-actionsInlineWrap dg-actionsInlineWrap--blocking'
+        ? `${inlineContainerClass} dg-actionsInlineWrap--blocking`
         : 'dg-actionsBackdropInBoard dg-actionsBackdropInBoard--blocking';
 
     const renderModalFrame = ({ blocking, role, ariaLabel, instruction = false, ariaLive, children }: ModalFrameOptions) => (
@@ -105,7 +108,7 @@ export function DuelActionsOverlay({
                 <>
                     <p className="mb-3 px-1 text-center text-sm text-slate-200">
                         {awaitingBoardCoinPick
-                            ? 'You matched green science icons � choose one progress coin from the shared board pool.'
+                            ? 'You matched green science icons, choose one progress coin from the shared board pool.'
                             : 'Pick one of the three progress coins offered by the wonder:'}
                     </p>
                     <div className="dg-actionsModalCoins">
@@ -161,7 +164,7 @@ export function DuelActionsOverlay({
                 <>
                     <p className="mb-3 px-1 text-center text-sm text-slate-200">
                         Who takes the first turn this age? By the rules that should be{' '}
-                        <span className="font-medium text-white">you</span> � you may keep first move or pass it to your opponent.
+                        <span className="font-medium text-white">you</span> may keep first move or pass it to your opponent.
                     </p>
                     <div className="dg-actionsButtons dg-actionsButtons--starter">
                         <button type="button" className="btn-primary" onClick={onChooseSelfStarts}>

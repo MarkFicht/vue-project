@@ -26,52 +26,6 @@
     --coin-size: 42px;
 }
 
-@media (min-width: 425px) {
-    :root {
-        --dg-military-board-scale: 0.71;
-        --dg-epoch-cards-scale: 0.8;
-        --dg-wonder-prepare-scale: 0.8;
-        --dg-player-wonders-scale: 0.9;
-        --dg-player-wonders-gap: 12px;
-    }
-    .dg-actionsInlineWrap {
-        margin-bottom: 4px;
-    }
-    .dg-militaryViewport {
-        margin-top: -20px !important;
-    }
-    .dg-stageCards:not(.dg-stageCards--prepare) {
-        margin-bottom: -30px !important;
-        margin-top: -36px !important;
-    }
-}
-
-@media (min-width: 768px) {
-    :root {
-        --dg-military-board-scale: 0.9;
-        --dg-epoch-cards-scale: 0.95;
-        --dg-wonder-prepare-scale: 0.95;
-        --dg-player-wonders-scale: 1;
-        --dg-player-wonders-gap: 20px;
-    }
-    .dg-militaryViewport {
-        margin-top: -26px !important;
-    }
-    .dg-stageCards:not(.dg-stageCards--prepare) {
-        margin-bottom: -32px !important;
-        margin-top: -44px !important;
-    }
-}
-
-@media (min-width: 1024px) {
-    :root {
-        --dg-military-board-scale: 1;
-        --dg-epoch-cards-scale: 1;
-        --dg-wonder-prepare-scale: 1;
-        --dg-player-wonders-scale: 1;
-    }
-}
-
 .cashSum {
     position: absolute;
     background-repeat: no-repeat;
@@ -492,58 +446,6 @@
     min-width: 0;
 }
 
-@media (min-width: 425px) {
-    .dg-playerShell {
-        max-width: 490px;
-    }
-    .dg-duelBand {
-        display: flex;
-        justify-content: center;
-    }
-    .dg-playerArea {
-        display: grid;
-        grid-template-columns: auto minmax(0, 1fr);
-        grid-template-areas:
-            'header header'
-            'wonders coins'
-            'columns columns';
-        column-gap: 12px;
-        align-items: start;
-    }
-
-    .dg-playerHeader {
-        grid-area: header;
-    }
-
-    .dg-playerWonders {
-        grid-area: wonders;
-        justify-content: start;
-        justify-self: start;
-        margin-right: auto;
-        margin-bottom: 4px !important;
-    }
-
-    .dg-playerColumnsScroller {
-        grid-area: columns;
-    }
-
-    .dg-playerCoinsBox {
-        grid-area: coins;
-        margin-top: 0;
-        justify-self: stretch;
-        align-self: stretch;
-    }
-}
-
-@media (min-width: 768px) {
-    .dg-playerWonders {
-        margin-bottom: 14px !important;
-    }
-    .dg-playerCoinsBox {
-        margin-left: 8px;
-    }
-}
-
 /** Duel layout — single column first (wider breakpoints add row layout below) */
 .dg-duelLayout {
     display: flex;
@@ -611,60 +513,6 @@
     }
 }
 
-@media (max-width: 768px) {
-    .dgHeader .btn-secondary {
-        padding: 6px 10px;
-    }
-
-    .dgHeaderActionsDesktop {
-        display: none !important;
-    }
-
-    .dgMobileMenuToggle {
-        display: inline-flex !important;
-        min-width: 2.35rem;
-        min-height: 2.35rem;
-        padding: 0.45rem;
-        border-radius: 0.9rem;
-        margin-left: auto;
-    }
-
-    .dgMobileMenu {
-        position: absolute;
-        top: calc(100% + 8px);
-        right: 0;
-        width: min(84vw, 16rem);
-        border-radius: 14px;
-        border: 1px solid var(--duel-mobile-menu-border);
-        background: var(--duel-mobile-menu-bg);
-        box-shadow: var(--duel-mobile-menu-shadow);
-        display: block !important;
-        z-index: 120;
-        animation: dgMenuIn 0.18s ease-out;
-    }
-
-    .dgMobileMenuList {
-        display: flex;
-        flex-direction: column;
-        gap: 0.35rem;
-        padding: 0.5rem;
-    }
-
-    .dgMobileMenuItem {
-        width: 100%;
-        justify-content: flex-start;
-        min-height: 2.2rem;
-        border-radius: 0.75rem;
-    }
-
-    .dgMobileMenuText {
-        min-width: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-}
-
 .dg-arenaTableCard {
     display: flex;
     flex-direction: column;
@@ -717,117 +565,6 @@
     top: 50%;
     transform: translate(-50%, -50%) rotate(90deg) scale(var(--dg-military-board-scale));
     transform-origin: center center;
-}
-
-@media (min-width: 1024px) {
-    .dg-playerBand:nth-child(1) {
-        justify-self: end;
-    }
-    .dg-playerBand:nth-child(2) {
-        justify-self: start;
-    }
-
-    .dg-playerShell {
-        width: fit-content;
-        max-width: 100%;
-    }
-
-    .dg-playerArea {
-        width: fit-content;
-        max-width: 100%;
-    }
-
-    .dg-stageCards:not(.dg-stageCards--prepare) {
-        margin-left: -50px;
-        margin-top: -20px !important;
-    }
-    .dg-actionsModal {
-        transform: translateX(-63%) !important;
-    }
-    .dg-arenaTableCard {
-        min-height: 516px;
-    }
-    .dg-militaryViewport {
-       position: absolute;
-       transform: rotate(-90deg) scale(var(--dg-military-board-scale));
-       top: 183px;
-       left: 260px;
-    }
-    .dg-boardCoinSlot {
-        transform: rotate(0);
-    }
-    .dg-arenaTableCard:has(.dg-stageCards--prepare) .dg-boardCoinSlot {
-        transform: rotate(-90deg);
-    }
-    /* Wonder-pick phase: conflict board like narrow layout — top, not shifted right beside pyramid */
-    .dg-arenaTableCard:has(.dg-stageCards--prepare) .dg-militaryViewport {
-        position: relative;
-        top: auto;
-        left: auto;
-        inset: auto;
-        transform: none;
-        width: 100%;
-        justify-self: auto;
-        align-self: auto;
-        height: calc(var(--width-board) * var(--dg-military-board-scale));
-        margin-top: -14px;
-        min-height: unset;
-        display: block;
-        max-width: none;
-    }
-
-    .dg-graveyardPanel {
-        width: 430px !important;
-        margin: 0 auto !important;
-        transform: translateX(-50px) !important;
-    }
-
-    .dg-duelPlayersRow {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-        gap: 10px;
-        min-width: 0;
-        align-items: start;
-        justify-content: center;
-    }
-}
-
-/* Wide screens: player column stack on the right, fixed-width arena on the left */
-@media (min-width: 1440px) {
-    .dg-playerBand:nth-child(1) {
-        justify-self: unset;
-    }
-    .dg-playerBand:nth-child(2) {
-        justify-self: unset;
-    }
-
-    .dg-duelLayout {
-        flex-direction: row;
-        justify-content: center;
-    }
-
-    .dg-duelArena {
-        order: 1;
-        width: 754px;
-    }
-
-    .dg-militaryViewport {
-        left: 442px;
-        width: 50%;
-    }
-
-    .dg-duelPlayersRow {
-        order: 2;
-        display: flex;
-        flex-direction: column;
-        min-width: 0;
-        align-items: stretch;
-        justify-content: start;
-    }
-
-    .dg-playerBand {
-        align-self: flex-start;
-    }
 }
 
 .dg-duelBand {
@@ -1039,13 +776,6 @@
     width: 100%;
 }
 
-@media (min-width: 1024px) {
-    .dg-actionsInlineWrap .dg-actionsModal {
-        margin-left: -100px;
-        width: 430px;
-    }
-}
-
 .dg-actionsModal p {
     color: var(--duel-actionbar-text);
 }
@@ -1070,12 +800,6 @@
 .dg-actionsButtons--starter {
     flex-direction: column;
     flex-wrap: wrap;
-}
-
-@media (min-width: 480px) {
-    .dg-actionsButtons--starter {
-        flex-direction: row;
-    }
 }
 
 .dg-actionsModalCoins {
@@ -1296,8 +1020,9 @@
     min-height: 0px;
     display: flex;
     flex-wrap: wrap;
-    gap: 2px;
+    gap: 6px;
     align-items: center;
+    margin-bottom: 2px;
 }
 
 .dg-playerCoinsBox {
@@ -1503,5 +1228,296 @@
             0 0 0 4px rgba(110, 231, 183, 0.45),
             0 0 20px rgba(34, 197, 94, 0.2);
         filter: brightness(1.12);
+    }
+}
+
+/* =========================================================
+   Responsive Overrides (kept together for maintainability)
+   ========================================================= */
+
+@media (max-width: 768px) {
+    .dgHeader .btn-secondary {
+        padding: 6px 10px;
+    }
+
+    .dgHeaderActionsDesktop {
+        display: none !important;
+    }
+
+    .dgMobileMenuToggle {
+        display: inline-flex !important;
+        min-width: 2.35rem;
+        min-height: 2.35rem;
+        padding: 0.45rem;
+        border-radius: 0.9rem;
+        margin-left: auto;
+    }
+
+    .dgMobileMenu {
+        position: absolute;
+        top: calc(100% + 8px);
+        right: 0;
+        width: min(84vw, 16rem);
+        border-radius: 14px;
+        border: 1px solid var(--duel-mobile-menu-border);
+        background: var(--duel-mobile-menu-bg);
+        box-shadow: var(--duel-mobile-menu-shadow);
+        display: block !important;
+        z-index: 120;
+        animation: dgMenuIn 0.18s ease-out;
+    }
+
+    .dgMobileMenuList {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+        padding: 0.5rem;
+    }
+
+    .dgMobileMenuItem {
+        width: 100%;
+        justify-content: flex-start;
+        min-height: 2.2rem;
+        border-radius: 0.75rem;
+    }
+
+    .dgMobileMenuText {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}
+
+@media (min-width: 425px) {
+    :root {
+        --dg-military-board-scale: 0.71;
+        --dg-epoch-cards-scale: 0.8;
+        --dg-wonder-prepare-scale: 0.8;
+        --dg-player-wonders-scale: 0.9;
+        --dg-player-wonders-gap: 12px;
+    }
+
+    .dg-actionsInlineWrap {
+        margin-bottom: 4px;
+    }
+
+    .dg-militaryViewport {
+        margin-top: -20px !important;
+    }
+
+    .dg-stageCards:not(.dg-stageCards--prepare) {
+        margin-bottom: -30px !important;
+        margin-top: -36px !important;
+    }
+
+    .dg-playerShell {
+        max-width: 490px;
+    }
+
+    .dg-duelBand {
+        display: flex;
+        justify-content: center;
+    }
+
+    .dg-playerArea {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        grid-template-areas:
+            'header header'
+            'wonders coins'
+            'columns columns';
+        column-gap: 12px;
+        align-items: start;
+    }
+
+    .dg-playerHeader {
+        grid-area: header;
+    }
+
+    .dg-playerWonders {
+        grid-area: wonders;
+        justify-content: start;
+        justify-self: start;
+        margin-right: auto;
+        margin-bottom: 4px !important;
+    }
+
+    .dg-playerColumnsScroller {
+        grid-area: columns;
+    }
+
+    .dg-playerCoinsBox {
+        grid-area: coins;
+        margin-top: 0;
+        justify-self: stretch;
+        align-self: stretch;
+    }
+}
+
+@media (min-width: 480px) {
+    .dg-actionsButtons--starter {
+        flex-direction: row;
+    }
+}
+
+@media (min-width: 768px) {
+    :root {
+        --dg-military-board-scale: 0.9;
+        --dg-epoch-cards-scale: 0.95;
+        --dg-wonder-prepare-scale: 0.95;
+        --dg-player-wonders-scale: 1;
+        --dg-player-wonders-gap: 20px;
+    }
+
+    .dg-militaryViewport {
+        margin-top: -26px !important;
+    }
+
+    .dg-stageCards:not(.dg-stageCards--prepare) {
+        margin-bottom: -32px !important;
+        margin-top: -44px !important;
+    }
+
+    .dg-playerWonders {
+        margin-bottom: 14px !important;
+    }
+
+    .dg-playerCoinsBox {
+        margin-left: 8px;
+    }
+}
+
+@media (min-width: 1024px) {
+    :root {
+        --dg-military-board-scale: 1;
+        --dg-epoch-cards-scale: 1;
+        --dg-wonder-prepare-scale: 1;
+        --dg-player-wonders-scale: 1;
+    }
+
+    .dg-playerBand:nth-child(1) {
+        justify-self: end;
+    }
+
+    .dg-playerBand:nth-child(2) {
+        justify-self: start;
+    }
+
+    .dg-playerShell {
+        width: fit-content;
+        max-width: 100%;
+    }
+
+    .dg-playerArea {
+        width: fit-content;
+        max-width: 100%;
+    }
+
+    .dg-stageCards:not(.dg-stageCards--prepare) {
+        margin-left: -50px;
+        margin-top: -20px !important;
+    }
+
+    .dg-actionsModal {
+        transform: translateX(-63%) !important;
+    }
+
+    .dg-actionsInlineWrap:not(.dg-actionsInlineWrap--prepare) .dg-actionsModal {
+        margin-left: -100px;
+    }
+
+    .dg-actionsInlineWrap .dg-actionsModal {
+        width: 430px;
+    }
+
+    .dg-arenaTableCard {
+        min-height: 516px;
+    }
+
+    .dg-militaryViewport {
+       position: absolute;
+       transform: rotate(-90deg) scale(var(--dg-military-board-scale));
+       top: 183px;
+       left: 260px;
+    }
+
+    .dg-boardCoinSlot {
+        transform: rotate(0);
+    }
+
+    .dg-arenaTableCard:has(.dg-stageCards--prepare) .dg-boardCoinSlot {
+        transform: rotate(-90deg);
+    }
+
+    /* Wonder-pick phase: conflict board like narrow layout — top, not shifted right beside pyramid */
+    .dg-arenaTableCard:has(.dg-stageCards--prepare) .dg-militaryViewport {
+        position: relative;
+        top: auto;
+        left: auto;
+        inset: auto;
+        transform: none;
+        width: 100%;
+        justify-self: auto;
+        align-self: auto;
+        height: calc(var(--width-board) * var(--dg-military-board-scale));
+        margin-top: -14px;
+        min-height: unset;
+        display: block;
+        max-width: none;
+    }
+
+    .dg-graveyardPanel {
+        width: 430px !important;
+        margin: 0 auto !important;
+        transform: translateX(-50px) !important;
+    }
+
+    .dg-duelPlayersRow {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 10px;
+        min-width: 0;
+        align-items: start;
+        justify-content: center;
+    }
+}
+
+/* Wide screens: player column stack on the right, fixed-width arena on the left */
+@media (min-width: 1440px) {
+    .dg-playerBand:nth-child(1) {
+        justify-self: unset;
+    }
+
+    .dg-playerBand:nth-child(2) {
+        justify-self: unset;
+    }
+
+    .dg-duelLayout {
+        flex-direction: row;
+        justify-content: center;
+    }
+
+    .dg-duelArena {
+        order: 1;
+        width: 754px;
+    }
+
+    .dg-militaryViewport {
+        left: 442px;
+        width: 50%;
+    }
+
+    .dg-duelPlayersRow {
+        order: 2;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        align-items: stretch;
+        justify-content: start;
+    }
+
+    .dg-playerBand {
+        align-self: flex-start;
     }
 }

@@ -433,7 +433,7 @@ service cloud.firestore {
       allow update: if isSignedIn()
         && isGameStatusDocId(docId)
         && validGameStatusDocument(request.resource.data, docId)
-        && isGameStatusParticipant(resource.data)
+        && (isGameStatusParticipant(resource.data) || isGameStatusParticipant(request.resource.data))
         && validGameStatusTransition()
         && validGameStatusStartedTransition();
       allow delete: if false;

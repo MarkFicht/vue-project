@@ -394,6 +394,7 @@ export function DuelGamePage({
                                     </div>
                                 <DuelActionsOverlay
                                     inline
+                                    isPrepareTier={game.tier === 'prepare'}
                                     showCoinChoiceModal={showCoinChoiceModal}
                                     awaitingBoardCoinPick={awaitingBoardCoinPick}
                                     visibleCoinChoices={visibleCoinChoices}
