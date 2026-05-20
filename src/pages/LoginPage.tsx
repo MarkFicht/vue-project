@@ -1,4 +1,4 @@
-import { FormEvent, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     createUserWithEmailAndPassword,
@@ -9,21 +9,47 @@ import {
     updateProfile
 } from 'firebase/auth';
 import { doc, getDoc, runTransaction, serverTimestamp } from 'firebase/firestore';
-import { Gamepad2, LogIn, Palette, UserPlus, Volume2, VolumeX } from 'lucide-react';
+import { ArrowRight, Gamepad2, LogIn, Palette, UserPlus, Volume2, VolumeX } from 'lucide-react';
 import { auth, db, googleProvider } from '@/firebaseConfig';
 import { displayNamesRef, usersRef } from '@/firebase/refs';
 import { clearLoginOverlayPending, markLoginOverlayPending } from '@/hooks/useGlobalLoadingOverlay';
 import { getNextTheme, getThemeLabel, getThemeSwitchTitle, type AppTheme } from '@/hooks/useAppTheme';
 import { isSoundMuted, setSoundMuted } from '@/utils/sound';
 import { normalizeDisplayName, sanitizeDisplayName } from '@/utils/displayName';
+import { PASSWORD_RESET_SENT_MESSAGE, sendAccountPasswordResetEmail } from '@/utils/passwordReset';
+import { mapLoginAuthError, mapPasswordResetError } from '@/utils/authErrors';
+import {
+    MAX_DISPLAY_NAME_LENGTH,
+    MAX_EMAIL_LENGTH,
+    MAX_PASSWORD_LENGTH,
+    MIN_PASSWORD_LENGTH,
+    normalizeAuthEmail
+} from '@/constants/auth';
+import { usePasswordResetCooldown } from '@/hooks/usePasswordResetCooldown';
 import { getCountrySelectOptions, guessCountryFromLocale, normalizeCountryCode } from '@/utils/country';
 import { CountrySelect } from '@/components/CountrySelect';
+import { PasswordInput } from '@/components/PasswordInput';
 import '@/styles/login.css';
+const LOGIN_THEME_HINT_KEY = 'login-theme-hint-seen';
 
-const MAX_EMAIL_LENGTH = 254;
-const MAX_DISPLAY_NAME_LENGTH = 32;
-const MIN_PASSWORD_LENGTH_REGISTER = 10;
-const MAX_PASSWORD_LENGTH = 128;
+function readThemeHintVisible(): boolean {
+    if (typeof window === 'undefined') {
+        return true;
+    }
+    try {
+        return window.localStorage.getItem(LOGIN_THEME_HINT_KEY) !== '1';
+    } catch {
+        return true;
+    }
+}
+
+function dismissThemeHint() {
+    try {
+        window.localStorage.setItem(LOGIN_THEME_HINT_KEY, '1');
+    } catch {
+        // Ignore storage failures (private mode, quota, etc.).
+    }
+}
 
 export function LoginPage({
     theme,
@@ -33,17 +59,54 @@ export function LoginPage({
     onThemeChange: (theme: AppTheme) => void;
 }) {
     const navigate = useNavigate();
-    const [mode, setMode] = useState<'signin' | 'register'>('signin');
+    const [mode, setMode] = useState<'signin' | 'register' | 'forgot'>('signin');
     const [displayName, setDisplayName] = useState('');
     const [registerCountry, setRegisterCountry] = useState(() => guessCountryFromLocale());
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [resetError, setResetError] = useState('');
+    const [resetMessage, setResetMessage] = useState('');
+    const [resetSending, setResetSending] = useState(false);
     const [authInProgress, setAuthInProgress] = useState(false);
     const [soundMuted, setSoundMutedState] = useState(() => isSoundMuted());
+    const [showThemeHint, setShowThemeHint] = useState(readThemeHintVisible);
     const isRegister = useMemo(() => mode === 'register', [mode]);
+    const isForgot = mode === 'forgot';
+    const isFormBusy = authInProgress || resetSending;
+    const passwordResetCooldown = usePasswordResetCooldown();
+
+    const clearResetFeedback = () => {
+        setResetError('');
+        setResetMessage('');
+    };
+
+    const goToSignIn = () => {
+        setMode('signin');
+        setError('');
+        clearResetFeedback();
+    };
+
+    const emailInputRef = useRef<HTMLInputElement>(null);
+
+    const goToForgot = () => {
+        setMode('forgot');
+        setError('');
+        clearResetFeedback();
+    };
+
+    useEffect(() => {
+        if (!isForgot) return;
+        emailInputRef.current?.focus();
+    }, [isForgot]);
     const countryOptions = useMemo(() => getCountrySelectOptions(), []);
-    const toggleTheme = () => onThemeChange(getNextTheme(theme));
+    const toggleTheme = () => {
+        if (showThemeHint) {
+            setShowThemeHint(false);
+            dismissThemeHint();
+        }
+        onThemeChange(getNextTheme(theme));
+    };
     const toggleSound = () => {
         const next = !soundMuted;
         setSoundMuted(next);
@@ -60,9 +123,13 @@ export function LoginPage({
 
     const onSubmit = async (event: FormEvent) => {
         event.preventDefault();
+        if (isForgot) {
+            await sendPasswordReset();
+            return;
+        }
         if (authInProgress) return;
         setError('');
-        const normalizedEmail = email.trim().toLowerCase();
+        const normalizedEmail = normalizeAuthEmail(email);
         if (!normalizedEmail) {
             setError('Email is required.');
             return;
@@ -86,8 +153,8 @@ export function LoginPage({
                     setError(`Display name is too long (max ${MAX_DISPLAY_NAME_LENGTH} characters).`);
                     return;
                 }
-                if (password.length < MIN_PASSWORD_LENGTH_REGISTER) {
-                    setError(`Password must have at least ${MIN_PASSWORD_LENGTH_REGISTER} characters.`);
+                if (password.length < MIN_PASSWORD_LENGTH) {
+                    setError(`Password must have at least ${MIN_PASSWORD_LENGTH} characters.`);
                     return;
                 }
                 const displayNameKey = normalizeDisplayName(cleanDisplayName);
@@ -150,20 +217,36 @@ export function LoginPage({
         } catch (err) {
             clearLoginOverlayPending();
             setAuthInProgress(false);
-            const firebaseError = err as { code?: string; message?: string };
-            if (firebaseError.code === 'auth/email-already-in-use') {
-                setError('This email already exists in Firebase Authentication.');
-                return;
-            }
-            if (firebaseError.code === 'auth/weak-password') {
-                setError('Password is too weak (minimum 6 characters).');
-                return;
-            }
-            if (firebaseError.code === 'auth/invalid-credential') {
-                setError('Invalid email or password.');
-                return;
-            }
-            setError(firebaseError.message || 'Operation failed.');
+            setError(mapLoginAuthError(err, isRegister));
+        }
+    };
+
+    const sendPasswordReset = async () => {
+        if (resetSending || authInProgress) return;
+        if (!passwordResetCooldown.canSendReset()) {
+            setResetError(passwordResetCooldown.getCooldownBlockedMessage());
+            setResetMessage('');
+            return;
+        }
+
+        const normalizedEmail = normalizeAuthEmail(email);
+        if (!normalizedEmail) {
+            setResetError('Email is required.');
+            setResetMessage('');
+            return;
+        }
+
+        setResetError('');
+        setResetMessage('');
+        setResetSending(true);
+        try {
+            await sendAccountPasswordResetEmail(normalizedEmail);
+            setResetMessage(PASSWORD_RESET_SENT_MESSAGE);
+            passwordResetCooldown.startCooldown();
+        } catch (err) {
+            setResetError(mapPasswordResetError(err));
+        } finally {
+            setResetSending(false);
         }
     };
 
@@ -178,7 +261,7 @@ export function LoginPage({
         } catch (err) {
             clearLoginOverlayPending();
             setAuthInProgress(false);
-            setError((err as Error).message);
+            setError(mapLoginAuthError(err, false));
         }
     };
 
@@ -188,11 +271,14 @@ export function LoginPage({
                 <div className="loginTopControls">
                     <button
                         type="button"
-                        className="btn-secondary loginTopControlBtn"
+                        className={`btn-secondary loginTopControlBtn${showThemeHint ? ' loginThemeHintBtn' : ''}`}
                         onClick={toggleTheme}
                         title={getThemeSwitchTitle(theme)}
-                        disabled={authInProgress}
+                        disabled={isFormBusy}
                     >
+                        {showThemeHint && (
+                            <ArrowRight className="loginThemeHintArrow" strokeWidth={2.5} aria-hidden />
+                        )}
                         <Palette className="h-4 w-4" />
                         <span>{getThemeLabel(theme)}</span>
                     </button>
@@ -201,7 +287,7 @@ export function LoginPage({
                         className="btn-secondary loginTopControlBtn"
                         onClick={toggleSound}
                         title={soundMuted ? 'Unmute sounds' : 'Mute sounds'}
-                        disabled={authInProgress}
+                        disabled={isFormBusy}
                     >
                         {soundMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
                         <span>{soundMuted ? 'Muted' : 'Sound'}</span>
@@ -211,11 +297,16 @@ export function LoginPage({
                     <Gamepad2 className="app-brand-icon h-7 w-7" aria-hidden />
                     Game Board
                 </header>
-                <h2 className="font-display mb-4 tracking-wide text-center text-xl font-semibold text-[var(--app-text)]">
-                    {isRegister ? 'Register' : 'Sign in'}
+                <h2 className="font-display tracking-wide text-center text-xl font-semibold text-[var(--app-text)]">
+                    {isRegister ? 'Register' : isForgot ? 'Reset password' : 'Sign in'}
                 </h2>
+                {isForgot && (
+                    <p className="loginForgotSubtitle">
+                        Enter your email address. We will send you a link to set a new password.
+                    </p>
+                )}
 
-                <form className="space-y-3" onSubmit={onSubmit}>
+                <form className="loginForm space-y-3" onSubmit={onSubmit}>
                     {isRegister && (
                         <>
                             <input
@@ -237,31 +328,85 @@ export function LoginPage({
                         </>
                     )}
                     <input
+                        ref={emailInputRef}
                         className="input"
                         type="email"
                         placeholder="Email"
                         value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        onChange={(e) => {
+                            setEmail(e.target.value);
+                            if (isForgot && (resetMessage || resetError)) {
+                                clearResetFeedback();
+                            }
+                        }}
                         maxLength={MAX_EMAIL_LENGTH}
                         autoComplete="email"
+                        inputMode="email"
                         required
                     />
-                    <input
-                        className="input"
-                        type="password"
-                        placeholder="Password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        maxLength={MAX_PASSWORD_LENGTH}
-                        minLength={isRegister ? MIN_PASSWORD_LENGTH_REGISTER : 1}
-                        autoComplete={isRegister ? 'new-password' : 'current-password'}
-                        required
-                    />
-                    <button className="btn-primary w-full" type="submit" disabled={authInProgress}>
-                        {authInProgress ? 'Loading...' : isRegister ? 'Create account' : 'Login'}
+                    {!isForgot && (
+                        <PasswordInput
+                            key={mode}
+                            value={password}
+                            onChange={setPassword}
+                            minLength={isRegister ? MIN_PASSWORD_LENGTH : 1}
+                            autoComplete={isRegister ? 'new-password' : 'current-password'}
+                            disabled={isFormBusy}
+                            required
+                        />
+                    )}
+                    {mode === 'signin' && (
+                        <div className="loginForgotBlock">
+                            <button type="button" className="loginForgotLink" disabled={isFormBusy} onClick={goToForgot}>
+                                Forgot password?
+                            </button>
+                        </div>
+                    )}
+                    <button
+                        className="btn-primary w-full"
+                        type="submit"
+                        disabled={
+                            isFormBusy ||
+                            (isForgot && !!resetMessage) ||
+                            (isForgot && passwordResetCooldown.cooldownSecondsLeft > 0)
+                        }
+                    >
+                        {isForgot
+                            ? resetSending
+                                ? 'Sending...'
+                                : resetMessage
+                                  ? 'Email sent'
+                                  : passwordResetCooldown.cooldownSecondsLeft > 0
+                                    ? `Wait ${passwordResetCooldown.cooldownSecondsLeft}s`
+                                    : 'Send reset link'
+                            : authInProgress
+                              ? 'Loading...'
+                              : isRegister
+                                ? 'Create account'
+                                : 'Login'}
                     </button>
+                    {isForgot && (resetMessage || resetError) && (
+                        <div className="loginForgotFeedback" aria-live="polite">
+                            {resetMessage && (
+                                <p className="loginForgotSuccess" role="status">
+                                    {resetMessage}
+                                </p>
+                            )}
+                            {resetError && (
+                                <p className="loginForgotError" role="alert">
+                                    {resetError}
+                                </p>
+                            )}
+                        </div>
+                    )}
+                    {isForgot && (
+                        <button type="button" className="loginBackLink" disabled={isFormBusy} onClick={goToSignIn}>
+                            ← Back to sign in
+                        </button>
+                    )}
                 </form>
 
+                {!isForgot && (
                 <button
                     className="btn-secondary loginGoogleBtn mt-3 w-full"
                     type="button"
@@ -290,15 +435,17 @@ export function LoginPage({
                     </span>
                     Continue with Google
                 </button>
+                )}
 
-                {error && <p className="loginPageError mt-3 text-sm">{error}</p>}
+                {!isForgot && error && <p className="loginPageError mt-3 text-sm">{error}</p>}
             </div>
+            {!isForgot && (
             <section className="loginModeSwitch">
                 <nav className="loginModeNav">
                     <button
                         type="button"
-                        className={`loginModeItem ${!isRegister ? 'active' : ''}`}
-                        onClick={() => setMode('signin')}
+                        className={`loginModeItem ${mode === 'signin' ? 'active' : ''}`}
+                        onClick={goToSignIn}
                     >
                         <span className="icon">
                             <LogIn className="h-5 w-5" />
@@ -308,7 +455,11 @@ export function LoginPage({
                     <button
                         type="button"
                         className={`loginModeItem ${isRegister ? 'active' : ''}`}
-                        onClick={() => setMode('register')}
+                        onClick={() => {
+                            setMode('register');
+                            setError('');
+                            clearResetFeedback();
+                        }}
                     >
                         <span className="icon">
                             <UserPlus className="h-5 w-5" />
@@ -318,6 +469,7 @@ export function LoginPage({
                     <div className={`loginModeIndicator ${isRegister ? 'toRight' : ''}`} />
                 </nav>
             </section>
+            )}
         </main>
     );
 }
