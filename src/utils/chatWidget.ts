@@ -121,7 +121,35 @@ export function persistCachedMessages(uid: string, chatId: string, messages: Cha
             text: entry.text,
             createdAtMs: entry.createdAtMs
         }));
+        if (!payload.length) {
+            localStorage.removeItem(`${CHAT_CACHE_PREFIX}${uid}:${chatId}`);
+            return;
+        }
         localStorage.setItem(`${CHAT_CACHE_PREFIX}${uid}:${chatId}`, JSON.stringify(payload));
+    } catch {
+        // Ignore storage quota errors.
+    }
+}
+
+export function clearCachedMessages(uid: string, chatId: string) {
+    try {
+        localStorage.removeItem(`${CHAT_CACHE_PREFIX}${uid}:${chatId}`);
+    } catch {
+        // Ignore storage quota errors.
+    }
+}
+
+export function pruneCachedMessages(uid: string, validChatIds: Set<string>) {
+    try {
+        const keyPrefix = `${CHAT_CACHE_PREFIX}${uid}:`;
+        for (let index = localStorage.length - 1; index >= 0; index -= 1) {
+            const key = localStorage.key(index);
+            if (!key || !key.startsWith(keyPrefix)) continue;
+            const chatId = key.slice(keyPrefix.length);
+            if (!validChatIds.has(chatId)) {
+                localStorage.removeItem(key);
+            }
+        }
     } catch {
         // Ignore storage quota errors.
     }

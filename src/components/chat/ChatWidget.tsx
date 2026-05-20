@@ -6,6 +6,7 @@ import {
     onSnapshot,
     query,
     serverTimestamp,
+    updateDoc,
     where,
     writeBatch,
     type Timestamp
@@ -25,6 +26,7 @@ import {
     loadHiddenRecentChatIds,
     loadChatNotifyMuted,
     loadReadMap,
+    pruneCachedMessages,
     saveHiddenRecentChatIds,
     saveReadMap,
     type ChatMessageLite,
@@ -49,6 +51,7 @@ type ChatSummary = {
     lastMessageSenderUid: string;
     updatedAt?: Timestamp;
     updatedAtMs: number;
+    readBy?: Record<string, Timestamp>;
 };
 
 const SPAM_WINDOW_MS = 10000;
@@ -57,6 +60,8 @@ const SPAM_MIN_INTERVAL_MS = 700;
 const SPAM_DUPLICATE_COOLDOWN_MS = 8000;
 const GROUP_WINDOW_MS = 120000;
 const EMOJI_QUICK_PICK = ['😀', '😂', '🔥', '👍', '❤️', '😎', '🤝', '🎉'];
+const getPeerUid = (participants: string[], uid: string) => participants.find((id) => id !== uid) || '';
+const withUnreadSuffix = (label: string, unread: number) => (unread > 0 ? `${label} (${unread})` : label);
 
 export function ChatWidget({ uid }: { uid: string }) {
     const [isOpen, setIsOpen] = useState(false);
@@ -71,6 +76,7 @@ export function ChatWidget({ uid }: { uid: string }) {
     const [freshMessageIds, setFreshMessageIds] = useState<Record<string, true>>({});
     const [nowMs, setNowMs] = useState(() => Date.now());
     const [readMap, setReadMap] = useState<Record<string, number>>(() => loadReadMap(uid));
+    const [unreadByChatId, setUnreadByChatId] = useState<Record<string, number>>({});
     const [chatNotifyMuted, setChatNotifyMuted] = useState(() => loadChatNotifyMuted(uid));
     const [hiddenRecentChatIds, setHiddenRecentChatIds] = useState<string[]>(() => loadHiddenRecentChatIds(uid));
     const [isRecentExpanded, setIsRecentExpanded] = useState(() => {
@@ -93,6 +99,7 @@ export function ChatWidget({ uid }: { uid: string }) {
         setHiddenRecentChatIds(loadHiddenRecentChatIds(uid));
         setSendError('');
         setFreshMessageIds({});
+        setUnreadByChatId({});
         setNowMs(Date.now());
         setSelectedChatId('');
         setSelectionCleared(false);
@@ -114,7 +121,8 @@ export function ChatWidget({ uid }: { uid: string }) {
                         lastMessage: (data.lastMessage as string) || '',
                         lastMessageSenderUid: (data.lastMessageSenderUid as string) || '',
                         updatedAt,
-                        updatedAtMs: updatedAt?.toMillis() ?? 0
+                        updatedAtMs: updatedAt?.toMillis() ?? 0,
+                        readBy: (data.readBy as Record<string, Timestamp> | undefined) ?? {}
                     };
                 })
                 .filter((entry) => entry.participants.includes(uid))
@@ -123,6 +131,25 @@ export function ChatWidget({ uid }: { uid: string }) {
         });
         return () => unsubscribe();
     }, [uid]);
+
+    useEffect(() => {
+        const validChatIds = new Set(chatSummaries.map((entry) => entry.chatId));
+        pruneCachedMessages(uid, validChatIds);
+
+        setReadMap((prev) => {
+            const filtered = Object.fromEntries(Object.entries(prev).filter(([chatId]) => validChatIds.has(chatId)));
+            if (Object.keys(filtered).length === Object.keys(prev).length) return prev;
+            saveReadMap(uid, filtered);
+            return filtered;
+        });
+
+        setHiddenRecentChatIds((prev) => {
+            const filtered = prev.filter((chatId) => validChatIds.has(chatId));
+            if (filtered.length === prev.length) return prev;
+            saveHiddenRecentChatIds(uid, filtered);
+            return filtered;
+        });
+    }, [chatSummaries, uid]);
 
     useEffect(() => {
         if (!isOpen) {
@@ -229,6 +256,12 @@ export function ChatWidget({ uid }: { uid: string }) {
         if (!activePeerUid) return '';
         return buildPrivateChatId(uid, activePeerUid);
     }, [selectedSummary, activePeerUid, uid]);
+    const activeChatSummary = useMemo(() => chatSummaryById.get(activeChatId) ?? null, [activeChatId, chatSummaryById]);
+    const activePeerReadAtMs = useMemo(() => {
+        if (!activeChatSummary || !activePeerUid) return 0;
+        const peerReadAt = activeChatSummary.readBy?.[activePeerUid];
+        return peerReadAt?.toMillis() ?? 0;
+    }, [activeChatSummary, activePeerUid]);
     const { messages, hasMoreOlder, loadingOlder, loadOlderMessages } = useChatMessages({ uid, activeChatId, isOpen });
 
     const openChatFromNotification = useCallback(
@@ -254,6 +287,15 @@ export function ChatWidget({ uid }: { uid: string }) {
 
     const { typingMap, clearTypingState, resetTypingMap } = useChatTyping({ uid, activeChatId, draft, isOpen });
 
+    const openChatPanel = () => {
+        setIsOpen(true);
+        setSelectionCleared(true);
+        setSelectedChatId('');
+        setActiveUserId('');
+        setDraft('');
+        setSendError('');
+    };
+
     const toggleConversation = (peerUid: string, explicitChatId?: string) => {
         const targetChatId = explicitChatId || buildPrivateChatId(uid, peerUid);
         const isSameChat = !!activeChatId && activeChatId === targetChatId;
@@ -265,6 +307,7 @@ export function ChatWidget({ uid }: { uid: string }) {
             setSelectionCleared(true);
             return;
         }
+        registerConversationInteraction();
         setSelectionCleared(false);
         setSelectedChatId(explicitChatId || '');
         setActiveUserId(peerUid);
@@ -273,14 +316,71 @@ export function ChatWidget({ uid }: { uid: string }) {
     const markChatAsRead = (chatId: string, readAtMs?: number) => {
         if (!chatId) return;
         const nextReadAt = readAtMs ?? Date.now();
+        const prevReadAt = readMap[chatId] ?? 0;
+        if (nextReadAt <= prevReadAt) return;
         setReadMap((prev) => {
-            const prevReadAt = prev[chatId] ?? 0;
-            if (nextReadAt <= prevReadAt) return prev;
             const next = { ...prev, [chatId]: nextReadAt };
             saveReadMap(uid, next);
             return next;
         });
+        void updateDoc(doc(privateChatsRef, chatId), {
+            [`readBy.${uid}`]: serverTimestamp()
+        }).catch(() => {
+            // Keep local read state even if cross-device receipt update fails.
+        });
     };
+
+    useEffect(() => {
+        if (!chatSummaries.length) {
+            setUnreadByChatId({});
+            return;
+        }
+
+        const trackedSummaries = chatSummaries.filter((summary) => {
+            const readAt = readMap[summary.chatId] ?? 0;
+            return !!summary.lastMessageSenderUid && summary.lastMessageSenderUid !== uid && summary.updatedAtMs > readAt;
+        });
+
+        if (!trackedSummaries.length) {
+            setUnreadByChatId({});
+            return;
+        }
+
+        const trackedChatIds = new Set(trackedSummaries.map((summary) => summary.chatId));
+        setUnreadByChatId((prev) =>
+            Object.fromEntries(Object.entries(prev).filter(([chatId]) => trackedChatIds.has(chatId)))
+        );
+
+        const unsubscribers = trackedSummaries.map((summary) => {
+            const readAt = readMap[summary.chatId] ?? 0;
+            const messagesRef = collection(db, 'privateChats', summary.chatId, 'messages');
+            const unreadQuery = readAt > 0
+                ? query(messagesRef, where('createdAt', '>', new Date(readAt)), limit(100))
+                : query(messagesRef, limit(100));
+
+            return onSnapshot(unreadQuery, (snapshot) => {
+                const unreadCountForChat = snapshot.docs.reduce((acc, messageDoc) => {
+                    const data = messageDoc.data() as Record<string, unknown>;
+                    return data.senderUid === uid ? acc : acc + 1;
+                }, 0);
+
+                setUnreadByChatId((prev) => {
+                    if (unreadCountForChat <= 0) {
+                        if (!(summary.chatId in prev)) return prev;
+                        const next = { ...prev };
+                        delete next[summary.chatId];
+                        return next;
+                    }
+                    if (prev[summary.chatId] === unreadCountForChat) return prev;
+                    return { ...prev, [summary.chatId]: unreadCountForChat };
+                });
+            });
+        });
+
+        return () => {
+            unsubscribers.forEach((unsubscribe) => unsubscribe());
+        };
+    }, [chatSummaries, readMap, uid]);
 
     useEffect(() => {
         const freshIds = messages
@@ -354,7 +454,10 @@ export function ChatWidget({ uid }: { uid: string }) {
                     createdAt: now,
                     lastMessage: text,
                     lastMessageSenderUid: uid,
-                    updatedAt: now
+                    updatedAt: now,
+                    readBy: {
+                        [uid]: now
+                    }
                 },
                 { merge: true }
             );
@@ -385,17 +488,24 @@ export function ChatWidget({ uid }: { uid: string }) {
     const awayCount = activeUsers.length - onlineCount;
     const getPresenceState = (userId: string): PresenceFilterState => presenceMap[userId] ?? 'offline';
     const unreadCount = useMemo(() => {
-        return chatSummaries.reduce((acc, summary) => {
-            const readAt = readMap[summary.chatId] ?? 0;
-            const isUnread = summary.lastMessageSenderUid && summary.lastMessageSenderUid !== uid && summary.updatedAtMs > readAt;
-            return acc + (isUnread ? 1 : 0);
-        }, 0);
-    }, [chatSummaries, readMap, uid]);
+        return Object.values(unreadByChatId).reduce((acc, count) => acc + count, 0);
+    }, [unreadByChatId]);
+    const unreadByUserId = useMemo(() => {
+        const map = new Map<string, number>();
+        chatSummaries.forEach((summary) => {
+            const unreadForChat = unreadByChatId[summary.chatId] ?? 0;
+            if (unreadForChat <= 0) return;
+            const otherUid = getPeerUid(summary.participants, uid);
+            if (!otherUid) return;
+            map.set(otherUid, (map.get(otherUid) ?? 0) + unreadForChat);
+        });
+        return map;
+    }, [chatSummaries, uid, unreadByChatId]);
 
     const recentConversations = useMemo(() => {
         return chatSummaries
             .map((summary) => {
-                const otherUid = summary.participants.find((id) => id !== uid) || '';
+                const otherUid = getPeerUid(summary.participants, uid);
                 const userInfo = usersById.get(otherUid);
                 return {
                     ...summary,
@@ -410,7 +520,7 @@ export function ChatWidget({ uid }: { uid: string }) {
     const hiddenRecentConversations = useMemo(() => {
         return chatSummaries
             .map((summary) => {
-                const otherUid = summary.participants.find((id) => id !== uid) || '';
+                const otherUid = getPeerUid(summary.participants, uid);
                 const userInfo = usersById.get(otherUid);
                 return {
                     ...summary,
@@ -494,7 +604,8 @@ export function ChatWidget({ uid }: { uid: string }) {
         [messages, freshMessageIds, nowMs, uid]
     );
 
-    const { messageRefs, messagesEndRef, messagesContainerRef, maybeMarkActiveChatAsRead } = useChatViewport({
+    const { messageRefs, messagesEndRef, messagesContainerRef, registerConversationInteraction, handleMessagesScroll } =
+        useChatViewport({
         uid,
         isOpen,
         activeChatId,
@@ -521,7 +632,7 @@ export function ChatWidget({ uid }: { uid: string }) {
                 <button
                     type="button"
                     className="chatFab"
-                    onClick={() => setIsOpen(true)}
+                    onClick={openChatPanel}
                     aria-label="Open chat"
                     title="Open chat"
                 >
@@ -598,10 +709,9 @@ export function ChatWidget({ uid }: { uid: string }) {
                                 <div className="chatRecentList modalLikeScrollbar">
                                     {recentConversations.map((entry) => {
                                         const label = entry.userInfo?.displayName || entry.userInfo?.email || entry.otherUid;
-                                        const isUnread =
-                                            entry.lastMessageSenderUid &&
-                                            entry.lastMessageSenderUid !== uid &&
-                                            entry.updatedAtMs > (readMap[entry.chatId] ?? 0);
+                                        const unreadForChat = unreadByChatId[entry.chatId] ?? 0;
+                                        const isUnread = unreadForChat > 0;
+                                        const unreadForUser = unreadByUserId.get(entry.otherUid) ?? 0;
                                         return (
                                             <div
                                                 key={entry.chatId}
@@ -627,7 +737,9 @@ export function ChatWidget({ uid }: { uid: string }) {
                                                 >
                                                     <span className="chatRecentMain">
                                                         <UserFlag code={entry.userInfo?.countryCode} className="text-sm" />
-                                                        <span className="chatRecentName">{label}</span>
+                                                        <span className="chatRecentName">
+                                                            {withUnreadSuffix(label, unreadForUser)}
+                                                        </span>
                                                     </span>
                                                     <span className="chatRecentMeta">
                                                         {isUnread && <span className="chatRecentUnreadDot" />}
@@ -681,6 +793,7 @@ export function ChatWidget({ uid }: { uid: string }) {
                         {activeUsers.map((entry) => {
                             const label = entry.displayName || entry.email || entry.uid;
                             const presenceState = getPresenceState(entry.uid);
+                            const unreadForUser = unreadByUserId.get(entry.uid) ?? 0;
                             return (
                                 <button
                                     key={entry.uid}
@@ -694,7 +807,7 @@ export function ChatWidget({ uid }: { uid: string }) {
                                         }`}
                                     />
                                     <UserFlag code={entry.countryCode} className="text-sm" />
-                                    <span className="chatUserName">{label}</span>
+                                    <span className="chatUserName">{withUnreadSuffix(label, unreadForUser)}</span>
                                 </button>
                             );
                         })}
@@ -710,7 +823,7 @@ export function ChatWidget({ uid }: { uid: string }) {
                         <div
                             ref={messagesContainerRef}
                             className="chatMessages modalLikeScrollbar"
-                            onScroll={maybeMarkActiveChatAsRead}
+                            onScroll={handleMessagesScroll}
                         >
                             {hasMoreOlder && (
                                 <button
@@ -746,7 +859,32 @@ export function ChatWidget({ uid }: { uid: string }) {
                                             }}
                                         >
                                             <p>{row.message.text}</p>
-                                            <time>{row.timeLabel}</time>
+                                            <div className="chatBubbleMeta">
+                                                <time>{row.timeLabel}</time>
+                                                {row.isMine && (
+                                                    <span
+                                                        className={`chatReadTick ${
+                                                            row.message.createdAtMs > 0 && activePeerReadAtMs >= row.message.createdAtMs
+                                                                ? 'isRead'
+                                                                : 'isSent'
+                                                        }`}
+                                                        aria-label={
+                                                            row.message.createdAtMs > 0 && activePeerReadAtMs >= row.message.createdAtMs
+                                                                ? 'Read'
+                                                                : 'Sent'
+                                                        }
+                                                        title={
+                                                            row.message.createdAtMs > 0 && activePeerReadAtMs >= row.message.createdAtMs
+                                                                ? 'Read'
+                                                                : 'Sent'
+                                                        }
+                                                    >
+                                                        {row.message.createdAtMs > 0 && activePeerReadAtMs >= row.message.createdAtMs
+                                                            ? '✓✓'
+                                                            : '✓'}
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
                                     </article>
                                 );

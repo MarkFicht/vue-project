@@ -520,36 +520,49 @@ export function DashboardPage({
     const removeUserFromLobby = async (targetUid: string) => {
         if (!targetUid) return;
         if (duel.isStarted) return;
+        try {
+            await runTransaction(db, async (tx) => {
+                const duelStatusSnap = await tx.get(gameStatusDuelRef);
+                if (!duelStatusSnap.exists()) return;
+                const players = (duelStatusSnap.data()?.players ?? []) as Array<{
+                    uid: string;
+                    displayName: string;
+                    email: string;
+                    game: string;
+                    readyToGame: boolean;
+                    joinedAt?: number;
+                }>;
+                const nextPlayers = players.filter((player) => player.uid !== targetUid);
+                tx.set(
+                    gameStatusDuelRef,
+                    {
+                        players: nextPlayers,
+                        isStarted: false
+                    },
+                    { merge: true }
+                );
+            });
 
-        const nextPlayers = duel.players
-            .filter((player) => player.uid !== targetUid);
-
-        const batch = writeBatch(db);
-        if (targetUid === uid) {
-            batch.set(
-                doc(usersRef, targetUid),
-                {
-                    game: '',
-                    readyToGame: false,
-                    status: 'online',
-                    online: deleteField(),
-                    timestamp: serverTimestamp(),
-                    updatedAt: serverTimestamp(),
-                    lastSeenAt: serverTimestamp(),
-                    schemaVersion: 1
-                },
-                { merge: true }
-            );
+            if (targetUid === uid) {
+                await setDoc(
+                    doc(usersRef, targetUid),
+                    {
+                        game: '',
+                        readyToGame: false,
+                        status: 'online',
+                        online: deleteField(),
+                        timestamp: serverTimestamp(),
+                        updatedAt: serverTimestamp(),
+                        lastSeenAt: serverTimestamp(),
+                        schemaVersion: 1
+                    },
+                    { merge: true }
+                );
+            }
+        } catch (error) {
+            const message = (error as { message?: string }).message || 'Failed to update lobby.';
+            setInitError(message);
         }
-        batch.set(
-            gameStatusDuelRef,
-            {
-                players: nextPlayers,
-                isStarted: false
-            },
-            { merge: true }
-        );
-        await batch.commit();
     };
 
     const readyUp = async () => {
@@ -1209,7 +1222,7 @@ export function DashboardPage({
                                                         <span className={player.readyToGame ? 'text-emerald-300' : 'text-amber-300'}>
                                                             {player.readyToGame ? 'ready' : 'waiting'}
                                                         </span>
-                                                        {player.uid === uid && (
+                                                        {inDuelLobby && player.uid !== uid && (
                                                             <button
                                                                 type="button"
                                                                 className={`dashRemoveButton ${
@@ -1229,7 +1242,7 @@ export function DashboardPage({
                                                                     !isBootstrapped
                                                                         ? 'Loading lobby data...'
                                                                         : removeCooldown.canRemove
-                                                                          ? 'Leave lobby'
+                                                                          ? 'Remove player from lobby'
                                                                           : `Remove available in ${removeCooldown.secondsLeft}s`
                                                                 }
                                                             >
@@ -1337,7 +1350,7 @@ export function DashboardPage({
                                             <span className={player.readyToGame ? 'text-emerald-300' : 'text-amber-300'}>
                                                 {player.readyToGame ? 'ready' : 'waiting'}
                                             </span>
-                                            {player.uid === uid && (
+                                            {inDuelLobby && player.uid !== uid && (
                                                 <button
                                                     type="button"
                                                     className={`dashRemoveButton ${
@@ -1357,7 +1370,7 @@ export function DashboardPage({
                                                         !isBootstrapped
                                                             ? 'Loading lobby data...'
                                                             : removeCooldown.canRemove
-                                                              ? 'Leave lobby'
+                                                              ? 'Remove player from lobby'
                                                               : `Remove available in ${removeCooldown.secondsLeft}s`
                                                     }
                                                 >

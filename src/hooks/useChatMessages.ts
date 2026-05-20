@@ -14,6 +14,7 @@ import {
 import { db } from '@/firebaseConfig';
 import {
     CHAT_PAGE_SIZE,
+    clearCachedMessages,
     hydrateCachedMessages,
     mergeMessages,
     persistCachedMessages,
@@ -66,12 +67,22 @@ export function useChatMessages({
 
         const messagesRef = collection(db, 'privateChats', activeChatId, 'messages');
         const messagesQuery = query(messagesRef, orderBy('createdAt', 'desc'), limit(CHAT_PAGE_SIZE));
-        const unsubscribe = onSnapshot(messagesQuery, (snapshot) => {
-            const nextMessages = snapshot.docs.map(mapMessageDoc).reverse();
-            setLiveMessages(nextMessages);
-            setOldestCursor(snapshot.docs.length ? snapshot.docs[snapshot.docs.length - 1] : null);
-            setHasMoreOlder(snapshot.docs.length === CHAT_PAGE_SIZE);
-        });
+        const unsubscribe = onSnapshot(
+            messagesQuery,
+            (snapshot) => {
+                const nextMessages = snapshot.docs.map(mapMessageDoc).reverse();
+                setLiveMessages(nextMessages);
+                setOldestCursor(snapshot.docs.length ? snapshot.docs[snapshot.docs.length - 1] : null);
+                setHasMoreOlder(snapshot.docs.length === CHAT_PAGE_SIZE);
+            },
+            () => {
+                clearCachedMessages(uid, activeChatId);
+                setLiveMessages([]);
+                setOlderMessages([]);
+                setOldestCursor(null);
+                setHasMoreOlder(false);
+            }
+        );
 
         return () => unsubscribe();
     }, [activeChatId, isOpen, mapMessageDoc, uid]);
@@ -79,7 +90,7 @@ export function useChatMessages({
     const messages = useMemo(() => mergeMessages([...olderMessages, ...liveMessages]), [olderMessages, liveMessages]);
 
     useEffect(() => {
-        if (!activeChatId || !messages.length) return;
+        if (!activeChatId) return;
         persistCachedMessages(uid, activeChatId, messages);
     }, [activeChatId, messages, uid]);
 

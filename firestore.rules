@@ -158,6 +158,33 @@ service cloud.firestore {
         && (!data.isStarted || data.players.size() == 2);
     }
 
+    function lobbyKickCooldownMs() {
+      return 3000;
+    }
+
+    function joinTimestampSkewMs() {
+      return 120000;
+    }
+
+    function joinPlayerHasValidJoinedAt(player) {
+      return ('joinedAt' in player)
+        && player.joinedAt is int
+        && player.joinedAt > 0;
+    }
+
+    function canKickLobbyPlayer(player) {
+      return (
+          !('joinedAt' in player)
+          || (
+            player.joinedAt is int
+            && (
+              player.joinedAt <= request.time.toMillis() - lobbyKickCooldownMs()
+              || player.joinedAt > request.time.toMillis() + joinTimestampSkewMs()
+            )
+          )
+        );
+    }
+
     function sameGameStatusUidOrder(beforePlayers, afterPlayers) {
       return beforePlayers.size() == afterPlayers.size()
         && (
@@ -195,25 +222,36 @@ service cloud.firestore {
         // Join empty lobby as caller.
         || (beforePlayers.size() == 0
           && afterPlayers.size() == 1
-          && afterPlayers[0].uid == request.auth.uid)
+          && afterPlayers[0].uid == request.auth.uid
+          && joinPlayerHasValidJoinedAt(afterPlayers[0]))
         // Join 1-player lobby as second player; existing player immutable.
         || (beforePlayers.size() == 1
           && afterPlayers.size() == 2
           && beforePlayers[0].uid != request.auth.uid
           && afterPlayers[0] == beforePlayers[0]
-          && afterPlayers[1].uid == request.auth.uid)
+          && afterPlayers[1].uid == request.auth.uid
+          && joinPlayerHasValidJoinedAt(afterPlayers[1]))
         // Leave single-player lobby where caller is the only player.
         || (beforePlayers.size() == 1
           && beforePlayers[0].uid == request.auth.uid
           && afterPlayers.size() == 0)
-        // Leave 2-player lobby; remaining player immutable.
+        // Leave 2-player lobby or kick stale peer after cooldown.
         || (beforePlayers.size() == 2
           && afterPlayers.size() == 1
           && (
+            // caller leaves; other player must remain unchanged
             (beforePlayers[0].uid == request.auth.uid
               && afterPlayers[0] == beforePlayers[1])
             || (beforePlayers[1].uid == request.auth.uid
               && afterPlayers[0] == beforePlayers[0])
+            // caller stays and removes peer after cooldown
+            || (afterPlayers[0].uid == request.auth.uid
+              && (
+                (beforePlayers[0].uid == request.auth.uid
+                  && canKickLobbyPlayer(beforePlayers[1]))
+                || (beforePlayers[1].uid == request.auth.uid
+                  && canKickLobbyPlayer(beforePlayers[0]))
+              ))
           ))
         // Game cleanup: participant may clear roster.
         || (beforePlayers.size() == 2
@@ -468,7 +506,8 @@ service cloud.firestore {
           'createdAt',
           'lastMessage',
           'lastMessageSenderUid',
-          'updatedAt'
+          'updatedAt',
+          'readBy'
         ])
         && request.resource.data.participants is list
         && request.resource.data.participants.size() == 2
@@ -483,6 +522,9 @@ service cloud.firestore {
         && request.resource.data.lastMessageSenderUid == request.auth.uid
         && request.resource.data.createdAt is timestamp
         && request.resource.data.updatedAt is timestamp
+        && request.resource.data.readBy is map
+        && request.resource.data.readBy[request.auth.uid] is timestamp
+        && request.resource.data.readBy[request.auth.uid] == request.time
         && request.resource.data.createdAt == request.time
         && request.resource.data.updatedAt == request.time;
       allow update: if isSignedIn()
@@ -493,17 +535,33 @@ service cloud.firestore {
           'createdAt',
           'lastMessage',
           'lastMessageSenderUid',
-          'updatedAt'
+          'updatedAt',
+          'readBy'
         ])
         && request.resource.data.participants == resource.data.participants
         && request.resource.data.schemaVersion is int
-        && request.resource.data.lastMessage is string
-        && request.resource.data.lastMessage.size() > 0
-        && request.resource.data.lastMessage.size() <= 500
-        && request.resource.data.lastMessageSenderUid == request.auth.uid
         && request.resource.data.createdAt is timestamp
-        && request.resource.data.updatedAt is timestamp
-        && request.resource.data.updatedAt == request.time;
+        && request.resource.data.readBy is map
+        && (
+          (
+            request.resource.data.lastMessage is string
+            && request.resource.data.lastMessage.size() > 0
+            && request.resource.data.lastMessage.size() <= 500
+            && request.resource.data.lastMessageSenderUid == request.auth.uid
+            && request.resource.data.updatedAt is timestamp
+            && request.resource.data.updatedAt == request.time
+            && request.resource.data.readBy[request.auth.uid] is timestamp
+            && request.resource.data.readBy[request.auth.uid] == request.time
+          )
+          ||
+          (
+            request.resource.data.lastMessage == resource.data.lastMessage
+            && request.resource.data.lastMessageSenderUid == resource.data.lastMessageSenderUid
+            && request.resource.data.updatedAt == resource.data.updatedAt
+            && request.resource.data.readBy[request.auth.uid] is timestamp
+            && request.resource.data.readBy[request.auth.uid] == request.time
+          )
+        );
       allow delete: if false;
 
       match /messages/{messageId} {
