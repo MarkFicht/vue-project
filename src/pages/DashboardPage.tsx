@@ -39,8 +39,9 @@ import { UserFlag } from '@/components/UserFlag';
 import { LoadingOverlay } from '@/components/LoadingOverlay';
 import { MobileHamburgerMenu } from '@/components/MobileHamburgerMenu';
 import { SkeletonDot, SkeletonInput, SkeletonTag, SkeletonText } from '@/components/Skeleton';
-import type { AppTheme } from '@/hooks/useAppTheme';
+import { getNextTheme, getThemeLabel, getThemeSwitchTitle, type AppTheme } from '@/hooks/useAppTheme';
 import '@/styles/dashboard.css';
+// import { DashGameCardDummyPngPreview } from '@/components/dashboard/DashGameCardDummyPngPreview';
 
 const MAX_DISPLAY_NAME_LENGTH = 32;
 
@@ -136,10 +137,10 @@ function DashboardHeader({
                     type="button"
                     className="btn-secondary hdrIconBtn"
                     onClick={toggleTheme}
-                    title={theme === 'classic' ? 'Switch to ivory theme' : 'Switch to classic theme'}
+                    title={getThemeSwitchTitle(theme)}
                 >
                     <Palette className="h-4 w-4" />
-                    <span className="hdrBtnText">{theme === 'classic' ? 'Ivory' : 'Classic'}</span>
+                    <span className="hdrBtnText">{getThemeLabel(theme)}</span>
                 </button>
                 <button type="button" className="btn-secondary hdrIconBtn" title="Log out" onClick={openLogoutModal}>
                     <LogOut className="h-4 w-4" />
@@ -175,7 +176,7 @@ function DashboardHeader({
                 <button type="button" className="btn-secondary dashMobileMenuItem" onClick={toggleTheme}>
                     <Palette className="h-4 w-4 shrink-0" />
                     <span className="dashMobileMenuText">
-                        {theme === 'classic' ? 'Switch to ivory theme' : 'Switch to classic theme'}
+                        {`${getThemeLabel(theme)} (Switch theme)`}
                     </span>
                 </button>
                 <button type="button" className="btn-secondary dashMobileMenuItem" onClick={openLogoutModal}>
@@ -616,7 +617,7 @@ export function DashboardPage({
         setShowHeaderMobileMenu(false);
     };
     const toggleTheme = () => {
-        onThemeChange(theme === 'classic' ? 'ivory' : 'classic');
+        onThemeChange(getNextTheme(theme));
     };
     const toggleSound = () => {
         const next = !soundMuted;
@@ -1163,6 +1164,8 @@ export function DashboardPage({
 
             <section className={`dashWrapper ${showDuelLobbyModal ? 'modalOpen' : ''}`}>
                 <div className="dashScrollViewport dashGameContainer modalLikeScrollbar">
+                    {/* <DashGameCardDummyPngPreview /> */}
+
                     <article className="dashCard" style={{ '--dash-clr': '#4589cc' } as CSSProperties}>
                         <div className="dashBox dashBoxTop">Video soon!</div>
                         <div className="dashBox dashBoxBottom">

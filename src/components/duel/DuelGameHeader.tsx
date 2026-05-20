@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { ArrowLeft, Gamepad2, Palette, ShieldAlert, Volume2, VolumeX } from 'lucide-react';
 import { MobileHamburgerMenu } from '@/components/MobileHamburgerMenu';
-import type { AppTheme } from '@/hooks/useAppTheme';
+import { getThemeLabel, getThemeSwitchTitle, type AppTheme } from '@/hooks/useAppTheme';
 import type { Tier } from '@/interfaces/GameDuel';
 
 function HeaderActionButton({
@@ -110,9 +110,9 @@ export function DuelGameHeader({
                 />
                 <HeaderActionButton
                     onClick={onToggleTheme}
-                    title={theme === 'classic' ? 'Switch to ivory theme' : 'Switch to classic theme'}
+                    title={getThemeSwitchTitle(theme)}
                     icon={<Palette className="h-4 w-4" />}
-                    label={theme === 'classic' ? 'Ivory' : 'Classic'}
+                    label={getThemeLabel(theme)}
                 />
                 <HeaderActionButton
                     onClick={onBackToFeed}
@@ -164,7 +164,7 @@ export function DuelGameHeader({
                 >
                     <Palette className="h-4 w-4 shrink-0" />
                     <span className="dgMobileMenuText">
-                        {theme === 'classic' ? 'Switch to ivory theme' : 'Switch to classic theme'}
+                        {`${getThemeLabel(theme)} (Switch theme)`}
                     </span>
                 </button>
                 <button

@@ -78,8 +78,8 @@
     width: min(86vw, 20.5rem);
     height: min(68vh, 28rem);
     border-radius: 1rem;
-    border: 1px solid rgb(205 160 108 / 46%);
-    background: linear-gradient(165deg, rgb(28 20 14 / 96%) 0%, rgb(18 13 9 / 97%) 100%);
+    border: 1px solid var(--chat-panel-border);
+    background: var(--chat-panel-bg);
     box-shadow:
         inset 0 1px 0 rgb(255 255 255 / 8%),
         0 20px 42px rgb(0 0 0 / 55%);
@@ -107,8 +107,8 @@
 
 .chatPanelHeader {
     padding: 0.55rem 0.7rem;
-    border-bottom: 1px solid rgb(205 160 108 / 28%);
-    background: linear-gradient(180deg, rgb(36 25 17 / 90%) 0%, rgb(22 16 11 / 94%) 100%);
+    border-bottom: 1px solid var(--chat-panel-header-border);
+    background: var(--chat-panel-header-bg);
 }
 
 .chatPanelHeaderRow {
@@ -157,11 +157,11 @@
     letter-spacing: 0.04em;
     line-height: 1;
     text-transform: uppercase;
-    border: 1px solid rgb(205 160 108 / 30%);
+    border: 1px solid var(--chat-border-soft);
     border-radius: 999px;
     padding: 0.16rem 0.3rem;
     color: var(--app-text-muted);
-    background: rgb(30 21 14 / 72%);
+    background: var(--chat-surface-soft);
     display: inline-flex;
     align-items: center;
     gap: 0.22rem;
@@ -181,13 +181,13 @@
 }
 
 .chatNotifyState.isEnabled {
-    color: rgb(150 235 180);
-    border-color: rgb(90 200 130 / 45%);
+    color: var(--chat-text-success);
+    border-color: color-mix(in srgb, var(--chat-text-success) 44%, transparent);
 }
 
 .chatNotifyState.isMuted {
-    color: rgb(240 182 73 / 95%);
-    border-color: rgb(240 182 73 / 42%);
+    color: var(--chat-text-warning);
+    border-color: color-mix(in srgb, var(--chat-text-warning) 42%, transparent);
 }
 
 .chatSectionLabel {
@@ -227,8 +227,8 @@
 }
 
 .chatRestoreRecentBtn:hover {
-    color: rgb(236 198 120 / 92%);
-    background: rgb(46 33 22 / 48%);
+    color: var(--app-accent-bright);
+    background: color-mix(in srgb, var(--chat-surface-soft) 75%, transparent);
 }
 
 .chatRecentToggleBtn {
@@ -248,12 +248,12 @@
 }
 
 .chatRecentToggleBtn:hover {
-    color: rgb(236 198 120 / 92%);
-    background: rgb(46 33 22 / 48%);
+    color: var(--app-accent-bright);
+    background: color-mix(in srgb, var(--chat-surface-soft) 75%, transparent);
 }
 
 .chatRecentWrap {
-    border-bottom: 1px solid rgb(205 160 108 / 20%);
+    border-bottom: 1px solid color-mix(in srgb, var(--chat-border-soft) 70%, transparent);
 }
 
 .chatRecentList {
@@ -268,8 +268,8 @@
     flex: 0 0 auto;
     width: 7.5rem;
     border-radius: 0.58rem;
-    border: 1px solid rgb(205 160 108 / 28%);
-    background: rgb(30 21 14 / 78%);
+    border: 1px solid var(--chat-border-soft);
+    background: var(--chat-surface-soft);
     color: var(--app-text);
     padding: 0.3rem 0.35rem;
     display: flex;
@@ -293,8 +293,8 @@
     top: 0.18rem;
     right: 0.18rem;
     border-radius: 999px;
-    border: 1px solid rgb(205 160 108 / 30%);
-    background: rgb(22 15 10 / 78%);
+    border: 1px solid var(--chat-border-soft);
+    background: color-mix(in srgb, var(--chat-surface-soft) 82%, var(--theme-bg-950));
     color: var(--app-text-muted);
     width: 1rem;
     height: 1rem;
@@ -306,7 +306,7 @@
 
 .chatRecentCloseItemBtn:hover {
     color: var(--app-text);
-    border-color: rgb(236 198 120 / 58%);
+    border-color: var(--chat-border-strong);
 }
 
 .chatRecentItemSwiping::after {
@@ -339,8 +339,8 @@
 
 .chatHiddenRecentItem {
     flex: 0 0 auto;
-    border: 1px solid rgb(205 160 108 / 20%);
-    background: rgb(24 17 12 / 58%);
+    border: 1px solid color-mix(in srgb, var(--chat-border-soft) 75%, transparent);
+    background: color-mix(in srgb, var(--chat-surface-soft) 80%, transparent);
     color: var(--app-text-muted);
     border-radius: 0.44rem;
     padding: 0.18rem 0.3rem;
@@ -358,15 +358,15 @@
 }
 
 .chatHiddenRecentAction {
-    color: rgb(236 198 120 / 90%);
+    color: var(--app-accent-bright);
     font-weight: 500;
     text-transform: uppercase;
     letter-spacing: 0.04em;
 }
 
 .chatRecentItemActive {
-    border-color: rgb(236 198 120 / 72%);
-    background: rgb(56 39 25 / 84%);
+    border-color: var(--chat-border-strong);
+    background: var(--chat-surface-strong);
 }
 
 .chatRecentMain {
@@ -394,15 +394,15 @@
     width: 0.42rem;
     height: 0.42rem;
     border-radius: 999px;
-    background: rgb(241 88 88 / 94%);
-    box-shadow: 0 0 8px rgb(241 88 88 / 60%);
+    background: color-mix(in srgb, var(--theme-danger) 92%, white 8%);
+    box-shadow: 0 0 8px color-mix(in srgb, var(--theme-danger) 64%, transparent);
 }
 
 .chatUsersList {
     display: flex;
     gap: 0.26rem;
     padding: 0.45rem 0.45rem;
-    border-bottom: 1px solid rgb(205 160 108 / 20%);
+    border-bottom: 1px solid color-mix(in srgb, var(--chat-border-soft) 70%, transparent);
     overflow-x: auto;
     overflow-y: hidden;
 }
@@ -410,8 +410,8 @@
 .chatUserItem {
     flex: 0 0 auto;
     border-radius: 0.55rem;
-    border: 1px solid rgb(205 160 108 / 30%);
-    background: rgb(34 24 16 / 74%);
+    border: 1px solid var(--chat-border-soft);
+    background: var(--chat-surface-soft);
     color: var(--app-text);
     display: inline-flex;
     align-items: center;
@@ -422,12 +422,12 @@
 }
 
 .chatUserItem:hover {
-    border-color: rgb(236 198 120 / 58%);
+    border-color: var(--chat-border-strong);
 }
 
 .chatUserItemActive {
-    border-color: rgb(236 198 120 / 70%);
-    background: rgb(58 40 26 / 80%);
+    border-color: var(--chat-border-strong);
+    background: var(--chat-surface-strong);
 }
 
 .chatPresenceDot {
@@ -479,15 +479,15 @@
 .chatBubble {
     max-width: 80%;
     border-radius: 0.62rem;
-    border: 1px solid rgb(205 160 108 / 28%);
-    background: rgb(31 22 15 / 84%);
+    border: 1px solid var(--chat-border-soft);
+    background: var(--chat-surface-soft);
     padding: 0.32rem 0.42rem;
     transition: transform 0.18s ease, opacity 0.18s ease;
 }
 
 .chatBubbleMine {
-    background: rgb(70 48 31 / 88%);
-    border-color: rgb(236 198 120 / 48%);
+    background: var(--chat-surface-strong);
+    border-color: color-mix(in srgb, var(--chat-border-strong) 82%, transparent);
 }
 
 .chatBubbleGroupTop {
@@ -549,7 +549,7 @@
 }
 
 .chatReadTick.isRead {
-    color: rgb(129 217 255 / 95%);
+    color: var(--chat-text-read);
 }
 
 .chatDateDivider {
@@ -563,9 +563,9 @@
     font-size: 0.56rem;
     letter-spacing: 0.04em;
     color: var(--app-text-muted);
-    border: 1px solid rgb(205 160 108 / 24%);
+    border: 1px solid color-mix(in srgb, var(--chat-border-soft) 76%, transparent);
     border-radius: 999px;
-    background: rgb(24 17 11 / 78%);
+    background: color-mix(in srgb, var(--chat-surface-soft) 84%, transparent);
     padding: 0.08rem 0.36rem;
 }
 
@@ -573,12 +573,12 @@
     margin: 0.2rem 0 0;
     padding: 0 0.15rem;
     font-size: 0.62rem;
-    color: rgb(235 205 150 / 90%);
+    color: var(--chat-typing);
     font-style: italic;
 }
 
 .chatComposer {
-    border-top: 1px solid rgb(205 160 108 / 24%);
+    border-top: 1px solid color-mix(in srgb, var(--chat-border-soft) 76%, transparent);
     padding: 0.42rem;
     display: flex;
     gap: 0.4rem;
@@ -603,8 +603,8 @@
 }
 
 .chatEmojiBtn {
-    border: 1px solid rgb(205 160 108 / 24%);
-    background: rgb(30 21 14 / 70%);
+    border: 1px solid color-mix(in srgb, var(--chat-border-soft) 76%, transparent);
+    background: color-mix(in srgb, var(--chat-surface-soft) 88%, transparent);
     border-radius: 0.44rem;
     padding: 0.14rem 0.22rem;
     font-size: 0.84rem;
@@ -614,14 +614,14 @@
 
 .chatEmojiBtn:hover {
     transform: translateY(-1px);
-    border-color: rgb(236 198 120 / 58%);
+    border-color: var(--chat-border-strong);
 }
 
 .chatSendError {
     margin: 0;
     padding: 0 0.5rem 0.4rem;
     font-size: 0.62rem;
-    color: rgb(255 155 155 / 95%);
+    color: var(--chat-text-danger);
 }
 
 .chatEmptyState {
