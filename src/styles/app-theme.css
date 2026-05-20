@@ -497,17 +497,17 @@
     --app-surface-callout-border: rgb(212 175 90 / 40%);
     --app-game-card-top-bg: linear-gradient(
         168deg,
-        rgb(248 232 188) 0%,
-        rgb(226 198 142) 52%,
-        rgb(196 162 98) 100%
+        rgb(192 158 92) 0%,
+        rgb(168 132 72) 52%,
+        rgb(142 108 58) 100%
     );
     --app-game-card-bottom-bg: linear-gradient(
         168deg,
-        rgb(210 206 198) 0%,
-        rgb(188 184 176) 52%,
-        rgb(164 160 152) 100%
+        rgb(82 76 68) 0%,
+        rgb(66 60 54) 52%,
+        rgb(52 48 42) 100%
     );
-    --app-game-card-bottom-text: rgb(58 54 48 / 91%);
+    --app-game-card-bottom-text: rgb(228 222 210 / 90%);
     --app-scroll-track: rgb(20 18 16 / 68%);
     --app-scroll-thumb: linear-gradient(180deg, rgb(255 232 158 / 0.96), rgb(212 162 58 / 0.92));
     --app-scroll-thumb-border: rgb(18 14 10 / 94%);

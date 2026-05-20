@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent, type MouseEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     deleteDoc,
@@ -22,6 +22,7 @@ import {
     reauthenticateWithCredential,
     reauthenticateWithPopup,
     signOut,
+    updatePassword,
     updateProfile
 } from 'firebase/auth';
 import { auth, db, googleProvider, rtdb } from '@/firebaseConfig';
@@ -34,6 +35,11 @@ import { persistUserSoundMuted } from '@/utils/persistUserSoundMuted';
 import { usePresenceMap } from '@/hooks/usePresenceMap';
 import { normalizeDisplayName, sanitizeDisplayName } from '@/utils/displayName';
 import { getCountrySelectOptions, guessCountryFromLocale, normalizeCountryCode } from '@/utils/country';
+import { MIN_PASSWORD_LENGTH, MAX_PASSWORD_LENGTH } from '@/constants/auth';
+import { mapPasswordChangeError, mapPasswordResetError } from '@/utils/authErrors';
+import { PASSWORD_RESET_SENT_MESSAGE, sendAccountPasswordResetEmail } from '@/utils/passwordReset';
+import { usePasswordResetCooldown } from '@/hooks/usePasswordResetCooldown';
+import { PasswordInput } from '@/components/PasswordInput';
 import { CountrySelect } from '@/components/CountrySelect';
 import { UserFlag } from '@/components/UserFlag';
 import { LoadingOverlay } from '@/components/LoadingOverlay';
@@ -44,6 +50,8 @@ import '@/styles/dashboard.css';
 // import { DashGameCardDummyPngPreview } from '@/components/dashboard/DashGameCardDummyPngPreview';
 
 const MAX_DISPLAY_NAME_LENGTH = 32;
+const DASH_PROFILE_FORM_ID = 'dash-user-profile-form';
+const DASH_PASSWORD_FORM_ID = 'dash-user-password-form';
 
 type LobbySkeletonProps = {
     rows?: number;
@@ -236,6 +244,15 @@ export function DashboardPage({
     const [profileCountryCode, setProfileCountryCode] = useState('');
     const [profileError, setProfileError] = useState('');
     const [savingProfile, setSavingProfile] = useState(false);
+    const [currentPassword, setCurrentPassword] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmNewPassword, setConfirmNewPassword] = useState('');
+    const [passwordChangeError, setPasswordChangeError] = useState('');
+    const [passwordChangeSuccess, setPasswordChangeSuccess] = useState('');
+    const [changingPassword, setChangingPassword] = useState(false);
+    const [passwordResetMessage, setPasswordResetMessage] = useState('');
+    const [passwordResetError, setPasswordResetError] = useState('');
+    const [sendingPasswordReset, setSendingPasswordReset] = useState(false);
     const [deletePassword, setDeletePassword] = useState('');
     const [deleteConfirmText, setDeleteConfirmText] = useState('');
     const [deleteError, setDeleteError] = useState('');
@@ -266,6 +283,7 @@ export function DashboardPage({
     const prevPlayersLenRef = useRef(duel.players.length);
     const prevStartedRef = useRef(duel.isStarted);
     const presenceMap = usePresenceMap();
+    const passwordResetCooldown = usePasswordResetCooldown();
 
     useEffect(() => {
         let cancelled = false;
@@ -666,12 +684,36 @@ export function DashboardPage({
         setProfileDisplayName(user.displayName || '');
         setProfileCountryCode(normalizeCountryCode(user.countryCode) ?? guessCountryFromLocale());
         setProfileError('');
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmNewPassword('');
+        setPasswordChangeError('');
+        setPasswordChangeSuccess('');
+        setPasswordResetMessage('');
+        setPasswordResetError('');
         setDeletePassword('');
         setDeleteConfirmText('');
         setDeleteError('');
         setExportError('');
         setShowUserModal(true);
         setShowHeaderMobileMenu(false);
+    };
+    const isUserModalBusy = changingPassword || savingProfile || deletingAccount || exportingData || sendingPasswordReset;
+    const closeUserProfileModal = () => {
+        if (isUserModalBusy) return;
+        setShowUserModal(false);
+    };
+    const handleUserModalOverlayMouseDown = (event: MouseEvent<HTMLDivElement>) => {
+        if (event.target !== event.currentTarget) return;
+        closeUserProfileModal();
+    };
+    const handleProfileFormSubmit = (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        void saveProfile();
+    };
+    const handlePasswordFormSubmit = (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        void changePassword();
     };
     const deleteAccountSelf = async () => {
         const currentUser = auth.currentUser;
@@ -979,6 +1021,102 @@ export function DashboardPage({
             </div>
         </label>
     );
+
+    const sendPasswordResetEmailToAccount = async () => {
+        const accountEmail = auth.currentUser?.email || user.email || '';
+        if (!accountEmail) {
+            setPasswordResetError('No email on this account.');
+            setPasswordResetMessage('');
+            return;
+        }
+        if (sendingPasswordReset || changingPassword) return;
+        if (!passwordResetCooldown.canSendReset()) {
+            setPasswordResetError(passwordResetCooldown.getCooldownBlockedMessage());
+            setPasswordResetMessage('');
+            return;
+        }
+
+        setPasswordResetError('');
+        setPasswordResetMessage('');
+        setSendingPasswordReset(true);
+        try {
+            await sendAccountPasswordResetEmail(accountEmail);
+            setPasswordResetMessage(PASSWORD_RESET_SENT_MESSAGE);
+            passwordResetCooldown.startCooldown();
+        } catch (error) {
+            setPasswordResetError(mapPasswordResetError(error));
+        } finally {
+            setSendingPasswordReset(false);
+        }
+    };
+
+    const changePassword = async () => {
+        const currentUser = auth.currentUser;
+        if (!currentUser || currentUser.uid !== uid) {
+            setPasswordChangeError('You need to be signed in to change your password.');
+            setPasswordChangeSuccess('');
+            return;
+        }
+        if (!currentUser.email) {
+            setPasswordChangeError('This account has no email attached.');
+            setPasswordChangeSuccess('');
+            return;
+        }
+        if (!currentPassword) {
+            setPasswordChangeError('Enter your current password.');
+            setPasswordChangeSuccess('');
+            return;
+        }
+        if (newPassword.length < MIN_PASSWORD_LENGTH) {
+            setPasswordChangeError(`New password must have at least ${MIN_PASSWORD_LENGTH} characters.`);
+            setPasswordChangeSuccess('');
+            return;
+        }
+        if (newPassword.length > MAX_PASSWORD_LENGTH) {
+            setPasswordChangeError(`New password is too long (max ${MAX_PASSWORD_LENGTH} characters).`);
+            setPasswordChangeSuccess('');
+            return;
+        }
+        if (newPassword !== confirmNewPassword) {
+            setPasswordChangeError('New passwords do not match.');
+            setPasswordChangeSuccess('');
+            return;
+        }
+        if (currentPassword === newPassword) {
+            setPasswordChangeError('New password must be different from the current one.');
+            setPasswordChangeSuccess('');
+            return;
+        }
+
+        setPasswordChangeError('');
+        setPasswordChangeSuccess('');
+        setProfileError('');
+        setChangingPassword(true);
+        try {
+            const credential = EmailAuthProvider.credential(currentUser.email, currentPassword);
+            try {
+                await reauthenticateWithCredential(currentUser, credential);
+            } catch (reauthError) {
+                setPasswordChangeError(mapPasswordChangeError(reauthError));
+                return;
+            }
+
+            try {
+                await updatePassword(currentUser, newPassword);
+            } catch (updateError) {
+                setPasswordChangeError(mapPasswordChangeError(updateError));
+                return;
+            }
+
+            setCurrentPassword('');
+            setNewPassword('');
+            setConfirmNewPassword('');
+            setDeletePassword('');
+            setPasswordChangeSuccess('Password updated successfully.');
+        } finally {
+            setChangingPassword(false);
+        }
+    };
 
     const saveProfile = async () => {
         const displayName = sanitizeDisplayName(profileDisplayName);
@@ -1397,56 +1535,151 @@ export function DashboardPage({
                 </div>
             )}
             {showUserModal && (
-                <div className="dashLobbyOverlay" onClick={() => setShowUserModal(false)}>
-                    <div className="dashUserModal" onClick={(event) => event.stopPropagation()}>
+                <div className="dashLobbyOverlay" onMouseDown={handleUserModalOverlayMouseDown}>
+                    <div className="dashUserModal" onMouseDown={(event) => event.stopPropagation()}>
                         <div className="dashUserModalHeader">
                             <h3>User profile</h3>
                             <p>Edit your account details.</p>
                         </div>
                         <div className="dashUserModalBody modalLikeScrollbar">
-                            <div className="dashUserGrid">
-                                {renderReadonlyField('UID', uid, 'uid')}
-                                {renderReadonlyField('Email', user.email || '', 'email', !isUserSnapshotReady || !user.email)}
-                                <label className="dashUserField">
-                                    <span>Display name</span>
-                                    <input
-                                        className="input"
-                                        value={profileDisplayName}
-                                        onChange={(event) => setProfileDisplayName(event.target.value)}
-                                        placeholder="Display name"
-                                    />
-                                </label>
-                                <label className="dashUserField">
-                                    <span>Country / region</span>
-                                    <CountrySelect
-                                        value={profileCountryCode}
-                                        onChange={setProfileCountryCode}
-                                        options={countryOptions}
-                                    />
-                                </label>
-                                {renderReadonlyField('Connection status (auto)', getPresence(uid), 'connectionStatus')}
-                                {renderReadonlyField('Current game', user.game || '-', 'currentGame', !isUserSnapshotReady)}
-                                {renderReadonlyField(
-                                    'Ready status',
-                                    user.readyToGame ? 'ready' : 'not ready',
-                                    'readyStatus',
-                                    !isUserSnapshotReady
-                                )}
-                                {renderReadonlyField(
-                                    'Created at',
-                                    formatUserTimestamp(user.createdAt),
-                                    'createdAt',
-                                    !isUserSnapshotReady
-                                )}
-                                {renderReadonlyField('Last seen', formatUserTimestamp(user.lastSeenAt), 'lastSeen', !isUserSnapshotReady)}
-                            </div>
-                            {profileError && <p className="mt-2 text-sm text-red-300">{profileError}</p>}
+                            <form id={DASH_PROFILE_FORM_ID} className="dashUserProfileForm" noValidate onSubmit={handleProfileFormSubmit}>
+                                <div className="dashUserGrid">
+                                    {renderReadonlyField('UID', uid, 'uid')}
+                                    {renderReadonlyField('Email', user.email || '', 'email', !isUserSnapshotReady || !user.email)}
+                                    <label className="dashUserField">
+                                        <span>Display name</span>
+                                        <input
+                                            className="input"
+                                            value={profileDisplayName}
+                                            onChange={(event) => setProfileDisplayName(event.target.value)}
+                                            placeholder="Display name"
+                                        />
+                                    </label>
+                                    <label className="dashUserField">
+                                        <span>Country / region</span>
+                                        <CountrySelect
+                                            value={profileCountryCode}
+                                            onChange={setProfileCountryCode}
+                                            options={countryOptions}
+                                        />
+                                    </label>
+                                    {renderReadonlyField('Connection status (auto)', getPresence(uid), 'connectionStatus')}
+                                    {renderReadonlyField('Current game', user.game || '-', 'currentGame', !isUserSnapshotReady)}
+                                    {renderReadonlyField(
+                                        'Ready status',
+                                        user.readyToGame ? 'ready' : 'not ready',
+                                        'readyStatus',
+                                        !isUserSnapshotReady
+                                    )}
+                                    {renderReadonlyField(
+                                        'Created at',
+                                        formatUserTimestamp(user.createdAt),
+                                        'createdAt',
+                                        !isUserSnapshotReady
+                                    )}
+                                    {renderReadonlyField('Last seen', formatUserTimestamp(user.lastSeenAt), 'lastSeen', !isUserSnapshotReady)}
+                                </div>
+                                {profileError && <p className="mt-2 text-sm text-red-300">{profileError}</p>}
+                            </form>
+                            {hasPasswordProvider && (
+                                <form
+                                    id={DASH_PASSWORD_FORM_ID}
+                                    className="dashSecurityZone"
+                                    noValidate
+                                    onSubmit={handlePasswordFormSubmit}
+                                >
+                                    <h4>Password</h4>
+                                    <p>Change your sign-in password. You will stay signed in.</p>
+                                    <label className="dashUserField">
+                                        <span>Current password</span>
+                                        <PasswordInput
+                                            value={currentPassword}
+                                            onChange={setCurrentPassword}
+                                            placeholder="Current password"
+                                            autoComplete="current-password"
+                                            disabled={changingPassword || savingProfile}
+                                        />
+                                    </label>
+                                    <label className="dashUserField">
+                                        <span>New password</span>
+                                        <PasswordInput
+                                            value={newPassword}
+                                            onChange={setNewPassword}
+                                            placeholder={`At least ${MIN_PASSWORD_LENGTH} characters`}
+                                            autoComplete="new-password"
+                                            minLength={MIN_PASSWORD_LENGTH}
+                                            disabled={changingPassword || savingProfile}
+                                        />
+                                    </label>
+                                    <label className="dashUserField">
+                                        <span>Confirm new password</span>
+                                        <PasswordInput
+                                            value={confirmNewPassword}
+                                            onChange={setConfirmNewPassword}
+                                            placeholder="Repeat new password"
+                                            autoComplete="new-password"
+                                            minLength={MIN_PASSWORD_LENGTH}
+                                            disabled={changingPassword || savingProfile}
+                                        />
+                                    </label>
+                                    {passwordChangeError && (
+                                        <p className="mt-2 text-sm text-red-300" role="alert">
+                                            {passwordChangeError}
+                                        </p>
+                                    )}
+                                    {passwordChangeSuccess && (
+                                        <p className="mt-2 text-sm text-emerald-300" role="status">
+                                            {passwordChangeSuccess}
+                                        </p>
+                                    )}
+                                    <div className="dashPasswordResetBlock">
+                                        <p className="dashPasswordResetHint">Forgot your current password?</p>
+                                        <button
+                                            type="button"
+                                            className="btn-secondary dashPasswordResetBtn"
+                                            disabled={
+                                                sendingPasswordReset ||
+                                                changingPassword ||
+                                                savingProfile ||
+                                                passwordResetCooldown.cooldownSecondsLeft > 0
+                                            }
+                                            onClick={sendPasswordResetEmailToAccount}
+                                        >
+                                            {sendingPasswordReset
+                                                ? 'Sending...'
+                                                : passwordResetCooldown.cooldownSecondsLeft > 0
+                                                  ? `Wait ${passwordResetCooldown.cooldownSecondsLeft}s`
+                                                  : 'Send reset link to my email'}
+                                        </button>
+                                        {passwordResetMessage && (
+                                            <p className="mt-2 text-sm text-emerald-300" role="status">
+                                                {passwordResetMessage}
+                                            </p>
+                                        )}
+                                        {passwordResetError && (
+                                            <p className="mt-2 text-sm text-red-300" role="alert">
+                                                {passwordResetError}
+                                            </p>
+                                        )}
+                                    </div>
+                                    <div className="dashSecurityActions">
+                                        <button type="submit" className="btn-secondary" disabled={changingPassword || savingProfile}>
+                                            {changingPassword ? 'Updating...' : 'Change password'}
+                                        </button>
+                                    </div>
+                                </form>
+                            )}
                             <div className="dashDataZone">
                                 <h4>Data export</h4>
                                 <p>Download your account-related data as JSON.</p>
                                 {exportError && <p className="mt-1 text-sm text-red-300">{exportError}</p>}
                                 <div className="dashDataActions">
-                                    <button className="btn-secondary" disabled={exportingData} onClick={exportAccountData}>
+                                    <button
+                                        type="button"
+                                        className="btn-secondary"
+                                        disabled={exportingData}
+                                        onClick={exportAccountData}
+                                    >
                                         {exportingData ? 'Exporting...' : 'Export my data'}
                                     </button>
                                 </div>
@@ -1459,13 +1692,12 @@ export function DashboardPage({
                                 {hasPasswordProvider ? (
                                     <label className="dashUserField">
                                         <span>Current password</span>
-                                        <input
-                                            type="password"
-                                            className="input"
+                                        <PasswordInput
                                             value={deletePassword}
-                                            onChange={(event) => setDeletePassword(event.target.value)}
+                                            onChange={setDeletePassword}
                                             placeholder="Enter current password"
                                             autoComplete="current-password"
+                                            disabled={deletingAccount}
                                         />
                                     </label>
                                 ) : (
@@ -1483,6 +1715,7 @@ export function DashboardPage({
                                 {deleteError && <p className="mt-2 text-sm text-red-300">{deleteError}</p>}
                                 <div className="dashDangerActions">
                                     <button
+                                        type="button"
                                         className="btn-secondary dashDangerButton"
                                         disabled={deletingAccount}
                                         onClick={deleteAccountSelf}
@@ -1493,10 +1726,15 @@ export function DashboardPage({
                             </div>
                         </div>
                         <div className="dashLobbyActions dashUserModalFooter">
-                            <button className="btn-secondary" onClick={() => setShowUserModal(false)}>
+                            <button type="button" className="btn-secondary" onClick={closeUserProfileModal} disabled={isUserModalBusy}>
                                 Cancel
                             </button>
-                            <button className="btn-primary" disabled={savingProfile} onClick={saveProfile}>
+                            <button
+                                type="submit"
+                                form={DASH_PROFILE_FORM_ID}
+                                className="btn-primary"
+                                disabled={savingProfile || changingPassword}
+                            >
                                 {savingProfile ? 'Saving...' : 'Save'}
                             </button>
                         </div>

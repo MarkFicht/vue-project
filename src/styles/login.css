@@ -4,6 +4,76 @@
     color: rgb(248 175 155);
 }
 
+.loginForm {
+    margin-top: 1rem;
+}
+
+.loginForgotSubtitle {
+    margin: 0.35rem 0 1rem;
+    text-align: left;
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--app-text-muted);
+}
+
+.loginForgotBlock {
+    display: flex;
+    justify-content: flex-start;
+    margin-top: 2px;
+}
+
+.loginForgotLink,
+.loginBackLink {
+    border: 0;
+    background: transparent;
+    padding: 0;
+    font-size: 12px;
+    color: var(--app-accent-bright);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+}
+
+.loginBackLink {
+    display: block;
+    width: fit-content;
+    text-align: left;
+    margin-top: 4px;
+}
+
+.loginForgotLink:hover:not(:disabled),
+.loginBackLink:hover:not(:disabled) {
+    color: var(--app-text);
+}
+
+.loginForgotLink:disabled,
+.loginBackLink:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.loginForgotFeedback {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.loginForgotSuccess {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.4;
+    text-align: left;
+    color: rgb(134 220 170);
+}
+
+.loginForgotError {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.4;
+    text-align: left;
+    color: rgb(248 175 155);
+}
+
 .loginPage .app-surface-login > header .app-brand-icon {
     width: clamp(2.45rem, 2.6vw, 2.35rem);
     height: clamp(2.45rem, 2.6vw, 2.35rem);

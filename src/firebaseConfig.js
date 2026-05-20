@@ -2,6 +2,7 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getDatabase } from 'firebase/database';
+import { initFirebaseAppCheck } from './firebase/appCheck';
 
 const firebaseConfig = {
     apiKey: 'AIzaSyBRIqo_JdB3v6nV5pAPNfkgm9NujxAup68',
@@ -15,6 +16,8 @@ const firebaseConfig = {
 };
 
 export const firebaseApp = initializeApp(firebaseConfig);
+initFirebaseAppCheck(firebaseApp);
+
 export const db = getFirestore(firebaseApp);
 export const rtdb = getDatabase(firebaseApp);
 export const auth = getAuth(firebaseApp);
