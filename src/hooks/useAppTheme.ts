@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 
-export const APP_THEMES = ['classic', 'cyberpunk', 'ivory'] as const;
+export const APP_THEMES = ['classic', 'cyberpunk', 'scifi', 'ivory'] as const;
 export type AppTheme = (typeof APP_THEMES)[number];
 
 const APP_THEME_LABELS: Record<AppTheme, string> = {
     classic: 'Classic',
     ivory: 'Ivory',
-    cyberpunk: 'Cyberpunk'
+    cyberpunk: 'Cyberpunk',
+    scifi: 'Sci-Fi'
 };
 
 const APP_THEME_KEY = 'app-theme';

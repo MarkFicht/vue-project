@@ -349,6 +349,117 @@
     --chat-typing: rgb(169 245 255 / 94%);
 }
 
+:root[data-app-theme='scifi'] {
+    /* Core palette (sci-fi) */
+    --theme-bg-950: rgb(8 10 18);
+    --theme-bg-900: rgb(14 18 30);
+    --theme-bg-800: rgb(26 34 54);
+    --theme-border: rgb(118 188 255 / 46%);
+    --theme-text: rgb(244 248 255);
+    --theme-text-muted: rgb(176 190 214);
+    --theme-accent: rgb(56 214 255);
+    --theme-accent-strong: rgb(154 236 255);
+    --theme-accent-deep: rgb(36 132 228);
+    --theme-danger: rgb(255 96 128);
+
+    --app-accent: var(--theme-accent);
+    --app-accent-bright: var(--theme-accent-strong);
+    --app-accent-deep: var(--theme-accent-deep);
+    --app-text: var(--theme-text);
+    --app-text-muted: var(--theme-text-muted);
+    --app-on-accent: rgb(8 18 32);
+    --app-border: var(--theme-border);
+    --app-border-soft: rgb(168 206 255 / 22%);
+    --app-secondary-bg: rgb(34 44 68 / 68%);
+    --app-secondary-bg-hover: rgb(48 60 90 / 82%);
+    --app-secondary-border-hover: rgb(88 220 255 / 72%);
+    --app-input-border: rgb(108 156 220 / 52%);
+    --app-input-bg: rgb(10 14 26 / 76%);
+    --app-input-placeholder: rgb(156 172 198 / 76%);
+    --app-input-focus: rgb(72 220 255 / 94%);
+    --app-input-focus-shadow: rgb(56 214 255 / 26%);
+    --app-surface-login-bg: linear-gradient(165deg, rgb(38 48 72 / 94%) 0%, rgb(24 32 54 / 96%) 45%, rgb(12 16 28 / 97%) 100%);
+    --app-surface-login-border: rgb(108 200 255 / 44%);
+    --app-surface-header-bg: linear-gradient(180deg, rgb(42 52 78 / 92%) 0%, rgb(20 26 44 / 95%) 100%);
+    --app-surface-header-border: rgb(120 188 255 / 42%);
+    --app-surface-callout-bg: linear-gradient(135deg, rgb(48 60 92 / 90%) 0%, rgb(22 28 48 / 94%) 100%);
+    --app-surface-callout-border: rgb(96 210 255 / 42%);
+    --app-game-card-top-bg: linear-gradient(
+        168deg,
+        rgb(156 164 186) 0%,
+        rgb(132 142 166) 52%,
+        rgb(108 118 144) 100%
+    );
+    --app-game-card-bottom-bg: linear-gradient(
+        168deg,
+        rgb(52 64 96) 0%,
+        rgb(38 48 78) 52%,
+        rgb(26 34 58) 100%
+    );
+    --app-game-card-bottom-text: rgb(220 230 248 / 91%);
+    --app-scroll-track: rgb(16 22 38 / 64%);
+    --app-scroll-thumb: linear-gradient(180deg, rgb(120 228 255 / 0.9), rgb(56 168 255 / 0.84));
+    --app-scroll-thumb-border: rgb(12 18 32 / 94%);
+    --app-scrollbar-color: rgb(72 214 255);
+    --duel-bg-fallback: var(--theme-bg-900);
+    --duel-arena-gradient: linear-gradient(168deg, rgb(42 54 84 / 90%) 0%, rgb(28 36 62 / 84%) 42%, rgb(14 18 32 / 82%) 100%);
+    --duel-scrollbar-track: rgb(22 30 50 / 64%);
+    --duel-scrollbar-thumb: rgb(72 214 255 / 88%);
+    --duel-scrollbar-thumb-hover: rgb(132 236 255 / 94%);
+    --duel-panel-border: color-mix(in srgb, var(--theme-border) 88%, transparent);
+    --duel-panel-bg: color-mix(in srgb, var(--theme-bg-800) 58%, transparent);
+    --duel-actionbar-bg: linear-gradient(180deg, rgb(36 46 72 / 95%) 0%, rgb(16 22 38 / 98%) 100%);
+    --duel-actionbar-border: rgb(88 220 255 / 58%);
+    --duel-actionbar-text: rgb(232 244 255 / 96%);
+    --duel-actionbar-shadow:
+        inset 0 1px 0 rgb(200 230 255 / 14%),
+        0 12px 30px rgb(0 0 0 / 48%);
+    --duel-graveyard-bg: linear-gradient(180deg, rgb(30 38 62 / 88%) 0%, rgb(16 22 40 / 92%) 100%);
+    --duel-graveyard-inner-bg: rgb(8 12 24 / 44%);
+    --duel-graveyard-border: rgb(96 210 255 / 48%);
+    --duel-graveyard-shadow:
+        inset 0 1px 0 rgb(220 240 255 / 10%),
+        0 8px 20px rgb(0 0 0 / 30%);
+    --duel-mobile-menu-bg: linear-gradient(180deg, rgb(40 50 78 / 96%) 0%, rgb(18 24 42 / 98%) 100%);
+    --duel-mobile-menu-border: rgb(108 188 255 / 40%);
+    --duel-mobile-menu-shadow:
+        inset 0 1px 0 rgb(220 240 255 / 10%),
+        0 14px 28px rgb(0 0 0 / 44%);
+    --duel-meta-strong: rgb(220 244 255 / 97%);
+    --duel-turn-badge-you: rgb(168 255 228 / 96%);
+    --duel-turn-badge-opponent: rgb(255 220 180 / 96%);
+    --duel-turn-badge-observer: rgb(196 210 236 / 96%);
+    --duel-surrender-modal-bg: linear-gradient(175deg, rgb(36 46 72 / 97%) 0%, rgb(14 18 32 / 99%) 100%);
+    --duel-surrender-modal-border: rgb(96 210 255 / 42%);
+    --app-page-bg: radial-gradient(circle at 22% 18%, #4a6fa5 0%, #243552 36%, #0c1220 100%);
+    --app-main-bg-image: url('@/assets/duel/main_bg_sci.png');
+    --app-login-overlay-bg: radial-gradient(circle at 20% 16%, rgb(88 210 255 / 22%) 0%, rgb(28 36 58 / 88%) 40%, rgb(10 14 26 / 98%) 100%);
+    --app-login-overlay-card-border: rgb(96 210 255 / 42%);
+    --app-login-overlay-card-bg: linear-gradient(160deg, rgb(38 48 74 / 94%) 0%, rgb(22 30 52 / 97%) 58%, rgb(12 16 28 / 98%) 100%);
+    --app-login-overlay-logo-color: rgb(88 228 255 / 98%);
+    --app-login-overlay-logo-filter: drop-shadow(0 0 14px rgb(64 210 255 / 52%));
+    --app-login-overlay-spinner-border: rgb(108 156 210 / 42%);
+    --app-login-overlay-spinner-top: rgb(120 236 255 / 98%);
+    --app-skeleton-bg: rgb(168 206 255 / 16%);
+    --app-skeleton-shimmer: linear-gradient(90deg, transparent, rgb(120 228 255 / 24%), transparent);
+    --app-brand-icon-color: rgb(88 228 255);
+    --app-brand-icon-filter: drop-shadow(0 0 14px rgb(56 214 255 / 54%));
+    --app-login-overlay-label-color: rgb(232 244 255 / 98%);
+    --chat-panel-border: rgb(96 210 255 / 44%);
+    --chat-panel-bg: linear-gradient(165deg, rgb(32 40 64 / 96%) 0%, rgb(14 18 30 / 97%) 100%);
+    --chat-panel-header-border: rgb(96 210 255 / 32%);
+    --chat-panel-header-bg: linear-gradient(180deg, rgb(42 52 80 / 92%) 0%, rgb(18 24 42 / 95%) 100%);
+    --chat-surface-soft: rgb(30 38 60 / 78%);
+    --chat-surface-strong: rgb(46 58 88 / 88%);
+    --chat-border-soft: rgb(108 156 210 / 32%);
+    --chat-border-strong: rgb(88 220 255 / 58%);
+    --chat-text-warning: rgb(255 210 130 / 96%);
+    --chat-text-success: rgb(148 255 220 / 98%);
+    --chat-text-danger: rgb(255 154 180 / 97%);
+    --chat-text-read: rgb(96 220 255 / 97%);
+    --chat-typing: rgb(176 228 255 / 94%);
+}
+
 /** Feed header / login hero icon — gold accent + glow */
 .app-brand-icon {
     color: var(--app-brand-icon-color);
