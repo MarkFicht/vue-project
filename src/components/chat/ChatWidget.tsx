@@ -534,12 +534,20 @@ export function ChatWidget({ uid }: { uid: string }) {
 
     const hideRecentConversation = (chatId: string) => {
         if (!chatId) return;
+        const isHidingActiveChat = activeChatId === chatId;
         setHiddenRecentChatIds((prev) => {
             if (prev.includes(chatId)) return prev;
             const next = [...prev, chatId];
             saveHiddenRecentChatIds(uid, next);
             return next;
         });
+        if (isHidingActiveChat) {
+            setSelectedChatId('');
+            setActiveUserId('');
+            setDraft('');
+            setSendError('');
+            setSelectionCleared(true);
+        }
     };
 
     const restoreHiddenRecentConversations = () => {
