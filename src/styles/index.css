@@ -41,14 +41,15 @@ body {
     font-family: var(--font-body);
     background: var(--app-page-bg);
     overflow-x: hidden;
-    overflow-y: hidden;
-    overscroll-behavior-y: none;
+    overflow-y: auto;
+    overscroll-behavior-y: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 #app {
     height: var(--app-vh);
     min-height: var(--app-vh);
-    overflow: hidden;
+    overflow: visible;
 }
 
 @media (max-width: 767px) {
