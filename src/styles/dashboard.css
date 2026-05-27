@@ -3,8 +3,8 @@
     justify-content: flex-start;
     align-items: center;
     flex-direction: column;
-    height: 100dvh;
-    max-height: 100dvh;
+    height: var(--app-vh);
+    max-height: var(--app-vh);
     overflow: hidden;
     padding: 8px;
     color: var(--app-text);
@@ -520,7 +520,7 @@
     top: 0;
     left: 0;
     width: 100vw;
-    height: 100dvh;
+    height: var(--app-vh);
     z-index: 30;
     background: rgb(12 8 5 / 76%);
     display: flex;
@@ -628,7 +628,7 @@
 
 .dashUserModal {
     width: min(94vw, 560px);
-    max-height: calc(100dvh - clamp(20px, 5.2vh, 44px));
+    max-height: calc(var(--app-vh) - clamp(20px, 5.2vh, 44px));
     overflow: hidden;
     overscroll-behavior: contain;
     display: flex;

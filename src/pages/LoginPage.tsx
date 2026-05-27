@@ -266,7 +266,7 @@ export function LoginPage({
     };
 
     return (
-        <main className="loginPage mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center p-4 text-[var(--app-text)]">
+        <main className="loginPage mx-auto flex h-[var(--app-vh)] w-full max-w-md flex-col items-center justify-center overflow-y-auto p-4 text-[var(--app-text)]">
             <div className="app-surface-login w-full rounded-2xl p-6">
                 <div className="loginTopControls">
                     <button

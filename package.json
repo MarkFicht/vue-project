@@ -33,6 +33,7 @@
         "autoprefixer": "^10.5.0",
         "eslint": "^8.46.0",
         "firebase-admin": "^13.9.0",
+        "firebase-tools": "^15.18.0",
         "jsdom": "^22.1.0",
         "postcss": "^8.5.14",
         "prettier": "^3.0.0",
