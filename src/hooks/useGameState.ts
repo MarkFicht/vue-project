@@ -61,6 +61,7 @@ export function useGameState(currentUserUid: string) {
     const deckDestroySfxPrimedRef = useRef(false);
     const prevMyBrownLenRef = useRef(0);
     const prevMyGreyLenRef = useRef(0);
+    const destroyAutoSkipInFlightRef = useRef(false);
 
     useEffect(() => {
         setSoundScope(currentUserUid);
@@ -474,6 +475,49 @@ export function useGameState(currentUserUid: string) {
         upgradeTurnAndMove
     ]);
 
+    useEffect(() => {
+        if (isObserver || !isMyTurn) return;
+        if (destroyAutoSkipInFlightRef.current) return;
+        if (game.turn !== currentUserUid) return;
+
+        const destroyBrownActive = game.destroyBrown === currentUserUid;
+        const destroyGreyActive = game.destroyGrey === currentUserUid;
+        if (!destroyBrownActive && !destroyGreyActive) return;
+
+        const enemy = game.turn === game.player1.user.uid ? game.player2 : game.player1;
+        const noBrownTargets = destroyBrownActive && enemy.cards.brown.length === 0;
+        const noGreyTargets = destroyGreyActive && enemy.cards.grey.length === 0;
+        if (!noBrownTargets && !noGreyTargets) return;
+
+        destroyAutoSkipInFlightRef.current = true;
+        void (async () => {
+            try {
+                const updates: { destroyBrown?: string; destroyGrey?: string } = {};
+                if (noBrownTargets) updates.destroyBrown = '';
+                if (noGreyTargets) updates.destroyGrey = '';
+                await updateDoc(tableGameDuelRef, updates);
+
+                const hasAnyDestroyActionLeft =
+                    (destroyBrownActive && !noBrownTargets) || (destroyGreyActive && !noGreyTargets);
+                if (!hasAnyDestroyActionLeft) {
+                    await finishTurnAfterSpecialAction();
+                }
+            } finally {
+                destroyAutoSkipInFlightRef.current = false;
+            }
+        })();
+    }, [
+        currentUserUid,
+        finishTurnAfterSpecialAction,
+        game.destroyBrown,
+        game.destroyGrey,
+        game.player1,
+        game.player2,
+        game.turn,
+        isMyTurn,
+        isObserver
+    ]);
+
     const chooseWonderForPlayer = useCallback(
         async (id: number) => {
             if (!isMyTurn || game.wonBySurr) return;
@@ -712,6 +756,8 @@ export function useGameState(currentUserUid: string) {
         const playerKey = game.turn === game.player1.user.uid ? 'player1' : 'player2';
         const opponentKey = playerKey === 'player1' ? 'player2' : 'player1';
         const opponentSnap = opponentKey === 'player1' ? game.player1 : game.player2;
+        shouldDestroyBrown = shouldDestroyBrown && opponentSnap.cards.brown.length > 0;
+        shouldDestroyGrey = shouldDestroyGrey && opponentSnap.cards.grey.length > 0;
 
         let opponentNextCash = opponentSnap.resources.cash;
         if (shouldStealThreeGold) {
