@@ -247,9 +247,18 @@ export function DuelGamePage({
             return;
         const handlePointerDown = (event: PointerEvent) => {
             if (showEpochStarterModal || showCoinChoiceModal || showDestroyOpponentModal || showGraveyardPickModal) return;
+            // Ignore secondary touch pointers (e.g. pinch zoom on mobile).
+            if (event.pointerType === 'touch' && !event.isPrimary) return;
             const target = event.target as Element | null;
             if (!target) return;
-            if (target.closest('.dg-cardWrapper') || target.closest('.dg-wonderWrapper') || target.closest('.dg-actionsModal')) return;
+            if (
+                target.closest('.dg-cardWrapper') ||
+                target.closest('.dg-wonderWrapper') ||
+                target.closest('.dg-actionsModal') ||
+                target.closest('.dgMobileMenu') ||
+                target.closest('.dgMobileMenuToggle')
+            )
+                return;
             closeSelectedCardActions();
         };
         const handleKeyDown = (event: KeyboardEvent) => {

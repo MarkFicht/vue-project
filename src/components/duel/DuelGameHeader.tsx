@@ -68,6 +68,8 @@ export function DuelGameHeader({
     useEffect(() => {
         if (!showHeaderMobileMenu) return;
         const onPointerDown = (event: PointerEvent) => {
+            // Ignore two-finger gestures (pinch/zoom) on touch devices.
+            if (event.pointerType === 'touch' && !event.isPrimary) return;
             const target = event.target as Node | null;
             if (headerRef.current?.contains(target)) return;
             setShowHeaderMobileMenu(false);
@@ -135,7 +137,6 @@ export function DuelGameHeader({
                     className="btn-secondary dgMobileMenuItem"
                     disabled={isObserver}
                     onClick={() => {
-                        setShowHeaderMobileMenu(false);
                         onOpenSurrender();
                     }}
                 >
@@ -147,7 +148,6 @@ export function DuelGameHeader({
                     className="btn-secondary dgMobileMenuItem"
                     onClick={() => {
                         onToggleSound();
-                        setShowHeaderMobileMenu(false);
                     }}
                     title={soundMuted ? 'Unmute sounds' : 'Mute sounds'}
                 >
@@ -159,7 +159,6 @@ export function DuelGameHeader({
                     className="btn-secondary dgMobileMenuItem"
                     onClick={() => {
                         onToggleTheme();
-                        setShowHeaderMobileMenu(false);
                     }}
                 >
                     <Palette className="h-4 w-4 shrink-0" />
@@ -171,7 +170,6 @@ export function DuelGameHeader({
                     type="button"
                     className="btn-secondary dgMobileMenuItem"
                     onClick={() => {
-                        setShowHeaderMobileMenu(false);
                         onBackToFeed();
                     }}
                 >
