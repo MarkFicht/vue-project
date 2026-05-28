@@ -245,11 +245,18 @@ export function DuelGamePage({
     useEffect(() => {
         if (!showActionModal && !showEpochStarterModal && !showCoinChoiceModal && !showDestroyOpponentModal && !showGraveyardPickModal)
             return;
-        const handlePointerDown = (event: PointerEvent) => {
+        const handleWindowClick = (event: MouseEvent) => {
             if (showEpochStarterModal || showCoinChoiceModal || showDestroyOpponentModal || showGraveyardPickModal) return;
             const target = event.target as Element | null;
             if (!target) return;
-            if (target.closest('.dg-cardWrapper') || target.closest('.dg-wonderWrapper') || target.closest('.dg-actionsModal')) return;
+            if (
+                target.closest('.dg-cardWrapper') ||
+                target.closest('.dg-wonderWrapper') ||
+                target.closest('.dg-actionsModal') ||
+                target.closest('.dgMobileMenu') ||
+                target.closest('.dgMobileMenuToggle')
+            )
+                return;
             closeSelectedCardActions();
         };
         const handleKeyDown = (event: KeyboardEvent) => {
@@ -261,10 +268,10 @@ export function DuelGamePage({
             }
             if (event.key === 'Escape') closeSelectedCardActions();
         };
-        window.addEventListener('pointerdown', handlePointerDown);
+        window.addEventListener('click', handleWindowClick);
         window.addEventListener('keydown', handleKeyDown);
         return () => {
-            window.removeEventListener('pointerdown', handlePointerDown);
+            window.removeEventListener('click', handleWindowClick);
             window.removeEventListener('keydown', handleKeyDown);
         };
     }, [showActionModal, showCoinChoiceModal, showDestroyOpponentModal, showEpochStarterModal, showGraveyardPickModal]);
@@ -280,9 +287,13 @@ export function DuelGamePage({
         if (isObserver) return;
         setShowSurrenderModal(true);
     };
-    const confirmSurrender = () => {
+    const confirmSurrender = async () => {
         setShowSurrenderModal(false);
-        surrender();
+        try {
+            await surrender();
+        } catch {
+            void setActionHint('choose-card-action');
+        }
     };
     const handleBuildSelectedWonder = async (wonderId: number) => {
         if (!wonderBuildMode) return;

@@ -1,14 +1,8 @@
 import { create } from 'zustand';
-import { deleteDoc, deleteField, doc, onSnapshot, serverTimestamp, updateDoc } from 'firebase/firestore';
+import { onSnapshot } from 'firebase/firestore';
 import type IUser from '@/interfaces/User';
-import {
-    gameStatusDuelRef,
-    gameStatusGemsRef,
-    gameStatusReflexRef,
-    tableGameDuelRef,
-    usersRef
-} from '@/firebase/refs';
-import { auth } from '@/firebaseConfig';
+import { gameStatusDuelRef, gameStatusGemsRef, gameStatusReflexRef } from '@/firebase/refs';
+import { cleanupDuelGame } from '@/store/duelCleanup';
 
 type GameCardInfo = {
     isStarted: boolean;
@@ -84,26 +78,5 @@ export const useGameStore = create<GameStoreState>((set, get) => ({
             unsubscribers: []
         });
     },
-    deleteGameDuel: async () => {
-        await updateDoc(gameStatusDuelRef, {
-            isStarted: false,
-            players: []
-        });
-
-        const currentUid = auth.currentUser?.uid;
-        if (currentUid) {
-            await updateDoc(doc(usersRef, currentUid), {
-                game: '',
-                readyToGame: false,
-                status: 'online',
-                online: deleteField(),
-                timestamp: serverTimestamp(),
-                updatedAt: serverTimestamp(),
-                lastSeenAt: serverTimestamp(),
-                schemaVersion: 1
-            });
-        }
-
-        await deleteDoc(tableGameDuelRef);
-    }
+    deleteGameDuel: cleanupDuelGame
 }));

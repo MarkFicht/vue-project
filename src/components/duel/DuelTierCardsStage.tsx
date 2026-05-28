@@ -3,7 +3,8 @@ import { DuelSpriteCard } from '@/components/duel/DuelSpriteCard';
 import {
     playCardFlightAnimation,
     type FlightFallbackPlacement,
-    type FlightTargetSelection
+    type FlightTargetSelection,
+    type FlightVisualMode
 } from '@/components/duel/duelCardFlight';
 import { showPrice } from '@/helpers/GameDuelHelpers';
 import type { IGameDuelCard, IGameDuelPlayer, Tier } from '@/interfaces/GameDuel';
@@ -52,6 +53,7 @@ type FlightTargetResolution = {
     targetEl: HTMLElement;
     fallbackPlacement: FlightFallbackPlacement;
     targetSelection: FlightTargetSelection;
+    visualMode: FlightVisualMode;
 };
 
 const resolveOwnerUidByDelta = (
@@ -80,7 +82,8 @@ const resolveFlightTarget = ({
     previousTopCounts,
     previousBottomCounts,
     graveyardLength,
-    previousGraveyardLength
+    previousGraveyardLength,
+    previousWonderActivationByKey
 }: {
     card: IGameDuelCard;
     topPlayer: IGameDuelPlayer;
@@ -91,6 +94,7 @@ const resolveFlightTarget = ({
     previousBottomCounts: PlayerCardCounts;
     graveyardLength: number;
     previousGraveyardLength: number;
+    previousWonderActivationByKey: Record<string, string>;
 }): FlightTargetResolution | null => {
     if (card.taken === 'inPlayerBoard') {
         const ownerUid =
@@ -111,7 +115,8 @@ const resolveFlightTarget = ({
         return {
             targetEl,
             fallbackPlacement: 'below-last',
-            targetSelection: 'match-card'
+            targetSelection: 'match-card',
+            visualMode: 'header-shrink'
         };
     }
 
@@ -122,7 +127,33 @@ const resolveFlightTarget = ({
         return {
             targetEl,
             fallbackPlacement: 'same-spot',
-            targetSelection: 'last-slot'
+            targetSelection: 'last-slot',
+            visualMode: 'header-shrink'
+        };
+    }
+
+    if (card.taken === 'inWonder') {
+        const activatedWonders = [...topPlayer.wonderCards, ...bottomPlayer.wonderCards].filter(
+            (wonder) => wonder.activated !== 'none'
+        );
+        const newlyActivatedWonder = activatedWonders.find((wonder) => {
+            const wonderKey = `w-${wonder.id}`;
+            return previousWonderActivationByKey[wonderKey] === 'none';
+        });
+        if (!newlyActivatedWonder) return null;
+
+        const wonderOwnerUid = topPlayer.wonderCards.some((wonder) => wonder.id === newlyActivatedWonder.id)
+            ? topPlayer.user.uid
+            : bottomPlayer.user.uid;
+        const targetEl = document.querySelector<HTMLElement>(
+            `#dg-wonder-${wonderOwnerUid}-${newlyActivatedWonder.id} .dg-tierCardForWonder`
+        );
+        if (!targetEl) return null;
+        return {
+            targetEl,
+            fallbackPlacement: 'same-spot',
+            targetSelection: 'none',
+            visualMode: 'flip-to-back'
         };
     }
 
@@ -145,7 +176,7 @@ export function DuelTierCardsStage({
             new Set(
                 tierCards
                     .map((card, index) => ({ card, index }))
-                    .filter(({ card }) => card.taken === 'inPlayerBoard' || card.taken === 'graveyard')
+                    .filter(({ card }) => card.taken === 'inPlayerBoard' || card.taken === 'graveyard' || card.taken === 'inWonder')
                     .map(({ card, index }) => getCardKey(card, index))
             )
     );
@@ -161,6 +192,7 @@ export function DuelTierCardsStage({
         bottomCounts: {}
     });
     const previousGraveyardLengthRef = useRef(graveyard.length);
+    const previousWonderActivationByKeyRef = useRef<Record<string, string>>({});
 
     useEffect(() => {
         const existingKeys = new Set(tierCards.map((card, index) => getCardKey(card, index)));
@@ -195,7 +227,11 @@ export function DuelTierCardsStage({
             const cardKey = getCardKey(card, index);
             const previousTaken = previousTakenByCardRef.current[cardKey];
             nextTakenByCard[cardKey] = card.taken;
-            if (previousTaken !== 'inGame' || (card.taken !== 'inPlayerBoard' && card.taken !== 'graveyard')) return;
+            if (
+                previousTaken !== 'inGame' ||
+                (card.taken !== 'inPlayerBoard' && card.taken !== 'graveyard' && card.taken !== 'inWonder')
+            )
+                return;
 
             const sourceEl = document.getElementById(`dg-tier-card-${cardKey}`);
             if (!sourceEl) {
@@ -212,7 +248,8 @@ export function DuelTierCardsStage({
                 previousTopCounts,
                 previousBottomCounts,
                 graveyardLength: graveyard.length,
-                previousGraveyardLength: previousGraveyardLengthRef.current
+                previousGraveyardLength: previousGraveyardLengthRef.current,
+                previousWonderActivationByKey: previousWonderActivationByKeyRef.current
             });
             if (!resolvedTarget) {
                 retryTransition(cardKey, previousTaken);
@@ -230,7 +267,8 @@ export function DuelTierCardsStage({
                 targetEl: resolvedTarget.targetEl,
                 card,
                 fallbackPlacement: resolvedTarget.fallbackPlacement,
-                targetSelection: resolvedTarget.targetSelection
+                targetSelection: resolvedTarget.targetSelection,
+                visualMode: resolvedTarget.visualMode
             });
         });
         previousTakenByCardRef.current = nextTakenByCard;
@@ -241,6 +279,12 @@ export function DuelTierCardsStage({
             bottomCounts: currentBottomCounts
         };
         previousGraveyardLengthRef.current = graveyard.length;
+        previousWonderActivationByKeyRef.current = [...topPlayer.wonderCards, ...bottomPlayer.wonderCards].reduce<
+            Record<string, string>
+        >((acc, wonder) => {
+            acc[`w-${wonder.id}`] = wonder.activated;
+            return acc;
+        }, {});
     }, [bottomPlayer, graveyard, tierCards, topPlayer]);
 
     return (
