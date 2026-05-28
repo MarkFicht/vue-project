@@ -245,10 +245,8 @@ export function DuelGamePage({
     useEffect(() => {
         if (!showActionModal && !showEpochStarterModal && !showCoinChoiceModal && !showDestroyOpponentModal && !showGraveyardPickModal)
             return;
-        const handlePointerDown = (event: PointerEvent) => {
+        const handleWindowClick = (event: MouseEvent) => {
             if (showEpochStarterModal || showCoinChoiceModal || showDestroyOpponentModal || showGraveyardPickModal) return;
-            // Ignore secondary touch pointers (e.g. pinch zoom on mobile).
-            if (event.pointerType === 'touch' && !event.isPrimary) return;
             const target = event.target as Element | null;
             if (!target) return;
             if (
@@ -270,10 +268,10 @@ export function DuelGamePage({
             }
             if (event.key === 'Escape') closeSelectedCardActions();
         };
-        window.addEventListener('pointerdown', handlePointerDown);
+        window.addEventListener('click', handleWindowClick);
         window.addEventListener('keydown', handleKeyDown);
         return () => {
-            window.removeEventListener('pointerdown', handlePointerDown);
+            window.removeEventListener('click', handleWindowClick);
             window.removeEventListener('keydown', handleKeyDown);
         };
     }, [showActionModal, showCoinChoiceModal, showDestroyOpponentModal, showEpochStarterModal, showGraveyardPickModal]);
