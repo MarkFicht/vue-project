@@ -1,4 +1,4 @@
-import { getDoc, runTransaction } from 'firebase/firestore';
+import { getDoc, runTransaction, serverTimestamp } from 'firebase/firestore';
 import type IUser from '@/interfaces/User';
 import { BoardDuel, PlayerDuel } from '@/interfaces/GameDuel';
 import { cardsTierGuild, cardsTierOne, cardsTierThree, cardsTierTwo, cardsWonder, coins } from '@/helpers/GameDuelInit';
@@ -33,6 +33,8 @@ const buildInitialDuelTable = (players: IUser[]) => {
         selectWondersForPlayersMove: 0,
         chooseWhoWillStart: false,
         turn: players[0].uid,
+        turnStartedAt: serverTimestamp(),
+        player1ClockMs: 30000,
         gameBoard: {
             ...new BoardDuel(),
             coins: randomCoins.slice(0, 5)

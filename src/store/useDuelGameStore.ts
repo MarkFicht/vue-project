@@ -14,6 +14,9 @@ import { tableGameDuelRef } from '@/firebase/refs';
 
 export type DuelGameState = {
     turn: string;
+    turnStartedAtMs: number | null;
+    player1ClockMs?: number;
+    player2ClockMs?: number;
     tier: Tier;
     move: number;
     pickCoin: string;
@@ -54,6 +57,8 @@ export type DuelGameState = {
 
 const initialState = {
     turn: '',
+    turnStartedAtMs: null as number | null,
+    player1ClockMs: 30000,
     tier: 'prepare' as Tier,
     move: 0,
     pickCoin: '',
@@ -90,11 +95,26 @@ export const useDuelGameStore = create<DuelGameState>((set, get) => ({
     unsubscribe: undefined,
     subFirebaseConnect: () => {
         get().unsubscribe?.();
+        const toMillis = (value: unknown): number | null => {
+            if (typeof value === 'number') return value;
+            if (typeof value === 'object' && value !== null) {
+                if ('toDate' in value && typeof (value as { toDate?: () => Date }).toDate === 'function') {
+                    return (value as { toDate: () => Date }).toDate().getTime();
+                }
+                if ('seconds' in value && typeof (value as { seconds?: unknown }).seconds === 'number') {
+                    return (value as { seconds: number }).seconds * 1000;
+                }
+            }
+            return null;
+        };
         const unsubscribe = onSnapshot(tableGameDuelRef, (doc) => {
             if (!doc.exists()) return;
             const data = doc.data();
             set({
                 turn: data.turn,
+                turnStartedAtMs: toMillis(data.turnStartedAt),
+                player1ClockMs: typeof data.player1ClockMs === 'number' ? data.player1ClockMs : undefined,
+                player2ClockMs: typeof data.player2ClockMs === 'number' ? data.player2ClockMs : undefined,
                 tier: data.tier,
                 move: data.move,
                 tierOneCards: data.tierICards,

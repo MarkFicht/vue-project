@@ -22,7 +22,9 @@ export function DuelPlayerColumns({
     isDestroyTarget,
     onDestroyCard,
     pulseScienceVictory,
-    showPreparePlaceholders
+    showPreparePlaceholders,
+    turnSecondsLeft = 30,
+    turnTimerDanger = false
 }: {
     player: IGameDuelPlayer;
     enemy: IGameDuelPlayer;
@@ -39,6 +41,8 @@ export function DuelPlayerColumns({
     /** Blink border on each green card + artefact7 coin after scientific victory. */
     pulseScienceVictory?: boolean;
     showPreparePlaceholders?: boolean;
+    turnSecondsLeft?: number;
+    turnTimerDanger?: boolean;
 }) {
     const totalPoints = countTotalPoints(player, enemy, boardPawn, isPlayerOne, {
         includeCashReserveVp: false
@@ -84,6 +88,9 @@ export function DuelPlayerColumns({
                 <div className="inline-flex items-center gap-1.5 font-semibold">
                     <UserFlag code={player.user.countryCode} className="text-base" />
                     <span>{player.user.displayName || player.user.email}</span>
+                    <span className={`dg-turnTimerChip${turnTimerDanger ? ' dg-turnTimerChip--danger' : ''}`}>
+                        {Math.max(0, turnSecondsLeft)}s
+                    </span>
                 </div>
                 <div className="text-xs opacity-80">{isCurrentTurn ? 'Your turn' : 'Waiting'}</div>
                 <div className="dg-playerTotals">

@@ -9,7 +9,8 @@ type SoundKind =
     | 'militaryAttack'
     | 'militaryHit'
     | 'destroyBrown'
-    | 'destroyGrey';
+    | 'destroyGrey'
+    | 'timerTick';
 
 let audioCtx: AudioContext | null = null;
 let soundUnlockBound = false;
@@ -252,6 +253,9 @@ export function playUiSound(kind: SoundKind) {
                 ],
                 0.042
             );
+            break;
+        case 'timerTick':
+            playTones([{ freq: 960, ms: 45, type: 'sine' }], 0.016);
             break;
         default:
             break;

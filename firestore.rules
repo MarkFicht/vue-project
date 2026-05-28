@@ -162,6 +162,10 @@ service cloud.firestore {
       return 3000;
     }
 
+    function observerLobbyKickCooldownMs() {
+      return 5000;
+    }
+
     function joinTimestampSkewMs() {
       return 120000;
     }
@@ -183,6 +187,31 @@ service cloud.firestore {
             )
           )
         );
+    }
+
+    function bothPlayersHaveValidJoinedAt(players) {
+      return players.size() == 2
+        && ('joinedAt' in players[0])
+        && ('joinedAt' in players[1])
+        && players[0].joinedAt is int
+        && players[1].joinedAt is int;
+    }
+
+    function twoPlayerLobbyCreatedAtMs(players) {
+      return players[0].joinedAt > players[1].joinedAt
+        ? players[0].joinedAt
+        : players[1].joinedAt;
+    }
+
+    function canObserverKickInLobby(beforePlayers, afterPlayers) {
+      return beforePlayers.size() == 2
+        && afterPlayers.size() == 1
+        && resource.data.isStarted == false
+        && request.resource.data.isStarted == false
+        && !(request.auth.uid in [beforePlayers[0].uid, beforePlayers[1].uid])
+        && (afterPlayers[0] == beforePlayers[0] || afterPlayers[0] == beforePlayers[1])
+        && bothPlayersHaveValidJoinedAt(beforePlayers)
+        && twoPlayerLobbyCreatedAtMs(beforePlayers) <= request.time.toMillis() - observerLobbyKickCooldownMs();
     }
 
     function sameGameStatusUidOrder(beforePlayers, afterPlayers) {
@@ -252,6 +281,8 @@ service cloud.firestore {
                 || (beforePlayers[1].uid == request.auth.uid
                   && canKickLobbyPlayer(beforePlayers[0]))
               ))
+            // observer may remove one player while lobby is waiting
+            || canObserverKickInLobby(beforePlayers, afterPlayers)
           ))
         // Game cleanup: participant may clear roster.
         || (beforePlayers.size() == 2
@@ -316,6 +347,9 @@ service cloud.firestore {
           'selectWondersForPlayersMove',
           'chooseWhoWillStart',
           'turn',
+          'turnStartedAt',
+          'player1ClockMs',
+          'player2ClockMs',
           'gameBoard',
           'tierICards',
           'tierIICards',
@@ -343,6 +377,9 @@ service cloud.firestore {
         && data.selectWondersForPlayersMove is int
         && data.chooseWhoWillStart is bool
         && isNonEmptyString(data.turn)
+        && (!('turnStartedAt' in data) || data.turnStartedAt is timestamp)
+        && (!('player1ClockMs' in data) || (data.player1ClockMs is int && data.player1ClockMs >= 0))
+        && (!('player2ClockMs' in data) || (data.player2ClockMs is int && data.player2ClockMs >= 0))
         && data.gameBoard is map
         && data.gameBoard.keys().hasOnly([
           'pawn',
@@ -401,6 +438,51 @@ service cloud.firestore {
         && resource.data.wonByAggressive == ''
         && resource.data.wonBySurr == ''
         && resource.data.wonByPoints == '';
+    }
+
+    function duelTimeoutKickCommonChecks() {
+      return resource.data.turnStartedAt is timestamp
+        && request.time >= resource.data.turnStartedAt + duelCurrentTurnDuration()
+        && resource.data.turn in [resource.data.player1.user.uid, resource.data.player2.user.uid]
+        && resource.data.wonByArt == ''
+        && resource.data.wonByAggressive == ''
+        && resource.data.wonBySurr == ''
+        && resource.data.wonByPoints == '';
+    }
+
+    function duelOtherSeatUid(data) {
+      return data.turn == data.player1.user.uid
+        ? data.player2.user.uid
+        : data.player1.user.uid;
+    }
+
+    function duelTimeoutKickUpdateIsValid() {
+      let p1 = resource.data.player1.user.uid;
+      let p2 = resource.data.player2.user.uid;
+      let isPlayer = request.auth.uid in [p1, p2];
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['wonBySurr'])
+        && request.resource.data.wonBySurr in [p1, p2]
+        && request.resource.data.wonBySurr != resource.data.turn
+        && duelTimeoutKickCommonChecks()
+        && (
+          (isPlayer && request.auth.uid != resource.data.turn && request.resource.data.wonBySurr == request.auth.uid)
+          || (!isPlayer && request.resource.data.wonBySurr == duelOtherSeatUid(resource.data))
+        );
+    }
+
+    function duelCurrentTurnRemainingMs() {
+      let p1Uid = resource.data.player1.user.uid;
+      let p2Uid = resource.data.player2.user.uid;
+      let p1Ms = ('player1ClockMs' in resource.data) ? resource.data.player1ClockMs : 30000;
+      let p2Ms = ('player2ClockMs' in resource.data) ? resource.data.player2ClockMs : 30000;
+      let raw = resource.data.turn == p1Uid
+        ? p1Ms
+        : (resource.data.turn == p2Uid ? p2Ms : 30000);
+      return (raw is int && raw >= 0) ? raw : 30000;
+    }
+
+    function duelCurrentTurnDuration() {
+      return duration.value((duelCurrentTurnRemainingMs() + 999) / 1000, 's');
     }
 
     match /users/{userId} {
@@ -481,7 +563,11 @@ service cloud.firestore {
       allow update: if isSignedIn()
         && isGameStatusDocId(docId)
         && validGameStatusDocument(request.resource.data, docId)
-        && (isGameStatusParticipant(resource.data) || isGameStatusParticipant(request.resource.data))
+        && (
+          isGameStatusParticipant(resource.data)
+          || isGameStatusParticipant(request.resource.data)
+          || canObserverKickInLobby(resource.data.players, request.resource.data.players)
+        )
         && validGameStatusTransition()
         && validGameStatusStartedTransition();
       allow delete: if false;
@@ -496,12 +582,20 @@ service cloud.firestore {
         && duelTurnIsValid(request.resource.data);
       allow update: if docId == 'table1'
         && isSignedIn()
-        && isDuelTableParticipant(resource.data)
-        && (request.auth.uid == resource.data.turn || duelSurrenderUpdateIsValid())
         && duelSeatOwnersAreImmutable()
         && duelTopLevelShapeIsValid(request.resource.data)
         && duelTurnIsValid(request.resource.data)
-        && duelMoveProgressionIsValid();
+        && duelMoveProgressionIsValid()
+        && (
+          (
+            isDuelTableParticipant(resource.data)
+            && (
+              request.auth.uid == resource.data.turn
+              || duelSurrenderUpdateIsValid()
+            )
+          )
+          || duelTimeoutKickUpdateIsValid()
+        );
       allow delete: if docId == 'table1'
         && isSignedIn()
         && isDuelTableParticipant(resource.data);

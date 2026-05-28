@@ -11,7 +11,7 @@ type UseDuelModalsStateParams = {
 
 export function useDuelModalsState({ game, uid, isObserver, isMyTurn }: UseDuelModalsStateParams) {
     return useMemo(() => {
-        const winnerUid = game.wonByArt || game.wonByAggressive || game.wonBySurr || game.wonByPoints;
+        const winnerUid = [game.wonByArt, game.wonByAggressive, game.wonBySurr, game.wonByPoints].find(Boolean) || '';
         const showEpochStarterModal =
             !winnerUid && game.tier !== 'prepare' && game.chooseWhoWillStart && isMyTurn && !isObserver;
         const showPrepareWonderPickModal = !winnerUid && game.tier === 'prepare' && isMyTurn && !isObserver;

@@ -28,6 +28,8 @@ import { useDuelGameStore } from '@/store/useDuelGameStore';
 import { useUserStore } from '@/store/useUserStore';
 import { gameStatusDuelRef, tableGameDuelRef, usersRef } from '@/firebase/refs';
 import { bootstrapDuelTable } from '@/hooks/duelBootstrap';
+import { hasDuelWinner } from '@/utils/duelTurnClock';
+import { useDuelClock } from '@/hooks/useDuelClock';
 import { playUiSound, setSoundScope } from '@/utils/sound';
 
 const EPOCH_STARTER_CHOICE_AFTER_MOVE = [19, 39] as const;
@@ -115,6 +117,12 @@ export function useGameState(currentUserUid: string) {
         if (!game.selectedCard?.id) return -1;
         return showPrice(game.selectedCard, currentPlayer, opponent);
     }, [game.selectedCard, currentPlayer, opponent]);
+
+    const { patchTurnClock, canKickTimedOut, kickTimedOutOpponent, timeoutKickLabel, turnChip } = useDuelClock(
+        game,
+        currentUserUid,
+        { isObserver, isMyTurn, opponentUid: opponent.user.uid }
+    );
 
     useEffect(() => {
         let cancelled = false;
@@ -304,7 +312,7 @@ export function useGameState(currentUserUid: string) {
     useEffect(() => {
         if (isObserver || !isMyTurn) return;
         if (!game.player1.user?.uid || !game.player2.user?.uid) return;
-        if (game.wonByArt || game.wonByAggressive || game.wonBySurr || game.wonByPoints) return;
+        if (hasDuelWinner(game)) return;
         if (game.tier === 'prepare') return;
 
         if (countArtefactsForPlayer(game.player1) >= 6) {
@@ -328,7 +336,7 @@ export function useGameState(currentUserUid: string) {
 
     useEffect(() => {
         if (!isMyTurn) return;
-        if (game.wonByArt || game.wonByAggressive || game.wonBySurr || game.wonByPoints) return;
+        if (hasDuelWinner(game)) return;
         if (game.tier !== 'end' && game.move < 60) return;
 
         const p1 = countTotalPoints(game.player1, game.player2, game.board.pawn, true);
@@ -362,7 +370,7 @@ export function useGameState(currentUserUid: string) {
         if (game.move !== 0) return;
         if (game.player1.wonderCards.length !== 4 || game.player2.wonderCards.length !== 4) return;
         const timer = window.setTimeout(() => {
-            updateDoc(tableGameDuelRef, { tier: 'I' });
+            updateDoc(tableGameDuelRef, { tier: 'I', turnStartedAt: serverTimestamp() });
         }, 980);
         return () => window.clearTimeout(timer);
     }, [game.move, game.player1.wonderCards.length, game.player2.wonderCards.length, game.tier, isMyTurn]);
@@ -377,7 +385,7 @@ export function useGameState(currentUserUid: string) {
     }, [deleteGameDuel, game.wonByAggressive, game.wonByArt, game.wonBySurr, isObserver, navigate]);
 
     useEffect(() => {
-        const winner = game.wonByArt || game.wonByAggressive || game.wonBySurr || game.wonByPoints;
+        const winner = [game.wonByArt, game.wonByAggressive, game.wonBySurr, game.wonByPoints].find(Boolean) || '';
         if (!winner || prevWinnerRef.current === winner) return;
 
         if (winner === 'draw' || winner === currentUserUid) {
@@ -445,8 +453,14 @@ export function useGameState(currentUserUid: string) {
 
     const upgradeTurnAndMove = useCallback(
         async (uid: string, withoutMove = false, opts?: { openEpochStarterChoice?: boolean }) => {
+            const turnTimingPatch = patchTurnClock(uid);
             if (withoutMove) {
-                await updateDoc(tableGameDuelRef, { turn: uid, actionUid: '', actionType: '' });
+                await updateDoc(tableGameDuelRef, {
+                    turn: uid,
+                    actionUid: '',
+                    actionType: '',
+                    ...turnTimingPatch
+                });
                 return;
             }
             await updateDoc(tableGameDuelRef, {
@@ -454,10 +468,11 @@ export function useGameState(currentUserUid: string) {
                 move: increment(1),
                 actionUid: '',
                 actionType: '',
+                ...turnTimingPatch,
                 ...(opts?.openEpochStarterChoice ? { chooseWhoWillStart: true } : {})
             });
         },
-        []
+        [patchTurnClock]
     );
 
     const setActionHint = useCallback(
@@ -559,6 +574,7 @@ export function useGameState(currentUserUid: string) {
                 wonderCards: newWonderCards,
                 selectWondersForPlayersMove: increment(1),
                 turn: nextTurn,
+                ...patchTurnClock(nextTurn),
                 ...(isP1Turn
                     ? {
                           player1: {
@@ -574,7 +590,7 @@ export function useGameState(currentUserUid: string) {
                       })
             });
         },
-        [game, isMyTurn]
+        [patchTurnClock, game, isMyTurn]
     );
 
     const chooseWhoStarts = useCallback(
@@ -582,12 +598,13 @@ export function useGameState(currentUserUid: string) {
             if (!isMyTurn || !game.chooseWhoWillStart) return;
             await updateDoc(tableGameDuelRef, {
                 turn: uid,
+                ...patchTurnClock(uid),
                 chooseWhoWillStart: false,
                 actionUid: '',
                 actionType: ''
             });
         },
-        [game.chooseWhoWillStart, isMyTurn]
+        [patchTurnClock, game.chooseWhoWillStart, isMyTurn]
     );
 
     const selectTierCard = useCallback(
@@ -1056,7 +1073,7 @@ export function useGameState(currentUserUid: string) {
 
     const surrender = useCallback(async () => {
         if (isObserver) return;
-        if (game.wonByArt || game.wonByAggressive || game.wonBySurr || game.wonByPoints) return;
+        if (hasDuelWinner(game)) return;
         if (!opponent.user.uid || opponent.user.uid === currentUserUid) return;
         await updateDoc(tableGameDuelRef, { wonBySurr: opponent.user.uid });
     }, [currentUserUid, game.wonByAggressive, game.wonByArt, game.wonByPoints, game.wonBySurr, isObserver, opponent.user.uid]);
@@ -1095,6 +1112,10 @@ export function useGameState(currentUserUid: string) {
         pickCardFromGraveyard,
         destroyEnemyCard,
         surrender,
+        kickTimedOutOpponent,
+        canKickTimedOut,
+        timeoutKickLabel,
+        turnChip,
         goBackToFeed,
         setActionHint
     };

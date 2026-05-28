@@ -97,6 +97,10 @@ export function DuelGamePage({
         pickCardFromGraveyard,
         destroyEnemyCard,
         surrender,
+        kickTimedOutOpponent,
+        canKickTimedOut,
+        timeoutKickLabel,
+        turnChip,
         goBackToFeed,
         setActionHint
     } = useGameState(uid);
@@ -119,6 +123,8 @@ export function DuelGamePage({
     const bottomPlayer = isObserver ? game.player2 : opponent;
     const topIsPlayerOne = topPlayer.user.uid === game.player1.user.uid;
     const bottomIsPlayerOne = bottomPlayer.user.uid === game.player1.user.uid;
+    const topTurn = turnChip(topPlayer.user.uid);
+    const bottomTurn = turnChip(bottomPlayer.user.uid);
     const hasBuildableWonder = useMemo(() => {
         if (!isMyTurn || !game.selectedCard) return false;
         return topPlayer.wonderCards.some(
@@ -433,6 +439,9 @@ export function DuelGamePage({
                                     showOpponentActionModal={showOpponentActionModal}
                                     opponentActionMessage={opponentActionMessage}
                                     showIdlePrompt={showIdlePrompt}
+                                    showTimeoutKickPrompt={canKickTimedOut}
+                                    timeoutKickLabel={timeoutKickLabel}
+                                    onKickTimedOutPlayer={() => void kickTimedOutOpponent()}
                                 />
                                 <DuelGraveyardPanel
                                     graveyard={game.graveyard}
@@ -461,6 +470,8 @@ export function DuelGamePage({
                                         pulseScienceVictory={!!game.wonByArt && game.wonByArt === topPlayer.user.uid}
                                         isCurrentTurn={game.turn === topPlayer.user.uid}
                                         showPreparePlaceholders={game.tier === 'prepare'}
+                                        turnSecondsLeft={topTurn.seconds}
+                                        turnTimerDanger={topTurn.danger}
                                     />
                                 </div>
                             </section>
@@ -486,6 +497,8 @@ export function DuelGamePage({
                                     pulseScienceVictory={!!game.wonByArt && game.wonByArt === bottomPlayer.user.uid}
                                     isCurrentTurn={game.turn === bottomPlayer.user.uid}
                                     showPreparePlaceholders={game.tier === 'prepare'}
+                                    turnSecondsLeft={bottomTurn.seconds}
+                                    turnTimerDanger={bottomTurn.danger}
                                 />
                                 </div>
                             </section>
