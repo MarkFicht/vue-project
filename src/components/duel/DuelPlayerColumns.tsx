@@ -112,9 +112,9 @@ export function DuelPlayerColumns({
                         cash={showPrice(wonder, player, enemy)}
                         resCash={player.resources.cash}
                         selected={selectedWonderId === wonder.id}
-                        disabled={!canSelectWonder || wonder.activated !== 'none' || !canAfford}
+                        disabled={!canSelectWonder || wonder.activated !== 'none' || !!wonder.blocked || !canAfford}
                         flipDelayMs={0}
-                        showFront={revealedWonderIds.includes(wonder.id)}
+                        showFront={revealedWonderIds.includes(wonder.id) && !wonder.blocked}
                         onClick={() => onSelectWonder?.(wonder.id)}
                     />
                     );

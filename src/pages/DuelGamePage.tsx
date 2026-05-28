@@ -124,6 +124,7 @@ export function DuelGamePage({
         return topPlayer.wonderCards.some(
             (wonder) =>
                 wonder.activated === 'none' &&
+                !wonder.blocked &&
                 showPrice(wonder, topPlayer, bottomPlayer) <= topPlayer.resources.cash
         );
     }, [bottomPlayer, game.selectedCard, isMyTurn, topPlayer]);
@@ -133,6 +134,7 @@ export function DuelGamePage({
                 .filter(
                     (wonder) =>
                         wonder.activated === 'none' &&
+                        !wonder.blocked &&
                         showPrice(wonder, topPlayer, bottomPlayer) <= topPlayer.resources.cash
                 )
                 .map((wonder) => wonder.id),

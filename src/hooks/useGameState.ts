@@ -31,10 +31,35 @@ import { bootstrapDuelTable } from '@/hooks/duelBootstrap';
 import { playUiSound, setSoundScope } from '@/utils/sound';
 
 const EPOCH_STARTER_CHOICE_AFTER_MOVE = [19, 39] as const;
+const MAX_BUILT_WONDERS = 7;
 
 /** Starter choice only between Ages I→II and II→III. After the last Age III pick (59→60) there is no next age — no modal. */
 function shouldOfferEpochStarterChoice(moveBeforeIncrement: number): boolean {
     return (EPOCH_STARTER_CHOICE_AFTER_MOVE as readonly number[]).includes(moveBeforeIncrement);
+}
+
+function blockFirstUnbuiltWonder(wonders: IGameDuelWonderCard[]): IGameDuelWonderCard[] {
+    let blocked = false;
+    const next = wonders.map((wonder) => {
+        if (!blocked && wonder.activated === 'none' && !wonder.blocked) {
+            blocked = true;
+            return { ...wonder, blocked: true };
+        }
+        return wonder;
+    });
+    return blocked ? next : wonders;
+}
+
+function applyBuiltWonderLimit(
+    p1Wonders: IGameDuelWonderCard[],
+    p2Wonders: IGameDuelWonderCard[]
+): { p1Wonders: IGameDuelWonderCard[]; p2Wonders: IGameDuelWonderCard[] } {
+    const builtCount = [...p1Wonders, ...p2Wonders].filter((wonder) => wonder.activated !== 'none').length;
+    if (builtCount < MAX_BUILT_WONDERS) return { p1Wonders, p2Wonders };
+    return {
+        p1Wonders: blockFirstUnbuiltWonder(p1Wonders),
+        p2Wonders: blockFirstUnbuiltWonder(p2Wonders)
+    };
 }
 
 export function useGameState(currentUserUid: string) {
@@ -535,8 +560,18 @@ export function useGameState(currentUserUid: string) {
                 selectWondersForPlayersMove: increment(1),
                 turn: nextTurn,
                 ...(isP1Turn
-                    ? { player1: { ...game.player1, wonderCards: [...game.player1.wonderCards, { ...selected, taken: true }] } }
-                    : { player2: { ...game.player2, wonderCards: [...game.player2.wonderCards, { ...selected, taken: true }] } })
+                    ? {
+                          player1: {
+                              ...game.player1,
+                              wonderCards: [...game.player1.wonderCards, { ...selected, taken: true, blocked: false }]
+                          }
+                      }
+                    : {
+                          player2: {
+                              ...game.player2,
+                              wonderCards: [...game.player2.wonderCards, { ...selected, taken: true, blocked: false }]
+                          }
+                      })
             });
         },
         [game, isMyTurn]
@@ -713,7 +748,7 @@ export function useGameState(currentUserUid: string) {
         if (!game.selectedCard) return;
 
         const selectedWonder = wonderToBuild ?? game.selectedWonder;
-        if (!selectedWonder) return;
+        if (!selectedWonder || selectedWonder.blocked || selectedWonder.activated !== 'none') return;
 
         const cost = showPrice(selectedWonder, currentPlayer, opponent);
         if (cost > currentPlayer.resources.cash) return;
@@ -771,8 +806,15 @@ export function useGameState(currentUserUid: string) {
         const newWonderCards = currentPlayer.wonderCards.map((wonder) =>
             wonder.id === selectedWonder.id ? { ...wonder, activated: game.selectedCard?.tier ?? 'I' } : wonder
         );
+        const p1WonderCardsAfter = playerKey === 'player1' ? newWonderCards : game.player1.wonderCards;
+        const p2WonderCardsAfter = playerKey === 'player2' ? newWonderCards : game.player2.wonderCards;
+        const { p1Wonders: nextP1Wonders, p2Wonders: nextP2Wonders } = applyBuiltWonderLimit(
+            p1WonderCardsAfter,
+            p2WonderCardsAfter
+        );
         await updateDoc(tableGameDuelRef, {
-            [`${playerKey}.wonderCards`]: newWonderCards,
+            'player1.wonderCards': nextP1Wonders,
+            'player2.wonderCards': nextP2Wonders,
             [`${playerKey}.resources.cash`]: increment(builderNetCashDelta),
             [`${opponentKey}.resources.cash`]: opponentNextCash,
             ...(shouldPickCoinOfThree ? { pickCoinOfThree: game.turn } : {}),
@@ -818,6 +860,7 @@ export function useGameState(currentUserUid: string) {
     ]);
 
     const selectWonder = useCallback((wonder: IGameDuelWonderCard) => {
+        if (wonder.blocked || wonder.activated !== 'none') return;
         const cost = showPrice(wonder, currentPlayer, opponent);
         if (cost > currentPlayer.resources.cash) return;
         game.setSelectedWonder(wonder);

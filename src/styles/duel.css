@@ -282,6 +282,8 @@
     background-image: url('@/assets/duel/wonders.webp');
     background-size: calc(var(--width-wonder) * 5) calc(var(--height-wonder) * 4);
     background-position: calc(var(--width-wonder) * -1) calc(var(--height-wonder) * -3);
+    /* Back sprite reads slightly smaller than front; nudge scale for visual parity. */
+    transform: scale(1.03);
     box-shadow: inset 5px 5px 10px rgba(0, 0, 0, 0.2), inset -5px -5px 10px rgba(255, 255, 255, 0.08);
 }
 
