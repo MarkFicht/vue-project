@@ -230,7 +230,6 @@
     mask-position: center;
     -webkit-clip-path: inset(0 0 var(--indicator-cut-bottom) 0);
     clip-path: inset(0 0 var(--indicator-cut-bottom) 0);
-    transition: 0.35s ease;
 }
 
 .loginModeIndicator::after {
