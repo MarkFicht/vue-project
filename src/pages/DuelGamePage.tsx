@@ -384,6 +384,7 @@ export function DuelGamePage({
                                             <DuelTierCardsStage
                                                 tier={game.tier}
                                                 tierCards={tierCards}
+                                                graveyard={game.graveyard}
                                                 tierLayout={tierLayout}
                                                 selectedCardId={game.selectedCard?.id}
                                                 topPlayer={topPlayer}

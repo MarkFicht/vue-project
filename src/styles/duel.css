@@ -80,6 +80,14 @@
     display: block;
 }
 
+.dg-cardWrapperCompact.dg-arrivalPending .dg-card {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    background-image: none !important;
+    background-color: transparent;
+    box-shadow: none;
+}
+
 .dg-cardWrapper:disabled {
     pointer-events: none;
 }
@@ -105,6 +113,55 @@
 .dg-invisible {
     transform: translateY(var(--y)) translateX(var(--x));
     animation: dg-invisible 0.5s linear forwards;
+}
+
+.dg-inPlayerBoardSource {
+    transform: translateY(var(--y)) translateX(var(--x));
+    animation: none !important;
+    opacity: 0 !important;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.dg-cardHeaderFlyer {
+    position: fixed;
+    z-index: 220;
+    border-radius: 5px;
+    overflow: hidden;
+    pointer-events: none;
+    box-shadow:
+        0 8px 16px rgba(0, 0, 0, 0.32),
+        0 2px 6px rgba(0, 0, 0, 0.38);
+}
+
+.dg-cardHeaderFlyerFace {
+    width: 100%;
+    height: var(--height-tier);
+}
+
+.dg-tierSimpleFlip {
+    position: absolute;
+    inset: 0;
+    transform-style: preserve-3d;
+    transform-origin: top center;
+}
+
+.dg-tierSimpleFlip .dg-tierSimpleFlipFace,
+.dg-tierSimpleFlip .dg-tierSimpleFlipBack {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: var(--width-tier);
+    height: var(--height-tier);
+    backface-visibility: hidden;
+}
+
+.dg-tierSimpleFlipBack {
+    transform: rotateY(180deg);
+}
+
+.dg-tierSimpleFlip--animate {
+    animation: dg-tierSimpleFlipReveal 780ms cubic-bezier(0.22, 0.88, 0.22, 1) forwards;
 }
 
 .dg-card {
@@ -647,7 +704,7 @@
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
-    justify-content: flex-start;
+    justify-content: center;
     align-content: flex-start;
     box-sizing: border-box;
     width: calc(100% / var(--dg-epoch-cards-scale));
@@ -675,7 +732,6 @@
     flex-direction: column;
     gap: 10px;
     min-height: 0;
-    border-radius: 0.875rem;
 }
 
 .dgSurrenderOverlay {
@@ -1228,6 +1284,16 @@
             0 0 0 4px rgba(110, 231, 183, 0.45),
             0 0 20px rgba(34, 197, 94, 0.2);
         filter: brightness(1.12);
+    }
+}
+
+@keyframes dg-tierSimpleFlipReveal {
+    from {
+        transform: rotateY(180deg);
+    }
+
+    to {
+        transform: rotateY(0deg);
     }
 }
 

@@ -129,7 +129,11 @@ export function DuelPlayerColumns({
                     const isDestroyColumn =
                         isDestroyTarget && (colorKey === 'brown' || colorKey === 'grey') && destroyMode === colorKey;
                     return (
-                        <div key={`${player.user.uid}-${colorKey}`} className={`dg-column dg-column-${colorKey}`}>
+                        <div
+                            key={`${player.user.uid}-${colorKey}`}
+                            id={`dg-deck-col-${player.user.uid}-${colorKey}`}
+                            className={`dg-column dg-column-${colorKey}`}
+                        >
                             {scienceProgress !== null && (
                                 <div
                                     className={[

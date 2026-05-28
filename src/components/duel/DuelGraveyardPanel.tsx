@@ -24,10 +24,11 @@ export function DuelGraveyardPanel({
         >
             <h3 className="mb-1 text-sm font-semibold">Graveyard</h3>
             <div className="dg-graveyardCards dg-graveyardCardsBox duelPageScrollbar overflow-y-auto rounded-lg p-1">
-                <div className="dg-graveyardCardsTransform">
+                <div id="dg-graveyard-cards-transform" className="dg-graveyardCardsTransform">
                     {graveyard.map((card, idx) => (
                         <DuelSpriteCard
                             key={`grave-${card.id}-${idx}`}
+                            domId={`dg-grave-card-${idx}`}
                             card={card}
                             x={0}
                             y={0}
