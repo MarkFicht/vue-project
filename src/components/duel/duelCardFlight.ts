@@ -18,8 +18,17 @@ export function playCardFlightAnimation({
     fallbackPlacement = 'below-last',
     targetSelection = 'match-card'
 }: PlayCardFlightAnimationArgs) {
+    const SOURCE_VISUAL_TOP_OFFSET_PX = 2;
+    const SHRINK_DURATION_MS = 230;
+    const SHRINK_EASING = 'cubic-bezier(0.2, 0.75, 0.2, 1)';
+    const FLY_DURATION_MS = 1300;
+    const FLY_EASING = 'cubic-bezier(0.65, 0.18, 0.35, 0.82)';
     const sourceRect = sourceEl.getBoundingClientRect();
-    if (!sourceRect.width || !sourceRect.height) return;
+    const sourceCardFace = sourceEl.querySelector<HTMLElement>('.dg-card');
+    const sourceVisualRect = sourceCardFace?.getBoundingClientRect() ?? sourceRect;
+    if (!sourceVisualRect.width || !sourceVisualRect.height) return;
+    const startLeft = sourceVisualRect.left;
+    const startTop = sourceVisualRect.top + SOURCE_VISUAL_TOP_OFFSET_PX;
 
     const getTargetCards = () =>
         targetEl.classList.contains('dg-cardWrapperCompact')
@@ -42,20 +51,27 @@ export function playCardFlightAnimation({
 
     const flyer = document.createElement('div');
     flyer.className = 'dg-cardHeaderFlyer';
-    flyer.style.left = `${sourceRect.left}px`;
-    flyer.style.top = `${sourceRect.top}px`;
-    flyer.style.width = `${sourceRect.width}px`;
-    flyer.style.height = `${sourceRect.height}px`;
+    flyer.style.left = `${startLeft}px`;
+    flyer.style.top = `${startTop}px`;
+    flyer.style.width = `${sourceVisualRect.width}px`;
+    flyer.style.height = `${sourceVisualRect.height}px`;
 
     const flyerFace = document.createElement('div');
     flyerFace.setAttribute('aria-hidden', 'true');
     flyerFace.className = `dg-card dg-card${card.idImg} dg-cardHeaderFlyerFace`;
+    flyerFace.style.position = 'absolute';
+    flyerFace.style.top = '0';
+    flyerFace.style.left = '0';
+    flyerFace.style.setProperty('--width-tier', `${sourceVisualRect.width}px`);
+    flyerFace.style.setProperty('--height-tier', `${sourceVisualRect.height}px`);
+    flyerFace.style.transformOrigin = 'top left';
     flyer.appendChild(flyerFace);
     document.body.appendChild(flyer);
 
-    const headerHeight = Math.max(sourceRect.height / 4.5, 16);
-    const targetWidth = sourceRect.width;
-    const targetHeight = headerHeight;
+    const sourceHeaderHeight = Math.max(sourceVisualRect.height / 4.5, 16);
+    const targetHeight = Math.max(targetCardLike?.getBoundingClientRect().height ?? sourceHeaderHeight, 16);
+    const flightStartHeight = Math.min(sourceHeaderHeight, targetHeight);
+    const targetWidth = targetCardLike ? targetRect.width : sourceRect.width;
     const targetLeft = targetCardLike
         ? targetRect.left
         : targetRect.left + Math.max(0, targetRect.width / 2 - targetWidth / 2);
@@ -101,23 +117,36 @@ export function playCardFlightAnimation({
     const shrink = flyer.animate(
         [
             { height: `${sourceRect.height}px`, opacity: 1 },
-            { height: `${headerHeight}px`, opacity: 1 }
+            { height: `${flightStartHeight}px`, opacity: 1 }
         ],
         {
-            duration: 230,
-            easing: 'cubic-bezier(0.2, 0.75, 0.2, 1)',
+            duration: SHRINK_DURATION_MS,
+            easing: SHRINK_EASING,
             fill: 'forwards'
         }
     );
 
     const startFly = () => {
+        const faceScaleX = targetWidth > 0 ? targetWidth / sourceVisualRect.width : 1;
+        const faceScaleY = targetHeight > 0 ? targetHeight / flightStartHeight : 1;
+        const faceScale = flyerFace.animate(
+            [
+                { transform: 'scale(1, 1)' },
+                { transform: `scale(${faceScaleX}, ${faceScaleY})` }
+            ],
+            {
+                duration: FLY_DURATION_MS,
+                easing: FLY_EASING,
+                fill: 'forwards'
+            }
+        );
         const fly = flyer.animate(
             [
                 {
-                    left: `${sourceRect.left}px`,
-                    top: `${sourceRect.top}px`,
-                    width: `${sourceRect.width}px`,
-                    height: `${headerHeight}px`,
+                    left: `${startLeft}px`,
+                    top: `${startTop}px`,
+                    width: `${sourceVisualRect.width}px`,
+                    height: `${flightStartHeight}px`,
                     opacity: 1
                 },
                 {
@@ -129,18 +158,20 @@ export function playCardFlightAnimation({
                 }
             ],
             {
-                duration: 1300,
-                easing: 'cubic-bezier(0.65, 0.18, 0.35, 0.82)',
+                duration: FLY_DURATION_MS,
+                easing: FLY_EASING,
                 fill: 'forwards'
             }
         );
 
         fly.onfinish = () => {
             clearHiddenTargetCard();
+            faceScale.cancel();
             flyer.remove();
         };
         fly.oncancel = () => {
             clearHiddenTargetCard();
+            faceScale.cancel();
             flyer.remove();
         };
     };
