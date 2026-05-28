@@ -107,7 +107,11 @@ export function DuelSpriteCard({
                 wrapperClassName,
                 !compact && card.taken === 'inGame' ? '' : '',
                 !compact && hideAsMovingToBoard ? 'dg-inPlayerBoardSource' : '',
-                !compact && card.taken !== 'inGame' && card.taken !== 'inPlayerBoard' && card.taken !== 'graveyard'
+                !compact &&
+                card.taken !== 'inGame' &&
+                card.taken !== 'inPlayerBoard' &&
+                card.taken !== 'graveyard' &&
+                card.taken !== 'inWonder'
                     ? 'dg-invisible'
                     : '',
                 !compact && card.coversBy?.length === 0 ? 'dg-canSelect' : '',

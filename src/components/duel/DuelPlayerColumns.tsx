@@ -107,6 +107,7 @@ export function DuelPlayerColumns({
                     return (
                     <DuelWonderSprite
                         key={`${player.user.uid}-w-${wonder.id}`}
+                        domId={`dg-wonder-${player.user.uid}-${wonder.id}`}
                         card={wonder}
                         cash={showPrice(wonder, player, enemy)}
                         resCash={player.resources.cash}

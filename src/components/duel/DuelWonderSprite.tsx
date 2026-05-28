@@ -3,6 +3,7 @@ import type { IGameDuelWonderCard } from '@/interfaces/GameDuel';
 
 type Props = {
     card?: IGameDuelWonderCard;
+    domId?: string;
     cash?: number;
     resCash?: number;
     selected?: boolean;
@@ -22,6 +23,7 @@ function getTierBackground(activated: IGameDuelWonderCard['activated']) {
 
 export function DuelWonderSprite({
     card,
+    domId,
     cash,
     resCash,
     selected,
@@ -36,6 +38,7 @@ export function DuelWonderSprite({
     return (
         <button
             type="button"
+            id={domId}
             className={[
                 'dg-wonderWrapper',
                 selected ? 'dg-selected' : '',
