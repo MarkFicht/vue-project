@@ -1,6 +1,7 @@
 type SoundKind =
     | 'click'
     | 'notify'
+    | 'chatMessage'
     | 'start'
     | 'turn'
     | 'win'
@@ -173,6 +174,16 @@ export function playUiSound(kind: SoundKind) {
                 { freq: 740, ms: 90, type: 'triangle' },
                 { freq: 988, ms: 120, type: 'triangle' }
             ]);
+            break;
+        case 'chatMessage':
+            playTones(
+                [
+                    { freq: 1280, ms: 26, type: 'triangle' },
+                    { freq: 1620, ms: 30, type: 'sine' },
+                    { freq: 1360, ms: 24, type: 'triangle' }
+                ],
+                0.022
+            );
             break;
         case 'start':
             playTones([
