@@ -6,25 +6,13 @@ import {
     doc,
     getDoc,
     increment,
-    runTransaction,
     serverTimestamp,
     updateDoc
 } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 import type IUser from '@/interfaces/User';
 import type { IGameDuelCard, IGameDuelCoin, IGameDuelPlayer, IGameDuelWonderCard } from '@/interfaces/GameDuel';
-import { BoardDuel, PlayerDuel } from '@/interfaces/GameDuel';
 import {
-    cardsTierGuild,
-    cardsTierOne,
-    cardsTierThree,
-    cardsTierTwo,
-    cardsWonder,
-    coins
-} from '@/helpers/GameDuelInit';
-import {
-    sampleArray,
-    prepareIdForCards,
     countPlayerResources,
     countArtefactsForPlayer,
     bankGoldFromYellowCashBackWatchingOpponentSpend,
@@ -39,7 +27,7 @@ import { useGameStore } from '@/store/useGameStore';
 import { useDuelGameStore } from '@/store/useDuelGameStore';
 import { useUserStore } from '@/store/useUserStore';
 import { gameStatusDuelRef, tableGameDuelRef, usersRef } from '@/firebase/refs';
-import { db } from '@/firebaseConfig';
+import { bootstrapDuelTable } from '@/hooks/duelBootstrap';
 import { playUiSound, setSoundScope } from '@/utils/sound';
 
 const EPOCH_STARTER_CHOICE_AFTER_MOVE = [19, 39] as const;
@@ -115,6 +103,7 @@ export function useGameState(currentUserUid: string) {
 
             const statusSnap = await getDoc(gameStatusDuelRef);
             const tableSnap = await getDoc(tableGameDuelRef);
+            if (cancelled) return;
 
             if (!statusSnap.exists()) return;
             const players = statusSnap.data().players as IUser[];
@@ -130,61 +119,12 @@ export function useGameState(currentUserUid: string) {
                 return;
             }
 
-            if (!tableSnap.exists()) {
-                await runTransaction(db, async (tx) => {
-                    const txSnap = await tx.get(tableGameDuelRef);
-                    if (txSnap.exists()) return;
-
-                    const randomCoins = sampleArray(coins, 10);
-                    const randomWonders = sampleArray(cardsWonder, 8);
-                    const tier3 = sampleArray(
-                        [...sampleArray(cardsTierThree, 17), ...sampleArray(cardsTierGuild, 3)],
-                        20
-                    );
-
-                    tx.set(tableGameDuelRef, {
-                        player1: { ...new PlayerDuel(), user: players[0] },
-                        player2: { ...new PlayerDuel(), user: players[1] },
-                        selectWondersForPlayers: [
-                            players[0].uid,
-                            players[1].uid,
-                            players[1].uid,
-                            players[0].uid,
-                            players[1].uid,
-                            players[0].uid,
-                            players[0].uid,
-                            players[1].uid,
-                            players[0].uid
-                        ],
-                        selectWondersForPlayersMove: 0,
-                        chooseWhoWillStart: false,
-                        turn: players[0].uid,
-                        gameBoard: {
-                            ...new BoardDuel(),
-                            coins: randomCoins.slice(0, 5)
-                        },
-                        tierICards: prepareIdForCards(sampleArray(cardsTierOne, 20), 'I'),
-                        tierIICards: prepareIdForCards(sampleArray(cardsTierTwo, 20), 'II'),
-                        tierIIICards: prepareIdForCards(tier3, 'III'),
-                        wonderCards: randomWonders,
-                        graveyard: [],
-                        theRestOfCoins: randomCoins.slice(5),
-                        tier: 'prepare',
-                        move: 0,
-                        pickCoin: '',
-                        pickCoinOfThree: '',
-                        pickCardFromGraveyard: '',
-                        destroyBrown: '',
-                        destroyGrey: '',
-                        actionUid: '',
-                        actionType: '',
-                        wonByArt: '',
-                        wonByAggressive: '',
-                        wonBySurr: '',
-                        wonByPoints: ''
-                    });
-                });
-            }
+            await bootstrapDuelTable({
+                currentUserUid,
+                players,
+                tableExists: tableSnap.exists(),
+                isCancelled: () => cancelled
+            });
 
             if (!cancelled) {
                 subDuelGame();
@@ -1026,8 +966,11 @@ export function useGameState(currentUserUid: string) {
     );
 
     const surrender = useCallback(async () => {
+        if (isObserver) return;
+        if (game.wonByArt || game.wonByAggressive || game.wonBySurr || game.wonByPoints) return;
+        if (!opponent.user.uid || opponent.user.uid === currentUserUid) return;
         await updateDoc(tableGameDuelRef, { wonBySurr: opponent.user.uid });
-    }, [opponent.user.uid]);
+    }, [currentUserUid, game.wonByAggressive, game.wonByArt, game.wonByPoints, game.wonBySurr, isObserver, opponent.user.uid]);
 
     const goBackToFeed = useCallback(async () => {
         await updateDoc(doc(usersRef, currentUserUid), {

@@ -280,9 +280,13 @@ export function DuelGamePage({
         if (isObserver) return;
         setShowSurrenderModal(true);
     };
-    const confirmSurrender = () => {
+    const confirmSurrender = async () => {
         setShowSurrenderModal(false);
-        surrender();
+        try {
+            await surrender();
+        } catch {
+            void setActionHint('choose-card-action');
+        }
     };
     const handleBuildSelectedWonder = async (wonderId: number) => {
         if (!wonderBuildMode) return;

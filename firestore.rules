@@ -393,6 +393,16 @@ service cloud.firestore {
         && request.resource.data.selectWondersForPlayersMove <= resource.data.selectWondersForPlayersMove + 1;
     }
 
+    function duelSurrenderUpdateIsValid() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['wonBySurr'])
+        && request.resource.data.wonBySurr in [resource.data.player1.user.uid, resource.data.player2.user.uid]
+        && request.resource.data.wonBySurr != request.auth.uid
+        && resource.data.wonByArt == ''
+        && resource.data.wonByAggressive == ''
+        && resource.data.wonBySurr == ''
+        && resource.data.wonByPoints == '';
+    }
+
     match /users/{userId} {
       allow read: if isSignedIn();
       allow create: if isSelf(userId)
@@ -487,7 +497,7 @@ service cloud.firestore {
       allow update: if docId == 'table1'
         && isSignedIn()
         && isDuelTableParticipant(resource.data)
-        && request.auth.uid == resource.data.turn
+        && (request.auth.uid == resource.data.turn || duelSurrenderUpdateIsValid())
         && duelSeatOwnersAreImmutable()
         && duelTopLevelShapeIsValid(request.resource.data)
         && duelTurnIsValid(request.resource.data)
