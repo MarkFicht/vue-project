@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+﻿import { useCallback, useEffect, useRef } from 'react';
 import { registerWebPushToken, subscribeToForegroundPush } from '@/utils/pushNotifications';
 import { saveChatNotifyMuted } from '@/utils/chatWidget';
 import { ensureUiSoundReady, playUiSound } from '@/utils/sound';
@@ -112,7 +112,7 @@ export function useChatNotifications({
         const incomingSoundKey = `${incoming.chatId}:${incoming.updatedAtMs}`;
         if (lastIncomingSummarySoundRef.current !== incomingSoundKey) {
             lastIncomingSummarySoundRef.current = incomingSoundKey;
-            playUiSound('notify');
+            playUiSound('chatMessage');
         }
 
         const currentChatOpen = isOpen && activeChatId === incoming.chatId && document.visibilityState === 'visible';

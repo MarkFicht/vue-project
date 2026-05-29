@@ -1,6 +1,7 @@
 type SoundKind =
     | 'click'
     | 'notify'
+    | 'chatMessage'
     | 'start'
     | 'turn'
     | 'win'
@@ -8,7 +9,8 @@ type SoundKind =
     | 'militaryAttack'
     | 'militaryHit'
     | 'destroyBrown'
-    | 'destroyGrey';
+    | 'destroyGrey'
+    | 'timerTick';
 
 let audioCtx: AudioContext | null = null;
 let soundUnlockBound = false;
@@ -174,6 +176,16 @@ export function playUiSound(kind: SoundKind) {
                 { freq: 988, ms: 120, type: 'triangle' }
             ]);
             break;
+        case 'chatMessage':
+            playTones(
+                [
+                    { freq: 1280, ms: 26, type: 'triangle' },
+                    { freq: 1620, ms: 30, type: 'sine' },
+                    { freq: 1360, ms: 24, type: 'triangle' }
+                ],
+                0.022
+            );
+            break;
         case 'start':
             playTones([
                 { freq: 523, ms: 90, type: 'square' },
@@ -241,6 +253,9 @@ export function playUiSound(kind: SoundKind) {
                 ],
                 0.042
             );
+            break;
+        case 'timerTick':
+            playTones([{ freq: 960, ms: 45, type: 'sine' }], 0.016);
             break;
         default:
             break;

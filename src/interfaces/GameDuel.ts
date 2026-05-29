@@ -47,6 +47,7 @@ export interface IGameDuelCoin {
 export interface IGameDuelWonderCard {
     id: number;
     taken: boolean;
+    blocked?: boolean;
     activated: 'none' | 'I' | 'II' | 'III' | 'guild';
     valueCost: number[];
     cost: Array<Materials>;

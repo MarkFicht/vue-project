@@ -28,13 +28,40 @@ import { useDuelGameStore } from '@/store/useDuelGameStore';
 import { useUserStore } from '@/store/useUserStore';
 import { gameStatusDuelRef, tableGameDuelRef, usersRef } from '@/firebase/refs';
 import { bootstrapDuelTable } from '@/hooks/duelBootstrap';
+import { hasDuelWinner } from '@/utils/duelTurnClock';
+import { useDuelClock } from '@/hooks/useDuelClock';
 import { playUiSound, setSoundScope } from '@/utils/sound';
 
 const EPOCH_STARTER_CHOICE_AFTER_MOVE = [19, 39] as const;
+const MAX_BUILT_WONDERS = 7;
 
 /** Starter choice only between Ages I→II and II→III. After the last Age III pick (59→60) there is no next age — no modal. */
 function shouldOfferEpochStarterChoice(moveBeforeIncrement: number): boolean {
     return (EPOCH_STARTER_CHOICE_AFTER_MOVE as readonly number[]).includes(moveBeforeIncrement);
+}
+
+function blockFirstUnbuiltWonder(wonders: IGameDuelWonderCard[]): IGameDuelWonderCard[] {
+    let blocked = false;
+    const next = wonders.map((wonder) => {
+        if (!blocked && wonder.activated === 'none' && !wonder.blocked) {
+            blocked = true;
+            return { ...wonder, blocked: true };
+        }
+        return wonder;
+    });
+    return blocked ? next : wonders;
+}
+
+function applyBuiltWonderLimit(
+    p1Wonders: IGameDuelWonderCard[],
+    p2Wonders: IGameDuelWonderCard[]
+): { p1Wonders: IGameDuelWonderCard[]; p2Wonders: IGameDuelWonderCard[] } {
+    const builtCount = [...p1Wonders, ...p2Wonders].filter((wonder) => wonder.activated !== 'none').length;
+    if (builtCount < MAX_BUILT_WONDERS) return { p1Wonders, p2Wonders };
+    return {
+        p1Wonders: blockFirstUnbuiltWonder(p1Wonders),
+        p2Wonders: blockFirstUnbuiltWonder(p2Wonders)
+    };
 }
 
 export function useGameState(currentUserUid: string) {
@@ -90,6 +117,12 @@ export function useGameState(currentUserUid: string) {
         if (!game.selectedCard?.id) return -1;
         return showPrice(game.selectedCard, currentPlayer, opponent);
     }, [game.selectedCard, currentPlayer, opponent]);
+
+    const { patchTurnClock, canKickTimedOut, kickTimedOutOpponent, timeoutKickLabel, turnChip } = useDuelClock(
+        game,
+        currentUserUid,
+        { isObserver, isMyTurn, opponentUid: opponent.user.uid }
+    );
 
     useEffect(() => {
         let cancelled = false;
@@ -279,7 +312,7 @@ export function useGameState(currentUserUid: string) {
     useEffect(() => {
         if (isObserver || !isMyTurn) return;
         if (!game.player1.user?.uid || !game.player2.user?.uid) return;
-        if (game.wonByArt || game.wonByAggressive || game.wonBySurr || game.wonByPoints) return;
+        if (hasDuelWinner(game)) return;
         if (game.tier === 'prepare') return;
 
         if (countArtefactsForPlayer(game.player1) >= 6) {
@@ -303,7 +336,7 @@ export function useGameState(currentUserUid: string) {
 
     useEffect(() => {
         if (!isMyTurn) return;
-        if (game.wonByArt || game.wonByAggressive || game.wonBySurr || game.wonByPoints) return;
+        if (hasDuelWinner(game)) return;
         if (game.tier !== 'end' && game.move < 60) return;
 
         const p1 = countTotalPoints(game.player1, game.player2, game.board.pawn, true);
@@ -337,7 +370,7 @@ export function useGameState(currentUserUid: string) {
         if (game.move !== 0) return;
         if (game.player1.wonderCards.length !== 4 || game.player2.wonderCards.length !== 4) return;
         const timer = window.setTimeout(() => {
-            updateDoc(tableGameDuelRef, { tier: 'I' });
+            updateDoc(tableGameDuelRef, { tier: 'I', turnStartedAt: serverTimestamp() });
         }, 980);
         return () => window.clearTimeout(timer);
     }, [game.move, game.player1.wonderCards.length, game.player2.wonderCards.length, game.tier, isMyTurn]);
@@ -352,7 +385,7 @@ export function useGameState(currentUserUid: string) {
     }, [deleteGameDuel, game.wonByAggressive, game.wonByArt, game.wonBySurr, isObserver, navigate]);
 
     useEffect(() => {
-        const winner = game.wonByArt || game.wonByAggressive || game.wonBySurr || game.wonByPoints;
+        const winner = [game.wonByArt, game.wonByAggressive, game.wonBySurr, game.wonByPoints].find(Boolean) || '';
         if (!winner || prevWinnerRef.current === winner) return;
 
         if (winner === 'draw' || winner === currentUserUid) {
@@ -420,8 +453,14 @@ export function useGameState(currentUserUid: string) {
 
     const upgradeTurnAndMove = useCallback(
         async (uid: string, withoutMove = false, opts?: { openEpochStarterChoice?: boolean }) => {
+            const turnTimingPatch = patchTurnClock(uid);
             if (withoutMove) {
-                await updateDoc(tableGameDuelRef, { turn: uid, actionUid: '', actionType: '' });
+                await updateDoc(tableGameDuelRef, {
+                    turn: uid,
+                    actionUid: '',
+                    actionType: '',
+                    ...turnTimingPatch
+                });
                 return;
             }
             await updateDoc(tableGameDuelRef, {
@@ -429,10 +468,11 @@ export function useGameState(currentUserUid: string) {
                 move: increment(1),
                 actionUid: '',
                 actionType: '',
+                ...turnTimingPatch,
                 ...(opts?.openEpochStarterChoice ? { chooseWhoWillStart: true } : {})
             });
         },
-        []
+        [patchTurnClock]
     );
 
     const setActionHint = useCallback(
@@ -534,12 +574,23 @@ export function useGameState(currentUserUid: string) {
                 wonderCards: newWonderCards,
                 selectWondersForPlayersMove: increment(1),
                 turn: nextTurn,
+                ...patchTurnClock(nextTurn),
                 ...(isP1Turn
-                    ? { player1: { ...game.player1, wonderCards: [...game.player1.wonderCards, { ...selected, taken: true }] } }
-                    : { player2: { ...game.player2, wonderCards: [...game.player2.wonderCards, { ...selected, taken: true }] } })
+                    ? {
+                          player1: {
+                              ...game.player1,
+                              wonderCards: [...game.player1.wonderCards, { ...selected, taken: true, blocked: false }]
+                          }
+                      }
+                    : {
+                          player2: {
+                              ...game.player2,
+                              wonderCards: [...game.player2.wonderCards, { ...selected, taken: true, blocked: false }]
+                          }
+                      })
             });
         },
-        [game, isMyTurn]
+        [patchTurnClock, game, isMyTurn]
     );
 
     const chooseWhoStarts = useCallback(
@@ -547,12 +598,13 @@ export function useGameState(currentUserUid: string) {
             if (!isMyTurn || !game.chooseWhoWillStart) return;
             await updateDoc(tableGameDuelRef, {
                 turn: uid,
+                ...patchTurnClock(uid),
                 chooseWhoWillStart: false,
                 actionUid: '',
                 actionType: ''
             });
         },
-        [game.chooseWhoWillStart, isMyTurn]
+        [patchTurnClock, game.chooseWhoWillStart, isMyTurn]
     );
 
     const selectTierCard = useCallback(
@@ -713,7 +765,7 @@ export function useGameState(currentUserUid: string) {
         if (!game.selectedCard) return;
 
         const selectedWonder = wonderToBuild ?? game.selectedWonder;
-        if (!selectedWonder) return;
+        if (!selectedWonder || selectedWonder.blocked || selectedWonder.activated !== 'none') return;
 
         const cost = showPrice(selectedWonder, currentPlayer, opponent);
         if (cost > currentPlayer.resources.cash) return;
@@ -771,8 +823,15 @@ export function useGameState(currentUserUid: string) {
         const newWonderCards = currentPlayer.wonderCards.map((wonder) =>
             wonder.id === selectedWonder.id ? { ...wonder, activated: game.selectedCard?.tier ?? 'I' } : wonder
         );
+        const p1WonderCardsAfter = playerKey === 'player1' ? newWonderCards : game.player1.wonderCards;
+        const p2WonderCardsAfter = playerKey === 'player2' ? newWonderCards : game.player2.wonderCards;
+        const { p1Wonders: nextP1Wonders, p2Wonders: nextP2Wonders } = applyBuiltWonderLimit(
+            p1WonderCardsAfter,
+            p2WonderCardsAfter
+        );
         await updateDoc(tableGameDuelRef, {
-            [`${playerKey}.wonderCards`]: newWonderCards,
+            'player1.wonderCards': nextP1Wonders,
+            'player2.wonderCards': nextP2Wonders,
             [`${playerKey}.resources.cash`]: increment(builderNetCashDelta),
             [`${opponentKey}.resources.cash`]: opponentNextCash,
             ...(shouldPickCoinOfThree ? { pickCoinOfThree: game.turn } : {}),
@@ -818,6 +877,7 @@ export function useGameState(currentUserUid: string) {
     ]);
 
     const selectWonder = useCallback((wonder: IGameDuelWonderCard) => {
+        if (wonder.blocked || wonder.activated !== 'none') return;
         const cost = showPrice(wonder, currentPlayer, opponent);
         if (cost > currentPlayer.resources.cash) return;
         game.setSelectedWonder(wonder);
@@ -1013,7 +1073,7 @@ export function useGameState(currentUserUid: string) {
 
     const surrender = useCallback(async () => {
         if (isObserver) return;
-        if (game.wonByArt || game.wonByAggressive || game.wonBySurr || game.wonByPoints) return;
+        if (hasDuelWinner(game)) return;
         if (!opponent.user.uid || opponent.user.uid === currentUserUid) return;
         await updateDoc(tableGameDuelRef, { wonBySurr: opponent.user.uid });
     }, [currentUserUid, game.wonByAggressive, game.wonByArt, game.wonByPoints, game.wonBySurr, isObserver, opponent.user.uid]);
@@ -1052,6 +1112,10 @@ export function useGameState(currentUserUid: string) {
         pickCardFromGraveyard,
         destroyEnemyCard,
         surrender,
+        kickTimedOutOpponent,
+        canKickTimedOut,
+        timeoutKickLabel,
+        turnChip,
         goBackToFeed,
         setActionHint
     };

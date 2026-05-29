@@ -66,7 +66,7 @@ export function DuelWonderSprite({
                     <div className="dg-tierCardImg" />
                 </div>
             )}
-            {card?.taken && card.activated === 'none' && cash !== undefined && (
+            {card?.taken && card.activated === 'none' && !card.blocked && cash !== undefined && (
                 <div className={['cashSum dg-wonderCash', resCash !== undefined && cash > resCash ? 'dg-tooHighPrice' : ''].join(' ')}>
                     {cash}
                 </div>

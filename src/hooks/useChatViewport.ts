@@ -1,118 +1,132 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 import { isNearBottom, type ChatMessageLite } from '@/utils/chatWidget';
+
+const scrollToBottom = (el: HTMLDivElement | null, behavior: ScrollBehavior = 'smooth') => {
+    el?.scrollTo({ top: el.scrollHeight, behavior });
+};
+
+const afterPaint = (fn: () => void) => {
+    let cancelled = false;
+    const id = requestAnimationFrame(() => requestAnimationFrame(() => !cancelled && fn()));
+    return () => {
+        cancelled = true;
+        cancelAnimationFrame(id);
+    };
+};
 
 export function useChatViewport({
     uid,
     isOpen,
     activeChatId,
     messages,
-    readMap,
+    messagesReady,
+    activeReadAtMs,
     onMarkAsRead
 }: {
     uid: string;
     isOpen: boolean;
     activeChatId: string;
     messages: ChatMessageLite[];
-    readMap: Record<string, number>;
-    onMarkAsRead: (chatId: string, readAtMs: number) => void;
+    messagesReady: boolean;
+    activeReadAtMs: number;
+    onMarkAsRead: (chatId: string) => void;
 }) {
-    const lastTailMessageIdRef = useRef('');
-    const initialScrollChatIdRef = useRef('');
-    const userInteractedRef = useRef(false);
-    const pendingInteractionForNextChatRef = useRef(false);
+    const scroll = useRef({
+        tailId: '',
+        initialDone: '',
+        openReadAt: 0,
+        userInteracted: false,
+        pendingInteraction: false,
+        markedRead: ''
+    });
+    const readAtMsRef = useRef(activeReadAtMs);
+    readAtMsRef.current = activeReadAtMs;
     const messageRefs = useRef<Record<string, HTMLElement | null>>({});
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
     const messagesContainerRef = useRef<HTMLDivElement | null>(null);
 
+    const resetScroll = (onChatSwitch = false) => {
+        const s = scroll.current;
+        if (onChatSwitch) {
+            s.openReadAt = readAtMsRef.current;
+            s.userInteracted = s.pendingInteraction;
+            s.pendingInteraction = false;
+        } else {
+            s.openReadAt = 0;
+            s.userInteracted = false;
+            s.pendingInteraction = false;
+        }
+        s.initialDone = '';
+        s.tailId = '';
+        s.markedRead = '';
+        messageRefs.current = {};
+    };
+
     const maybeMarkActiveChatAsRead = useCallback(() => {
-        if (!isOpen || !activeChatId) return;
-        if (!userInteractedRef.current) return;
-        if (!isNearBottom(messagesContainerRef.current)) return;
-        const latestIncomingAt = messages.reduce((latest, entry) => {
-            if (entry.senderUid === uid) return latest;
-            return Math.max(latest, entry.createdAtMs || 0);
-        }, 0);
+        const s = scroll.current;
+        if (!isOpen || !activeChatId || !s.userInteracted || !isNearBottom(messagesContainerRef.current)) return;
+        if (s.markedRead === activeChatId) return;
+        const latestIncomingAt = messages.reduce(
+            (latest, entry) => (entry.senderUid === uid ? latest : Math.max(latest, entry.createdAtMs || 0)),
+            0
+        );
         if (!latestIncomingAt) return;
-        onMarkAsRead(activeChatId, latestIncomingAt);
+        s.markedRead = activeChatId;
+        onMarkAsRead(activeChatId);
     }, [activeChatId, isOpen, messages, onMarkAsRead, uid]);
 
-    useEffect(() => {
-        initialScrollChatIdRef.current = '';
-        lastTailMessageIdRef.current = '';
-        userInteractedRef.current = false;
-        pendingInteractionForNextChatRef.current = false;
-        messageRefs.current = {};
-    }, [uid]);
-
-    useEffect(() => {
-        if (!isOpen || !activeChatId) return;
-        initialScrollChatIdRef.current = activeChatId;
-        userInteractedRef.current = pendingInteractionForNextChatRef.current;
-        pendingInteractionForNextChatRef.current = false;
+    useEffect(() => resetScroll(), [uid]);
+    useLayoutEffect(() => {
+        if (isOpen && activeChatId) resetScroll(true);
     }, [activeChatId, isOpen]);
 
     useEffect(() => {
-        const tailMessage = messages[messages.length - 1];
-        if (!tailMessage) {
-            lastTailMessageIdRef.current = '';
+        const s = scroll.current;
+        if (s.initialDone !== activeChatId) return;
+        const tail = messages.at(-1);
+        if (!tail) {
+            s.tailId = '';
             return;
         }
-        const prevTailMessageId = lastTailMessageIdRef.current;
-        const tailChanged = prevTailMessageId !== tailMessage.id;
-        lastTailMessageIdRef.current = tailMessage.id;
-        if (!tailChanged) return;
-        const shouldScroll = tailMessage.senderUid === uid || isNearBottom(messagesContainerRef.current);
-        if (!shouldScroll) return;
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-    }, [messages, uid]);
+        if (tail.senderUid !== uid) s.markedRead = '';
+        if (s.tailId === tail.id) return;
+        s.tailId = tail.id;
+        if (tail.senderUid === uid || isNearBottom(messagesContainerRef.current)) {
+            scrollToBottom(messagesContainerRef.current);
+        }
+    }, [activeChatId, messages, uid]);
 
     useEffect(() => {
-        if (!activeChatId || !messages.length) return;
-        if (initialScrollChatIdRef.current !== activeChatId) return;
+        const s = scroll.current;
+        if (!activeChatId || !messages.length || !messagesReady || s.initialDone === activeChatId) return;
 
-        const readAt = readMap[activeChatId] ?? 0;
-        const hasUnread = messages.some((entry) => entry.senderUid !== uid && entry.createdAtMs > readAt);
-        let targetId = '';
-        if (hasUnread && readAt > 0) {
-            for (let i = messages.length - 1; i >= 0; i -= 1) {
-                const current = messages[i];
-                if (current.createdAtMs > 0 && current.createdAtMs <= readAt) {
-                    targetId = current.id;
-                    break;
-                }
-            }
-        }
-        if (hasUnread && readAt <= 0) {
-            initialScrollChatIdRef.current = '';
-            return;
-        }
+        const readAt = s.openReadAt;
+        const hasUnread = messages.some((m) => m.senderUid !== uid && m.createdAtMs > readAt);
+        const targetId =
+            hasUnread && readAt > 0
+                ? [...messages].reverse().find((m) => m.createdAtMs > 0 && m.createdAtMs <= readAt)?.id
+                : undefined;
 
-        const raf = window.requestAnimationFrame(() => {
-            if (hasUnread && targetId && messageRefs.current[targetId]) {
-                messageRefs.current[targetId]?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        return afterPaint(() => {
+            const tail = messages.at(-1);
+            const targetEl = targetId ? messageRefs.current[targetId] : null;
+            if (hasUnread && targetEl) {
+                targetEl.scrollIntoView({ block: 'center', behavior: 'smooth' });
             } else {
-                messagesEndRef.current?.scrollIntoView({ block: 'end', behavior: 'smooth' });
+                scrollToBottom(messagesContainerRef.current);
             }
-            initialScrollChatIdRef.current = '';
+            s.initialDone = activeChatId;
+            s.tailId = tail?.id ?? '';
         });
-        return () => window.cancelAnimationFrame(raf);
-    }, [activeChatId, messages, readMap, uid]);
-
-    useEffect(() => {
-        if (!isOpen || !userInteractedRef.current) return;
-        const raf = window.requestAnimationFrame(() => {
-            maybeMarkActiveChatAsRead();
-        });
-        return () => window.cancelAnimationFrame(raf);
-    }, [isOpen, activeChatId, messages, maybeMarkActiveChatAsRead]);
+    }, [activeChatId, messages, messagesReady, uid]);
 
     const registerConversationInteraction = useCallback(() => {
-        pendingInteractionForNextChatRef.current = true;
-        userInteractedRef.current = true;
+        scroll.current.pendingInteraction = true;
+        scroll.current.userInteracted = true;
     }, []);
 
     const handleMessagesScroll = useCallback(() => {
-        userInteractedRef.current = true;
+        scroll.current.userInteracted = true;
         maybeMarkActiveChatAsRead();
     }, [maybeMarkActiveChatAsRead]);
 
@@ -120,7 +134,6 @@ export function useChatViewport({
         messageRefs,
         messagesEndRef,
         messagesContainerRef,
-        maybeMarkActiveChatAsRead,
         registerConversationInteraction,
         handleMessagesScroll
     };

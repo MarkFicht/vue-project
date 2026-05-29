@@ -24,33 +24,64 @@ export type ChatRenderRow =
 export const CHAT_PAGE_SIZE = 12;
 export const CACHE_MSG_LIMIT = 12;
 export const CHAT_CACHE_PREFIX = 'chat-cache-v1:';
-export const CHAT_READ_PREFIX = 'chat-read-v1:';
 export const CHAT_NOTIFY_MUTE_PREFIX = 'chat-notify-muted-v1:';
 export const CHAT_RECENT_HIDDEN_PREFIX = 'chat-recent-hidden-v1:';
 export const READ_BOTTOM_THRESHOLD_PX = 56;
 
+export function resolveSnapshotTimeMs(
+    value: Timestamp | undefined,
+    hasPendingWrites: boolean,
+    fallbackMs = 0
+) {
+    const resolvedMs = value?.toMillis?.() ?? 0;
+    if (resolvedMs > 0) return resolvedMs;
+    if (hasPendingWrites) return Date.now();
+    return fallbackMs;
+}
+
 export function formatChatTime(value?: Timestamp, createdAtMs?: number) {
-    const date = value?.toDate() ?? (createdAtMs ? new Date(createdAtMs) : null);
+    const date = value?.toDate?.() ?? (createdAtMs && createdAtMs > 0 ? new Date(createdAtMs) : null);
     if (!date) return '';
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-export function loadReadMap(uid: string): Record<string, number> {
-    try {
-        const raw = localStorage.getItem(`${CHAT_READ_PREFIX}${uid}`);
-        if (!raw) return {};
-        return JSON.parse(raw) as Record<string, number>;
-    } catch {
-        return {};
+export function timestampToMs(value: unknown): number {
+    if (typeof value === 'number') return value;
+    if (typeof value === 'object' && value !== null) {
+        if ('toMillis' in value && typeof (value as { toMillis?: () => number }).toMillis === 'function') {
+            return (value as { toMillis: () => number }).toMillis();
+        }
+        if ('seconds' in value && typeof (value as { seconds?: unknown }).seconds === 'number') {
+            const seconds = (value as { seconds: number }).seconds;
+            const nanos =
+                'nanoseconds' in value && typeof (value as { nanoseconds?: unknown }).nanoseconds === 'number'
+                    ? (value as { nanoseconds: number }).nanoseconds
+                    : 0;
+            return seconds * 1000 + Math.floor(nanos / 1_000_000);
+        }
     }
+    return 0;
 }
 
-export function saveReadMap(uid: string, map: Record<string, number>) {
-    try {
-        localStorage.setItem(`${CHAT_READ_PREFIX}${uid}`, JSON.stringify(map));
-    } catch {
-        // Ignore storage quota errors.
-    }
+export function getEffectiveReadAtMs(
+    summary: { readBy?: Record<string, unknown> },
+    uid: string,
+    optimisticReadAtMs = 0
+) {
+    return Math.max(timestampToMs(summary.readBy?.[uid]), optimisticReadAtMs);
+}
+
+export function isChatUnreadForUser(
+    summary: {
+        lastMessageSenderUid: string;
+        updatedAtMs: number;
+        readBy?: Record<string, unknown>;
+    },
+    uid: string,
+    optimisticReadAtMs = 0
+) {
+    if (!summary.lastMessageSenderUid || summary.lastMessageSenderUid === uid) return false;
+    return summary.updatedAtMs > getEffectiveReadAtMs(summary, uid, optimisticReadAtMs);
 }
 
 export function loadChatNotifyMuted(uid: string) {
@@ -194,7 +225,9 @@ export function buildChatRenderRows(
     };
 
     const getTimeLabel = (timestampMs: number, createdAt?: Timestamp) => {
-        if (!timestampMs) return formatChatTime(createdAt, timestampMs);
+        if (!timestampMs) {
+            return formatChatTime(createdAt, timestampMs) || 'now';
+        }
         const deltaMinutes = Math.floor((nowMs - timestampMs) / 60000);
         if (deltaMinutes <= 0) return 'now';
         if (deltaMinutes < 60) return `${deltaMinutes} min ago`;

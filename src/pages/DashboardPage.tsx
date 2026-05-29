@@ -236,6 +236,7 @@ export function DashboardPage({
     onThemeChange: (theme: AppTheme) => void;
 }) {
     const REMOVE_COOLDOWN_MS = 3000;
+    const OBSERVER_REMOVE_COOLDOWN_MS = 5000;
     const navigate = useNavigate();
     const [initError, setInitError] = useState('');
     const [isBootstrapped, setIsBootstrapped] = useState(false);
@@ -878,9 +879,8 @@ export function DashboardPage({
         }
         return null;
     };
-    const getRemoveCooldown = (joinedAt: unknown) => {
-        const joinedAtMs = getLobbyJoinedAtMs(joinedAt);
-        if (!joinedAtMs) {
+    const getRemoveCooldown = (joinedAtMs: number | null, cooldownMs: number) => {
+        if (!joinedAtMs || cooldownMs <= 0) {
             return {
                 canRemove: true,
                 progressDeg: '360deg',
@@ -888,15 +888,24 @@ export function DashboardPage({
             };
         }
         const elapsedMs = nowMs - joinedAtMs;
-        const clampedElapsed = Math.max(0, Math.min(elapsedMs, REMOVE_COOLDOWN_MS));
-        const progress = clampedElapsed / REMOVE_COOLDOWN_MS;
-        const remainingMs = Math.max(0, REMOVE_COOLDOWN_MS - elapsedMs);
+        const clampedElapsed = Math.max(0, Math.min(elapsedMs, cooldownMs));
+        const progress = clampedElapsed / cooldownMs;
+        const remainingMs = Math.max(0, cooldownMs - elapsedMs);
         return {
             canRemove: remainingMs <= 0,
             progressDeg: `${Math.round(progress * 360)}deg`,
             secondsLeft: Math.ceil(remainingMs / 1000)
         };
     };
+    const duelLobbyCreatedAtMs = useMemo(() => {
+        if (duel.players.length !== 2) return null;
+        const joinedTimes = duel.players
+            .map((player) => getLobbyJoinedAtMs(player.joinedAt))
+            .filter((value): value is number => typeof value === 'number');
+        if (!joinedTimes.length) return null;
+        return Math.max(...joinedTimes);
+    }, [duel.players]);
+    const canObserverKickWhileCreating = duel.players.length === 2 && !duel.isStarted && !inDuelLobby;
     const getPresence = (id: string) => presenceMap[id] || 'offline';
     const hasPasswordProvider = auth.currentUser?.providerData.some((provider) => provider.providerId === 'password');
     const toExportSafeData = (value: unknown): unknown => {
@@ -1337,7 +1346,12 @@ export function DashboardPage({
                                 ) : (
                                     <>
                                         {duel.players.map((player) => {
-                                            const removeCooldown = getRemoveCooldown(player.joinedAt);
+                                            const canLobbyPlayerKick = inDuelLobby && player.uid !== uid;
+                                            const canObserverKick = canObserverKickWhileCreating;
+                                            const shouldShowKick = canLobbyPlayerKick || canObserverKick;
+                                            const removeCooldown = canObserverKick
+                                                ? getRemoveCooldown(duelLobbyCreatedAtMs, OBSERVER_REMOVE_COOLDOWN_MS)
+                                                : getRemoveCooldown(getLobbyJoinedAtMs(player.joinedAt), REMOVE_COOLDOWN_MS);
                                             const removeDisabled = !isBootstrapped || !removeCooldown.canRemove;
                                             const playerLabel = player.displayName || player.email;
                                             return (
@@ -1363,7 +1377,7 @@ export function DashboardPage({
                                                         <span className={player.readyToGame ? 'text-emerald-300' : 'text-amber-300'}>
                                                             {player.readyToGame ? 'ready' : 'waiting'}
                                                         </span>
-                                                        {inDuelLobby && player.uid !== uid && (
+                                                        {shouldShowKick && (
                                                             <button
                                                                 type="button"
                                                                 className={`dashRemoveButton ${
@@ -1469,7 +1483,7 @@ export function DashboardPage({
                         <p>2 players are in lobby. Click Ready to start or Exit to leave lobby.</p>
                         <div className="dashLobbyPlayers">
                             {duel.players.map((player) => {
-                                const removeCooldown = getRemoveCooldown(player.joinedAt);
+                                const removeCooldown = getRemoveCooldown(getLobbyJoinedAtMs(player.joinedAt), REMOVE_COOLDOWN_MS);
                                 const removeDisabled = !isBootstrapped || !removeCooldown.canRemove;
                                 const playerLabel = player.displayName || player.email;
                                 return (

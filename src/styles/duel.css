@@ -282,6 +282,8 @@
     background-image: url('@/assets/duel/wonders.webp');
     background-size: calc(var(--width-wonder) * 5) calc(var(--height-wonder) * 4);
     background-position: calc(var(--width-wonder) * -1) calc(var(--height-wonder) * -3);
+    /* Back sprite reads slightly smaller than front; nudge scale for visual parity. */
+    transform: scale(1.03);
     box-shadow: inset 5px 5px 10px rgba(0, 0, 0, 0.2), inset -5px -5px 10px rgba(255, 255, 255, 0.08);
 }
 
@@ -913,6 +915,28 @@
     justify-content: space-between;
     gap: 8px;
     margin-bottom: 8px;
+}
+
+.dg-turnTimerChip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 34px;
+    height: 18px;
+    padding: 0 6px;
+    border-radius: 999px;
+    font-size: 11px;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    background: rgb(22 30 44 / 62%);
+    color: rgb(222 234 255 / 92%);
+    border: 1px solid rgb(133 156 210 / 38%);
+}
+
+.dg-turnTimerChip--danger {
+    background: rgb(106 24 24 / 76%);
+    color: rgb(255 216 216 / 96%);
+    border-color: rgb(240 94 94 / 52%);
 }
 
 .dg-playerTotals {

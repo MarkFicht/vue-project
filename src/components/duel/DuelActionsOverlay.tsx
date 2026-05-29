@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Ban, Hand } from 'lucide-react';
+import { Ban, Hand, UserX } from 'lucide-react';
 import { DuelCoinSprite } from '@/components/duel/DuelCoinSprite';
 import type { IGameDuelCoin } from '@/interfaces/GameDuel';
 
@@ -30,6 +30,9 @@ type DuelActionsOverlayProps = {
     showOpponentActionModal?: boolean;
     opponentActionMessage?: string | null;
     showIdlePrompt?: boolean;
+    showTimeoutKickPrompt?: boolean;
+    timeoutKickLabel?: string;
+    onKickTimedOutPlayer?: () => void;
 };
 
 type ModalFrameOptions = {
@@ -67,7 +70,10 @@ export function DuelActionsOverlay({
     onToggleWonderBuildMode,
     showOpponentActionModal,
     opponentActionMessage,
-    showIdlePrompt
+    showIdlePrompt,
+    showTimeoutKickPrompt,
+    timeoutKickLabel,
+    onKickTimedOutPlayer
 }: DuelActionsOverlayProps) {
     const inlineContainerClass = `dg-actionsInlineWrap${isPrepareTier ? ' dg-actionsInlineWrap--prepare' : ''}`;
     const containerClass = inline ? inlineContainerClass : 'dg-actionsBackdropInBoard';
@@ -210,6 +216,27 @@ export function DuelActionsOverlay({
             blocking: false,
             role: 'status',
             ariaLabel: 'Awaiting card selection'
+        });
+    }
+
+    if (showTimeoutKickPrompt) {
+        return renderModalFrame({
+            blocking: true,
+            role: 'dialog',
+            ariaLabel: 'Kick inactive player',
+            children: (
+                <>
+                    <p className="mb-3 px-1 text-center text-sm text-slate-200">
+                        {timeoutKickLabel || 'Opponent ran out of time. You can kick this player.'}
+                    </p>
+                    <div className="dg-actionsButtons">
+                        <button type="button" className="btn-secondary" onClick={onKickTimedOutPlayer}>
+                            <UserX className="h-3.5 w-3.5" />
+                            Kick player
+                        </button>
+                    </div>
+                </>
+            )
         });
     }
 

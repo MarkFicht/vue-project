@@ -1,3 +1,1 @@
-export function buildPrivateChatId(uidA: string, uidB: string) {
-    return [uidA, uidB].sort().join('_');
-}
+export { buildPrivateChatId, getPeerUid, withUnreadSuffix } from '@/types/chat';

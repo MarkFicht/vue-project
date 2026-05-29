@@ -9,12 +9,14 @@ export function useChatTyping({
     uid,
     activeChatId,
     draft,
-    isOpen
+    isOpen,
+    chatExists
 }: {
     uid: string;
     activeChatId: string;
     draft: string;
     isOpen: boolean;
+    chatExists: boolean;
 }) {
     const [typingMap, setTypingMap] = useState<Record<string, number>>({});
     const typingTimeoutRef = useRef<number | null>(null);
@@ -36,7 +38,7 @@ export function useChatTyping({
     );
 
     const pulseTypingState = useCallback(async () => {
-        if (!activeChatId || !draft.trim()) return;
+        if (!activeChatId || !chatExists || !draft.trim()) return;
         await setDoc(
             doc(db, 'privateChats', activeChatId, 'typing', uid),
             {
@@ -46,10 +48,10 @@ export function useChatTyping({
             },
             { merge: true }
         );
-    }, [activeChatId, draft, uid]);
+    }, [activeChatId, chatExists, draft, uid]);
 
     useEffect(() => {
-        if (!isOpen || !activeChatId) {
+        if (!isOpen || !activeChatId || !chatExists) {
             setTypingMap({});
             return;
         }
@@ -68,10 +70,10 @@ export function useChatTyping({
             unsubscribe();
             void clearTypingState(activeChatId);
         };
-    }, [activeChatId, clearTypingState, isOpen]);
+    }, [activeChatId, chatExists, clearTypingState, isOpen]);
 
     useEffect(() => {
-        if (!isOpen || !activeChatId) return;
+        if (!isOpen || !activeChatId || !chatExists) return;
         if (!draft.trim()) {
             void clearTypingState(activeChatId);
             return;
@@ -81,7 +83,7 @@ export function useChatTyping({
         typingTimeoutRef.current = window.setTimeout(() => {
             void clearTypingState(activeChatId);
         }, TYPING_IDLE_MS);
-    }, [activeChatId, clearTypingState, draft, isOpen, pulseTypingState]);
+    }, [activeChatId, chatExists, clearTypingState, draft, isOpen, pulseTypingState]);
 
     useEffect(() => {
         return () => {
