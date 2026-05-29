@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
     collection,
     type DocumentData,
@@ -18,76 +18,107 @@ import {
     hydrateCachedMessages,
     mergeMessages,
     persistCachedMessages,
+    resolveSnapshotTimeMs,
     type ChatMessageLite
 } from '@/utils/chatWidget';
 
 export function useChatMessages({
     uid,
     activeChatId,
-    isOpen
+    isOpen,
+    chatExists
 }: {
     uid: string;
     activeChatId: string;
     isOpen: boolean;
+    chatExists: boolean;
 }) {
     const [liveMessages, setLiveMessages] = useState<ChatMessageLite[]>([]);
     const [olderMessages, setOlderMessages] = useState<ChatMessageLite[]>([]);
     const [oldestCursor, setOldestCursor] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
     const [hasMoreOlder, setHasMoreOlder] = useState(false);
     const [loadingOlder, setLoadingOlder] = useState(false);
+    const [messagesReady, setMessagesReady] = useState(false);
+    const [loadedChatId, setLoadedChatId] = useState('');
+    const activeChatIdRef = useRef(activeChatId);
+    activeChatIdRef.current = activeChatId;
 
     const mapMessageDoc = useCallback((entry: QueryDocumentSnapshot<DocumentData>) => {
         const data = entry.data() as Record<string, unknown>;
         const createdAt = data.createdAt as Timestamp | undefined;
-        const fallbackMs = entry.metadata.hasPendingWrites ? Date.now() : 0;
         return {
             id: entry.id,
             senderUid: (data.senderUid as string) || '',
             text: (data.text as string) || '',
             createdAt,
-            createdAtMs: createdAt?.toMillis() ?? fallbackMs
+            createdAtMs: resolveSnapshotTimeMs(createdAt, entry.metadata.hasPendingWrites)
         };
     }, []);
 
-    useEffect(() => {
-        if (!isOpen || !activeChatId) {
-            setLiveMessages([]);
-            setOlderMessages([]);
-            setOldestCursor(null);
-            setHasMoreOlder(false);
-            setLoadingOlder(false);
-            return;
-        }
-
+    const resetMessageState = useCallback((ready: boolean) => {
         setOlderMessages([]);
         setOldestCursor(null);
         setHasMoreOlder(false);
         setLoadingOlder(false);
-        setLiveMessages(hydrateCachedMessages(uid, activeChatId));
+        setMessagesReady(ready);
+    }, []);
+
+    useLayoutEffect(() => {
+        if (!isOpen || !activeChatId) {
+            setLoadedChatId('');
+            setLiveMessages([]);
+            resetMessageState(false);
+            return;
+        }
+
+        setLoadedChatId(activeChatId);
+        if (!chatExists) {
+            setLiveMessages([]);
+            resetMessageState(true);
+            return;
+        }
+
+        resetMessageState(false);
+        const cachedMessages = hydrateCachedMessages(uid, activeChatId);
+        setLiveMessages(cachedMessages);
+        if (cachedMessages.length === CHAT_PAGE_SIZE) setHasMoreOlder(true);
+        if (cachedMessages.length > 0) {
+            requestAnimationFrame(() => {
+                if (activeChatIdRef.current === activeChatId) setMessagesReady(true);
+            });
+        }
+    }, [activeChatId, chatExists, isOpen, resetMessageState, uid]);
+
+    useEffect(() => {
+        if (!isOpen || !activeChatId || !chatExists) return;
 
         const messagesRef = collection(db, 'privateChats', activeChatId, 'messages');
         const messagesQuery = query(messagesRef, orderBy('createdAt', 'desc'), limit(CHAT_PAGE_SIZE));
+        const subscribedChatId = activeChatId;
         const unsubscribe = onSnapshot(
             messagesQuery,
             (snapshot) => {
+                if (activeChatIdRef.current !== subscribedChatId) return;
                 const nextMessages = snapshot.docs.map(mapMessageDoc).reverse();
                 setLiveMessages(nextMessages);
                 setOldestCursor(snapshot.docs.length ? snapshot.docs[snapshot.docs.length - 1] : null);
                 setHasMoreOlder(snapshot.docs.length === CHAT_PAGE_SIZE);
+                setMessagesReady(true);
             },
             () => {
                 clearCachedMessages(uid, activeChatId);
                 setLiveMessages([]);
-                setOlderMessages([]);
-                setOldestCursor(null);
-                setHasMoreOlder(false);
+                resetMessageState(true);
             }
         );
 
         return () => unsubscribe();
-    }, [activeChatId, isOpen, mapMessageDoc, uid]);
+    }, [activeChatId, chatExists, isOpen, mapMessageDoc, resetMessageState, uid]);
 
-    const messages = useMemo(() => mergeMessages([...olderMessages, ...liveMessages]), [olderMessages, liveMessages]);
+    const messages = useMemo(() => {
+        if (loadedChatId !== activeChatId) return [];
+        return mergeMessages([...olderMessages, ...liveMessages]);
+    }, [activeChatId, loadedChatId, olderMessages, liveMessages]);
 
     useEffect(() => {
         if (!activeChatId) return;
@@ -110,5 +141,5 @@ export function useChatMessages({
         }
     }, [activeChatId, hasMoreOlder, loadingOlder, mapMessageDoc, oldestCursor]);
 
-    return { messages, hasMoreOlder, loadingOlder, loadOlderMessages };
+    return { messages, hasMoreOlder, loadingOlder, loadOlderMessages, messagesReady };
 }

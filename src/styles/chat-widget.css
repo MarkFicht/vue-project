@@ -388,6 +388,9 @@
     gap: 0.28rem;
     font-size: 0.56rem;
     color: var(--app-text-muted);
+    min-width: 2.4rem;
+    min-height: 0.85rem;
+    justify-content: flex-end;
 }
 
 .chatRecentUnreadDot {
@@ -456,10 +459,23 @@
 .chatMessages {
     flex: 1;
     overflow-y: auto;
+    scroll-behavior: smooth;
     padding: 0.45rem;
     display: flex;
     flex-direction: column;
     gap: 0.32rem;
+}
+
+.chatLoadOlderSlot {
+    align-self: center;
+    flex-shrink: 0;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.chatLoadOlderSlotVisible {
+    min-height: 1.55rem;
+    margin-bottom: 0.08rem;
 }
 
 .chatLoadOlderBtn {
@@ -533,6 +549,9 @@
 }
 
 .chatBubbleMeta time {
+    min-width: 1.8rem;
+    min-height: 0.85rem;
+    display: inline-block;
     font-size: 0.56rem;
     color: var(--app-text-muted);
 }
