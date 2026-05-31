@@ -1,0 +1,768 @@
+.chatWidgetRoot {
+    position: fixed;
+    right: 0.85rem;
+    bottom: 0.85rem;
+    right: max(0.85rem, env(safe-area-inset-right));
+    bottom: max(0.85rem, env(safe-area-inset-bottom));
+    z-index: 90;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.8rem;
+    pointer-events: none;
+    transform-origin: bottom right;
+}
+
+.chatFab {
+    pointer-events: auto;
+    width: clamp(3rem, 3.2vw + 1.9rem, 3.5rem);
+    height: clamp(3rem, 3.2vw + 1.9rem, 3.5rem);
+    border-radius: 999px;
+    border: 1px solid rgb(255 215 160 / 42%);
+    color: var(--app-on-accent);
+    background: linear-gradient(
+        180deg,
+        var(--app-accent-bright) 0%,
+        var(--app-accent) 45%,
+        var(--app-accent-deep) 100%
+    );
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 28%),
+        0 12px 24px rgb(0 0 0 / 38%);
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    transition:
+        transform 0.24s ease,
+        box-shadow 0.24s ease;
+    position: relative;
+}
+
+.chatFab svg {
+    width: 1.1rem;
+    height: 1.1rem;
+}
+
+.chatFab:hover {
+    transform: translateY(-2px) scale(1.02);
+}
+
+.chatFabOpen {
+    transform: rotate(90deg);
+}
+
+.chatUnreadBadge {
+    position: absolute;
+    top: -0.4rem;
+    right: -0.2rem;
+    min-width: 1.15rem;
+    height: 1.15rem;
+    border-radius: 999px;
+    border: 1px solid rgb(255 235 205 / 75%);
+    background: rgb(227 69 69 / 95%);
+    color: #fff;
+    font-size: 0.62rem;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 0.24rem;
+    font-weight: 700;
+}
+
+.chatPanel {
+    pointer-events: auto;
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: min(86vw, 20.5rem);
+    height: min(68vh, 28rem);
+    border-radius: 1rem;
+    border: 1px solid var(--chat-panel-border);
+    background: var(--chat-panel-bg);
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 8%),
+        0 20px 42px rgb(0 0 0 / 55%);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transform-origin: bottom right;
+    transform: scale(0.65) translateY(18px);
+    opacity: 0;
+    visibility: hidden;
+    transition:
+        transform 0.25s ease,
+        opacity 0.25s ease,
+        visibility 0.25s step-end;
+}
+
+.chatPanelOpen {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+    visibility: visible;
+    transition:
+        transform 0.25s ease,
+        opacity 0.25s ease;
+}
+
+.chatPanelHeader {
+    padding: 0.55rem 0.7rem;
+    border-bottom: 1px solid var(--chat-panel-header-border);
+    background: var(--chat-panel-header-bg);
+}
+
+.chatPanelHeaderRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.chatPanelHeaderControls {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.28rem;
+}
+
+.chatPanelTitle {
+    margin: 0;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    font-size: 0.92rem;
+}
+
+.chatPanelSubtitle {
+    margin: 0.15rem 0 0;
+    font-size: 0.68rem;
+    color: var(--app-text-muted);
+}
+
+.chatNotifyBtn {
+    min-width: 1.7rem;
+    min-height: 1.7rem;
+    padding: 0.22rem;
+    border-radius: 999px;
+}
+
+.chatCloseBtn {
+    min-width: 1.7rem;
+    min-height: 1.7rem;
+    padding: 0.22rem;
+    border-radius: 999px;
+}
+
+.chatNotifyState {
+    font-size: 0.58rem;
+    letter-spacing: 0.04em;
+    line-height: 1;
+    text-transform: uppercase;
+    border: 1px solid var(--chat-border-soft);
+    border-radius: 999px;
+    padding: 0.16rem 0.3rem;
+    color: var(--app-text-muted);
+    background: var(--chat-surface-soft);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.22rem;
+    min-width: 5rem;
+    min-height: 1.7rem;
+    justify-content: center;
+}
+
+.chatNotifyStateLabel {
+    opacity: 0.9;
+}
+
+.chatNotifyStateValue {
+    display: inline-block;
+    min-width: 3ch;
+    text-align: center;
+}
+
+.chatNotifyState.isEnabled {
+    color: var(--chat-text-success);
+    border-color: color-mix(in srgb, var(--chat-text-success) 44%, transparent);
+}
+
+.chatNotifyState.isMuted {
+    color: var(--chat-text-warning);
+    border-color: color-mix(in srgb, var(--chat-text-warning) 42%, transparent);
+}
+
+.chatSectionLabel {
+    margin: 0;
+    padding: 0;
+    font-size: 0.58rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--app-text-muted);
+}
+
+.chatSectionHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.4rem;
+    padding: 0.34rem 0.5rem 0.2rem;
+}
+
+.chatSectionActions {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+}
+
+.chatRestoreRecentBtn {
+    border: none;
+    background: transparent;
+    color: var(--app-text-muted);
+    font: inherit;
+    font-size: 0.58rem;
+    line-height: 1;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 0.08rem 0.16rem;
+    border-radius: 0.25rem;
+}
+
+.chatRestoreRecentBtn:hover {
+    color: var(--app-accent-bright);
+    background: color-mix(in srgb, var(--chat-surface-soft) 75%, transparent);
+}
+
+.chatRecentToggleBtn {
+    border: none;
+    background: transparent;
+    color: var(--app-text-muted);
+    font: inherit;
+    font-size: 0.58rem;
+    line-height: 1;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 0.08rem 0.16rem;
+    border-radius: 0.25rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.16rem;
+}
+
+.chatRecentToggleBtn:hover {
+    color: var(--app-accent-bright);
+    background: color-mix(in srgb, var(--chat-surface-soft) 75%, transparent);
+}
+
+.chatRecentWrap {
+    border-bottom: 1px solid color-mix(in srgb, var(--chat-border-soft) 70%, transparent);
+}
+
+.chatRecentList {
+    display: flex;
+    gap: 0.28rem;
+    padding: 0 0.5rem 0.38rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+.chatRecentItem {
+    flex: 0 0 auto;
+    width: 7.5rem;
+    border-radius: 0.58rem;
+    border: 1px solid var(--chat-border-soft);
+    background: var(--chat-surface-soft);
+    color: var(--app-text);
+    padding: 0.3rem 0.35rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    text-align: left;
+    position: relative;
+    transition: transform 0.18s ease;
+}
+
+.chatRecentOpenBtn {
+    all: unset;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.chatRecentCloseItemBtn {
+    position: absolute;
+    top: 0.18rem;
+    right: 0.18rem;
+    border-radius: 999px;
+    border: 1px solid var(--chat-border-soft);
+    background: color-mix(in srgb, var(--chat-surface-soft) 82%, var(--theme-bg-950));
+    color: var(--app-text-muted);
+    width: 1rem;
+    height: 1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+.chatRecentCloseItemBtn:hover {
+    color: var(--app-text);
+    border-color: var(--chat-border-strong);
+}
+
+.chatRecentItemSwiping::after {
+    content: 'Hide';
+    position: absolute;
+    right: 0.36rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.55rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: rgb(255 184 144 / 92%);
+    pointer-events: none;
+}
+
+.chatRecentEmptyHint {
+    margin: 0;
+    font-size: 0.6rem;
+    color: var(--app-text-muted);
+    padding: 0.15rem 0.2rem;
+}
+
+.chatHiddenRecentList {
+    display: flex;
+    gap: 0.26rem;
+    padding: 0 0.5rem 0.42rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+.chatHiddenRecentItem {
+    flex: 0 0 auto;
+    border: 1px solid color-mix(in srgb, var(--chat-border-soft) 75%, transparent);
+    background: color-mix(in srgb, var(--chat-surface-soft) 80%, transparent);
+    color: var(--app-text-muted);
+    border-radius: 0.44rem;
+    padding: 0.18rem 0.3rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.22rem;
+    font-size: 0.56rem;
+    max-width: 8.3rem;
+}
+
+.chatHiddenRecentName {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.chatHiddenRecentAction {
+    color: var(--app-accent-bright);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.chatRecentItemActive {
+    border-color: var(--chat-border-strong);
+    background: var(--chat-surface-strong);
+}
+
+.chatRecentMain {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.chatRecentName {
+    font-size: 0.66rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.chatRecentMeta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.28rem;
+    font-size: 0.56rem;
+    color: var(--app-text-muted);
+    min-width: 2.4rem;
+    min-height: 0.85rem;
+    justify-content: flex-end;
+}
+
+.chatRecentUnreadDot {
+    width: 0.42rem;
+    height: 0.42rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--theme-danger) 92%, white 8%);
+    box-shadow: 0 0 8px color-mix(in srgb, var(--theme-danger) 64%, transparent);
+}
+
+.chatUsersList {
+    display: flex;
+    gap: 0.26rem;
+    padding: 0.45rem 0.45rem;
+    border-bottom: 1px solid color-mix(in srgb, var(--chat-border-soft) 70%, transparent);
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+.chatUserItem {
+    flex: 0 0 auto;
+    border-radius: 0.55rem;
+    border: 1px solid var(--chat-border-soft);
+    background: var(--chat-surface-soft);
+    color: var(--app-text);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.26rem;
+    padding: 0.26rem 0.42rem;
+    font-size: 0.66rem;
+    transition: all 0.2s ease;
+}
+
+.chatUserItem:hover {
+    border-color: var(--chat-border-strong);
+}
+
+.chatUserItemActive {
+    border-color: var(--chat-border-strong);
+    background: var(--chat-surface-strong);
+}
+
+.chatPresenceDot {
+    width: 0.42rem;
+    height: 0.42rem;
+    border-radius: 999px;
+}
+
+.chatPresenceDotOnline {
+    background: rgb(32 216 122 / 90%);
+    box-shadow: 0 0 10px rgb(32 216 122 / 58%);
+}
+
+.chatPresenceDotAway {
+    background: rgb(240 182 73 / 92%);
+    box-shadow: 0 0 10px rgb(240 182 73 / 55%);
+}
+
+.chatUserName {
+    max-width: 5rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.chatMessages {
+    flex: 1;
+    overflow-y: auto;
+    scroll-behavior: smooth;
+    padding: 0.45rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.32rem;
+}
+
+.chatLoadOlderSlot {
+    align-self: center;
+    flex-shrink: 0;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.chatLoadOlderSlotVisible {
+    min-height: 1.55rem;
+    margin-bottom: 0.08rem;
+}
+
+.chatLoadOlderBtn {
+    align-self: center;
+    font-size: 0.58rem;
+    padding: 0.2rem 0.38rem;
+}
+
+.chatBubbleWrap {
+    display: flex;
+}
+
+.chatBubbleWrapMine {
+    justify-content: flex-end;
+}
+
+.chatBubble {
+    max-width: 80%;
+    border-radius: 0.62rem;
+    border: 1px solid var(--chat-border-soft);
+    background: var(--chat-surface-soft);
+    padding: 0.32rem 0.42rem;
+    transition: transform 0.18s ease, opacity 0.18s ease;
+}
+
+.chatBubbleMine {
+    background: var(--chat-surface-strong);
+    border-color: color-mix(in srgb, var(--chat-border-strong) 82%, transparent);
+}
+
+.chatBubbleGroupTop {
+    margin-top: 0.1rem;
+}
+
+.chatBubbleGroupBottom {
+    margin-bottom: 0.12rem;
+}
+
+.chatBubbleGroupMid {
+    border-radius: 0.55rem;
+}
+
+.chatBubbleEnter {
+    animation: chatBubbleEnter 0.24s ease;
+}
+
+@keyframes chatBubbleEnter {
+    from {
+        opacity: 0;
+        transform: translateY(6px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.chatBubble p {
+    margin: 0;
+    font-size: 0.72rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.chatBubbleMeta {
+    margin-top: 0.14rem;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.24rem;
+}
+
+.chatBubbleMeta time {
+    min-width: 1.8rem;
+    min-height: 0.85rem;
+    display: inline-block;
+    font-size: 0.56rem;
+    color: var(--app-text-muted);
+}
+
+.chatReadTick {
+    font-size: 0.58rem;
+    line-height: 1;
+    letter-spacing: -0.06em;
+    user-select: none;
+}
+
+.chatReadTick.isSent {
+    color: rgb(204 176 132 / 85%);
+}
+
+.chatReadTick.isRead {
+    color: var(--chat-text-read);
+}
+
+.chatDateDivider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0.28rem 0 0.12rem;
+}
+
+.chatDateDivider span {
+    font-size: 0.56rem;
+    letter-spacing: 0.04em;
+    color: var(--app-text-muted);
+    border: 1px solid color-mix(in srgb, var(--chat-border-soft) 76%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--chat-surface-soft) 84%, transparent);
+    padding: 0.08rem 0.36rem;
+}
+
+.chatTypingIndicator {
+    margin: 0.2rem 0 0;
+    padding: 0 0.15rem;
+    font-size: 0.62rem;
+    color: var(--chat-typing);
+    font-style: italic;
+}
+
+.chatComposer {
+    border-top: 1px solid color-mix(in srgb, var(--chat-border-soft) 76%, transparent);
+    padding: 0.42rem;
+    display: flex;
+    gap: 0.4rem;
+}
+
+.chatComposer .input {
+    font-size: 16px;
+    user-select: text;
+    -webkit-user-select: text;
+}
+
+.chatSendBtn {
+    min-width: 2.1rem;
+    padding-inline: 0.58rem;
+}
+
+.chatEmojiBar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.22rem;
+    padding: 0 0.45rem 0.35rem;
+}
+
+.chatEmojiBtn {
+    border: 1px solid color-mix(in srgb, var(--chat-border-soft) 76%, transparent);
+    background: color-mix(in srgb, var(--chat-surface-soft) 88%, transparent);
+    border-radius: 0.44rem;
+    padding: 0.14rem 0.22rem;
+    font-size: 0.84rem;
+    line-height: 1;
+    transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.chatEmojiBtn:hover {
+    transform: translateY(-1px);
+    border-color: var(--chat-border-strong);
+}
+
+.chatSendError {
+    margin: 0;
+    padding: 0 0.5rem 0.4rem;
+    font-size: 0.62rem;
+    color: var(--chat-text-danger);
+}
+
+.chatEmptyState {
+    margin: 0;
+    padding: 0.65rem;
+    font-size: 0.68rem;
+    color: var(--app-text-muted);
+}
+
+.chatEmptyConversation {
+    padding: 0.25rem;
+}
+
+@media (max-width: 767px) {
+    .chatWidgetRoot {
+        right: 0.55rem;
+        bottom: 0.55rem;
+        right: max(0.55rem, env(safe-area-inset-right));
+        bottom: max(0.55rem, env(safe-area-inset-bottom));
+        gap: 0.55rem;
+    }
+
+    .chatPanel {
+        width: min(94vw, 21rem);
+        height: min(74vh, 30rem);
+        transform: translateY(12px);
+    }
+
+    .chatPanelOpen {
+        transform: translateY(0);
+    }
+
+    .chatFab {
+        width: 2.5rem;
+        height: 2.5rem;
+    }
+
+    .chatFab svg {
+        width: 0.86rem;
+        height: 0.86rem;
+    }
+
+    .chatNotifyState {
+        min-width: 2.8rem;
+        min-height: 1.5rem;
+        padding-inline: 0.26rem;
+        font-size: 0.52rem;
+    }
+
+    .chatNotifyStateLabel {
+        display: none;
+    }
+
+    .chatPanelHeaderControls {
+        gap: 0.18rem;
+    }
+
+    .chatNotifyBtn,
+    .chatCloseBtn {
+        min-width: 1.72rem;
+        min-height: 1.72rem;
+        padding: 0.16rem;
+    }
+
+    .chatRecentItem {
+        width: 6.3rem;
+        touch-action: pan-y;
+    }
+
+    .chatRestoreRecentBtn {
+        font-size: 0.52rem;
+        padding: 0.06rem 0.14rem;
+    }
+
+    .chatRecentToggleBtn {
+        font-size: 0.52rem;
+        padding: 0.06rem 0.14rem;
+    }
+
+    .chatHiddenRecentItem {
+        max-width: 6.6rem;
+        font-size: 0.54rem;
+        padding: 0.18rem 0.26rem;
+    }
+
+    .chatRecentCloseItemBtn {
+        width: 0.92rem;
+        height: 0.92rem;
+        top: 0.14rem;
+        right: 0.14rem;
+    }
+
+    .chatUserItem {
+        padding: 0.2rem 0.34rem;
+        font-size: 0.62rem;
+    }
+
+    .chatBubble {
+        max-width: 86%;
+        padding: 0.26rem 0.36rem;
+    }
+
+    .chatBubble p {
+        font-size: 0.66rem;
+    }
+
+    .chatComposer {
+        padding: 0.4rem;
+        gap: 0.35rem;
+    }
+
+    .chatComposer .input {
+        min-height: 2rem;
+    }
+
+    .chatSendBtn {
+        min-width: 2.1rem;
+        min-height: 2rem;
+        padding-inline: 0.45rem;
+    }
+
+    .chatEmojiBtn {
+        font-size: 0.78rem;
+    }
+}

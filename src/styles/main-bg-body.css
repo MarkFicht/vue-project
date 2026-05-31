@@ -1,0 +1,13 @@
+/**
+ * Login & dashboard: applied to document.body (see App.tsx).
+ * Centered theme background image, cover (no stretch); fallback from theme tokens.
+ */
+body.app-body-main-bg {
+    background: var(--duel-bg-fallback) var(--app-main-bg-image) center / cover no-repeat fixed;
+}
+
+@supports (-webkit-touch-callout: none) {
+    body.app-body-main-bg {
+        background-attachment: scroll;
+    }
+}

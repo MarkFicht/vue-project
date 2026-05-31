@@ -1,0 +1,333 @@
+/* --- Page --- */
+
+.loginPageError {
+    color: rgb(248 175 155);
+}
+
+.loginForm {
+    margin-top: 1rem;
+}
+
+.loginForgotSubtitle {
+    margin: 0.35rem 0 1rem;
+    text-align: left;
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--app-text-muted);
+}
+
+.loginForgotBlock {
+    display: flex;
+    justify-content: flex-start;
+    margin-top: 2px;
+}
+
+.loginForgotLink,
+.loginBackLink {
+    border: 0;
+    background: transparent;
+    padding: 0;
+    font-size: 12px;
+    color: var(--app-accent-bright);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+}
+
+.loginBackLink {
+    display: block;
+    width: fit-content;
+    text-align: left;
+    margin-top: 4px;
+}
+
+.loginForgotLink:hover:not(:disabled),
+.loginBackLink:hover:not(:disabled) {
+    color: var(--app-text);
+}
+
+.loginForgotLink:disabled,
+.loginBackLink:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.loginForgotFeedback {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.loginForgotSuccess {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.4;
+    text-align: left;
+    color: rgb(134 220 170);
+}
+
+.loginForgotError {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.4;
+    text-align: left;
+    color: rgb(248 175 155);
+}
+
+.loginPage .app-surface-login > header .app-brand-icon {
+    width: clamp(2.45rem, 2.6vw, 2.35rem);
+    height: clamp(2.45rem, 2.6vw, 2.35rem);
+}
+
+/* --- Top controls (theme, sound) --- */
+
+.loginTopControls {
+    margin-top: 0;
+    margin-bottom: 14px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.loginTopControlBtn {
+    min-height: 2.25rem;
+    justify-content: center;
+    padding-inline: 0.65rem;
+    font-size: 12px;
+    gap: 0.35rem;
+}
+
+/* --- Theme hint --- */
+
+.loginThemeHintBtn {
+    position: relative;
+    z-index: 1;
+    transition: none;
+    overflow: visible;
+    padding-left: 1.35rem;
+}
+
+.loginThemeHintBtn::after {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    border: 1px solid var(--app-accent-bright);
+    opacity: 0.28;
+    box-shadow: 0 0 6px color-mix(in srgb, var(--app-accent) 30%, transparent);
+    pointer-events: none;
+    animation: loginThemeHintPulse 3.2s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+    will-change: opacity;
+}
+
+.loginThemeHintArrow {
+    position: absolute;
+    left: 0.4rem;
+    top: 50%;
+    width: 0.95rem;
+    height: 0.95rem;
+    color: var(--app-accent-bright);
+    pointer-events: none;
+    filter: drop-shadow(0 0 6px color-mix(in srgb, var(--app-accent) 55%, transparent));
+    animation: loginThemeHintArrowNudge 3.2s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+    will-change: transform, opacity;
+}
+
+/* --- Sign-in / register switch --- */
+
+.loginModeSwitch {
+    --switch-surface: var(--theme-bg-800);
+    --mode-width: 78px;
+    --switch-accent: var(--app-accent, rgb(218 170 85));
+    margin-top: 48px;
+    width: 184px;
+    height: 56px;
+    border-radius: 12px;
+    border: 1px solid var(--app-border);
+    background: var(--switch-surface);
+    box-shadow: 0 14px 36px rgba(2, 6, 23, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: visible;
+}
+
+.loginModeNav {
+    position: relative;
+    display: flex;
+    width: calc(var(--mode-width) * 2);
+}
+
+.loginModeItem {
+    position: relative;
+    z-index: 2;
+    width: var(--mode-width);
+    height: 56px;
+    border: 0;
+    background: transparent;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--app-text-muted);
+    cursor: pointer;
+    transition: 0.3s ease;
+}
+
+.loginModeItem .icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: translateY(0);
+    transition: 0.35s ease;
+}
+
+.loginModeItem .text {
+    position: absolute;
+    bottom: 6px;
+    padding: 1px 8px;
+    border-radius: 10px;
+    font-size: 10px;
+    letter-spacing: 0.04em;
+    transform: translateY(10px);
+    opacity: 0;
+    color: #fff;
+    transition: 0.35s ease;
+}
+
+.loginModeItem.active .icon {
+    transform: translateY(-16px);
+    color: var(--switch-accent);
+    filter: drop-shadow(0 0 8px color-mix(in srgb, var(--app-accent) 45%, transparent));
+}
+
+.loginModeItem.active .text {
+    transform: translateY(-4px);
+    opacity: 1;
+    background: linear-gradient(135deg, var(--app-accent-bright), var(--app-accent-deep));
+    color: var(--app-on-accent);
+    font-weight: 700;
+}
+
+.loginModeIndicator {
+    --indicator-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 94 54'%3E%3Cpath d='M47 17C57.2 17 65.2 22.2 68.3 29.9C69 31.6 70.5 32.6 72.5 32.6H83A7.4 7.4 0 0 1 83 47.4H11A7.4 7.4 0 0 1 11 32.6H21.5C23.5 32.6 25 31.6 25.7 29.9C28.8 22.2 36.8 17 47 17Z' fill='black'/%3E%3C/svg%3E");
+    --indicator-stroke: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 94 54'%3E%3Cpath d='M7.5 32.6H21.5C23.8 31.9 25.2 30.7 25.7 29.9C28.8 22.2 36.8 17 47 17C57.2 17 65.2 22.2 68.3 29.9C68.8 30.7 70.2 31.9 72.5 32.6H96.8' fill='none' stroke='%23ffffff' stroke-opacity='0.2' stroke-width='3.708' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    --indicator-cut-bottom: 20.9px;
+    position: absolute;
+    top: -30.9px;
+    left: -8px;
+    width: 94px;
+    height: 54px;
+    border: none;
+    background: var(--switch-surface);
+    -webkit-mask-image: var(--indicator-mask);
+    mask-image: var(--indicator-mask);
+    -webkit-mask-size: 100% 100%;
+    mask-size: 100% 100%;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
+    -webkit-clip-path: inset(0 0 var(--indicator-cut-bottom) 0);
+    clip-path: inset(0 0 var(--indicator-cut-bottom) 0);
+}
+
+.loginModeIndicator::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: var(--indicator-stroke);
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    background-position: center;
+    pointer-events: none;
+}
+
+.loginModeIndicator.toRight {
+    transform: translateX(var(--mode-width));
+}
+
+/* --- Google sign-in --- */
+
+.loginGoogleBtn {
+    border-color: var(--app-border);
+    background: var(--app-secondary-bg);
+    color: var(--app-text);
+}
+
+.loginGoogleBtn:hover:not(:disabled) {
+    border-color: var(--app-secondary-border-hover);
+    background: var(--app-secondary-bg-hover);
+}
+
+.loginGoogleIcon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.2rem;
+    height: 1.2rem;
+    margin-right: 0.4rem;
+}
+
+.loginGoogleIcon svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+/* --- Animations --- */
+
+@keyframes loginThemeHintPulse {
+    0%,
+    100% {
+        opacity: 0.28;
+    }
+
+    50% {
+        opacity: 0.92;
+    }
+}
+
+@keyframes loginThemeHintArrowNudge {
+    0%,
+    100% {
+        transform: translateY(-50%) translateX(0);
+        opacity: 0.28;
+    }
+
+    50% {
+        transform: translateY(-50%) translateX(5px);
+        opacity: 0.92;
+    }
+}
+
+/* --- Responsive --- */
+
+@media (max-width: 640px) {
+    .loginTopControls {
+        margin-top: 0;
+        margin-bottom: 10px;
+        gap: 6px;
+    }
+
+    .loginTopControlBtn {
+        min-height: 2.2rem;
+        padding-inline: 0.55rem;
+        font-size: 11px;
+    }
+
+    .loginModeSwitch {
+        margin-top: 34px;
+    }
+}
+
+@media (max-width: 360px) {
+    .loginTopControlBtn span {
+        display: none;
+    }
+
+    .loginTopControlBtn {
+        gap: 0;
+        padding-inline: 0.45rem;
+    }
+}

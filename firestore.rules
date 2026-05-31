@@ -1,0 +1,697 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isSelf(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isNonEmptyString(value) {
+      return value is string && value.size() > 0;
+    }
+
+    function isValidEmailLength(value) {
+      return value is string
+        && value.size() > 3
+        && value.size() <= 254;
+    }
+
+    function isValidDisplayName(value) {
+      return value is string
+        && value.size() >= 2
+        && value.size() <= 32;
+    }
+
+    function hasRequiredUserKeys(data) {
+      return data.keys().hasAll([
+        'uid',
+        'email',
+        'displayName',
+        'displayNameKey',
+        'game',
+        'readyToGame',
+        'status',
+        'timestamp',
+        'createdAt',
+        'updatedAt',
+        'lastSeenAt',
+        'schemaVersion',
+        'soundMuted'
+      ]);
+    }
+
+    function hasOnlyAllowedUserKeys(data) {
+      return data.keys().hasOnly([
+        'uid',
+        'email',
+        'displayName',
+        'displayNameKey',
+        'game',
+        'readyToGame',
+        'status',
+        'timestamp',
+        'createdAt',
+        'updatedAt',
+        'lastSeenAt',
+        'schemaVersion',
+        'soundMuted',
+        'countryCode'
+      ]);
+    }
+
+    function userDocShapeIsValid(data, userId) {
+      return data.uid == userId
+        && data.uid is string
+        && isValidEmailLength(data.email)
+        && isValidDisplayName(data.displayName)
+        && isNonEmptyString(data.displayNameKey)
+        && data.displayNameKey.size() <= 64
+        && data.game is string
+        && (data.game in ['', 'Duel', 'Gems', 'Reflex'])
+        && data.readyToGame is bool
+        && (data.status in ['online', 'away', 'offline'])
+        && data.timestamp is timestamp
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp
+        && data.lastSeenAt is timestamp
+        && data.schemaVersion is int
+        && data.soundMuted is bool
+        && (!('countryCode' in data)
+          || (data.countryCode is string
+            && data.countryCode.size() == 2));
+    }
+
+    function isChatParticipant(chatId) {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/privateChats/$(chatId))
+        && (request.auth.uid in get(/databases/$(database)/documents/privateChats/$(chatId)).data.participants);
+    }
+
+    function isChatParticipantAfter(chatId) {
+      return isSignedIn()
+        && existsAfter(/databases/$(database)/documents/privateChats/$(chatId))
+        && (request.auth.uid in getAfter(/databases/$(database)/documents/privateChats/$(chatId)).data.participants);
+    }
+
+    function isGameStatusDocId(docId) {
+      return docId in ['Duel', 'Gems', 'Reflex'];
+    }
+
+    function validGameStatusPlayer(player, gameId) {
+      return player is map
+        && player.keys().hasOnly([
+          'uid',
+          'displayName',
+          'email',
+          'game',
+          'readyToGame',
+          'status',
+          'joinedAt',
+          'schemaVersion',
+          'countryCode'
+        ])
+        && isNonEmptyString(player.uid)
+        && isValidDisplayName(player.displayName)
+        && isValidEmailLength(player.email)
+        && player.game == gameId
+        && player.readyToGame is bool
+        && (!('status' in player) || (player.status in ['online', 'away', 'offline']))
+        && (!('joinedAt' in player) || player.joinedAt is int)
+        && (!('schemaVersion' in player) || player.schemaVersion is int)
+        && (!('countryCode' in player)
+          || (player.countryCode is string
+            && player.countryCode.size() == 2));
+    }
+
+    function validGameStatusPlayers(players, gameId) {
+      return players is list
+        && players.size() <= 2
+        && (
+          players.size() == 0
+          || (players.size() == 1
+            && validGameStatusPlayer(players[0], gameId))
+          || (players.size() == 2
+            && validGameStatusPlayer(players[0], gameId)
+            && validGameStatusPlayer(players[1], gameId)
+            && players[0].uid != players[1].uid)
+        );
+    }
+
+    function isGameStatusParticipant(data) {
+      return data.players is list
+        && (
+          (data.players.size() == 1
+            && data.players[0].uid == request.auth.uid)
+          || (data.players.size() == 2
+            && request.auth.uid in [data.players[0].uid, data.players[1].uid])
+        );
+    }
+
+    function validGameStatusDocument(data, docId) {
+      return data.keys().hasOnly(['isStarted', 'players'])
+        && data.isStarted is bool
+        && validGameStatusPlayers(data.players, docId)
+        && (!data.isStarted || data.players.size() == 2);
+    }
+
+    function lobbyKickCooldownMs() {
+      return 3000;
+    }
+
+    function observerLobbyKickCooldownMs() {
+      return 5000;
+    }
+
+    function joinTimestampSkewMs() {
+      return 120000;
+    }
+
+    function joinPlayerHasValidJoinedAt(player) {
+      return ('joinedAt' in player)
+        && player.joinedAt is int
+        && player.joinedAt > 0;
+    }
+
+    function canKickLobbyPlayer(player) {
+      return (
+          !('joinedAt' in player)
+          || (
+            player.joinedAt is int
+            && (
+              player.joinedAt <= request.time.toMillis() - lobbyKickCooldownMs()
+              || player.joinedAt > request.time.toMillis() + joinTimestampSkewMs()
+            )
+          )
+        );
+    }
+
+    function bothPlayersHaveValidJoinedAt(players) {
+      return players.size() == 2
+        && ('joinedAt' in players[0])
+        && ('joinedAt' in players[1])
+        && players[0].joinedAt is int
+        && players[1].joinedAt is int;
+    }
+
+    function twoPlayerLobbyCreatedAtMs(players) {
+      return players[0].joinedAt > players[1].joinedAt
+        ? players[0].joinedAt
+        : players[1].joinedAt;
+    }
+
+    function canObserverKickInLobby(beforePlayers, afterPlayers) {
+      return beforePlayers.size() == 2
+        && afterPlayers.size() == 1
+        && resource.data.isStarted == false
+        && request.resource.data.isStarted == false
+        && !(request.auth.uid in [beforePlayers[0].uid, beforePlayers[1].uid])
+        && (afterPlayers[0] == beforePlayers[0] || afterPlayers[0] == beforePlayers[1])
+        && bothPlayersHaveValidJoinedAt(beforePlayers)
+        && twoPlayerLobbyCreatedAtMs(beforePlayers) <= request.time.toMillis() - observerLobbyKickCooldownMs();
+    }
+
+    function sameGameStatusUidOrder(beforePlayers, afterPlayers) {
+      return beforePlayers.size() == afterPlayers.size()
+        && (
+          beforePlayers.size() == 0
+          || (beforePlayers.size() == 1
+            && beforePlayers[0].uid == afterPlayers[0].uid)
+          || (beforePlayers.size() == 2
+            && beforePlayers[0].uid == afterPlayers[0].uid
+            && beforePlayers[1].uid == afterPlayers[1].uid)
+        );
+    }
+
+    function gameStatusOtherPlayersAreImmutable(beforePlayers, afterPlayers) {
+      return beforePlayers.size() == afterPlayers.size()
+        && (
+          beforePlayers.size() == 0
+          || (beforePlayers.size() == 1
+            && (beforePlayers[0].uid == request.auth.uid
+              || beforePlayers[0] == afterPlayers[0]))
+          || (beforePlayers.size() == 2
+            && (beforePlayers[0].uid == request.auth.uid
+              || beforePlayers[0] == afterPlayers[0])
+            && (beforePlayers[1].uid == request.auth.uid
+              || beforePlayers[1] == afterPlayers[1]))
+        );
+    }
+
+    function validGameStatusTransition() {
+      let beforePlayers = resource.data.players;
+      let afterPlayers = request.resource.data.players;
+      return (
+        // Same roster, only caller's own player object may change.
+        (sameGameStatusUidOrder(beforePlayers, afterPlayers)
+          && gameStatusOtherPlayersAreImmutable(beforePlayers, afterPlayers))
+        // Join empty lobby as caller.
+        || (beforePlayers.size() == 0
+          && afterPlayers.size() == 1
+          && afterPlayers[0].uid == request.auth.uid
+          && joinPlayerHasValidJoinedAt(afterPlayers[0]))
+        // Join 1-player lobby as second player; existing player immutable.
+        || (beforePlayers.size() == 1
+          && afterPlayers.size() == 2
+          && beforePlayers[0].uid != request.auth.uid
+          && afterPlayers[0] == beforePlayers[0]
+          && afterPlayers[1].uid == request.auth.uid
+          && joinPlayerHasValidJoinedAt(afterPlayers[1]))
+        // Leave single-player lobby where caller is the only player.
+        || (beforePlayers.size() == 1
+          && beforePlayers[0].uid == request.auth.uid
+          && afterPlayers.size() == 0)
+        // Leave 2-player lobby or kick stale peer after cooldown.
+        || (beforePlayers.size() == 2
+          && afterPlayers.size() == 1
+          && (
+            // caller leaves; other player must remain unchanged
+            (beforePlayers[0].uid == request.auth.uid
+              && afterPlayers[0] == beforePlayers[1])
+            || (beforePlayers[1].uid == request.auth.uid
+              && afterPlayers[0] == beforePlayers[0])
+            // caller stays and removes peer after cooldown
+            || (afterPlayers[0].uid == request.auth.uid
+              && (
+                (beforePlayers[0].uid == request.auth.uid
+                  && canKickLobbyPlayer(beforePlayers[1]))
+                || (beforePlayers[1].uid == request.auth.uid
+                  && canKickLobbyPlayer(beforePlayers[0]))
+              ))
+            // observer may remove one player while lobby is waiting
+            || canObserverKickInLobby(beforePlayers, afterPlayers)
+          ))
+        // Game cleanup: participant may clear roster.
+        || (beforePlayers.size() == 2
+          && afterPlayers.size() == 0
+          && request.auth.uid in [beforePlayers[0].uid, beforePlayers[1].uid])
+      );
+    }
+
+    function validGameStatusStartedTransition() {
+      return (
+        // normal lobby changes while game not started
+        (!resource.data.isStarted && !request.resource.data.isStarted)
+        // start game only when both players are ready
+        || (!resource.data.isStarted
+          && request.resource.data.isStarted
+          && request.resource.data.players.size() == 2
+          && request.resource.data.players[0].readyToGame == true
+          && request.resource.data.players[1].readyToGame == true
+          && request.auth.uid in [
+            request.resource.data.players[0].uid,
+            request.resource.data.players[1].uid
+          ])
+        // keep started state immutable
+        || (resource.data.isStarted
+          && request.resource.data.isStarted
+          && request.resource.data.players == resource.data.players)
+        // allow ending/reset by participant
+        || (resource.data.isStarted
+          && !request.resource.data.isStarted
+          && resource.data.players.size() == 2
+          && request.auth.uid in [resource.data.players[0].uid, resource.data.players[1].uid])
+      );
+    }
+
+    function hasDuelSeats(data) {
+      return data.player1 is map
+        && data.player2 is map
+        && data.player1.user is map
+        && data.player2.user is map
+        && isNonEmptyString(data.player1.user.uid)
+        && isNonEmptyString(data.player2.user.uid)
+        && data.player1.user.uid != data.player2.user.uid;
+    }
+
+    function isDuelTableParticipant(data) {
+      return hasDuelSeats(data)
+        && request.auth.uid in [data.player1.user.uid, data.player2.user.uid];
+    }
+
+    function duelSeatOwnersAreImmutable() {
+      return hasDuelSeats(resource.data)
+        && hasDuelSeats(request.resource.data)
+        && request.resource.data.player1.user.uid == resource.data.player1.user.uid
+        && request.resource.data.player2.user.uid == resource.data.player2.user.uid;
+    }
+
+    function duelTopLevelShapeIsValid(data) {
+      return data.keys().hasOnly([
+          'player1',
+          'player2',
+          'selectWondersForPlayers',
+          'selectWondersForPlayersMove',
+          'chooseWhoWillStart',
+          'turn',
+          'turnStartedAt',
+          'player1ClockMs',
+          'player2ClockMs',
+          'gameBoard',
+          'tierICards',
+          'tierIICards',
+          'tierIIICards',
+          'wonderCards',
+          'graveyard',
+          'theRestOfCoins',
+          'tier',
+          'move',
+          'pickCoin',
+          'pickCoinOfThree',
+          'pickCardFromGraveyard',
+          'destroyBrown',
+          'destroyGrey',
+          'actionUid',
+          'actionType',
+          'wonByArt',
+          'wonByAggressive',
+          'wonBySurr',
+          'wonByPoints'
+        ])
+        && data.player1 is map
+        && data.player2 is map
+        && data.selectWondersForPlayers is list
+        && data.selectWondersForPlayersMove is int
+        && data.chooseWhoWillStart is bool
+        && isNonEmptyString(data.turn)
+        && (!('turnStartedAt' in data) || data.turnStartedAt is timestamp)
+        && (!('player1ClockMs' in data) || (data.player1ClockMs is int && data.player1ClockMs >= 0))
+        && (!('player2ClockMs' in data) || (data.player2ClockMs is int && data.player2ClockMs >= 0))
+        && data.gameBoard is map
+        && data.gameBoard.keys().hasOnly([
+          'pawn',
+          'coins',
+          'punishment1',
+          'punishment2',
+          'punishment3',
+          'punishment4'
+        ])
+        && data.gameBoard.pawn is int
+        && data.gameBoard.coins is list
+        && data.gameBoard.punishment1 is bool
+        && data.gameBoard.punishment2 is bool
+        && data.gameBoard.punishment3 is bool
+        && data.gameBoard.punishment4 is bool
+        && data.tierICards is list
+        && data.tierIICards is list
+        && data.tierIIICards is list
+        && data.wonderCards is list
+        && data.graveyard is list
+        && data.theRestOfCoins is list
+        && (data.tier in ['prepare', 'I', 'II', 'III', 'end'])
+        && data.move is int
+        && data.move >= 0
+        && data.move <= 60
+        && data.pickCoin is string
+        && data.pickCoinOfThree is string
+        && data.pickCardFromGraveyard is string
+        && data.destroyBrown is string
+        && data.destroyGrey is string
+        && data.actionUid is string
+        && data.actionType is string
+        && data.wonByArt is string
+        && data.wonByAggressive is string
+        && data.wonBySurr is string
+        && data.wonByPoints is string;
+    }
+
+    function duelTurnIsValid(data) {
+      return hasDuelSeats(data)
+        && data.turn in [data.player1.user.uid, data.player2.user.uid];
+    }
+
+    function duelMoveProgressionIsValid() {
+      return request.resource.data.move >= resource.data.move
+        && request.resource.data.move <= resource.data.move + 1
+        && request.resource.data.selectWondersForPlayersMove >= resource.data.selectWondersForPlayersMove
+        && request.resource.data.selectWondersForPlayersMove <= resource.data.selectWondersForPlayersMove + 1;
+    }
+
+    function duelSurrenderUpdateIsValid() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['wonBySurr'])
+        && request.resource.data.wonBySurr in [resource.data.player1.user.uid, resource.data.player2.user.uid]
+        && request.resource.data.wonBySurr != request.auth.uid
+        && resource.data.wonByArt == ''
+        && resource.data.wonByAggressive == ''
+        && resource.data.wonBySurr == ''
+        && resource.data.wonByPoints == '';
+    }
+
+    function duelTimeoutKickCommonChecks() {
+      return resource.data.turnStartedAt is timestamp
+        && request.time >= resource.data.turnStartedAt + duelCurrentTurnDuration()
+        && resource.data.turn in [resource.data.player1.user.uid, resource.data.player2.user.uid]
+        && resource.data.wonByArt == ''
+        && resource.data.wonByAggressive == ''
+        && resource.data.wonBySurr == ''
+        && resource.data.wonByPoints == '';
+    }
+
+    function duelOtherSeatUid(data) {
+      return data.turn == data.player1.user.uid
+        ? data.player2.user.uid
+        : data.player1.user.uid;
+    }
+
+    function duelTimeoutKickUpdateIsValid() {
+      let p1 = resource.data.player1.user.uid;
+      let p2 = resource.data.player2.user.uid;
+      let isPlayer = request.auth.uid in [p1, p2];
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['wonBySurr'])
+        && request.resource.data.wonBySurr in [p1, p2]
+        && request.resource.data.wonBySurr != resource.data.turn
+        && duelTimeoutKickCommonChecks()
+        && (
+          (isPlayer && request.auth.uid != resource.data.turn && request.resource.data.wonBySurr == request.auth.uid)
+          || (!isPlayer && request.resource.data.wonBySurr == duelOtherSeatUid(resource.data))
+        );
+    }
+
+    function duelCurrentTurnRemainingMs() {
+      let p1Uid = resource.data.player1.user.uid;
+      let p2Uid = resource.data.player2.user.uid;
+      let p1Ms = ('player1ClockMs' in resource.data) ? resource.data.player1ClockMs : 30000;
+      let p2Ms = ('player2ClockMs' in resource.data) ? resource.data.player2ClockMs : 30000;
+      let raw = resource.data.turn == p1Uid
+        ? p1Ms
+        : (resource.data.turn == p2Uid ? p2Ms : 30000);
+      return (raw is int && raw >= 0) ? raw : 30000;
+    }
+
+    function duelCurrentTurnDuration() {
+      return duration.value((duelCurrentTurnRemainingMs() + 999) / 1000, 's');
+    }
+
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create: if isSelf(userId)
+        && hasRequiredUserKeys(request.resource.data)
+        && hasOnlyAllowedUserKeys(request.resource.data)
+        && userDocShapeIsValid(request.resource.data, userId)
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.lastSeenAt == request.time
+        && request.resource.data.timestamp == request.time;
+      allow update: if isSelf(userId)
+        && hasRequiredUserKeys(request.resource.data)
+        && hasOnlyAllowedUserKeys(request.resource.data)
+        && userDocShapeIsValid(request.resource.data, userId)
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.timestamp == request.time
+        && (
+          request.resource.data.lastSeenAt == resource.data.lastSeenAt
+          || request.resource.data.lastSeenAt == request.time
+        );
+      allow delete: if isSelf(userId);
+    }
+
+    match /users/{userId}/pushTokens/{tokenId} {
+      allow read: if isSelf(userId);
+      allow create, update: if isSelf(userId)
+        && request.resource.data.keys().hasOnly([
+          'uid',
+          'token',
+          'platform',
+          'userAgent',
+          'createdAt',
+          'updatedAt'
+        ])
+        && request.resource.data.uid == userId
+        && request.resource.data.token is string
+        && request.resource.data.token.size() > 20
+        && request.resource.data.platform == 'web'
+        && request.resource.data.userAgent is string
+        && request.resource.data.userAgent.size() <= 300
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.updatedAt is timestamp;
+      allow delete: if isSelf(userId);
+    }
+
+    match /displayNames/{displayNameKey} {
+      allow get: if true;
+      allow list: if isSignedIn();
+      allow create: if isSignedIn()
+        && !exists(/databases/$(database)/documents/displayNames/$(displayNameKey))
+        && request.resource.data.keys().hasOnly(['uid', 'displayName', 'createdAt', 'updatedAt'])
+        && request.resource.data.uid == request.auth.uid
+        && isValidDisplayName(request.resource.data.displayName)
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.updatedAt is timestamp
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+      allow update: if isSignedIn()
+        && resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['uid', 'displayName', 'createdAt', 'updatedAt'])
+        && request.resource.data.uid == request.auth.uid
+        && isValidDisplayName(request.resource.data.displayName)
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.updatedAt is timestamp
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if isSignedIn() && resource.data.uid == request.auth.uid;
+    }
+
+    match /gameStatus/{docId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn()
+        && isGameStatusDocId(docId)
+        && validGameStatusDocument(request.resource.data, docId)
+        && isGameStatusParticipant(request.resource.data);
+      allow update: if isSignedIn()
+        && isGameStatusDocId(docId)
+        && validGameStatusDocument(request.resource.data, docId)
+        && (
+          isGameStatusParticipant(resource.data)
+          || isGameStatusParticipant(request.resource.data)
+          || canObserverKickInLobby(resource.data.players, request.resource.data.players)
+        )
+        && validGameStatusTransition()
+        && validGameStatusStartedTransition();
+      allow delete: if false;
+    }
+
+    match /gameDuel/{docId} {
+      allow read: if isSignedIn();
+      allow create: if docId == 'table1'
+        && isSignedIn()
+        && isDuelTableParticipant(request.resource.data)
+        && duelTopLevelShapeIsValid(request.resource.data)
+        && duelTurnIsValid(request.resource.data);
+      allow update: if docId == 'table1'
+        && isSignedIn()
+        && duelSeatOwnersAreImmutable()
+        && duelTopLevelShapeIsValid(request.resource.data)
+        && duelTurnIsValid(request.resource.data)
+        && duelMoveProgressionIsValid()
+        && (
+          (
+            isDuelTableParticipant(resource.data)
+            && (
+              request.auth.uid == resource.data.turn
+              || duelSurrenderUpdateIsValid()
+            )
+          )
+          || duelTimeoutKickUpdateIsValid()
+        );
+      allow delete: if docId == 'table1'
+        && isSignedIn()
+        && isDuelTableParticipant(resource.data);
+    }
+
+    match /privateChats/{chatId} {
+      allow read: if isSignedIn() && request.auth.uid in resource.data.participants;
+      allow create: if isSignedIn()
+        && request.resource.data.keys().hasOnly([
+          'participants',
+          'schemaVersion',
+          'createdAt',
+          'lastMessage',
+          'lastMessageSenderUid',
+          'updatedAt',
+          'readBy'
+        ])
+        && request.resource.data.participants is list
+        && request.resource.data.participants.size() == 2
+        && request.resource.data.participants[0] is string
+        && request.resource.data.participants[1] is string
+        && request.resource.data.participants[0] != request.resource.data.participants[1]
+        && request.auth.uid in request.resource.data.participants
+        && request.resource.data.schemaVersion is int
+        && request.resource.data.lastMessage is string
+        && request.resource.data.lastMessage.size() > 0
+        && request.resource.data.lastMessage.size() <= 500
+        && request.resource.data.lastMessageSenderUid == request.auth.uid
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.updatedAt is timestamp
+        && request.resource.data.readBy is map
+        && request.resource.data.readBy[request.auth.uid] is timestamp
+        && request.resource.data.readBy[request.auth.uid] == request.time
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+      allow update: if isSignedIn()
+        && request.auth.uid in resource.data.participants
+        && request.resource.data.keys().hasOnly([
+          'participants',
+          'schemaVersion',
+          'createdAt',
+          'lastMessage',
+          'lastMessageSenderUid',
+          'updatedAt',
+          'readBy'
+        ])
+        && request.resource.data.participants == resource.data.participants
+        && request.resource.data.schemaVersion is int
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.readBy is map
+        && (
+          (
+            request.resource.data.lastMessage is string
+            && request.resource.data.lastMessage.size() > 0
+            && request.resource.data.lastMessage.size() <= 500
+            && request.resource.data.lastMessageSenderUid == request.auth.uid
+            && request.resource.data.updatedAt is timestamp
+            && request.resource.data.updatedAt == request.time
+            && request.resource.data.readBy[request.auth.uid] is timestamp
+            && request.resource.data.readBy[request.auth.uid] == request.time
+          )
+          ||
+          (
+            request.resource.data.lastMessage == resource.data.lastMessage
+            && request.resource.data.lastMessageSenderUid == resource.data.lastMessageSenderUid
+            && request.resource.data.updatedAt == resource.data.updatedAt
+            && request.resource.data.readBy[request.auth.uid] is timestamp
+            && request.resource.data.readBy[request.auth.uid] == request.time
+          )
+        );
+      allow delete: if false;
+
+      match /messages/{messageId} {
+        allow read: if isChatParticipant(chatId);
+        allow create: if (isChatParticipant(chatId) || isChatParticipantAfter(chatId))
+          && request.resource.data.keys().hasOnly(['senderUid', 'text', 'createdAt'])
+          && request.resource.data.senderUid == request.auth.uid
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0
+          && request.resource.data.text.size() <= 500
+          && request.resource.data.createdAt is timestamp
+          && request.resource.data.createdAt == request.time;
+        allow update, delete: if false;
+      }
+
+      match /typing/{typingUid} {
+        allow read: if isChatParticipant(chatId);
+        allow create, update: if (isChatParticipant(chatId) || isChatParticipantAfter(chatId))
+          && request.auth.uid == typingUid
+          && request.resource.data.keys().hasOnly(['uid', 'expiresAt', 'updatedAt'])
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.expiresAt is int
+          && request.resource.data.updatedAt is timestamp
+          && request.resource.data.updatedAt == request.time;
+        allow delete: if isChatParticipant(chatId) && request.auth.uid == typingUid;
+      }
+    }
+  }
+}

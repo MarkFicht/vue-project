@@ -1,0 +1,678 @@
+/**
+ * Warm brown / gold UI aligned with theme backgrounds — shared buttons, inputs, panel surfaces.
+ */
+:root {
+    /* Core palette (classic) */
+    --theme-bg-950: rgb(18 13 9);
+    --theme-bg-900: rgb(26 18 13);
+    --theme-bg-800: rgb(36 25 17);
+    --theme-border: rgb(205 160 105 / 42%);
+    --theme-text: rgb(245 235 224);
+    --theme-text-muted: rgb(198 180 158);
+    --theme-accent: rgb(218 170 85);
+    --theme-accent-strong: rgb(236 198 120);
+    --theme-accent-deep: rgb(168 125 58);
+    --theme-danger: rgb(185 28 28);
+
+    --app-accent: var(--theme-accent);
+    --app-accent-bright: var(--theme-accent-strong);
+    --app-accent-deep: var(--theme-accent-deep);
+    --app-text: var(--theme-text);
+    --app-text-muted: var(--theme-text-muted);
+    --app-on-accent: var(--theme-bg-900);
+    --app-border: var(--theme-border);
+    --app-border-soft: rgb(255 255 255 / 10%);
+    --app-secondary-bg: rgb(38 26 18 / 72%);
+    --app-secondary-bg-hover: rgb(50 34 22 / 82%);
+    --app-secondary-border-hover: rgb(220 180 120 / 52%);
+    --app-input-border: rgb(160 120 75 / 45%);
+    --app-input-bg: rgb(12 9 6 / 58%);
+    --app-input-placeholder: rgb(150 135 120 / 72%);
+    --app-input-focus: rgb(218 170 85 / 85%);
+    --app-input-focus-shadow: rgb(218 170 85 / 22%);
+    --app-surface-login-bg: linear-gradient(
+        165deg,
+        rgb(28 20 14 / 96%) 0%,
+        rgb(42 29 18 / 93%) 42%,
+        rgb(18 13 9 / 97%) 100%
+    );
+    --app-surface-login-border: rgb(205 160 108 / 44%);
+    --app-surface-header-bg: linear-gradient(180deg, rgb(36 25 17 / 94%) 0%, rgb(22 16 11 / 96%) 100%);
+    --app-surface-header-border: rgb(195 150 95 / 38%);
+    --app-surface-callout-bg: linear-gradient(135deg, rgb(48 34 22 / 88%) 0%, rgb(26 18 12 / 94%) 100%);
+    --app-surface-callout-border: rgb(210 165 95 / 38%);
+    --app-game-card-top-bg: linear-gradient(180deg, rgb(118 90 68) 0%, rgb(92 70 52) 100%);
+    --app-game-card-bottom-bg: linear-gradient(
+        168deg,
+        rgb(74 54 40) 0%,
+        rgb(56 40 30) 52%,
+        rgb(44 32 24) 100%
+    );
+    --app-scroll-track: rgb(22 16 11 / 58%);
+    --app-scroll-thumb: linear-gradient(180deg, rgb(200 150 80 / 0.82), rgb(140 95 48 / 0.72));
+    --app-scroll-thumb-border: rgb(22 16 11 / 90%);
+    --app-scrollbar-color: var(--app-accent);
+    --duel-bg-fallback: var(--theme-bg-900);
+    --duel-arena-gradient: linear-gradient(
+        168deg,
+        rgb(40 28 20 / 88%) 0%,
+        rgb(28 20 14 / 84%) 38%,
+        rgb(20 14 10 / 80%) 72%,
+        rgb(14 10 7 / 76%) 100%
+    );
+    --duel-scrollbar-track: rgb(32 22 16 / 55%);
+    --duel-scrollbar-thumb: rgb(100 62 38 / 88%);
+    --duel-scrollbar-thumb-hover: rgb(124 80 48 / 95%);
+    --duel-panel-border: color-mix(in srgb, var(--theme-border) 84%, transparent);
+    --duel-panel-bg: color-mix(in srgb, var(--theme-bg-800) 54%, transparent);
+    --duel-actionbar-bg: linear-gradient(180deg, rgb(25 18 13 / 95%) 0%, rgb(14 10 8 / 98%) 100%);
+    --duel-actionbar-border: rgb(213 171 110 / 58%);
+    --duel-actionbar-text: rgb(244 232 214 / 96%);
+    --duel-actionbar-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 9%),
+        0 12px 30px rgb(0 0 0 / 46%);
+    --duel-graveyard-bg: linear-gradient(180deg, rgb(30 22 16 / 88%) 0%, rgb(18 13 10 / 92%) 100%);
+    --duel-graveyard-inner-bg: rgb(7 5 4 / 34%);
+    --duel-graveyard-border: rgb(206 164 106 / 52%);
+    --duel-graveyard-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 8%),
+        0 8px 20px rgb(0 0 0 / 28%);
+    --duel-mobile-menu-bg: linear-gradient(180deg, rgb(36 25 17 / 96%) 0%, rgb(22 16 11 / 98%) 100%);
+    --duel-mobile-menu-border: rgb(195 150 95 / 38%);
+    --duel-mobile-menu-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 6%),
+        0 14px 28px rgb(0 0 0 / 42%);
+    --duel-meta-strong: rgb(252 236 204 / 96%);
+    --duel-turn-badge-you: rgb(198 244 214 / 92%);
+    --duel-turn-badge-opponent: rgb(255 226 197 / 92%);
+    --duel-turn-badge-observer: rgb(222 213 200 / 92%);
+    --duel-surrender-modal-bg: linear-gradient(175deg, rgb(34 24 17 / 96%) 0%, rgb(18 13 9 / 98%) 100%);
+    --duel-surrender-modal-border: rgb(195 150 95 / 42%);
+    --app-page-bg: radial-gradient(circle at 20% 20%, #244b6b 0%, #0f172a 35%, #020617 100%);
+    --app-main-bg-image: url('@/assets/themes/main_bg.png');
+    --app-login-overlay-bg: radial-gradient(
+        circle at 22% 18%,
+        rgb(165 118 70 / 24%) 0%,
+        rgb(36 24 16 / 92%) 42%,
+        rgb(12 8 6 / 98%) 100%
+    );
+    --app-login-overlay-card-border: rgb(210 165 102 / 38%);
+    --app-login-overlay-card-bg: linear-gradient(160deg, rgb(33 23 16 / 94%) 0%, rgb(22 16 11 / 96%) 58%, rgb(16 11 8 / 97%) 100%);
+    --app-login-overlay-logo-color: rgb(226 184 110 / 96%);
+    --app-login-overlay-logo-filter: drop-shadow(0 0 12px rgb(215 160 88 / 40%));
+    --app-login-overlay-spinner-border: rgb(170 132 84 / 34%);
+    --app-login-overlay-spinner-top: rgb(236 198 120 / 98%);
+    --app-skeleton-bg: rgb(255 255 255 / 14%);
+    --app-skeleton-shimmer: linear-gradient(90deg, transparent, rgb(255 255 255 / 22%), transparent);
+    --app-brand-icon-color: var(--app-accent);
+    --app-brand-icon-filter: drop-shadow(0 0 12px rgb(218 170 85 / 38%));
+    --app-login-overlay-label-color: rgb(245 235 224 / 98%);
+    --chat-panel-border: rgb(205 160 108 / 46%);
+    --chat-panel-bg: linear-gradient(165deg, rgb(28 20 14 / 96%) 0%, rgb(18 13 9 / 97%) 100%);
+    --chat-panel-header-border: rgb(205 160 108 / 28%);
+    --chat-panel-header-bg: linear-gradient(180deg, rgb(36 25 17 / 90%) 0%, rgb(22 16 11 / 94%) 100%);
+    --chat-surface-soft: rgb(30 21 14 / 72%);
+    --chat-surface-strong: rgb(56 39 25 / 84%);
+    --chat-border-soft: rgb(205 160 108 / 28%);
+    --chat-border-strong: rgb(236 198 120 / 58%);
+    --chat-text-warning: rgb(240 182 73 / 95%);
+    --chat-text-success: rgb(150 235 180);
+    --chat-text-danger: rgb(255 155 155 / 95%);
+    --chat-text-read: rgb(129 217 255 / 95%);
+    --chat-typing: rgb(235 205 150 / 90%);
+}
+
+:root[data-app-theme='ivory'] {
+    /* Core palette (ivory) */
+    --theme-bg-950: rgb(28 21 15);
+    --theme-bg-900: rgb(38 28 21);
+    --theme-bg-800: rgb(62 46 33);
+    --theme-border: rgb(236 214 176 / 48%);
+    --theme-text: rgb(255 251 245);
+    --theme-text-muted: rgb(231 216 192);
+    --theme-accent: rgb(250 242 228);
+    --theme-accent-strong: rgb(255 253 246);
+    --theme-accent-deep: rgb(228 204 166);
+    --theme-danger: rgb(220 38 38);
+
+    --app-accent: var(--theme-accent);
+    --app-accent-bright: var(--theme-accent-strong);
+    --app-accent-deep: var(--theme-accent-deep);
+    --app-text: var(--theme-text);
+    --app-text-muted: var(--theme-text-muted);
+    --app-on-accent: rgb(52 37 21);
+    --app-border: var(--theme-border);
+    --app-border-soft: rgb(255 250 240 / 22%);
+    --app-secondary-bg: rgb(70 52 37 / 64%);
+    --app-secondary-bg-hover: rgb(86 63 44 / 80%);
+    --app-secondary-border-hover: rgb(250 235 206 / 78%);
+    --app-input-border: rgb(210 178 136 / 54%);
+    --app-input-bg: rgb(40 30 22 / 60%);
+    --app-input-placeholder: rgb(226 208 182 / 78%);
+    --app-input-focus: rgb(255 250 238 / 96%);
+    --app-input-focus-shadow: rgb(255 242 214 / 28%);
+    --app-surface-login-bg: linear-gradient(165deg, rgb(58 43 30 / 94%) 0%, rgb(76 57 40 / 90%) 45%, rgb(46 34 25 / 95%) 100%);
+    --app-surface-login-border: rgb(236 211 170 / 46%);
+    --app-surface-header-bg: linear-gradient(180deg, rgb(66 49 35 / 92%) 0%, rgb(46 34 25 / 94%) 100%);
+    --app-surface-header-border: rgb(230 204 164 / 42%);
+    --app-surface-callout-bg: linear-gradient(135deg, rgb(76 57 40 / 88%) 0%, rgb(52 38 28 / 92%) 100%);
+    --app-surface-callout-border: rgb(238 214 174 / 44%);
+    --app-game-card-top-bg: linear-gradient(180deg, rgb(165 129 94) 0%, rgb(137 106 78) 100%);
+    --app-game-card-bottom-bg: linear-gradient(
+        168deg,
+        rgb(110 83 60) 0%,
+        rgb(84 63 45) 52%,
+        rgb(64 48 35) 100%
+    );
+    --app-scroll-track: rgb(43 32 23 / 62%);
+    --app-scroll-thumb: linear-gradient(180deg, rgb(255 251 241 / 0.88), rgb(232 208 170 / 0.82));
+    --app-scroll-thumb-border: rgb(34 25 18 / 90%);
+    --app-scrollbar-color: var(--app-accent);
+    --duel-bg-fallback: var(--theme-bg-800);
+    --duel-arena-gradient: linear-gradient(
+        168deg,
+        rgb(126 95 68 / 88%) 0%,
+        rgb(100 75 54 / 84%) 38%,
+        rgb(78 58 42 / 80%) 72%,
+        rgb(58 43 30 / 76%) 100%
+    );
+    --duel-scrollbar-track: rgb(66 49 35 / 58%);
+    --duel-scrollbar-thumb: rgb(244 223 186 / 90%);
+    --duel-scrollbar-thumb-hover: rgb(255 239 212 / 96%);
+    --duel-panel-border: color-mix(in srgb, var(--theme-border) 88%, transparent);
+    --duel-panel-bg: color-mix(in srgb, var(--theme-bg-800) 58%, transparent);
+    --duel-actionbar-bg: linear-gradient(180deg, rgb(66 49 35 / 92%) 0%, rgb(46 34 25 / 96%) 100%);
+    --duel-actionbar-border: rgb(236 211 170 / 42%);
+    --duel-actionbar-text: rgb(250 239 222);
+    --duel-actionbar-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 10%),
+        0 12px 30px rgb(0 0 0 / 36%);
+    --duel-graveyard-bg: rgb(62 46 33 / 72%);
+    --duel-graveyard-inner-bg: rgb(42 31 22 / 36%);
+    --duel-graveyard-border: rgb(222 196 154 / 40%);
+    --duel-graveyard-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 8%),
+        0 8px 20px rgb(0 0 0 / 22%);
+    --duel-mobile-menu-bg: linear-gradient(180deg, rgb(55 41 30 / 96%) 0%, rgb(35 26 19 / 98%) 100%);
+    --duel-mobile-menu-border: rgb(222 197 154 / 38%);
+    --duel-mobile-menu-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 8%),
+        0 14px 28px rgb(0 0 0 / 36%);
+    --duel-meta-strong: rgb(255 243 219 / 97%);
+    --duel-turn-badge-you: rgb(223 255 237 / 95%);
+    --duel-turn-badge-opponent: rgb(255 236 214 / 95%);
+    --duel-turn-badge-observer: rgb(244 231 216 / 94%);
+    --duel-surrender-modal-bg: linear-gradient(175deg, rgb(54 40 29 / 96%) 0%, rgb(32 24 18 / 98%) 100%);
+    --duel-surrender-modal-border: rgb(222 196 154 / 42%);
+    --app-page-bg: radial-gradient(circle at 20% 20%, #9a7d5b 0%, #614933 42%, #35271b 100%);
+    --app-main-bg-image: url('@/assets/themes/main_bg_white.png');
+    --app-login-overlay-bg: radial-gradient(
+        circle at 20% 18%,
+        rgb(255 236 206 / 24%) 0%,
+        rgb(58 42 29 / 90%) 42%,
+        rgb(28 20 14 / 98%) 100%
+    );
+    --app-login-overlay-card-border: rgb(230 203 162 / 46%);
+    --app-login-overlay-card-bg: linear-gradient(160deg, rgb(52 38 27 / 94%) 0%, rgb(37 27 20 / 96%) 58%, rgb(28 21 15 / 97%) 100%);
+    --app-login-overlay-logo-color: rgb(255 245 226 / 97%);
+    --app-login-overlay-logo-filter: drop-shadow(0 0 12px rgb(255 229 188 / 42%));
+    --app-login-overlay-spinner-border: rgb(225 198 159 / 34%);
+    --app-login-overlay-spinner-top: rgb(255 246 231 / 98%);
+    --app-skeleton-bg: rgb(255 246 228 / 17%);
+    --app-skeleton-shimmer: linear-gradient(90deg, transparent, rgb(255 251 242 / 24%), transparent);
+    --app-brand-icon-color: rgb(255 224 158);
+    --app-brand-icon-filter: drop-shadow(0 0 12px rgb(255 193 87 / 44%));
+    --app-login-overlay-label-color: rgb(255 246 230 / 98%);
+    --chat-panel-border: rgb(230 203 162 / 46%);
+    --chat-panel-bg: linear-gradient(165deg, rgb(56 41 29 / 95%) 0%, rgb(32 24 18 / 97%) 100%);
+    --chat-panel-header-border: rgb(230 203 162 / 34%);
+    --chat-panel-header-bg: linear-gradient(180deg, rgb(69 52 38 / 90%) 0%, rgb(44 32 24 / 94%) 100%);
+    --chat-surface-soft: rgb(58 43 30 / 72%);
+    --chat-surface-strong: rgb(80 58 40 / 86%);
+    --chat-border-soft: rgb(230 203 162 / 30%);
+    --chat-border-strong: rgb(255 234 202 / 62%);
+    --chat-text-warning: rgb(255 206 120 / 96%);
+    --chat-text-success: rgb(196 255 220 / 96%);
+    --chat-text-danger: rgb(255 170 170 / 96%);
+    --chat-text-read: rgb(175 229 255 / 96%);
+    --chat-typing: rgb(255 228 184 / 93%);
+}
+
+:root[data-app-theme='cyberpunk'] {
+    /* Core palette (cyberpunk) */
+    --theme-bg-950: rgb(9 3 24);
+    --theme-bg-900: rgb(16 8 42);
+    --theme-bg-800: rgb(29 16 66);
+    --theme-border: rgb(149 100 255 / 52%);
+    --theme-text: rgb(232 244 255);
+    --theme-text-muted: rgb(168 190 225);
+    --theme-accent: rgb(29 233 255);
+    --theme-accent-strong: rgb(128 247 255);
+    --theme-accent-deep: rgb(142 89 255);
+    --theme-danger: rgb(255 73 141);
+
+    --app-accent: var(--theme-accent);
+    --app-accent-bright: var(--theme-accent-strong);
+    --app-accent-deep: var(--theme-accent-deep);
+    --app-text: var(--theme-text);
+    --app-text-muted: var(--theme-text-muted);
+    --app-on-accent: rgb(6 8 28);
+    --app-border: var(--theme-border);
+    --app-border-soft: rgb(176 136 255 / 28%);
+    --app-secondary-bg: rgb(43 24 90 / 66%);
+    --app-secondary-bg-hover: rgb(61 36 122 / 82%);
+    --app-secondary-border-hover: rgb(71 245 255 / 68%);
+    --app-input-border: rgb(145 98 255 / 62%);
+    --app-input-bg: rgb(8 4 28 / 74%);
+    --app-input-placeholder: rgb(152 178 220 / 74%);
+    --app-input-focus: rgb(38 235 255 / 94%);
+    --app-input-focus-shadow: rgb(38 235 255 / 28%);
+    --app-surface-login-bg: linear-gradient(165deg, rgb(35 18 78 / 95%) 0%, rgb(20 11 50 / 96%) 45%, rgb(10 5 30 / 97%) 100%);
+    --app-surface-login-border: rgb(84 242 255 / 44%);
+    --app-surface-header-bg: linear-gradient(180deg, rgb(44 25 92 / 92%) 0%, rgb(20 11 52 / 95%) 100%);
+    --app-surface-header-border: rgb(104 80 255 / 44%);
+    --app-surface-callout-bg: linear-gradient(135deg, rgb(56 30 112 / 90%) 0%, rgb(21 11 54 / 94%) 100%);
+    --app-surface-callout-border: rgb(73 242 255 / 42%);
+    --app-game-card-top-bg: linear-gradient(
+        168deg,
+        rgb(172 78 132) 0%,
+        rgb(148 70 116) 52%,
+        rgb(116 62 96) 100%
+    );
+    --app-game-card-bottom-bg: linear-gradient(
+        168deg,
+        rgb(102 56 136) 0%,
+        rgb(86 48 122) 52%,
+        rgb(68 42 106) 100%
+    );
+    --app-game-card-bottom-text: rgb(228 206 220 / 90%);
+    --app-scroll-track: rgb(15 9 42 / 62%);
+    --app-scroll-thumb: linear-gradient(180deg, rgb(255 120 228 / 0.92), rgb(173 92 255 / 0.88));
+    --app-scroll-thumb-border: rgb(35 16 69 / 94%);
+    --app-scrollbar-color: rgb(255 118 226);
+    --duel-bg-fallback: var(--theme-bg-900);
+    --duel-arena-gradient: linear-gradient(168deg, rgb(46 26 102 / 90%) 0%, rgb(28 16 72 / 84%) 42%, rgb(14 8 42 / 82%) 100%);
+    --duel-scrollbar-track: rgb(21 12 52 / 62%);
+    --duel-scrollbar-thumb: rgb(255 124 230 / 90%);
+    --duel-scrollbar-thumb-hover: rgb(255 170 239 / 96%);
+    --duel-panel-border: color-mix(in srgb, var(--theme-border) 88%, transparent);
+    --duel-panel-bg: color-mix(in srgb, var(--theme-bg-800) 62%, transparent);
+    --duel-actionbar-bg: linear-gradient(180deg, rgb(40 22 89 / 95%) 0%, rgb(14 8 40 / 98%) 100%);
+    --duel-actionbar-border: rgb(72 242 255 / 62%);
+    --duel-actionbar-text: rgb(222 248 255 / 96%);
+    --duel-actionbar-shadow:
+        inset 0 1px 0 rgb(172 150 255 / 16%),
+        0 12px 30px rgb(0 0 0 / 52%);
+    --duel-graveyard-bg: linear-gradient(180deg, rgb(32 18 80 / 88%) 0%, rgb(15 8 44 / 92%) 100%);
+    --duel-graveyard-inner-bg: rgb(6 3 20 / 44%);
+    --duel-graveyard-border: rgb(90 244 255 / 52%);
+    --duel-graveyard-shadow:
+        inset 0 1px 0 rgb(162 136 255 / 14%),
+        0 8px 20px rgb(0 0 0 / 32%);
+    --duel-mobile-menu-bg: linear-gradient(180deg, rgb(45 25 98 / 96%) 0%, rgb(19 11 52 / 98%) 100%);
+    --duel-mobile-menu-border: rgb(104 80 255 / 42%);
+    --duel-mobile-menu-shadow:
+        inset 0 1px 0 rgb(178 159 255 / 14%),
+        0 14px 28px rgb(0 0 0 / 48%);
+    --duel-meta-strong: rgb(197 250 255 / 97%);
+    --duel-turn-badge-you: rgb(162 255 222 / 96%);
+    --duel-turn-badge-opponent: rgb(255 189 225 / 96%);
+    --duel-turn-badge-observer: rgb(205 214 255 / 96%);
+    --duel-surrender-modal-bg: linear-gradient(175deg, rgb(42 23 90 / 97%) 0%, rgb(14 8 38 / 99%) 100%);
+    --duel-surrender-modal-border: rgb(90 244 255 / 44%);
+    --app-page-bg: radial-gradient(circle at 18% 18%, #7d2bff 0%, #2a1366 38%, #0b0424 100%);
+    --app-main-bg-image: url('@/assets/themes/main_bg_cyber.png');
+    --app-login-overlay-bg: radial-gradient(circle at 20% 16%, rgb(164 86 255 / 24%) 0%, rgb(33 18 78 / 88%) 40%, rgb(10 5 29 / 98%) 100%);
+    --app-login-overlay-card-border: rgb(80 242 255 / 44%);
+    --app-login-overlay-card-bg: linear-gradient(160deg, rgb(40 22 90 / 94%) 0%, rgb(21 12 56 / 97%) 58%, rgb(10 5 30 / 98%) 100%);
+    --app-login-overlay-logo-color: rgb(69 246 255 / 98%);
+    --app-login-overlay-logo-filter: drop-shadow(0 0 14px rgb(58 239 255 / 52%));
+    --app-login-overlay-spinner-border: rgb(148 103 255 / 46%);
+    --app-login-overlay-spinner-top: rgb(84 244 255 / 98%);
+    --app-skeleton-bg: rgb(136 96 255 / 20%);
+    --app-skeleton-shimmer: linear-gradient(90deg, transparent, rgb(76 240 255 / 26%), transparent);
+    --app-brand-icon-color: rgb(255 110 225);
+    --app-brand-icon-filter: drop-shadow(0 0 16px rgb(255 106 221 / 58%));
+    --app-login-overlay-label-color: rgb(216 244 255 / 98%);
+    --chat-panel-border: rgb(84 242 255 / 46%);
+    --chat-panel-bg: linear-gradient(165deg, rgb(33 18 76 / 96%) 0%, rgb(11 6 31 / 97%) 100%);
+    --chat-panel-header-border: rgb(84 242 255 / 34%);
+    --chat-panel-header-bg: linear-gradient(180deg, rgb(46 26 101 / 92%) 0%, rgb(17 10 44 / 95%) 100%);
+    --chat-surface-soft: rgb(38 22 82 / 78%);
+    --chat-surface-strong: rgb(57 33 116 / 88%);
+    --chat-border-soft: rgb(105 80 255 / 34%);
+    --chat-border-strong: rgb(84 242 255 / 62%);
+    --chat-text-warning: rgb(255 202 120 / 96%);
+    --chat-text-success: rgb(148 255 220 / 98%);
+    --chat-text-danger: rgb(255 154 198 / 97%);
+    --chat-text-read: rgb(84 242 255 / 97%);
+    --chat-typing: rgb(169 245 255 / 94%);
+}
+
+:root[data-app-theme='scifi'] {
+    /* Core palette (sci-fi) */
+    --theme-bg-950: rgb(8 10 18);
+    --theme-bg-900: rgb(14 18 30);
+    --theme-bg-800: rgb(26 34 54);
+    --theme-border: rgb(118 188 255 / 46%);
+    --theme-text: rgb(244 248 255);
+    --theme-text-muted: rgb(176 190 214);
+    --theme-accent: rgb(56 214 255);
+    --theme-accent-strong: rgb(154 236 255);
+    --theme-accent-deep: rgb(36 132 228);
+    --theme-danger: rgb(255 96 128);
+
+    --app-accent: var(--theme-accent);
+    --app-accent-bright: var(--theme-accent-strong);
+    --app-accent-deep: var(--theme-accent-deep);
+    --app-text: var(--theme-text);
+    --app-text-muted: var(--theme-text-muted);
+    --app-on-accent: rgb(8 18 32);
+    --app-border: var(--theme-border);
+    --app-border-soft: rgb(168 206 255 / 22%);
+    --app-secondary-bg: rgb(34 44 68 / 68%);
+    --app-secondary-bg-hover: rgb(48 60 90 / 82%);
+    --app-secondary-border-hover: rgb(88 220 255 / 72%);
+    --app-input-border: rgb(108 156 220 / 52%);
+    --app-input-bg: rgb(10 14 26 / 76%);
+    --app-input-placeholder: rgb(156 172 198 / 76%);
+    --app-input-focus: rgb(72 220 255 / 94%);
+    --app-input-focus-shadow: rgb(56 214 255 / 26%);
+    --app-surface-login-bg: linear-gradient(165deg, rgb(38 48 72 / 94%) 0%, rgb(24 32 54 / 96%) 45%, rgb(12 16 28 / 97%) 100%);
+    --app-surface-login-border: rgb(108 200 255 / 44%);
+    --app-surface-header-bg: linear-gradient(180deg, rgb(42 52 78 / 92%) 0%, rgb(20 26 44 / 95%) 100%);
+    --app-surface-header-border: rgb(120 188 255 / 42%);
+    --app-surface-callout-bg: linear-gradient(135deg, rgb(48 60 92 / 90%) 0%, rgb(22 28 48 / 94%) 100%);
+    --app-surface-callout-border: rgb(96 210 255 / 42%);
+    --app-game-card-top-bg: linear-gradient(
+        168deg,
+        rgb(156 164 186) 0%,
+        rgb(132 142 166) 52%,
+        rgb(108 118 144) 100%
+    );
+    --app-game-card-bottom-bg: linear-gradient(
+        168deg,
+        rgb(52 64 96) 0%,
+        rgb(38 48 78) 52%,
+        rgb(26 34 58) 100%
+    );
+    --app-game-card-bottom-text: rgb(220 230 248 / 91%);
+    --app-scroll-track: rgb(16 22 38 / 64%);
+    --app-scroll-thumb: linear-gradient(180deg, rgb(120 228 255 / 0.9), rgb(56 168 255 / 0.84));
+    --app-scroll-thumb-border: rgb(12 18 32 / 94%);
+    --app-scrollbar-color: rgb(72 214 255);
+    --duel-bg-fallback: var(--theme-bg-900);
+    --duel-arena-gradient: linear-gradient(168deg, rgb(42 54 84 / 90%) 0%, rgb(28 36 62 / 84%) 42%, rgb(14 18 32 / 82%) 100%);
+    --duel-scrollbar-track: rgb(22 30 50 / 64%);
+    --duel-scrollbar-thumb: rgb(72 214 255 / 88%);
+    --duel-scrollbar-thumb-hover: rgb(132 236 255 / 94%);
+    --duel-panel-border: color-mix(in srgb, var(--theme-border) 88%, transparent);
+    --duel-panel-bg: color-mix(in srgb, var(--theme-bg-800) 58%, transparent);
+    --duel-actionbar-bg: linear-gradient(180deg, rgb(36 46 72 / 95%) 0%, rgb(16 22 38 / 98%) 100%);
+    --duel-actionbar-border: rgb(88 220 255 / 58%);
+    --duel-actionbar-text: rgb(232 244 255 / 96%);
+    --duel-actionbar-shadow:
+        inset 0 1px 0 rgb(200 230 255 / 14%),
+        0 12px 30px rgb(0 0 0 / 48%);
+    --duel-graveyard-bg: linear-gradient(180deg, rgb(30 38 62 / 88%) 0%, rgb(16 22 40 / 92%) 100%);
+    --duel-graveyard-inner-bg: rgb(8 12 24 / 44%);
+    --duel-graveyard-border: rgb(96 210 255 / 48%);
+    --duel-graveyard-shadow:
+        inset 0 1px 0 rgb(220 240 255 / 10%),
+        0 8px 20px rgb(0 0 0 / 30%);
+    --duel-mobile-menu-bg: linear-gradient(180deg, rgb(40 50 78 / 96%) 0%, rgb(18 24 42 / 98%) 100%);
+    --duel-mobile-menu-border: rgb(108 188 255 / 40%);
+    --duel-mobile-menu-shadow:
+        inset 0 1px 0 rgb(220 240 255 / 10%),
+        0 14px 28px rgb(0 0 0 / 44%);
+    --duel-meta-strong: rgb(220 244 255 / 97%);
+    --duel-turn-badge-you: rgb(168 255 228 / 96%);
+    --duel-turn-badge-opponent: rgb(255 220 180 / 96%);
+    --duel-turn-badge-observer: rgb(196 210 236 / 96%);
+    --duel-surrender-modal-bg: linear-gradient(175deg, rgb(36 46 72 / 97%) 0%, rgb(14 18 32 / 99%) 100%);
+    --duel-surrender-modal-border: rgb(96 210 255 / 42%);
+    --app-page-bg: radial-gradient(circle at 22% 18%, #4a6fa5 0%, #243552 36%, #0c1220 100%);
+    --app-main-bg-image: url('@/assets/themes/main_bg_sci.png');
+    --app-login-overlay-bg: radial-gradient(circle at 20% 16%, rgb(88 210 255 / 22%) 0%, rgb(28 36 58 / 88%) 40%, rgb(10 14 26 / 98%) 100%);
+    --app-login-overlay-card-border: rgb(96 210 255 / 42%);
+    --app-login-overlay-card-bg: linear-gradient(160deg, rgb(38 48 74 / 94%) 0%, rgb(22 30 52 / 97%) 58%, rgb(12 16 28 / 98%) 100%);
+    --app-login-overlay-logo-color: rgb(88 228 255 / 98%);
+    --app-login-overlay-logo-filter: drop-shadow(0 0 14px rgb(64 210 255 / 52%));
+    --app-login-overlay-spinner-border: rgb(108 156 210 / 42%);
+    --app-login-overlay-spinner-top: rgb(120 236 255 / 98%);
+    --app-skeleton-bg: rgb(168 206 255 / 16%);
+    --app-skeleton-shimmer: linear-gradient(90deg, transparent, rgb(120 228 255 / 24%), transparent);
+    --app-brand-icon-color: rgb(88 228 255);
+    --app-brand-icon-filter: drop-shadow(0 0 14px rgb(56 214 255 / 54%));
+    --app-login-overlay-label-color: rgb(232 244 255 / 98%);
+    --chat-panel-border: rgb(96 210 255 / 44%);
+    --chat-panel-bg: linear-gradient(165deg, rgb(32 40 64 / 96%) 0%, rgb(14 18 30 / 97%) 100%);
+    --chat-panel-header-border: rgb(96 210 255 / 32%);
+    --chat-panel-header-bg: linear-gradient(180deg, rgb(42 52 80 / 92%) 0%, rgb(18 24 42 / 95%) 100%);
+    --chat-surface-soft: rgb(30 38 60 / 78%);
+    --chat-surface-strong: rgb(46 58 88 / 88%);
+    --chat-border-soft: rgb(108 156 210 / 32%);
+    --chat-border-strong: rgb(88 220 255 / 58%);
+    --chat-text-warning: rgb(255 210 130 / 96%);
+    --chat-text-success: rgb(148 255 220 / 98%);
+    --chat-text-danger: rgb(255 154 180 / 97%);
+    --chat-text-read: rgb(96 220 255 / 97%);
+    --chat-typing: rgb(176 228 255 / 94%);
+}
+
+:root[data-app-theme='luxury'] {
+    /* Core palette (luxury — obsidian, gold, marble) */
+    --theme-bg-950: rgb(12 12 14);
+    --theme-bg-900: rgb(20 20 24);
+    --theme-bg-800: rgb(38 38 44);
+    --theme-border: rgb(212 175 90 / 50%);
+    --theme-text: rgb(248 244 236);
+    --theme-text-muted: rgb(178 172 162);
+    --theme-accent: rgb(220 178 72);
+    --theme-accent-strong: rgb(255 228 150);
+    --theme-accent-deep: rgb(176 132 42);
+    --theme-danger: rgb(220 72 88);
+
+    --app-accent: var(--theme-accent);
+    --app-accent-bright: var(--theme-accent-strong);
+    --app-accent-deep: var(--theme-accent-deep);
+    --app-text: var(--theme-text);
+    --app-text-muted: var(--theme-text-muted);
+    --app-on-accent: rgb(28 22 14);
+    --app-border: var(--theme-border);
+    --app-border-soft: rgb(212 175 90 / 22%);
+    --app-secondary-bg: rgb(42 40 48 / 72%);
+    --app-secondary-bg-hover: rgb(58 56 64 / 84%);
+    --app-secondary-border-hover: rgb(230 198 120 / 72%);
+    --app-input-border: rgb(168 148 118 / 52%);
+    --app-input-bg: rgb(14 14 18 / 78%);
+    --app-input-placeholder: rgb(156 150 140 / 76%);
+    --app-input-focus: rgb(230 198 120 / 92%);
+    --app-input-focus-shadow: rgb(212 175 90 / 24%);
+    --app-surface-login-bg: linear-gradient(165deg, rgb(48 46 54 / 94%) 0%, rgb(30 28 34 / 96%) 45%, rgb(16 16 20 / 97%) 100%);
+    --app-surface-login-border: rgb(212 175 90 / 44%);
+    --app-surface-header-bg: linear-gradient(180deg, rgb(52 50 58 / 92%) 0%, rgb(24 24 28 / 95%) 100%);
+    --app-surface-header-border: rgb(200 168 96 / 42%);
+    --app-surface-callout-bg: linear-gradient(135deg, rgb(58 56 64 / 90%) 0%, rgb(28 28 32 / 94%) 100%);
+    --app-surface-callout-border: rgb(212 175 90 / 40%);
+    --app-game-card-top-bg: linear-gradient(
+        168deg,
+        rgb(192 158 92) 0%,
+        rgb(168 132 72) 52%,
+        rgb(142 108 58) 100%
+    );
+    --app-game-card-bottom-bg: linear-gradient(
+        168deg,
+        rgb(82 76 68) 0%,
+        rgb(66 60 54) 52%,
+        rgb(52 48 42) 100%
+    );
+    --app-game-card-bottom-text: rgb(228 222 210 / 90%);
+    --app-scroll-track: rgb(20 18 16 / 68%);
+    --app-scroll-thumb: linear-gradient(180deg, rgb(255 232 158 / 0.96), rgb(212 162 58 / 0.92));
+    --app-scroll-thumb-border: rgb(18 14 10 / 94%);
+    --app-scrollbar-color: rgb(255 210 96);
+    --duel-bg-fallback: var(--theme-bg-900);
+    --duel-arena-gradient: linear-gradient(168deg, rgb(48 46 54 / 90%) 0%, rgb(32 30 38 / 84%) 42%, rgb(16 16 20 / 82%) 100%);
+    --duel-scrollbar-track: rgb(28 28 32 / 64%);
+    --duel-scrollbar-thumb: rgb(255 210 96 / 90%);
+    --duel-scrollbar-thumb-hover: rgb(255 234 168 / 96%);
+    --duel-panel-border: color-mix(in srgb, var(--theme-border) 86%, transparent);
+    --duel-panel-bg: color-mix(in srgb, var(--theme-bg-800) 56%, transparent);
+    --duel-actionbar-bg: linear-gradient(180deg, rgb(44 42 50 / 95%) 0%, rgb(18 18 22 / 98%) 100%);
+    --duel-actionbar-border: rgb(212 175 90 / 54%);
+    --duel-actionbar-text: rgb(248 244 236 / 96%);
+    --duel-actionbar-shadow:
+        inset 0 1px 0 rgb(255 248 230 / 12%),
+        0 12px 30px rgb(0 0 0 / 50%);
+    --duel-graveyard-bg: linear-gradient(180deg, rgb(38 36 44 / 88%) 0%, rgb(20 20 24 / 92%) 100%);
+    --duel-graveyard-inner-bg: rgb(10 10 14 / 46%);
+    --duel-graveyard-border: rgb(200 168 96 / 46%);
+    --duel-graveyard-shadow:
+        inset 0 1px 0 rgb(255 248 230 / 8%),
+        0 8px 20px rgb(0 0 0 / 34%);
+    --duel-mobile-menu-bg: linear-gradient(180deg, rgb(48 46 54 / 96%) 0%, rgb(22 22 26 / 98%) 100%);
+    --duel-mobile-menu-border: rgb(200 168 96 / 40%);
+    --duel-mobile-menu-shadow:
+        inset 0 1px 0 rgb(255 248 230 / 8%),
+        0 14px 28px rgb(0 0 0 / 46%);
+    --duel-meta-strong: rgb(248 236 210 / 97%);
+    --duel-turn-badge-you: rgb(198 244 214 / 95%);
+    --duel-turn-badge-opponent: rgb(255 226 197 / 95%);
+    --duel-turn-badge-observer: rgb(210 206 198 / 94%);
+    --duel-surrender-modal-bg: linear-gradient(175deg, rgb(44 42 50 / 97%) 0%, rgb(16 16 20 / 99%) 100%);
+    --duel-surrender-modal-border: rgb(200 168 96 / 42%);
+    --app-page-bg: radial-gradient(circle at 20% 16%, #5c5240 0%, #2a282e 38%, #0e0e12 100%);
+    --app-main-bg-image: url('@/assets/themes/main_bg_lux.png');
+    --app-login-overlay-bg: radial-gradient(circle at 20% 16%, rgb(212 175 90 / 20%) 0%, rgb(36 34 42 / 88%) 40%, rgb(12 12 14 / 98%) 100%);
+    --app-login-overlay-card-border: rgb(212 175 90 / 42%);
+    --app-login-overlay-card-bg: linear-gradient(160deg, rgb(48 46 54 / 94%) 0%, rgb(28 28 32 / 97%) 58%, rgb(14 14 18 / 98%) 100%);
+    --app-login-overlay-logo-color: rgb(255 220 120 / 98%);
+    --app-login-overlay-logo-filter: drop-shadow(0 0 16px rgb(255 196 72 / 58%));
+    --app-login-overlay-spinner-border: rgb(176 140 72 / 44%);
+    --app-login-overlay-spinner-top: rgb(255 228 150 / 98%);
+    --app-skeleton-bg: rgb(220 178 72 / 18%);
+    --app-skeleton-shimmer: linear-gradient(90deg, transparent, rgb(255 228 150 / 28%), transparent);
+    --app-brand-icon-color: rgb(255 216 96);
+    --app-brand-icon-filter: drop-shadow(0 0 16px rgb(255 196 64 / 62%));
+    --app-login-overlay-label-color: rgb(248 244 236 / 98%);
+    --chat-panel-border: rgb(200 168 96 / 44%);
+    --chat-panel-bg: linear-gradient(165deg, rgb(38 36 44 / 96%) 0%, rgb(14 14 18 / 97%) 100%);
+    --chat-panel-header-border: rgb(200 168 96 / 32%);
+    --chat-panel-header-bg: linear-gradient(180deg, rgb(52 50 58 / 92%) 0%, rgb(22 22 26 / 95%) 100%);
+    --chat-surface-soft: rgb(36 34 42 / 78%);
+    --chat-surface-strong: rgb(52 50 58 / 88%);
+    --chat-border-soft: rgb(168 148 118 / 32%);
+    --chat-border-strong: rgb(212 175 90 / 56%);
+    --chat-text-warning: rgb(255 210 130 / 96%);
+    --chat-text-success: rgb(168 230 190 / 98%);
+    --chat-text-danger: rgb(255 154 168 / 97%);
+    --chat-text-read: rgb(212 175 90 / 97%);
+    --chat-typing: rgb(230 210 170 / 94%);
+}
+
+/** Feed header / login hero icon — gold accent + glow */
+.app-brand-icon {
+    color: var(--app-brand-icon-color);
+    filter: var(--app-brand-icon-filter);
+}
+
+.btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60;
+    color: var(--app-on-accent);
+    border: 1px solid color-mix(in srgb, var(--app-accent-bright) 42%, transparent);
+    background: linear-gradient(
+        180deg,
+        var(--app-accent-bright) 0%,
+        var(--app-accent) 42%,
+        var(--app-accent-deep) 100%
+    );
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 28%),
+        0 2px 10px rgb(0 0 0 / 32%);
+}
+
+.btn-primary:hover:not(:disabled) {
+    filter: brightness(1.07);
+}
+
+.btn-primary:active:not(:disabled) {
+    filter: brightness(0.96);
+}
+
+.btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60;
+    color: var(--app-text);
+    border: 1px solid var(--app-border);
+    background: var(--app-secondary-bg);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 6%);
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background: var(--app-secondary-bg-hover);
+    border-color: var(--app-secondary-border-hover);
+}
+
+.input {
+    @apply w-full rounded-xl px-3 py-2 text-sm outline-none transition;
+    color: var(--app-text);
+    border: 1px solid var(--app-input-border);
+    background: var(--app-input-bg);
+}
+
+.input::placeholder {
+    color: var(--app-input-placeholder);
+}
+
+.input:focus {
+    border-color: var(--app-input-focus);
+    box-shadow: 0 0 0 2px var(--app-input-focus-shadow);
+}
+
+/** Login card: solid layered browns + rim light — no backdrop-blur */
+.app-surface-login {
+    background: var(--app-surface-login-bg);
+    border: 2px solid var(--app-surface-login-border);
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 9%),
+        inset 0 0 60px rgb(0 0 0 / 18%),
+        0 16px 44px rgb(0 0 0 / 48%),
+        0 0 0 1px rgb(0 0 0 / 38%);
+}
+
+/** Dashboard header, duel toolbar — flat gradient, crisp border */
+.app-surface-header {
+    background: var(--app-surface-header-bg);
+    border: 1px solid var(--app-surface-header-border);
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 7%),
+        0 10px 28px rgb(0 0 0 / 38%);
+}
+
+/** Notices (e.g. game over) — warm highlight without cyan */
+.app-surface-callout {
+    background: var(--app-surface-callout-bg);
+    border: 1px solid var(--app-surface-callout-border);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 6%);
+}
+
+.modalLikeScrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: var(--app-scrollbar-color, var(--app-accent)) var(--app-scroll-track);
+}
+
+.modalLikeScrollbar::-webkit-scrollbar {
+    width: 10px;
+}
+
+.modalLikeScrollbar::-webkit-scrollbar-track {
+    background: var(--app-scroll-track);
+    border-radius: 999px;
+    margin-block: 8px;
+}
+
+.modalLikeScrollbar::-webkit-scrollbar-thumb {
+    background: var(--app-scroll-thumb);
+    border-radius: 999px;
+    border: 2px solid var(--app-scroll-thumb-border);
+}

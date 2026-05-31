@@ -1,0 +1,1637 @@
+:root {
+    /* Full-size military board (.dg-board); visually rotate(90deg) × scale(...) */
+    --dg-military-board-scale: 0.56;
+
+    --dg-card-board-height: 420px;
+    --dg-card-board-height-compact: 350px;
+    --dg-card-board-width: calc(var(--width-tier) * 7);
+    /* Age pyramid (.dg-cardBoard): full logical size, visual scale only */
+    --dg-epoch-cards-scale: 0.62;
+
+    /* Opening wonder pick: 2×2 grid (full size in DOM), visual scale */
+    --dg-wonder-prepare-scale: 0.56;
+    --dg-wonders-pick-row-gap: 10px;
+    /* Block height at 4 slots × 2 columns (unscaled) → used for negative margin */
+    --dg-wonders-pick-logical-height: calc(2 * var(--height-wonder) + var(--dg-wonders-pick-row-gap));
+
+    /* Wonders built by the player (compact strips) — scale separate from epoch table */
+    --dg-player-wonders-scale: 0.86;
+
+    --width-wonder: 130px;
+    --height-wonder: 85px;
+    --width-tier: 66px;
+    --height-tier: 100px;
+    --width-board: 200px;
+    --height-board: 500px;
+    --coin-size: 42px;
+}
+
+.cashSum {
+    position: absolute;
+    background-repeat: no-repeat;
+    background-size: 154px 154px;
+    background-image: url('@/assets/duel/sprites.webp');
+    background-position: -54px -129px;
+    width: 19px;
+    height: 19px;
+    line-height: 19px;
+    border-radius: 50%;
+    font-weight: 700;
+    font-size: 11px;
+    text-align: center;
+    z-index: 20;
+    color: #ffffff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+}
+
+.dg-cardBoard {
+    position: relative;
+    width: var(--dg-card-board-width);
+    height: var(--dg-card-board-current-height, var(--dg-card-board-height));
+    margin: 0 auto;
+    overflow: hidden;
+    border-radius: 10px;
+}
+
+.dg-cardWrapper {
+    position: absolute;
+    width: var(--width-tier);
+    height: var(--height-tier);
+    top: 50%;
+    left: 50%;
+    border-radius: 5px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.25);
+    transition: 0.3s all;
+    opacity: 0;
+    animation: dg-prepareLayOut 1.2s calc(var(--z) * 0.25s) linear forwards;
+    background: transparent;
+    border: none;
+    padding: 0;
+}
+
+.dg-cardWrapperCompact {
+    position: relative;
+    width: var(--width-tier);
+    height: calc(var(--height-tier) / 4.5);
+    border-radius: 5px;
+    background: transparent;
+    border: none;
+    padding: 0;
+    display: block;
+}
+
+.dg-cardWrapperCompact.dg-arrivalPending .dg-card {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    background-image: none !important;
+    background-color: transparent;
+    box-shadow: none;
+}
+
+.dg-tierCardForWonder.dg-arrivalPending {
+    opacity: 0;
+}
+
+.dg-tierCardForWonder.dg-tierCardForWonder--arrive .dg-tierCardImg {
+    animation: dg-wonderTierArrive 280ms ease-out;
+}
+
+.dg-cardWrapper:disabled {
+    pointer-events: none;
+}
+
+.dg-cardWrapper.dg-selected::before {
+    content: '';
+    position: absolute;
+    z-index: 2;
+    top: 0;
+    left: 0;
+    width: var(--width-tier);
+    height: var(--height-tier);
+    border-radius: 5px;
+    border: 3px dotted tomato;
+    animation: dg-pulseBorder 1.5s ease-in-out infinite;
+}
+
+.dg-canSelect:hover {
+    transform: translateY(var(--y)) translateX(var(--x)) scale(1.07);
+    z-index: 99;
+}
+
+.dg-invisible {
+    transform: translateY(var(--y)) translateX(var(--x));
+    animation: dg-invisible 0.5s linear forwards;
+}
+
+.dg-inPlayerBoardSource {
+    transform: translateY(var(--y)) translateX(var(--x));
+    animation: none !important;
+    opacity: 0 !important;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.dg-cardHeaderFlyer {
+    position: fixed;
+    z-index: 220;
+    border-radius: 5px;
+    overflow: hidden;
+    pointer-events: none;
+    box-shadow:
+        0 8px 16px rgba(0, 0, 0, 0.32),
+        0 2px 6px rgba(0, 0, 0, 0.38);
+}
+
+.dg-cardHeaderFlyer--wonder {
+    z-index: 8;
+}
+
+.dg-cardHeaderFlyerFace {
+    width: 100%;
+    height: var(--height-tier);
+}
+
+.dg-tierSimpleFlip {
+    position: absolute;
+    inset: 0;
+    transform-style: preserve-3d;
+    transform-origin: top center;
+}
+
+.dg-tierSimpleFlip .dg-tierSimpleFlipFace,
+.dg-tierSimpleFlip .dg-tierSimpleFlipBack {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: var(--width-tier);
+    height: var(--height-tier);
+    backface-visibility: hidden;
+}
+
+.dg-tierSimpleFlipBack {
+    transform: rotateY(180deg);
+}
+
+.dg-tierSimpleFlip--animate {
+    animation: dg-tierSimpleFlipReveal 780ms cubic-bezier(0.22, 0.88, 0.22, 1) forwards;
+}
+
+.dg-card {
+    position: relative;
+    width: var(--width-tier);
+    height: var(--height-tier);
+    border-radius: 5px;
+    background-repeat: no-repeat;
+    background-size: calc(var(--width-tier) * 12) calc(var(--height-tier) * 8);
+    background-image: url('@/assets/duel/cards.webp');
+    box-shadow: inset 5px 5px 10px rgba(0, 0, 0, 0.2), inset -5px -5px 10px rgba(255, 255, 255, 0.1);
+}
+
+.dg-cardCompact {
+    height: calc(var(--height-tier) / 4.5);
+    background-size: calc(var(--width-tier) * 12) calc(var(--height-tier) * 8);
+}
+
+.dg-hideCard {
+    background-position: var(--reversBg) !important;
+}
+
+.dg-cashSumP1 {
+    bottom: -42%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-145%);
+}
+.dg-cashSumP2 {
+    background-position: -132px -102px;
+    bottom: 3%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-40%);
+}
+
+.dg-tooHighPrice {
+    color: red;
+}
+
+.dg-wondersPick {
+    display: grid;
+    grid-template-columns: var(--width-wonder) var(--width-wonder);
+    gap: var(--dg-wonders-pick-row-gap);
+    justify-content: center;
+    align-content: center;
+}
+
+.dg-wondersPickTransform {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    overflow: visible;
+    transform: scale(var(--dg-wonder-prepare-scale));
+    transform-origin: top center;
+    /* transform does not affect flow height — remove the extra gap scaling would leave */
+    margin-bottom: calc(-1 * var(--dg-wonders-pick-logical-height) * (1 - var(--dg-wonder-prepare-scale)));
+}
+
+.dg-wonderWrapper {
+    position: relative;
+    width: var(--width-wonder);
+    height: var(--height-wonder);
+    border-radius: 5px;
+    border: none;
+    padding: 0;
+    background: transparent;
+    cursor: pointer;
+    overflow: visible;
+}
+
+.dg-wonderCard {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: var(--width-wonder);
+    height: var(--height-wonder);
+    border-radius: 5px;
+    background-repeat: no-repeat;
+    background-size: calc(var(--width-wonder) * 5) calc(var(--height-wonder) * 4);
+    background-image: url('@/assets/duel/wonders.webp');
+    z-index: 10;
+}
+
+.dg-wonderFlip {
+    position: absolute;
+    inset: 0;
+    transform-style: preserve-3d;
+    transition: transform 940ms cubic-bezier(0.22, 0.9, 0.24, 1);
+    transition-delay: var(--wonder-flip-delay, 0ms);
+}
+
+.dg-wonderFlipFront {
+    transform: rotateY(180deg);
+}
+
+.dg-wonderFace,
+.dg-wonderBack {
+    backface-visibility: hidden;
+    border-radius: 5px;
+}
+
+.dg-wonderFace {
+    transform: rotateY(180deg);
+}
+
+.dg-wonderBack {
+    background-image: url('@/assets/duel/wonders.webp');
+    background-size: calc(var(--width-wonder) * 5) calc(var(--height-wonder) * 4);
+    background-position: calc(var(--width-wonder) * -1) calc(var(--height-wonder) * -3);
+    /* Back sprite reads slightly smaller than front; nudge scale for visual parity. */
+    transform: scale(1.03);
+    box-shadow: inset 5px 5px 10px rgba(0, 0, 0, 0.2), inset -5px -5px 10px rgba(255, 255, 255, 0.08);
+}
+
+/* Age-card back along the wonder’s right edge — sprite from inline getTierBackground(); image on child + inherit */
+.dg-tierCardForWonder {
+    position: absolute;
+    top: -7px;
+    left: 61px;
+    transform: rotate(-90deg);
+    width: var(--width-tier);
+    height: var(--height-tier);
+    border-radius: 5px;
+    z-index: -1;
+    transform-origin: center center;
+    pointer-events: none;
+}
+
+.dg-tierCardForWonder .dg-tierCardImg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('@/assets/duel/cards.webp');
+    background-repeat: no-repeat;
+    background-size: calc(var(--width-tier) * 12) calc(var(--height-tier) * 8);
+    border-radius: 5px;
+    background-position: inherit;
+}
+
+
+.dg-wonderCash {
+    bottom: -4px;
+    right: 50%;
+    transform: translateX(50%);
+}
+
+.dg-board {
+    grid-area: duel;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: var(--width-board);
+    height: var(--height-board);
+    filter: drop-shadow(0 0 35px rgba(0, 0, 0, 0.2));
+    background-image: url('@/assets/duel/board.webp');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.dg-pawnTrack {
+    position: absolute;
+    height: var(--height-board);
+    width: calc(var(--width-board) * 1 / 5.35);
+    top: 0;
+    left: 35.9%;
+}
+
+.dg-pawnTrackFlipped {
+    transform: rotate(180deg) scaleX(-1);
+}
+
+.dg-punishments {
+    position: absolute;
+    height: var(--height-board);
+    width: 10%;
+    top: 0;
+    left: 23.9%;
+    z-index: 12;
+}
+
+.dg-punishment {
+    position: absolute;
+    border-radius: 4px;
+    transition: 0.4s ease;
+    background-size: 92px 92px;
+    background-image: url('@/assets/duel/sprites.webp');
+    background-repeat: no-repeat;
+}
+
+.dg-punishment1 {
+    top: 10%;
+    right: 0;
+    width: 27px;
+    height: 60px;
+}
+
+.dg-punishment2 {
+    top: 25.5%;
+    right: 16%;
+    width: 22.5px;
+    height: 51px;
+    background-position: -26px 0;
+}
+
+.dg-punishment3 {
+    top: 64.2%;
+    right: 16%;
+    width: 22.5px;
+    height: 51px;
+    background-position: -26px 0;
+}
+
+.dg-punishment2,
+.dg-punishment3 {
+    filter: none;
+}
+
+.dg-punishment4 {
+    top: 77.8%;
+    right: 0;
+    width: 27px;
+    height: 60px;
+}
+
+.dg-punishmentGone {
+    opacity: 0;
+}
+
+.dg-boardCoins {
+    position: absolute;
+    width: 26.5%;
+    height: 53.8%;
+    top: 23.1%;
+    left: 58.7%;
+    border: 3px dotted transparent;
+    border-top-right-radius: 18px;
+    border-bottom-right-radius: 18px;
+}
+
+.dg-boardCoinSlot {
+    position: absolute;
+    left: 3px;
+    z-index: 5;
+    transform: rotate(-90deg);
+}
+
+.dg-boardCoinSlot:nth-child(1) { top: 8px; }
+.dg-boardCoinSlot:nth-child(2) { top: 60px; }
+.dg-boardCoinSlot:nth-child(3) { top: 111px; }
+.dg-boardCoinSlot:nth-child(4) { top: 162px; }
+.dg-boardCoinSlot:nth-child(5) { top: 211px; }
+
+.dg-selectCoin {
+    border-color: tomato;
+    animation: dg-pulseBorder 1.5s ease-in-out infinite;
+}
+
+.dg-coin {
+    appearance: none;
+    -webkit-appearance: none;
+    display: block;
+    padding: 0;
+    border: none;
+    background-color: transparent;
+    cursor: pointer;
+    transition: 0.4s ease;
+}
+
+.dg-pawn {
+    position: absolute;
+    width: 55px;
+    height: 20px;
+    background-image: url('@/assets/duel/sprites.webp');
+    background-size: 170px 170px;
+    background-repeat: no-repeat;
+    background-position: -81px -142px;
+    left: -9px;
+    top: 49.9%;
+    transition: 0.5s;
+    z-index: 10;
+}
+
+.dg-coin {
+    height: var(--coin-size);
+    width: var(--coin-size);
+    border-radius: 50%;
+    background-repeat: no-repeat;
+    background-image: url('@/assets/duel/coins.webp');
+    background-size: calc(var(--coin-size) * 4) calc(var(--coin-size) * 4);
+    padding: 0;
+}
+
+.dg-coin:disabled {
+    opacity: 0.95;
+}
+
+.dg-coin-point4n6cash { background-position: 0 0; }
+.dg-coin-lowCostWonder { background-position: calc(var(--coin-size) * -1) 0; }
+.dg-coin-cashBack { background-position: calc(var(--coin-size) * -2) 0; }
+.dg-coin-artefact7 { background-position: calc(var(--coin-size) * -3) 0; }
+.dg-coin-lowCostBlue { background-position: 0 calc(var(--coin-size) * -1); }
+.dg-coin-pointX3 { background-position: calc(var(--coin-size) * -1) calc(var(--coin-size) * -1); }
+.dg-coin-point7 { background-position: calc(var(--coin-size) * -2) calc(var(--coin-size) * -1); }
+.dg-coin-attack1 { background-position: calc(var(--coin-size) * -3) calc(var(--coin-size) * -1); }
+.dg-coin-repeatWonder { background-position: 0 calc(var(--coin-size) * -2); }
+.dg-coin-cash6n4special { background-position: calc(var(--coin-size) * -1) calc(var(--coin-size) * -2); }
+
+/** Scrollbars on duel-game only — warm browns aligned with arena surface */
+.duelPageScrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: var(--duel-scrollbar-thumb) var(--duel-scrollbar-track);
+}
+
+.duelPageScrollbar::-webkit-scrollbar {
+    width: 10px;
+}
+
+.duelPageScrollbar::-webkit-scrollbar-track {
+    background: var(--duel-scrollbar-track);
+    border-radius: 999px;
+    margin-block: 8px;
+}
+
+.duelPageScrollbar::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, var(--duel-scrollbar-thumb), rgba(72 44 28 / 0.9));
+    border-radius: 999px;
+    border: 2px solid rgba(18 12 9 / 0.75);
+}
+
+.duelPageScrollbar::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, var(--duel-scrollbar-thumb-hover), rgba(88 54 34 / 0.95));
+}
+
+.dg-playerArea {
+    border-radius: 12px;
+    border: 1px solid var(--duel-panel-border);
+    background: var(--duel-panel-bg);
+    padding: 6px 7px;
+    min-width: 0;
+}
+
+/** Duel layout — single column first (wider breakpoints add row layout below) */
+.dg-duelLayout {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0;
+}
+
+.dgHeader {
+    position: relative;
+}
+
+.dgMetaLine {
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    opacity: 0.95;
+}
+
+.dgMetaStrong {
+    color: var(--duel-meta-strong);
+}
+
+.dgMetaValue {
+    font-weight: 400;
+}
+
+.dgTurnBadge {
+    display: inline;
+    font-weight: 400;
+    letter-spacing: 0.02em;
+}
+
+.dgTurnBadgeYou {
+    color: var(--duel-turn-badge-you);
+}
+
+.dgTurnBadgeOpponent {
+    color: var(--duel-turn-badge-opponent);
+}
+
+.dgTurnBadgeObserver {
+    color: var(--duel-turn-badge-observer);
+}
+
+.dgHeaderActionsDesktop {
+    display: flex;
+}
+
+.dgMobileMenuToggle {
+    display: none !important;
+}
+
+.dgMobileMenu {
+    display: none !important;
+}
+
+@keyframes dgMenuIn {
+    from {
+        opacity: 0;
+        transform: translateY(-6px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.dg-arenaTableCard {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    border: 1px solid var(--duel-panel-border);
+    background: var(--duel-panel-bg);
+}
+
+.dg-duelArena {
+    min-width: 0;
+}
+
+.dg-duelPlayersRow {
+    display: contents;
+}
+
+.dg-stageCards {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: -24px;
+    margin-top: -32px;
+}
+
+.dg-stageCards--prepare {
+    margin-bottom: 8px;
+    margin-top: -8px;
+}
+
+/* While picking wonders hide graveyard slot — keeps layout tighter */
+.dg-stageCards--prepare ~ .dg-graveyardPanel {
+    display: none;
+}
+
+.dg-militaryViewport {
+    position: relative;
+    width: 100%;
+    overflow: visible;
+    /* After ±90° rotation, on-screen height = original board width × scale */
+    height: calc(var(--width-board) * var(--dg-military-board-scale));
+    /* Tighter gap above table card (arena padding unchanged, board sits higher) */
+    margin-top: -14px;
+}
+
+.dg-militaryTransform {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%) rotate(90deg) scale(var(--dg-military-board-scale));
+    transform-origin: center center;
+}
+
+.dg-duelBand {
+    min-width: 0;
+    flex-shrink: 0;
+    scroll-margin-block-start: calc(4px + env(safe-area-inset-top));
+    scroll-margin-block-end: calc(48px + env(safe-area-inset-bottom));
+}
+
+.dg-playerColumnsScroller {
+    width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-gutter: stable;
+    padding-bottom: 2px;
+}
+
+.dg-cardBoardShell {
+    --dg-card-board-current-height: var(--dg-card-board-height);
+    margin-inline: auto;
+    width: 100%;
+    padding-inline: 6px;
+    position: relative;
+    overflow: visible;
+    /* Layout height = scaled pyramid height (not full 420px) */
+    height: calc(var(--dg-card-board-current-height) * var(--dg-epoch-cards-scale));
+}
+
+.dg-cardBoardShell--compact {
+    --dg-card-board-current-height: var(--dg-card-board-height-compact);
+}
+
+.dg-cardBoardShell--tall {
+    --dg-card-board-current-height: var(--dg-card-board-height);
+}
+
+.dg-epochCardsTransform {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    transform: translateX(-50%) scale(var(--dg-epoch-cards-scale));
+    transform-origin: top center;
+}
+
+.dg-graveyardPanel {
+    position: relative;
+    min-width: 0;
+    width: 100%;
+    border: 1px solid var(--duel-graveyard-border);
+    background: var(--duel-graveyard-bg);
+    box-shadow: var(--duel-graveyard-shadow);
+}
+
+.dg-graveyardPanel--pickActive::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    border-radius: inherit;
+    border: 3px dotted tomato;
+    animation: dg-pulseBorder 1.5s ease-in-out infinite;
+    pointer-events: none;
+}
+
+.dg-graveyardCards {
+    /* Fixed card window: min height ≈ 2 compact rows (+ gap + padding); empty state doesn’t collapse */
+    min-height: calc(2 * (var(--height-tier) / 24) + 6px + 1rem);
+    /* max-height: calc(2 * (var(--height-tier) / 4.5) + 6px + 1rem); */
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-gutter: stable;
+}
+
+.dg-graveyardCardsBox {
+    background: var(--duel-graveyard-inner-bg);
+}
+
+.dg-graveyardCardsTransform {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+    align-content: flex-start;
+    box-sizing: border-box;
+    width: calc(100% / var(--dg-epoch-cards-scale));
+    transform: scale(var(--dg-epoch-cards-scale));
+    transform-origin: top left;
+    /* scale doesn’t change flow height → long scroll + empty tail under cards without this negative margin */
+    margin-bottom: calc(
+        -11 * (1 - var(--dg-epoch-cards-scale)) * ((var(--height-tier) / 4.5) + 6px)
+    );
+}
+
+.dg-tableArena {
+    border-radius: 1rem;
+    padding: 8px;
+    overflow: hidden;
+    position: relative;
+    background: var(--duel-arena-gradient);
+    box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, 0.07),
+        0 12px 32px rgba(0, 0, 0, 0.35);
+}
+
+.dg-tableSurface {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0;
+}
+
+.dgSurrenderOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 140;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    background: rgb(2 6 23 / 55%);
+    backdrop-filter: blur(2px);
+}
+
+.dgSurrenderModal {
+    width: min(92vw, 440px);
+    border-radius: 16px;
+    border: 1px solid var(--duel-surrender-modal-border);
+    background: var(--duel-surrender-modal-bg);
+    color: rgb(245 235 224);
+    padding: 16px;
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 7%),
+        0 16px 44px rgb(0 0 0 / 48%);
+}
+
+.dgSurrenderModal h3 {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.dgSurrenderModal p {
+    font-size: 14px;
+    opacity: 0.9;
+    margin-bottom: 12px;
+}
+
+.dgSurrenderActions {
+    margin-top: 14px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+}
+
+.dg-playerShell {
+    min-width: 0;
+}
+
+.dg-actionsBackdropInBoard {
+    position: absolute;
+    inset: 0;
+    z-index: 30;
+    pointer-events: none;
+}
+
+/* Captures clicks so cards underneath don’t receive them (epoch starter, coins) */
+.dg-actionsBackdropInBoard--blocking {
+    pointer-events: auto;
+}
+
+.dg-actionsInlineWrap {
+    position: relative;
+    width: 100%;
+    z-index: 8;
+    display: flex;
+    justify-content: center;
+    pointer-events: none;
+    margin-top: 2px;
+}
+
+.dg-actionsInlineWrap--blocking {
+    pointer-events: auto;
+}
+
+.dg-actionsModal {
+    position: absolute;
+    left: 50%;
+    bottom: 88px;
+    transform: translateX(-50%);
+    width: min(88%, 430px);
+    min-height: 42px;
+    border-radius: 12px;
+    border: 1px solid var(--duel-actionbar-border);
+    background: var(--duel-actionbar-bg);
+    backdrop-filter: blur(8px);
+    padding: 7px;
+    box-shadow: var(--duel-actionbar-shadow);
+    pointer-events: auto;
+}
+
+.dg-actionsInlineWrap .dg-actionsModal {
+    position: relative;
+    left: auto;
+    bottom: auto;
+    transform: none !important;
+    width: 100%;
+}
+
+.dg-actionsModal p {
+    color: var(--duel-actionbar-text);
+}
+
+.dg-actionsModal--instruction {
+    padding: 8px;
+    padding-top: 10px;
+}
+
+.dg-actionsModal--instruction p {
+    margin: 0;
+}
+
+.dg-actionsButtons {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 6px;
+    align-items: center;
+    justify-content: center;
+}
+
+.dg-actionsButtons--starter {
+    flex-direction: column;
+    flex-wrap: wrap;
+}
+
+.dg-actionsModalCoins {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: center;
+    align-items: center;
+    padding: 6px 4px 4px;
+}
+
+.dg-actionsModalCoinWrap {
+    display: inline-flex;
+    border-radius: 50%;
+    box-shadow: 0 0 0 2px rgba(250, 250, 250, 0.35);
+}
+
+.dg-actionsModalCoinWrap:focus-within {
+    box-shadow: 0 0 0 2px rgba(94, 234, 212, 0.85);
+}
+
+.dg-actionsModalCoinWrap .dg-coin {
+    cursor: pointer;
+}
+
+.dg-actionsModalCoinWrap .dg-coin:hover {
+    filter: brightness(1.1);
+}
+
+.dg-actionsButtons .btn-primary,
+.dg-actionsButtons .btn-secondary {
+    font-size: 0.875rem;
+    line-height: 1.1;
+    padding: 4px 7px;
+    min-height: 26px;
+    border-radius: 6px;
+    gap: 3px;
+}
+
+.dg-playerHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.dg-turnTimerChip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 34px;
+    height: 18px;
+    padding: 0 6px;
+    border-radius: 999px;
+    font-size: 11px;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    background: rgb(22 30 44 / 62%);
+    color: rgb(222 234 255 / 92%);
+    border: 1px solid rgb(133 156 210 / 38%);
+}
+
+.dg-turnTimerChip--danger {
+    background: rgb(106 24 24 / 76%);
+    color: rgb(255 216 216 / 96%);
+    border-color: rgb(240 94 94 / 52%);
+}
+
+.dg-playerTotals {
+    position: relative;
+    min-width: 66px;
+    height: 22px;
+}
+
+.dg-playerTotals .dg-totalCash {
+    left: 8px;
+    top: 3px;
+    transform: scale(1.3);
+    font-size: 9px;
+}
+
+.dg-playerTotals .dg-totalPoints {
+    left: 38px;
+    top: 0.5px;
+    width: 27px;
+    height: 23px;
+    line-height: 23px;
+    background-position: -80px -103px;
+    font-size: 12px;
+    transform: scale(1.05);
+}
+
+.dg-columns {
+    --dg-col-gap: 2px;
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    gap: var(--dg-col-gap);
+    /* Never shrink below seven slot widths — narrow panes scroll horizontally */
+    width: max-content;
+    max-width: none;
+    margin-inline: auto;
+}
+
+.dg-playerWonders {
+    display: grid;
+    grid-template-columns: repeat(2, var(--width-wonder));
+    justify-content: center;
+    gap: var(--dg-player-wonders-gap);
+    /* Extra gap when wonders are scaled down — they overlap neighbors less */
+    margin-bottom: 2px;
+}
+
+.dg-playerWonders .dg-wonderWrapper {
+    margin: 0;
+    transform: scale(var(--dg-player-wonders-scale));
+    transform-origin: top center;
+}
+
+.dg-wonderWrapper.dg-selected::after,
+.dg-wonderSelectable::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: var(--width-wonder);
+    height: var(--height-wonder);
+    border-radius: 5px;
+    border: 3px dotted tomato;
+    animation: dg-pulseBorder 1.5s ease-in-out infinite;
+    z-index: 20;
+    pointer-events: none;
+}
+
+.dg-wonderWrapper.dg-selected::after {
+    border-style: solid;
+    border-color: #22d3ee;
+}
+
+.dg-column {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    flex: 0 0 var(--width-tier);
+    width: var(--width-tier);
+    min-width: var(--width-tier);
+    min-height: calc(1 / 4 * var(--height-tier) * 2 + 6px);
+    border-radius: 6px;
+    padding-top: 1px;
+}
+
+.dg-column-brown { background-image: linear-gradient(to bottom, rgba(197, 96, 13, 0.33), 60%, transparent); }
+.dg-column-grey { background-image: linear-gradient(to bottom, rgba(131, 121, 114, 0.33), 60%, transparent); }
+.dg-column-yellow { background-image: linear-gradient(to bottom, rgba(255, 239, 9, 0.33), 60%, transparent); }
+.dg-column-blue { background-image: linear-gradient(to bottom, rgba(25, 48, 255, 0.33), 60%, transparent); }
+.dg-column-red { background-image: linear-gradient(to bottom, rgba(255, 26, 26, 0.33), 60%, transparent); }
+.dg-column-green { background-image: linear-gradient(to bottom, rgba(18, 219, 0, 0.33), 60%, transparent); }
+.dg-column-purple { background-image: linear-gradient(to bottom, rgba(124, 11, 189, 0.33), 60%, transparent); }
+
+.dg-cardWrapperCompact.dg-destroyCardTarget {
+    position: relative;
+}
+
+.dg-cardWrapperCompact.dg-destroyCardTarget::before {
+    content: '';
+    position: absolute;
+    z-index: 2;
+    top: 0;
+    left: 0;
+    width: var(--width-tier);
+    height: calc(var(--height-tier) / 4.5);
+    border-radius: 5px;
+    border: 3px dotted tomato;
+    animation: dg-pulseBorder 1.5s ease-in-out infinite;
+    pointer-events: none;
+}
+
+.dg-cardWrapperCompact.dg-scienceVictoryPulse {
+    position: relative;
+}
+
+.dg-cardWrapperCompact.dg-scienceVictoryPulse::before {
+    content: '';
+    position: absolute;
+    z-index: 2;
+    top: -1px;
+    right: -1px;
+    bottom: -1px;
+    left: -1px;
+    border-radius: 6px;
+    border: 3px dashed rgba(34, 197, 94, 0.92);
+    animation: dg-pulseScience 1.25s ease-in-out infinite;
+    pointer-events: none;
+}
+
+.dg-coin.dg-coinScienceVictoryPulse {
+    animation: dg-pulseScienceCoin 1.2s ease-in-out infinite;
+    box-sizing: border-box;
+}
+
+.dg-victoryScience {
+    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.85) inset;
+    animation: dg-pulseScience 1.25s ease-in-out infinite;
+}
+
+.dg-artCount {
+    position: relative;
+    left: auto;
+    top: auto;
+    transform: none;
+    flex-shrink: 0;
+    width: 100%;
+    text-align: center;
+    margin: 0 0 3px;
+    padding: 0 1px;
+    font-size: 9px;
+    line-height: 1.2;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.04em;
+    color: rgb(219 239 229 / 0.95);
+    text-shadow:
+        0 0 1px rgba(0 0 0 / 85%),
+        0 1px 2px rgba(0 0 0 / 55%);
+    pointer-events: none;
+    user-select: none;
+}
+
+.dg-artCount--complete {
+    color: rgb(254 249 195 / 0.98);
+    text-shadow:
+        0 0 6px rgba(250 204 21 / 45%),
+        0 1px 2px rgba(0 0 0 / 60%);
+}
+
+.dg-playerCoins {
+    min-height: 0px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    margin-bottom: 2px;
+}
+
+.dg-playerCoinsBox {
+    margin-top: 4px;
+    width: 100%;
+    max-width: none;
+}
+
+.dg-playerCoinsLabel {
+    font-size: 11px;
+    opacity: 0.8;
+    margin-bottom: 4px;
+}
+
+.dg-endIcon {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+    background-repeat: no-repeat;
+    background-image: url('@/assets/duel/sprites.webp');
+    background-size: 91px 91px;
+}
+
+.dg-endIconMilitary {
+    background-position: -32px -60px;
+}
+
+.dg-endIconScience {
+    background-position: -20px -35px;
+}
+
+.dg-endFocus {
+    border: 2px dotted transparent;
+}
+
+.dg-endFocusPoints {
+    border-color: rgba(255, 255, 255, 0.9);
+    animation: dg-pulseBorderLight 1.2s ease-in-out infinite;
+}
+
+.dg-endFocusMilitary {
+    border-color: rgba(239, 68, 68, 0.95);
+    animation: dg-pulseMilitary 1.2s ease-in-out infinite;
+}
+
+.dg-endFocusScience {
+    border-color: rgba(34, 197, 94, 0.95);
+    animation: dg-pulseScience 1.2s ease-in-out infinite;
+}
+
+/* Wonders sprites */
+.dg-wonder9 { background-position: 0 0; }
+.dg-wonder12 { background-position: calc(var(--width-wonder) * -1) 0; }
+.dg-wonder10 { background-position: calc(var(--width-wonder) * -2) 0; }
+.dg-wonder11 { background-position: calc(var(--width-wonder) * -3) 0; }
+.dg-wonder6 { background-position: calc(var(--width-wonder) * -4) 0; }
+.dg-wonder8 { background-position: 0 calc(var(--height-wonder) * -1); }
+.dg-wonder7 { background-position: calc(var(--width-wonder) * -1) calc(var(--height-wonder) * -1); }
+.dg-wonder5 { background-position: calc(var(--width-wonder) * -2) calc(var(--height-wonder) * -1); }
+.dg-wonder1 { background-position: calc(var(--width-wonder) * -3) calc(var(--height-wonder) * -1); }
+.dg-wonder4 { background-position: calc(var(--width-wonder) * -4) calc(var(--height-wonder) * -1); }
+.dg-wonder3 { background-position: 0 calc(var(--height-wonder) * -2); }
+.dg-wonder2 { background-position: calc(var(--width-wonder) * -1) calc(var(--height-wonder) * -2); }
+
+/* Cards sprites 1..73 */
+.dg-card1 { background-position: 0 0; }
+.dg-card2 { background-position: calc(var(--width-tier) * -1) 0; }
+.dg-card3 { background-position: calc(var(--width-tier) * -2) 0; }
+.dg-card4 { background-position: calc(var(--width-tier) * -3) 0; }
+.dg-card5 { background-position: calc(var(--width-tier) * -4) 0; }
+.dg-card6 { background-position: calc(var(--width-tier) * -5) 0; }
+.dg-card7 { background-position: calc(var(--width-tier) * -6) 0; }
+.dg-card8 { background-position: calc(var(--width-tier) * -7) 0; }
+.dg-card9 { background-position: calc(var(--width-tier) * -8) 0; }
+.dg-card10 { background-position: calc(var(--width-tier) * -9) 0; }
+.dg-card11 { background-position: calc(var(--width-tier) * -10) 0; }
+.dg-card12 { background-position: calc(var(--width-tier) * -11) 0; }
+.dg-card13 { background-position: 0 calc(var(--height-tier) * -1); }
+.dg-card14 { background-position: calc(var(--width-tier) * -1) calc(var(--height-tier) * -1); }
+.dg-card15 { background-position: calc(var(--width-tier) * -2) calc(var(--height-tier) * -1); }
+.dg-card16 { background-position: calc(var(--width-tier) * -3) calc(var(--height-tier) * -1); }
+.dg-card17 { background-position: calc(var(--width-tier) * -4) calc(var(--height-tier) * -1); }
+.dg-card18 { background-position: calc(var(--width-tier) * -5) calc(var(--height-tier) * -1); }
+.dg-card19 { background-position: calc(var(--width-tier) * -6) calc(var(--height-tier) * -1); }
+.dg-card20 { background-position: calc(var(--width-tier) * -7) calc(var(--height-tier) * -1); }
+.dg-card21 { background-position: calc(var(--width-tier) * -8) calc(var(--height-tier) * -1); }
+.dg-card22 { background-position: calc(var(--width-tier) * -9) calc(var(--height-tier) * -1); }
+.dg-card23 { background-position: calc(var(--width-tier) * -10) calc(var(--height-tier) * -1); }
+.dg-card24 { background-position: calc(var(--width-tier) * -11) calc(var(--height-tier) * -1); }
+.dg-card25 { background-position: 0 calc(var(--height-tier) * -2); }
+.dg-card26 { background-position: calc(var(--width-tier) * -1) calc(var(--height-tier) * -2); }
+.dg-card27 { background-position: calc(var(--width-tier) * -2) calc(var(--height-tier) * -2); }
+.dg-card28 { background-position: calc(var(--width-tier) * -3) calc(var(--height-tier) * -2); }
+.dg-card29 { background-position: calc(var(--width-tier) * -4) calc(var(--height-tier) * -2); }
+.dg-card30 { background-position: calc(var(--width-tier) * -5) calc(var(--height-tier) * -2); }
+.dg-card31 { background-position: calc(var(--width-tier) * -6) calc(var(--height-tier) * -2); }
+.dg-card32 { background-position: calc(var(--width-tier) * -7) calc(var(--height-tier) * -2); }
+.dg-card33 { background-position: calc(var(--width-tier) * -8) calc(var(--height-tier) * -2); }
+.dg-card34 { background-position: calc(var(--width-tier) * -10) calc(var(--height-tier) * -2); }
+.dg-card35 { background-position: calc(var(--width-tier) * -9) calc(var(--height-tier) * -2); }
+.dg-card36 { background-position: calc(var(--width-tier) * -11) calc(var(--height-tier) * -2); }
+.dg-card37 { background-position: 0 calc(var(--height-tier) * -3); }
+.dg-card38 { background-position: calc(var(--width-tier) * -1) calc(var(--height-tier) * -3); }
+.dg-card39 { background-position: calc(var(--width-tier) * -2) calc(var(--height-tier) * -3); }
+.dg-card40 { background-position: calc(var(--width-tier) * -3) calc(var(--height-tier) * -3); }
+.dg-card41 { background-position: calc(var(--width-tier) * -4) calc(var(--height-tier) * -3); }
+.dg-card42 { background-position: calc(var(--width-tier) * -5) calc(var(--height-tier) * -3); }
+.dg-card43 { background-position: calc(var(--width-tier) * -6) calc(var(--height-tier) * -3); }
+.dg-card44 { background-position: calc(var(--width-tier) * -7) calc(var(--height-tier) * -3); }
+.dg-card45 { background-position: calc(var(--width-tier) * -8) calc(var(--height-tier) * -3); }
+.dg-card46 { background-position: calc(var(--width-tier) * -9) calc(var(--height-tier) * -3); }
+.dg-card47 { background-position: calc(var(--width-tier) * -10) calc(var(--height-tier) * -3); }
+.dg-card48 { background-position: calc(var(--width-tier) * -11) calc(var(--height-tier) * -3); }
+.dg-card49 { background-position: 0 calc(var(--height-tier) * -4); }
+.dg-card50 { background-position: calc(var(--width-tier) * -1) calc(var(--height-tier) * -4); }
+.dg-card51 { background-position: calc(var(--width-tier) * -2) calc(var(--height-tier) * -4); }
+.dg-card52 { background-position: calc(var(--width-tier) * -3) calc(var(--height-tier) * -4); }
+.dg-card53 { background-position: calc(var(--width-tier) * -4) calc(var(--height-tier) * -4); }
+.dg-card54 { background-position: calc(var(--width-tier) * -5) calc(var(--height-tier) * -4); }
+.dg-card55 { background-position: calc(var(--width-tier) * -6) calc(var(--height-tier) * -4); }
+.dg-card56 { background-position: calc(var(--width-tier) * -7) calc(var(--height-tier) * -4); }
+.dg-card57 { background-position: calc(var(--width-tier) * -8) calc(var(--height-tier) * -4); }
+.dg-card58 { background-position: calc(var(--width-tier) * -9) calc(var(--height-tier) * -4); }
+.dg-card59 { background-position: calc(var(--width-tier) * -10) calc(var(--height-tier) * -4); }
+.dg-card60 { background-position: calc(var(--width-tier) * -11) calc(var(--height-tier) * -4); }
+.dg-card61 { background-position: 0 calc(var(--height-tier) * -5); }
+.dg-card62 { background-position: calc(var(--width-tier) * -1) calc(var(--height-tier) * -5); }
+.dg-card63 { background-position: calc(var(--width-tier) * -2) calc(var(--height-tier) * -5); }
+.dg-card64 { background-position: calc(var(--width-tier) * -3) calc(var(--height-tier) * -5); }
+.dg-card65 { background-position: calc(var(--width-tier) * -4) calc(var(--height-tier) * -5); }
+.dg-card66 { background-position: calc(var(--width-tier) * -5) calc(var(--height-tier) * -5); }
+.dg-card67 { background-position: calc(var(--width-tier) * -6) calc(var(--height-tier) * -5); }
+.dg-card68 { background-position: calc(var(--width-tier) * -7) calc(var(--height-tier) * -5); }
+.dg-card69 { background-position: calc(var(--width-tier) * -8) calc(var(--height-tier) * -5); }
+.dg-card70 { background-position: calc(var(--width-tier) * -9) calc(var(--height-tier) * -5); }
+.dg-card71 { background-position: calc(var(--width-tier) * -10) calc(var(--height-tier) * -5); }
+.dg-card72 { background-position: calc(var(--width-tier) * -11) calc(var(--height-tier) * -5); }
+.dg-card73 { background-position: 0 calc(var(--height-tier) * -6); }
+
+@keyframes dg-invisible {
+    0% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+        z-index: -100;
+    }
+}
+
+@keyframes dg-prepareLayOut {
+    0% {
+        transform: translateY(-250%) translateX(-250%);
+        opacity: 0;
+    }
+    60% {
+        transform: translateY(-250%) translateX(-250%);
+        opacity: 0;
+    }
+    70% {
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(var(--y)) translateX(var(--x));
+        opacity: 1;
+    }
+}
+
+@keyframes dg-pulseBorder {
+    0% { border: 3px dotted tomato; }
+    50% { border: 3px dotted transparent; }
+    100% { border: 3px dotted tomato; }
+}
+
+@keyframes dg-pulseBorderLight {
+    0% { border-color: rgba(255, 255, 255, 0.95); }
+    50% { border-color: transparent; }
+    100% { border-color: rgba(255, 255, 255, 0.95); }
+}
+
+@keyframes dg-pulseMilitary {
+    0% { border-color: rgba(239, 68, 68, 0.95); }
+    50% { border-color: transparent; }
+    100% { border-color: rgba(239, 68, 68, 0.95); }
+}
+
+@keyframes dg-pulseScience {
+    0% { border-color: rgba(34, 197, 94, 0.95); }
+    50% { border-color: transparent; }
+    100% { border-color: rgba(34, 197, 94, 0.95); }
+}
+
+@keyframes dg-pulseScienceCoin {
+    0%, 100% {
+        box-shadow:
+            0 0 0 2px rgba(34, 197, 94, 0.95),
+            0 0 12px rgba(34, 197, 94, 0.4);
+        filter: brightness(1);
+    }
+
+    50% {
+        box-shadow:
+            0 0 0 4px rgba(110, 231, 183, 0.45),
+            0 0 20px rgba(34, 197, 94, 0.2);
+        filter: brightness(1.12);
+    }
+}
+
+@keyframes dg-tierSimpleFlipReveal {
+    from {
+        transform: rotateY(180deg);
+    }
+
+    to {
+        transform: rotateY(0deg);
+    }
+}
+
+@keyframes dg-wonderTierArrive {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* =========================================================
+   Responsive Overrides (kept together for maintainability)
+   ========================================================= */
+
+@media (max-width: 768px) {
+    .dgHeader .btn-secondary {
+        padding: 6px 10px;
+    }
+
+    .dgHeaderActionsDesktop {
+        display: none !important;
+    }
+
+    .dgMobileMenuToggle {
+        display: inline-flex !important;
+        min-width: 2.35rem;
+        min-height: 2.35rem;
+        padding: 0.45rem;
+        border-radius: 0.9rem;
+        margin-left: auto;
+    }
+
+    .dgMobileMenu {
+        position: absolute;
+        top: calc(100% + 8px);
+        right: 0;
+        width: min(84vw, 16rem);
+        border-radius: 14px;
+        border: 1px solid var(--duel-mobile-menu-border);
+        background: var(--duel-mobile-menu-bg);
+        box-shadow: var(--duel-mobile-menu-shadow);
+        display: block !important;
+        z-index: 120;
+        animation: dgMenuIn 0.18s ease-out;
+    }
+
+    .dgMobileMenuList {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+        padding: 0.5rem;
+    }
+
+    .dgMobileMenuItem {
+        width: 100%;
+        justify-content: flex-start;
+        min-height: 2.2rem;
+        border-radius: 0.75rem;
+    }
+
+    .dgMobileMenuText {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}
+
+@media (min-width: 425px) {
+    :root {
+        --dg-military-board-scale: 0.71;
+        --dg-epoch-cards-scale: 0.8;
+        --dg-wonder-prepare-scale: 0.8;
+        --dg-player-wonders-scale: 0.9;
+        --dg-player-wonders-gap: 12px;
+    }
+
+    .dg-actionsInlineWrap {
+        margin-bottom: 4px;
+    }
+
+    .dg-militaryViewport {
+        margin-top: -20px !important;
+    }
+
+    .dg-stageCards:not(.dg-stageCards--prepare) {
+        margin-bottom: -30px !important;
+        margin-top: -36px !important;
+    }
+
+    .dg-playerShell {
+        max-width: 490px;
+    }
+
+    .dg-duelBand {
+        display: flex;
+        justify-content: center;
+    }
+
+    .dg-playerArea {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        grid-template-areas:
+            'header header'
+            'wonders coins'
+            'columns columns';
+        column-gap: 12px;
+        align-items: start;
+    }
+
+    .dg-playerHeader {
+        grid-area: header;
+    }
+
+    .dg-playerWonders {
+        grid-area: wonders;
+        justify-content: start;
+        justify-self: start;
+        margin-right: auto;
+        margin-bottom: 4px !important;
+    }
+
+    .dg-playerColumnsScroller {
+        grid-area: columns;
+    }
+
+    .dg-playerCoinsBox {
+        grid-area: coins;
+        margin-top: 0;
+        justify-self: stretch;
+        align-self: stretch;
+    }
+}
+
+@media (min-width: 480px) {
+    .dg-actionsButtons--starter {
+        flex-direction: row;
+    }
+}
+
+@media (min-width: 768px) {
+    :root {
+        --dg-military-board-scale: 0.9;
+        --dg-epoch-cards-scale: 0.95;
+        --dg-wonder-prepare-scale: 0.95;
+        --dg-player-wonders-scale: 1;
+        --dg-player-wonders-gap: 20px;
+    }
+
+    .dg-militaryViewport {
+        margin-top: -26px !important;
+    }
+
+    .dg-stageCards:not(.dg-stageCards--prepare) {
+        margin-bottom: -32px !important;
+        margin-top: -44px !important;
+    }
+
+    .dg-playerWonders {
+        margin-bottom: 14px !important;
+    }
+
+    .dg-playerCoinsBox {
+        margin-left: 8px;
+    }
+}
+
+@media (min-width: 1024px) {
+    :root {
+        --dg-military-board-scale: 1;
+        --dg-epoch-cards-scale: 1;
+        --dg-wonder-prepare-scale: 1;
+        --dg-player-wonders-scale: 1;
+    }
+
+    .dg-playerBand:nth-child(1) {
+        justify-self: end;
+    }
+
+    .dg-playerBand:nth-child(2) {
+        justify-self: start;
+    }
+
+    .dg-playerShell {
+        width: fit-content;
+        max-width: 100%;
+    }
+
+    .dg-playerArea {
+        width: fit-content;
+        max-width: 100%;
+    }
+
+    .dg-stageCards:not(.dg-stageCards--prepare) {
+        margin-left: -50px;
+        margin-top: -20px !important;
+    }
+
+    .dg-actionsModal {
+        transform: translateX(-63%) !important;
+    }
+
+    .dg-actionsInlineWrap:not(.dg-actionsInlineWrap--prepare) .dg-actionsModal {
+        margin-left: -100px;
+    }
+
+    .dg-actionsInlineWrap .dg-actionsModal {
+        width: 430px;
+    }
+
+    .dg-arenaTableCard {
+        min-height: 516px;
+    }
+
+    .dg-militaryViewport {
+       position: absolute;
+       transform: rotate(-90deg) scale(var(--dg-military-board-scale));
+       top: 183px;
+       left: 260px;
+    }
+
+    .dg-boardCoinSlot {
+        transform: rotate(0);
+    }
+
+    .dg-arenaTableCard:has(.dg-stageCards--prepare) .dg-boardCoinSlot {
+        transform: rotate(-90deg);
+    }
+
+    /* Wonder-pick phase: conflict board like narrow layout — top, not shifted right beside pyramid */
+    .dg-arenaTableCard:has(.dg-stageCards--prepare) .dg-militaryViewport {
+        position: relative;
+        top: auto;
+        left: auto;
+        inset: auto;
+        transform: none;
+        width: 100%;
+        justify-self: auto;
+        align-self: auto;
+        height: calc(var(--width-board) * var(--dg-military-board-scale));
+        margin-top: -14px;
+        min-height: unset;
+        display: block;
+        max-width: none;
+    }
+
+    .dg-graveyardPanel {
+        width: 430px !important;
+        margin: 0 auto !important;
+        transform: translateX(-50px) !important;
+    }
+
+    .dg-duelPlayersRow {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 10px;
+        min-width: 0;
+        align-items: start;
+        justify-content: center;
+    }
+}
+
+/* Wide screens: player column stack on the right, fixed-width arena on the left */
+@media (min-width: 1440px) {
+    .dg-playerBand:nth-child(1) {
+        justify-self: unset;
+    }
+
+    .dg-playerBand:nth-child(2) {
+        justify-self: unset;
+    }
+
+    .dg-duelLayout {
+        flex-direction: row;
+        justify-content: center;
+    }
+
+    .dg-duelArena {
+        order: 1;
+        width: 754px;
+    }
+
+    .dg-militaryViewport {
+        left: 442px;
+        width: 50%;
+    }
+
+    .dg-duelPlayersRow {
+        order: 2;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        align-items: stretch;
+        justify-content: start;
+    }
+
+    .dg-playerBand {
+        align-self: flex-start;
+    }
+}
